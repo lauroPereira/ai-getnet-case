@@ -2,7 +2,7 @@
 
 # Especificação: Assistente multiagente de suporte ao lojista
 
-Versão 0.1 — 2026-10-26 — **aprovada pelo responsável em 2026-10-26**.
+Versão 0.2 — 2026-10-26 — **aprovada pelo responsável em 2026-10-26**. A 0.2 acrescenta a etapa Personality (RF-37, CA-26), identificada na imagem do enunciado pela tarefa 01.
 
 Origem: enunciado do desafio "AI Hardcore Engineer — Multi-Agent Support System" e material de discovery local (`discovery/`, não versionado). A solução técnica está no [plano](assistente-multiagente-lojista-plano.md) e nas [decisões propostas](../architecture/decisions/).
 
@@ -34,7 +34,7 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; 
 | Fatia | Conteúdo | Obrigatoriedade |
 | --- | --- | --- |
 | 0 — Verificação | Fontes oficiais dos exemplos, imagem do enunciado, acesso e preços dos modelos | Pré-requisito |
-| 1 — Núcleo | API, Router com guardrails, Knowledge com RAG e busca web, Customer Support com ferramentas do núcleo, Escalation Agent, orquestração com limites, logs e traces, Docker, testes e avaliação dos 10 exemplos | Obrigatória |
+| 1 — Núcleo | API, Router com guardrails, Knowledge com RAG e busca web, Customer Support com ferramentas do núcleo, Escalation Agent, Personality, orquestração com limites, logs e traces, Docker, testes e avaliação dos 10 exemplos | Obrigatória |
 | 2 — Confiabilidade e acompanhamento | Histórico curto por conversa, estados de atendimento com evidência de resolução, acompanhamento técnico em até dois ciclos, servidor MCP para as ferramentas | Recomendada |
 | 3 — Profundidade | Preço e contestação com serviço de pricing fictício, habilitação de bandeiras, consulta de cancelamento de venda | Opcional |
 | 4 — Demonstração | Seletor do mecanismo do Router (LLM ou Jev), interface de demonstração, README final e vídeo | README e vídeo obrigatórios; demais opcionais |
@@ -93,6 +93,10 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; 
 
 - **RF-22** Um Escalation Agent deve preparar o pacote de encaminhamento (resumo do problema, referências mínimas, consultas e resultados, tentativas, retorno do lojista, motivo e questão pendente) e persisti-lo localmente com protocolo identificado como simulação. Repetir a mesma requisição não duplica o caso.
 - **RF-23** O encaminhamento ocorre por pedido explícito, evidência insuficiente para um tema que exige dado, divergência sem fonte de autoridade, falha de ferramenta essencial ou limite de tentativas. Pedido explícito de humano é atendido mesmo se as ferramentas falharem.
+
+### Personality
+
+- **RF-37** Toda resposta deve passar por uma etapa Personality antes da saída, como mostra o diagrama do enunciado. Ela recebe as contribuições estruturadas dos agentes e redige a resposta final com voz consistente de atendimento ao lojista, no idioma da mensagem. Não pode acrescentar, remover ou alterar fatos, valores, datas, fontes ou o status da resposta; recusas e encaminhamentos mantêm o conteúdo definido pelo fluxo.
 
 ### Orquestração e limites
 
@@ -184,6 +188,7 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; 
 - [ ] **CA-15** Logs e traces por `request_id` mostram rota, agentes, ferramentas, duração por etapa, tokens e custo.
 - [ ] **CA-16** O README cobre build, configuração, execução, testes, arquitetura, fluxo de mensagens, pipeline RAG (ingestão → armazenamento → recuperação → geração), uso de ferramentas pelos modelos, estratégia de testes, avaliação e observabilidade.
 - [ ] **CA-17** Um relatório de avaliação registra configuração, amostra, resultado por caso, custo e latência, separando medições de metas.
+- [ ] **CA-26** Toda resposta passa pela etapa Personality; a verificação de saída confirma que valores, datas e fontes continuam iguais aos das contribuições dos agentes.
 
 ### Fatias 2 a 4
 
@@ -217,4 +222,4 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; 
 | Q2 | Idioma do README final e do vídeo (proposta: inglês) | Responsável | Fatia 4 |
 | Q3 | Visibilidade final do repositório (criado como privado em 2026-10-26) | Responsável | Entrega |
 | Q4 | Acesso e crédito no Jev | Responsável | RF-35 |
-| Q5 | Conteúdo da imagem incorporada ao enunciado | Tarefa 01 | Aderência final da arquitetura |
+| Q5 | ~~Conteúdo da imagem incorporada ao enunciado~~ Resolvida em 2026-10-26: diagrama com etapa Personality antes da saída (RF-37) | Tarefa 01 | — |

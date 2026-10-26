@@ -29,17 +29,17 @@ Confirmar as páginas oficiais que fundamentam os exemplos de conhecimento e se 
 
 ## Critérios de conclusão
 
-- [ ] Cada exemplo de conhecimento (UC-01, 04, 06, 09, 10) tem fonte verificada ou ausência registrada.
-- [ ] Toda página da lista tem classificação de extração.
-- [ ] Imagem do enunciado verificada, ou impossibilidade registrada.
-- [ ] Evidência gravada com data e método.
+- [x] Cada exemplo de conhecimento (UC-01, 04, 06, 09, 10) tem fonte verificada ou ausência registrada.
+- [x] Toda página da lista tem classificação de extração.
+- [x] Imagem do enunciado verificada, ou impossibilidade registrada.
+- [x] Evidência gravada com data e método.
 
 ## Validação
 
-A preencher na execução.
+Verificação manual no navegador e automatizada por cliente HTTP em 2026-10-26: 32 URLs com `robots.txt` permitido, 30 com extração estática e 2 dinâmicas capturadas renderizadas. Detalhes em [docs/evidence/2026-10-26-verificacao-de-fontes.md](../evidence/2026-10-26-verificacao-de-fontes.md). A imagem do enunciado revelou a etapa Personality, incorporada como RF-37.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

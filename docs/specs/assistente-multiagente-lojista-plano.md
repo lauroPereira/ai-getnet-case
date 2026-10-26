@@ -2,7 +2,7 @@
 
 # Plano: Assistente multiagente de suporte ao lojista
 
-Versão 0.1 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, junto com as decisões 0001 a 0005.
+Versão 0.2 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, junto com as decisões 0001 a 0005. A 0.2 acrescenta a etapa Personality (RF-37).
 
 ## Especificação relacionada
 
@@ -102,19 +102,22 @@ Também: `GET /health`, `GET /ready` e, somente em modo demonstração, `GET /tr
 | Knowledge | `mode` (rag, web), `claims[]`, `citations[{title, url, source_kind, chunk_id}]`, `evidence_sufficient`, `procedure_id`, `missing[]` |
 | Customer Support | `facts[{tool, field, value, source, observed_at}]`, `needs_selection`, `missing[]`, `escalate`, `reason`, `answer` |
 | Escalation | `case_id`, `protocol`, `reason`, `summary`, `queries[]`, `attempts[]`, `pending_question` |
+| Personality | `answer` (texto final) e `language`; recebe `status`, fatos, citações e pontos dos especialistas, sem poder alterá-los |
 
-Composição: com um único especialista, a resposta dele é usada diretamente. Na rota combinada, o Knowledge roda primeiro e o Customer Support compõe a resposta com o procedimento recebido. Toda resposta passa pela verificação de saída (RF-08).
+Composição: os especialistas devolvem conteúdo estruturado (pontos, fatos, citações). Na rota combinada, o Knowledge roda primeiro e o Customer Support usa o procedimento recebido. A etapa Personality redige a resposta final a partir dessas contribuições (RF-37) e a verificação de saída confere valores, datas e fontes contra os fatos (RF-08). Recusas e esclarecimentos usam textos de política, também passados pela Personality para manter a voz e o idioma.
 
 ### Grafo
 
 ```text
-input_guard → router ─┬─ knowledge ───────────────────────────────→ output_guard → respond
-                      ├─ general_web → knowledge(web) ─────────────→ output_guard → respond
-                      ├─ support → support_prefix → support ────────→ output_guard → respond
-                      ├─ knowledge_and_support → support_prefix → knowledge → support → output_guard → respond
-                      ├─ human_handoff → support_prefix (tolerante a falhas) → escalation → respond
-                      ├─ clarify → respond
-                      └─ out_of_scope → respond (recusa)
+input_guard → router ─┬─ knowledge ──────────────────────────────────────────┐
+                      ├─ general_web → knowledge(web) ────────────────────────┤
+                      ├─ support → support_prefix → support ───────────────────┤
+                      ├─ knowledge_and_support → support_prefix → knowledge → support ┤
+                      ├─ human_handoff → support_prefix (tolerante a falhas) → escalation ┤
+                      ├─ clarify ────────────────────────────────────────────────┤
+                      └─ out_of_scope (recusa) ──────────────────────────────────┤
+                                                                                 ▼
+                                                   personality → output_guard → respond
 support --escalate--> escalation
 ```
 
@@ -178,6 +181,7 @@ Cada etapa é uma tarefa em `docs/tasks/`. As fatias 2 a 4 serão detalhadas em 
 10. [Knowledge Agent](../tasks/10-knowledge-agent.md)
 11. [Customer Support Agent](../tasks/11-customer-support-agent.md)
 12. [Escalation Agent](../tasks/12-escalation-agent.md)
+12b. [Personality](../tasks/12b-personality.md)
 13. [Docker e README inicial](../tasks/13-docker-e-readme-inicial.md)
 14. [Avaliação dos exemplos do desafio](../tasks/14-avaliacao-exemplos-desafio.md)
 
@@ -187,4 +191,4 @@ Cada etapa é uma tarefa em `docs/tasks/`. As fatias 2 a 4 serão detalhadas em 
 
 **Fatia 4 — Demonstração (a detalhar):** seletor LLM/Jev (RF-35), interface (RF-36), README final, revisão de privacidade antes do primeiro push e vídeo (CA-16, CA-25).
 
-Dependências: 03 antes de tudo na fatia 1; 05 antes de 06; 01 antes de 07; 04 e 08 antes de 09 a 12; 06 antes de 11; 07 antes de 10; 13 e 14 por último.
+Dependências: 03 antes de tudo na fatia 1; 05 antes de 06; 01 antes de 07; 04 e 08 antes de 09 a 12; 06 antes de 11; 07 antes de 10; 12b depois de 09 a 12; 13 e 14 por último.

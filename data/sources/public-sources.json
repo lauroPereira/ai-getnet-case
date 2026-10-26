@@ -1,0 +1,489 @@
+{
+  "version": "1.0.0",
+  "source_kind": "public_official",
+  "verified_at": "2026-10-26",
+  "user_agent": "ai-getnet-case-ingest/0.1 (+https://github.com/lauroPereira/ai-getnet-case)",
+  "notes": "Lista verificada na tarefa 01. Somente URLs visitadas; robots.txt permite todas.",
+  "sources": [
+    {
+      "url": "https://www.getnet.net/en/",
+      "market": "global",
+      "language": "en",
+      "topic": "company_overview",
+      "products": [],
+      "examples": [],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "products_overview",
+      "products": [],
+      "examples": [
+        "UC-01"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/todas-as-maquininhas/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "card_machines",
+      "products": [
+        "get_classica",
+        "get_smart",
+        "get_lite",
+        "get_tap"
+      ],
+      "examples": [
+        "UC-01",
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "dynamic",
+      "capture": "browser_rendered",
+      "rendered_path": "data/snapshots/public/rendered/todas-as-maquininhas.txt",
+      "capture_note": "Cards de produto e tabelas montados por JavaScript; HTML estático não contém as características das maquininhas."
+    },
+    {
+      "url": "https://site.getnet.com.br/pix/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "pix",
+      "products": [
+        "pix"
+      ],
+      "examples": [
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/crediario/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "crediario",
+      "products": [
+        "crediario"
+      ],
+      "examples": [
+        "UC-09"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/link-de-pagamento/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "payment_link",
+      "products": [
+        "link_de_pagamento"
+      ],
+      "examples": [
+        "UC-10"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/conta-digital/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "digital_account",
+      "products": [
+        "get_conta"
+      ],
+      "examples": [
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/duvidas/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "faq",
+      "products": [],
+      "examples": [
+        "UC-04",
+        "UC-05",
+        "UC-06"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/taxas/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "public_rates",
+      "products": [
+        "get_classica",
+        "get_smart"
+      ],
+      "examples": [
+        "UC-01"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "dynamic",
+      "capture": "browser_rendered",
+      "rendered_path": "data/snapshots/public/rendered/taxas.txt",
+      "capture_note": "Tabela exibida na seleção padrão (aba Adesão; filtros iniciais de faturamento, bandeira e prazo). Valores públicos de oferta: não representam condições individuais."
+    },
+    {
+      "url": "https://site.getnet.com.br/get-tap/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "get_tap",
+      "products": [
+        "get_tap"
+      ],
+      "examples": [],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/bandeiras/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "card_brands",
+      "products": [],
+      "examples": [],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-antecipacao-de-venda/como-antecipar-sua-vendas-pelo-app/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "receivables_advance",
+      "products": [
+        "antecipacao"
+      ],
+      "examples": [
+        "UC-06"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-antecipacao-de-venda/como-habilitar-antecipacao-automatica-pelo-app/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "receivables_advance",
+      "products": [
+        "antecipacao_automatica"
+      ],
+      "examples": [
+        "UC-06"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-antecipacao-de-venda/como-habilitar-antecipacao-automatica-pelo-portal/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "receivables_advance",
+      "products": [
+        "antecipacao_automatica"
+      ],
+      "examples": [
+        "UC-06"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-receba-ja/plano-de-recebimento-reduzido/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "reduced_settlement_plan",
+      "products": [
+        "receba_ja"
+      ],
+      "examples": [
+        "UC-06"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-reserva-financeira/antecipacao-reserva-financeira/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "receivables_advance",
+      "products": [
+        "reserva_financeira"
+      ],
+      "examples": [
+        "UC-06"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-pix/como-fazer-uma-venda-com-pix-na-maquininha/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "pix",
+      "products": [
+        "pix"
+      ],
+      "examples": [
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-pix/como-habilitar-o-recebimento-de-vendas-via-pix-no-aplicativo-getnet-brasil/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "pix",
+      "products": [
+        "pix"
+      ],
+      "examples": [
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-get-conta/o-que-e-a-get-conta/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "digital_account",
+      "products": [
+        "get_conta"
+      ],
+      "examples": [
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-cadastro/como-trocar-o-domicilio-bancario/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "settlement_account",
+      "products": [],
+      "examples": [
+        "UC-03",
+        "UC-04"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-configuracoes/como-configurar-o-wi-fi-na-sua-maquininha-getnet/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "device_connectivity",
+      "products": [],
+      "examples": [
+        "UC-05"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-erros-maquininha/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "device_errors",
+      "products": [],
+      "examples": [
+        "UC-08"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-erros-maquininha/erro-adq-1-50/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "device_errors",
+      "products": [],
+      "examples": [
+        "UC-08"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-erros-maquininha/erro-adq-4-83/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "device_errors",
+      "products": [],
+      "examples": [
+        "UC-08"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-erros-maquininha/erro-adq-4-91/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "device_errors",
+      "products": [],
+      "examples": [
+        "UC-08"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-gestao-de-vendas/quais-possiveis-status-das-minhas-vendas/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "sales_status",
+      "products": [],
+      "examples": [
+        "UC-03"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-gestao-de-vendas/como-consultar-os-status-das-minhas-vendas/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "sales_status",
+      "products": [],
+      "examples": [
+        "UC-03"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-taxas/taxas-por-transacao/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "fees",
+      "products": [],
+      "examples": [],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-whatsapp-business/descontinuacao-whatsapp-business/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "payment_link",
+      "products": [
+        "link_de_pagamento"
+      ],
+      "examples": [
+        "UC-10"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-maquininha/como-fazer-uma-venda-na-maquininha-getnet/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "card_machines",
+      "products": [],
+      "examples": [
+        "UC-08"
+      ],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-cancelamento/como-cancelar-produtos-e-servicos/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "cancellation",
+      "products": [],
+      "examples": [],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    },
+    {
+      "url": "https://site.getnet.com.br/get-ajuda-chargeback/como-estornar-uma-venda-na-maquininha-getnet/",
+      "market": "BR",
+      "language": "pt",
+      "topic": "sale_reversal",
+      "products": [],
+      "examples": [],
+      "robots_allowed": true,
+      "verified_at": "2026-10-26",
+      "extraction": "static",
+      "capture": "http"
+    }
+  ]
+}
