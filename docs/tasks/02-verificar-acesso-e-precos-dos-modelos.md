@@ -28,17 +28,17 @@ Confirmar que a conta OpenAI acessa os modelos candidatos (agentes, embeddings e
 
 ## Critérios de conclusão
 
-- [ ] Modelos confirmados ou substitutos propostos.
-- [ ] Tabela de preços com fonte e data.
-- [ ] Gasto observado registrado e abaixo de US$0,05.
-- [ ] Situação do Jev registrada.
+- [x] Modelos confirmados ou substitutos propostos.
+- [x] Tabela de preços com fonte e data.
+- [x] Gasto observado registrado e abaixo de US$0,05.
+- [x] Situação do Jev registrada.
 
 ## Validação
 
-A preencher na execução.
+Chamadas mínimas reais em 2026-10-26 (saída estruturada, busca web, embeddings) e listagem de modelos dos três provedores. Gasto estimado US$0,0209. Detalhes em [docs/evidence/2026-10-26-acesso-e-precos-dos-modelos.md](../evidence/2026-10-26-acesso-e-precos-dos-modelos.md).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```
