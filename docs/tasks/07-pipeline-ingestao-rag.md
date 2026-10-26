@@ -33,16 +33,16 @@ Coletar as fontes, gravar a cópia versionada, fragmentar, indexar e recuperar, 
 
 ## Critérios de conclusão
 
-- [ ] `ingest` gera a cópia versionada; `index` reconstrói o índice só a partir dela.
-- [ ] Testes rodam sem rede.
-- [ ] Recall@k em inglês e em português registrado em `docs/evidence/`, com amostra e custo.
+- [x] `ingest` gera a cópia versionada; `index` reconstrói o índice só a partir dela.
+- [x] Testes rodam sem rede.
+- [x] Recall@k em inglês e em português registrado em `docs/evidence/`, com amostra e custo.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: `ingest` gerou 32 cópias sem falha; `index` e `eval-retrieval` reconstroem o índice só a partir delas. Recall@6 = 1,0 em inglês e português com `text-embedding-3-small` (14 perguntas, US$0,0007). Testes offline em `tests/unit/rag/`. Detalhes em [docs/evidence/2026-10-26-pipeline-rag.md](../evidence/2026-10-26-pipeline-rag.md). Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

@@ -1,0 +1,15 @@
+{
+ "url": "https://site.getnet.com.br/get-ajuda-antecipacao-de-venda/como-habilitar-antecipacao-automatica-pelo-portal/",
+ "title": "Como habilitar antecipação automática pelo Portal - Getnet",
+ "market": "BR",
+ "language": "pt",
+ "topic": "receivables_advance",
+ "products": [
+  "antecipacao_automatica"
+ ],
+ "capture": "http",
+ "capture_note": null,
+ "collected_at": "2026-10-26T23:20:43+00:00",
+ "content_hash": "d63d38b000ac47d5c878fa8736f5c7a5b51eb851d7271d5be95ea1e15d4adc49",
+ "text": "Você pode habilitar a antecipação automática pelo Portal Minha Conta, contudo, lembre-se que para qualquer solicitação de ativação e desativação é necessário ter um perfil administrativo e senha para conseguir seguir.\nPasso a passo para habilitar a antecipação automática:\n1. Acesse o Portal com seu login e senha;\n2. No menu lateral à esquerda clique em “Produtos e Serviços”;\n3. Dentro dessa aba veja o ícone de ANTECIPAÇÃO AUTOMÁTICA, pode constar HABILITADO OU DESABILITADO;\n4. Clique em “Habilitar”;\n5. Leia e clique em “Aceitar termos e condições”;\n6. Insira a senha do login para confirmação da habilitação;\n7. Pronto! A antecipação está habilitada de forma automática.\nVocê pode acompanhar o seu pedido no menu lateral em “Produtos e Serviços”. No campo Meus pedidos , na aba “Atendimentos”, clique em detalhes para ver o status completo da solicitação.\nA habilitação é livre, porém para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+}

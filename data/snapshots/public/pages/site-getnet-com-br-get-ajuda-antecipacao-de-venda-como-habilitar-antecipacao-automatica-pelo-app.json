@@ -1,0 +1,15 @@
+{
+ "url": "https://site.getnet.com.br/get-ajuda-antecipacao-de-venda/como-habilitar-antecipacao-automatica-pelo-app/",
+ "title": "Como habilitar antecipação automática pelo App - Getnet",
+ "market": "BR",
+ "language": "pt",
+ "topic": "receivables_advance",
+ "products": [
+  "antecipacao_automatica"
+ ],
+ "capture": "http",
+ "capture_note": null,
+ "collected_at": "2026-10-26T23:20:42+00:00",
+ "content_hash": "cf7d7ed0c0eb7aad3e26746536308193c86ec31b65e58cbcc8142b476c978b26",
+ "text": "Você pode habilitar a antecipação automática direto pelo App Getnet Brasil. Contudo, lembre-se que para qualquer solicitação de ativação e desativação é necessário ter um perfil administrativo e senha para conseguir seguir.\nPasso a passo para habilitar a antecipação automática:\n1. Acesse o App com seu login e senha;\n2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;\n4. Clique Habilitar;\n5. Insira sua senha, leia os termos e condições e clique Habilitar;\n6. Pronto! Sua solicitação foi enviada e pode demorar até 48 horas.\n7. Verifique o valor final e clique em Antecipar.\nCaso deseje desabilitar, basta selecionar Antecipação Automática na área Serviços e desabilitar.\nA habilitação é livre, porém para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+}

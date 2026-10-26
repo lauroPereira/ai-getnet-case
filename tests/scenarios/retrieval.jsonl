@@ -1,0 +1,14 @@
+{"id": "R-UC01-en", "case": "UC-01", "language": "en", "question": "What's the difference between the Get Clássica and the Get Smart?", "expected_docs": ["todas-as-maquininhas", "site-getnet-com-br-taxas"]}
+{"id": "R-UC01-pt", "case": "UC-01", "language": "pt", "question": "Qual a diferença entre a Get Clássica e a Get Smart?", "expected_docs": ["todas-as-maquininhas", "site-getnet-com-br-taxas"]}
+{"id": "R-UC04-en", "case": "UC-04", "language": "en", "question": "Do I need a bank account to receive my sales via Pix?", "expected_docs": ["duvidas", "get-conta", "domicilio-bancario", "site-getnet-com-br-pix", "get-ajuda-pix", "conta-digital"]}
+{"id": "R-UC04-pt", "case": "UC-04", "language": "pt", "question": "Preciso de conta bancária para receber minhas vendas via Pix?", "expected_docs": ["duvidas", "get-conta", "domicilio-bancario", "site-getnet-com-br-pix", "get-ajuda-pix", "conta-digital"]}
+{"id": "R-UC05-en", "case": "UC-05", "language": "en", "question": "My card machine won't connect to the internet, what should I do?", "expected_docs": ["wi-fi", "KB-DEMO-DEVICES", "duvidas"]}
+{"id": "R-UC05-pt", "case": "UC-05", "language": "pt", "question": "Minha maquininha não conecta na internet, o que eu faço?", "expected_docs": ["wi-fi", "KB-DEMO-DEVICES", "duvidas"]}
+{"id": "R-UC06-en", "case": "UC-06", "language": "en", "question": "How does receivables advance (antecipação) work with Getnet?", "expected_docs": ["antecipacao", "receba-ja", "reserva-financeira", "duvidas"]}
+{"id": "R-UC06-pt", "case": "UC-06", "language": "pt", "question": "Como funciona a antecipação de recebíveis na Getnet?", "expected_docs": ["antecipacao", "receba-ja", "reserva-financeira", "duvidas"]}
+{"id": "R-UC08-en", "case": "UC-08", "language": "en", "question": "My card machine is showing a transaction decline error.", "expected_docs": ["KB-DEMO-AUTHORIZATIONS", "erros-maquininha"]}
+{"id": "R-UC08-pt", "case": "UC-08", "language": "pt", "question": "Minha maquininha está mostrando erro de transação negada.", "expected_docs": ["KB-DEMO-AUTHORIZATIONS", "erros-maquininha"]}
+{"id": "R-UC09-en", "case": "UC-09", "language": "en", "question": "How many installments can I split a sale into with the crediário?", "expected_docs": ["crediario"]}
+{"id": "R-UC09-pt", "case": "UC-09", "language": "pt", "question": "Em quantas parcelas posso dividir uma venda no crediário?", "expected_docs": ["crediario"]}
+{"id": "R-UC10-en", "case": "UC-10", "language": "en", "question": "Can I sell through WhatsApp using the Payment Link?", "expected_docs": ["whatsapp", "link-de-pagamento"]}
+{"id": "R-UC10-pt", "case": "UC-10", "language": "pt", "question": "Posso vender pelo WhatsApp usando o Link de Pagamento?", "expected_docs": ["whatsapp", "link-de-pagamento"]}
