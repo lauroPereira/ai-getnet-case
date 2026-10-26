@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import uuid
 import warnings
 from dataclasses import dataclass
@@ -45,11 +46,13 @@ def corpus_hash(chunks: list[Chunk]) -> str:
 class KnowledgeIndex:
     def __init__(self, client: QdrantClient, collection: str, embedder: Embedder) -> None:
         self.client, self.collection, self.embedder = client, collection, embedder
+        self._lock = threading.Lock()  # the embedded local store is not thread-safe
 
     def count(self) -> int:
-        if not self.client.collection_exists(self.collection):
-            return 0
-        return self.client.count(self.collection, exact=True).count
+        with self._lock:
+            if not self.client.collection_exists(self.collection):
+                return 0
+            return self.client.count(self.collection, exact=True).count
 
     def rebuild(self, chunks: list[Chunk], manifest_path: Path | None = None) -> dict:
         if self.client.collection_exists(self.collection):
@@ -91,7 +94,8 @@ class KnowledgeIndex:
             query_filter = models.Filter(
                 must=[models.FieldCondition(key="source_kind", match=models.MatchAny(any=source_kinds))]
             )
-        result = self.client.query_points(
-            self.collection, query=vector, limit=k, query_filter=query_filter, with_payload=True
-        )
+        with self._lock:
+            result = self.client.query_points(
+                self.collection, query=vector, limit=k, query_filter=query_filter, with_payload=True
+            )
         return [Hit(p.score, dict(p.payload or {})) for p in result.points if p.score >= min_score]

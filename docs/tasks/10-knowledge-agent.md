@@ -27,16 +27,16 @@ Implementar o Knowledge Agent nos modos RAG, busca web e procedimento, com cita�
 
 ## Critérios de conclusão
 
-- [ ] Testes determinísticos dos sete casos de uso conferem caminho e citações.
-- [ ] Testes de "sem evidência" e de busca indisponível.
-- [ ] Nenhuma consulta web contém `user_id` ou dados do cliente.
+- [x] Testes determinísticos dos sete casos de uso conferem caminho e citações.
+- [x] Testes de "sem evidência" e de busca indisponível.
+- [x] Nenhuma consulta web contém `user_id` ou dados do cliente.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

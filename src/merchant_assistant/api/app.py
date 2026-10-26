@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from contextlib import asynccontextmanager
 from typing import Protocol
 
 from fastapi import FastAPI, Request
@@ -56,7 +57,16 @@ def _error(status: int, code: str, message: str, request_id: str) -> JSONRespons
 
 def create_app(orchestrator: Orchestrator | None = None, settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        close = getattr(app.state.orchestrator, "close", None)
+        if close:
+            close()
+
     app = FastAPI(
+        lifespan=lifespan,
         title="Getnet Merchant Assistant",
         version=__version__,
         description="Multi-agent support system: Router, Knowledge, Customer Support, Escalation and Personality.",

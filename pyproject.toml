@@ -47,3 +47,4 @@ extend-exclude = ["discovery", "data", ".claude", ".agents", "skills"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["UP046", "SIM905"]

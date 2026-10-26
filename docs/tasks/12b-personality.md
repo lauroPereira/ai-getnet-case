@@ -27,16 +27,16 @@ Implementar a etapa Personality, que redige a resposta final com voz consistente
 
 ## Critérios de conclusão
 
-- [ ] Todas as rotas passam pela Personality.
-- [ ] Resposta que altera um valor ou data é bloqueada e substituída.
-- [ ] Idioma da resposta igual ao da mensagem.
+- [x] Todas as rotas passam pela Personality.
+- [x] Resposta que altera um valor ou data é bloqueada e substituída.
+- [x] Idioma da resposta igual ao da mensagem.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

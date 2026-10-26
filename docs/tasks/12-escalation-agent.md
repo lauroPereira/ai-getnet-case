@@ -27,16 +27,16 @@ Implementar o quarto agente, que prepara e persiste o pacote de encaminhamento h
 
 ## Critérios de conclusão
 
-- [ ] Repetir a mesma requisição não cria um segundo caso.
-- [ ] O pacote tem todos os campos de RF-22.
-- [ ] Falha de ferramentas não impede o encaminhamento.
+- [x] Repetir a mesma requisição não cria um segundo caso.
+- [x] O pacote tem todos os campos de RF-22.
+- [x] Falha de ferramentas não impede o encaminhamento.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

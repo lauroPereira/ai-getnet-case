@@ -29,16 +29,16 @@ Implementar o Router com decisão estruturada e os guardrails de entrada e de sa
 
 ## Critérios de conclusão
 
-- [ ] UC-12, UC-16 e UC-18 com o resultado esperado em testes determinísticos.
-- [ ] Logs sem dados sensíveis.
-- [ ] Resposta com valor não suportado pelos fatos é bloqueada.
+- [x] UC-12, UC-16 e UC-18 com o resultado esperado em testes determinísticos.
+- [x] Logs sem dados sensíveis.
+- [x] Resposta com valor não suportado pelos fatos é bloqueada.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```
