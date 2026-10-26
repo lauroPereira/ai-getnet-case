@@ -29,9 +29,7 @@ CHALLENGE_EXAMPLES = [
 class MessageRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={
-            "examples": [{"message": m, "user_id": "cliente1988"} for m in CHALLENGE_EXAMPLES]
-        },
+        json_schema_extra={"examples": [{"message": m, "user_id": "cliente1988"} for m in CHALLENGE_EXAMPLES]},
     )
 
     message: str = Field(min_length=1, max_length=2000, description="Merchant message, in Portuguese or English.")

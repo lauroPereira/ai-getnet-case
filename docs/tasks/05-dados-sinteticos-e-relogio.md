@@ -30,17 +30,17 @@ Criar o banco SQLite com seed relativo a um relógio injetável, incluindo `clie
 
 ## Critérios de conclusão
 
-- [ ] Com relógio fixo em 2026-10-26, todos os valores e datas são determinísticos.
-- [ ] Com o relógio do sistema, as vendas de `cliente1988` sempre caem no dia anterior.
-- [ ] Teste de virada de dia no fuso de São Paulo.
-- [ ] Nenhum dado real.
+- [x] Com relógio fixo em 2026-10-26, todos os valores e datas são determinísticos.
+- [x] Com o relógio do sistema, as vendas de `cliente1988` sempre caem no dia anterior.
+- [x] Teste de virada de dia no fuso de São Paulo.
+- [x] Nenhum dado real.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: `tests/unit/data/` (15 testes) cobre fuso de São Paulo na virada do dia, períodos nomeados, dias úteis, seed determinístico com relógio fixo, vendas sempre em D-1 com o relógio do sistema, idempotência preservando encaminhamentos e isolamento entre clientes. Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

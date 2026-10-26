@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "note": "Synthetic status vocabulary. Original names are preserved; normalized concepts are what the assistant explains.",
+  "receivable_status": {
+    "LOT_DONE": {"normalized": "batch_processed", "credit_confirmed": false, "meaning_pt": "Lote de vendas processado; ainda não significa dinheiro na conta.", "meaning_en": "Sales batch processed; this does not mean the money is in the account yet."},
+    "SETTLED": {"normalized": "settled", "credit_confirmed": true, "meaning_pt": "Recebível liquidado.", "meaning_en": "Receivable settled."},
+    "PENDING_CAPTURE": {"normalized": "pending_capture", "credit_confirmed": false, "meaning_pt": "Venda ainda em processamento.", "meaning_en": "Sale still being processed."}
+  },
+  "payout_stage": {
+    "SCHEDULED": {"normalized": "payout_scheduled", "credit_confirmed": false, "meaning_pt": "Pagamento agendado para a data prevista; crédito ainda não confirmado.", "meaning_en": "Payment scheduled for the expected date; credit not confirmed yet."},
+    "SENT": {"normalized": "payout_sent", "credit_confirmed": false, "meaning_pt": "Pagamento enviado ao banco de destino; aguardando confirmação.", "meaning_en": "Payment sent to the destination bank; awaiting confirmation."},
+    "PAID": {"normalized": "paid", "credit_confirmed": true, "meaning_pt": "Crédito confirmado na conta de recebimento.", "meaning_en": "Credit confirmed in the receiving account."}
+  }
+}
