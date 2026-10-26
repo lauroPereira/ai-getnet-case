@@ -1,0 +1,47 @@
+# Segredos e configurações locais
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.secret
+
+# Configurações locais dos agentes (específicas da máquina)
+.claude/settings.local.json
+.codex/
+
+# Cache e temporários
+*.log
+*.tmp
+*.bak
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Configurações específicas do Obsidian
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.obsidian/plugins/*/data.json
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Material de discovery local (contexto privado; não publicar)
+discovery/
+
+# Python: build e cobertura
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Dados gerados em execução (banco sintético, índice vetorial, traces, casos simulados)
+data/runtime/
+qdrant_storage/
