@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 
-from merchant_assistant.agents.common import guess_language
+from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.llm.base import LLMError
 from merchant_assistant.llm.scripted import ScriptedCall, ToolPlan
 
@@ -43,9 +43,34 @@ def route_for(message: str) -> tuple[str, str | None]:
     return "clarify", None
 
 
+RESOLVED = r"voltou a funcionar|funcionou|resolvid|deu certo|it works|it worked|working now|fixed"
+STILL_FAILING = r"continua|ainda n[aã]o|still|didn'?t work|n[aã]o funcionou|j[aá] fiz|j[aá] tentei|already tried"
+THANKS = r"^\W*(?:obrigad[oa]|valeu|thanks|thank you|ok|entendi)\W*$"
+
+
+def case_signal_for(message: str, has_history: bool) -> str:
+    if not has_history:
+        return "none"
+    if re.search(RESOLVED, message, flags=re.IGNORECASE):
+        return "resolved"
+    if re.search(STILL_FAILING, message, flags=re.IGNORECASE):
+        return "still_failing"
+    if re.search(THANKS, message, flags=re.IGNORECASE):
+        return "thanks_only"
+    return "none"
+
+
 def _router(call: ScriptedCall) -> dict:
-    message = call.spec.context["message"]
+    ctx = call.spec.context
+    message = ctx["message"]
+    history = ctx.get("history", [])
+    signal = case_signal_for(message, bool(history))
     route, topic = route_for(message)
+    case_topic = (ctx.get("case") or {}).get("topic")
+    if signal in ("resolved", "thanks_only"):
+        route, topic = "acknowledgement", None
+    elif signal == "still_failing" and case_topic:
+        route, topic = "knowledge_and_support", case_topic
     language = guess_language(message)
     question = None
     if route == "clarify":
@@ -58,6 +83,7 @@ def _router(call: ScriptedCall) -> dict:
         "intents": [route],
         "safety": safety,
         "clarification_question": question,
+        "case_signal": signal,
     }
 
 
@@ -70,6 +96,14 @@ def _knowledge(call: ScriptedCall) -> dict:
     passages = call.spec.context.get("passages", [])
     if not passages or "get xyz" in call.spec.context["message"].lower():
         return {"points": [], "used_passages": [], "evidence_sufficient": False, "missing": ["not in passages"]}
+    if call.spec.context.get("mode") == "procedure":  # several steps, one per passage
+        top = passages[:4]
+        return {
+            "points": [_first_sentences(p["text"], 120) for p in top],
+            "used_passages": [p["n"] for p in top],
+            "evidence_sufficient": True,
+            "missing": [],
+        }
     return {
         "points": [_first_sentences(passages[0]["text"])],
         "used_passages": [1],
@@ -153,13 +187,25 @@ def _support(call: ScriptedCall) -> ToolPlan:
             if (bad := failed(results)) is not None:
                 return bad
             d = _load(results, 0)["devices"][0]
-            steps = [s for s in ctx.get("procedure", "").split("\n") if s][:2]
+            tried = {a["step"] for a in ctx.get("attempts", [])}
+            candidates = [s.lstrip("- ").strip() for s in ctx.get("procedure", "").split("\n") if s.strip()]
+            steps = [s[:80] for s in candidates if s[:80] not in tried][:2]
+            if not steps:
+                return {
+                    "points": [],
+                    "needs_selection": False,
+                    "missing": [],
+                    "escalate": True,
+                    "escalation_reason": "no_untried_steps",
+                    "steps_given": [],
+                }
             return {
                 "points": [f"{d['model']}: {d['status']} ({d['minutes_since_last_seen']} min)", *steps],
                 "needs_selection": False,
                 "missing": [],
                 "escalate": False,
                 "escalation_reason": None,
+                "steps_given": steps,
             }
 
         return ToolPlan([("get_device_status", {})], final=final_device)
@@ -195,6 +241,9 @@ def _support(call: ScriptedCall) -> ToolPlan:
 
 def _personality(call: ScriptedCall) -> dict:
     c = call.spec.context["contributions"]
+    if c.get("route") == "acknowledgement":
+        key = "ack_resolved" if c.get("case_state_after_reply") == "resolved" else "ack"
+        return {"answer": policy(key, call.spec.context["language"])}
     parts = []
     if c.get("policy_text"):
         parts.append(c["policy_text"])
@@ -221,7 +270,10 @@ def handler(call: ScriptedCall):
     if agent == "knowledge":
         return _knowledge(call)
     if agent == "customer_support":
-        return _support(call)
+        plan = _support(call)
+        original = plan.final
+        plan.final = lambda results: {"steps_given": [], "issue_verified_by_tool": False, **original(results)}
+        return plan
     if agent == "escalation":
         return {"summary": "Lojista pediu atendimento humano.", "pending_question": "Retornar ao lojista."}
     if agent == "personality":

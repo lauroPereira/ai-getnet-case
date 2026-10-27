@@ -180,10 +180,10 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 ## Critérios de aceitação
 
-- [ ] **CA-27** A tag `v0.1.0` reproduz a entrega inicial; cada versão nova tem changelog com instruções de retorno.
-- [ ] **CA-28** Os critérios do núcleo continuam passando em cada versão (testes e avaliação de regressão).
-- [ ] **CA-29** UC-19 a UC-21 demonstrados com testes sem custo e com uma rodada real registrada (complementa CA-18 e CA-19).
-- [ ] **CA-30** Demonstração MCP verificável conforme RF-45 (complementa CA-20).
+- [x] **CA-27** A tag `v0.1.0` reproduz a entrega inicial; cada versão nova tem changelog com instruções de retorno.
+- [x] **CA-28** Os critérios do núcleo continuam passando em cada versão (testes e avaliação de regressão). Comprovado na v0.2.0; refazer a cada versão.
+- [x] **CA-29** UC-19 a UC-21 demonstrados com testes sem custo e com uma rodada real registrada (complementa CA-18 e CA-19).
+- [x] **CA-30** Demonstração MCP verificável conforme RF-45 (complementa CA-20).
 - [ ] **CA-31** Os quatro comportamentos de preço, a habilitação e o cancelamento demonstrados com dados sintéticos (complementa CA-21 a CA-23).
 - [ ] **CA-32** Toggle LLM/JEV real funcionando no Streamlit, com mecanismo, versão, duração e custo registrados (complementa CA-24).
 - [ ] **CA-33** Indisponibilidade do JEV produz erro explícito, sem troca silenciosa.

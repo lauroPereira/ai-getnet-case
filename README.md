@@ -13,9 +13,11 @@ curl -s localhost:8000/messages -H 'content-type: application/json' \
   -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?", "user_id": "cliente1988"}'
 ```
 
-**Status:** core delivery (slice 1) complete. 112 offline tests; the 10 challenge examples and 17 held-out cases pass
-the automated checks against the real model ([evaluation report](docs/evidence/2026-10-26-avaliacao-nucleo.md)).
-Total API spend so far: US$0.31 of a US$5 project budget.
+**Status:** version 0.2.0 ([changelog](CHANGELOG.md)): the core delivery plus conversation memory, case states,
+technical follow-up and an MCP server. 141 offline tests; the 10 challenge examples, 17 held-out cases and 4
+multi-turn conversations pass the automated checks against the real model
+([regression report](docs/evidence/2026-10-26-regressao-v020.md)). Total API spend so far: US$0.45 of a US$5
+project budget. Next versions are planned in the [increments spec](docs/specs/incrementos-pos-nucleo.md).
 
 ---
 
@@ -77,10 +79,28 @@ uvicorn --factory merchant_assistant.main:create_application --reload
 merchant-assistant ask "Qual a cotação do euro hoje?" --trace  # one message, in process, with its trace
 ```
 
+### MCP server
+
+The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
+same domain functions, validation, customer isolation, audit log and structured errors. The merchant is fixed when
+the server starts, never passed as a tool argument.
+
+```bash
+merchant-assistant mcp --customer cliente1988     # stdio server (for an MCP client such as Claude Desktop)
+merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
+```
+
+The demo lists the five tools, reads yesterday's receivables and recent declines, and shows that a receivable of
+another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
+
+```json
+{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp", "--customer", "cliente1988"]}}}
+```
+
 ### Tests and evaluation
 
 ```bash
-pytest                                   # 112 tests, no network, no cost (scripted model + hashing embedder)
+pytest                                   # 141 tests, no network, no cost (scripted model + hashing embedder)
 ruff check .
 merchant-assistant eval --scripted       # end-to-end evaluation offline (wiring only, zero cost)
 merchant-assistant eval --judge          # real evaluation of the 27 labeled cases (≈ US$0.05)
@@ -158,6 +178,7 @@ tools, budget meter, limits and the trace recorder.
 | `human_handoff` | Merchant asks for a person | Prefix → Escalation |
 | `clarify` | Too vague | Personality asks one question |
 | `out_of_scope` | Unsafe, sensitive or injection | Personality declines and says what it can do |
+| `acknowledgement` | Reaction to the previous reply with no new request ("it works now", "thanks") | Personality; case state updated |
 
 ## Message workflow
 
@@ -192,6 +213,28 @@ Example: *"When will the money from yesterday's sales be deposited?"* (`cliente1
 
 `status` is one of `answered`, `needs_clarification`, `handoff`, `refused`. `resolution` is separate from the
 request status: answering does not close the case. Handoffs add `{"protocol": "SIM-…", "simulated": true}`.
+
+## Conversations and case follow-up
+
+Since v0.2.0 a conversation carries memory and a case state.
+
+- **Ownership.** `conversation_id` belongs to the merchant that started it; another `user_id` gets
+  `404 conversation_not_found`. Without an id, the server creates one and returns it.
+- **History.** The last turns (up to 10 messages / 1,200 tokens, masked) go to the Router, Customer Support and
+  Personality as data, so "I already did that" is understood in context.
+- **Case state.** `in_progress` → `awaiting_customer` after each reply → `resolved` only with evidence
+  (`customer_confirmed` when the merchant says it works, or `tool_verified` when a tool shows it) → or `handoff`.
+  "Thanks" alone never resolves. The state is returned in `resolution`.
+- **Technical follow-up.** Each suggested step is recorded per cycle with the merchant's feedback; steps are never
+  repeated; after two failed cycles (or on request) the case goes to a human with the attempts. A case already with
+  a human keeps one protocol.
+- **Prefix reuse.** History and healthcheck run once per case and topic, refreshed after 30 minutes or when the
+  topic changes.
+
+```bash
+curl -s localhost:8000/messages -H 'content-type: application/json' \
+  -d '{"message": "Já fiz isso e continua sem conexão", "user_id": "cliente1988", "conversation_id": "conv_..."}'
+```
 
 ## RAG pipeline
 
@@ -303,8 +346,8 @@ tests), with `store=false`:
 | --- | --- | --- |
 | Unit | Tools (binding, filters, dates, errors), clock and seed, chunking, guards, pricing, budget atomicity, Router rules | 0 |
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
-| Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces | 0 |
-| Evaluation (real) | 27 labeled scenarios through the real system: route, status, language, expected tools, required values, required/forbidden content, sources, guard violations, latency, cost, plus a model-graded rubric | ≈ US$0.05 |
+| Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
+| Evaluation (real) | 27 labeled scenarios and 4 multi-turn conversations through the real system: route, status, language, expected tools, required values, required/forbidden content, sources, guard violations, latency, cost, plus a model-graded rubric | ≈ US$0.05 |
 | Retrieval | Recall@k and MRR on labeled questions | ≈ US$0.001 |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
@@ -335,7 +378,7 @@ Recorded as ADRs (in Portuguese) in [`docs/architecture/decisions/`](docs/archit
   so the framework is confined to one module.
 - **Qdrant + versioned snapshots**: reproducible builds and evaluations independent of the live site.
 - **Synthetic data in SQLite, tools as domain functions**: testable without network; one place enforces customer
-  isolation. An MCP server over the same functions is planned.
+  isolation. The MCP server (v0.2.0) exposes the same functions.
 - **OpenAI baseline with a persistent budget guard**: a reviewer needs only one key; spending is capped before it
   happens.
 
@@ -345,12 +388,14 @@ merchant's language while code, prompts and this README are in English.
 
 ## Limitations and next steps
 
-- One message per request: conversation history, resolution states and multi-turn technical follow-up are the next
-  slice; `conversation_id` is already in the contract.
 - The handoff is simulated (local record and protocol); no real ticketing integration.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
-- Planned: MCP server for the tools, the pricing/contestation and card-brand enablement journeys over synthetic
-  back-ends, a Router selector comparing the LLM with TypeSafe's Jev, and a demo UI.
+- Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
+  confirmation before a case is resolved.
+- Planned ([increments spec](docs/specs/incrementos-pos-nucleo.md)): v0.3.0 pricing/contestation, card-brand
+  enablement and sale cancellation over synthetic back-ends; v0.4.0 the Jev Router toggle, per-agent models and the
+  Streamlit interface; v0.5.0–v0.7.0 knowledge-base versions, per-step evaluation with supervised improvement,
+  experiments and sharing.
 - `user_id` is not authentication. Production would bind it to an authenticated session and authorize every tool
   call against it.
 

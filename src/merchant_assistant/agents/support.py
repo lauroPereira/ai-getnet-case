@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from pydantic import ValidationError
 
-from merchant_assistant.agents.common import LANGUAGE_NAME, policy, prompt
+from merchant_assistant.agents.common import LANGUAGE_NAME, format_history, policy, prompt
+from merchant_assistant.conversations import MAX_TECHNICAL_CYCLES, PREFIX_TTL
 from merchant_assistant.data.clock import today
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.orchestration.budget import BudgetExceeded
@@ -24,6 +25,12 @@ def run_prefix(state: GraphState, ctx: RunContext) -> dict:
         ctx.step_notes["skipped"] = "customer_not_found"
         return {"prefix": {"customer_known": False}}
     topic = (state.decision.topic if state.decision else None) or "general"
+    cache = state.prefix_cache or {}
+    if cache.get("data") and cache.get("topic") == topic and cache.get("at"):
+        age = ctx.clock.now() - datetime.fromisoformat(cache["at"])
+        if age <= PREFIX_TTL:  # same case, same topic, still fresh: no new queries
+            ctx.step_notes.update(topic=topic, reused=True, age_s=int(age.total_seconds()))
+            return {"prefix": {**cache["data"], "reused": True}}
     history = ctx.run_tool("get_complaint_history", {"topic": topic}, agent=None)
     health = ctx.run_tool("run_customer_healthcheck", {"topic": topic}, agent=None)
     prefix = {
@@ -32,8 +39,15 @@ def run_prefix(state: GraphState, ctx: RunContext) -> dict:
         "history": history.data if history.ok else {"error": history.error},
         "healthcheck": health.data if health.ok else {"error": health.error},
     }
-    ctx.step_notes.update(topic=topic, history_ok=history.ok, healthcheck_ok=health.ok)
+    ctx.step_notes.update(topic=topic, history_ok=history.ok, healthcheck_ok=health.ok, reused=False)
     return {"prefix": prefix}
+
+
+def _attempts_summary(attempts: list[dict]) -> str:
+    if not attempts:
+        return "- None yet."
+    lines = [f"- cycle {a['cycle']}: {a['step']} -> {a['result']}" for a in attempts]
+    return "\n".join(lines)
 
 
 def _prefix_summary(prefix: dict) -> str:
@@ -72,6 +86,21 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         )
         return {"support": result, "agents": agents, "status": "answered"}
 
+    cycles = int(state.case.get("technical_cycles", 0))
+    signal = decision.case_signal if decision else "none"
+    if signal == "still_failing" and state.case.get("state") == "handoff":
+        ctx.step_notes.update(already_handed_off=True)
+        result = SupportResult(
+            points=[], needs_selection=False, missing=[], escalate=True, escalation_reason="already_with_human"
+        )
+        return {"support": result, "agents": agents}
+    if signal == "still_failing" and cycles >= MAX_TECHNICAL_CYCLES:
+        ctx.step_notes.update(cycles=cycles, limit_reached=True)
+        result = SupportResult(
+            points=[], needs_selection=False, missing=[], escalate=True, escalation_reason="technical_cycles_exhausted"
+        )
+        return {"support": result, "agents": agents}
+
     now = ctx.clock.now()
     d0 = today(ctx.clock)
     procedure = ""
@@ -89,6 +118,10 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             prefix=_prefix_summary(state.prefix) or "- Nothing.",
             procedure=procedure or "- None.",
             language_name=LANGUAGE_NAME[language],
+            history=format_history(state.history, limit=8),
+            case_status=state.case.get("state", "in_progress"),
+            case_signal=signal,
+            attempts=_attempts_summary(state.case.get("attempts", [])),
         ),
         input=f"Merchant message:\n<<<\n{state.message}\n>>>",
         effort="low",
@@ -98,6 +131,8 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             "topic": decision.topic if decision else None,
             "procedure": procedure,
             "today": d0.isoformat(),
+            "case_signal": signal,
+            "attempts": state.case.get("attempts", []),
         },
     )
     before = len(ctx.outcomes)
@@ -124,7 +159,11 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     used = [o for o in ctx.outcomes[before:] if o.name in specialist]
     result = SupportResult(**draft.model_dump(), tools_used=[o.name for o in used])
     ctx.step_notes.update(
-        tools=[o.name for o in used], failed=[o.name for o in used if not o.ok], escalate=result.escalate
+        tools=[o.name for o in used],
+        failed=[o.name for o in used if not o.ok],
+        escalate=result.escalate,
+        steps_given=result.steps_given,
+        cycles_before=cycles,
     )
     update: dict = {"support": result, "agents": agents}
     if not result.escalate:

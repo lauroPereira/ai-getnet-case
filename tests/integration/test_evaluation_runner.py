@@ -21,3 +21,12 @@ def test_runner_scripted_mode_produces_report(settings, tmp_path):
     assert summary["overall"]["n"] == 4 and set(CHECK_KEYS) <= set(summary["overall"])
     md, js = write_report(rows, summary, tmp_path, "test", {"mode": "scripted"})
     assert md.exists() and js.exists()
+
+
+def test_multi_turn_scenarios_scripted(settings):
+    from merchant_assistant.evaluation.runner import run_conversations
+
+    orchestrator, _ = offline_orchestrator(settings)
+    rows = run_conversations(orchestrator, SCENARIOS / "followup.jsonl")
+    assert len(rows) == 4
+    assert all(r["passed"] for r in rows), [(r["id"], [t for t in r["turns"] if not t["passed"]]) for r in rows]

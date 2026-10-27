@@ -30,16 +30,16 @@ Fixar a entrega inicial como `v0.1.0`, criar o changelog e a infraestrutura de m
 
 ## Critérios de conclusão
 
-- [ ] `git checkout v0.1.0` reproduz a entrega inicial.
-- [ ] Migrações sobem e descem sem perda dos dados sintéticos recriáveis.
-- [ ] `/ready` mostra as versões.
+- [x] `git checkout v0.1.0` reproduz a entrega inicial.
+- [x] Migrações sobem e descem sem perda dos dados sintéticos recriáveis.
+- [x] `/ready` mostra as versões.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: tag `v0.1.0` criada no commit `29a0088` e publicada, com autorização do responsável. `CHANGELOG.md` criado. Migrações 0001 a 0003 em `data/migrations.py` com `up`/`down` e `schema_version`; `merchant-assistant migrate --to 1` e de volta ao 3 verificados; banco da v0.1.0 é atualizado no lugar. `tests/unit/data/test_migrations.py` e `/ready` com versões (app, esquema, índice, prompts). 116 testes passando. Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

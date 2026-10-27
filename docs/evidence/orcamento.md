@@ -10,3 +10,6 @@ Teto do projeto: US$5,00. Este registro é manual até a guarda de orçamento da
 | 2026-10-26 | Tarefa 13: índice e smoke no Docker em ambiente limpo, encaminhamento | Ensaio e demonstração (US$1,00) | US$0,0262 | US$0,1180 |
 | 2026-10-26 | Tarefa 14: três rodadas de avaliação (27 casos) com rubrica por modelo | Avaliação e regressão (US$1,50) | US$0,1620 | US$0,2800 |
 | 2026-10-26 | Tarefa 13: smoke final no Docker com o código final | Ensaio e demonstração (US$1,00) | US$0,0250 | US$0,3050 |
+| 2026-10-26 | v0.2.0: conversas reais de vários turnos (duas rodadas) | Desenvolvimento (US$1,25) | US$0,0064 | US$0,3114 |
+| 2026-10-26 | v0.2.0: duas rodadas de regressão real (27 casos + 4 conversas, com rubrica) | Avaliação e regressão (US$1,50) | US$0,1150 | US$0,4264 |
+| 2026-10-26 | v0.2.0: Docker em ambiente limpo (índice) e smoke | Ensaio e demonstração (US$1,00) | US$0,0252 | US$0,4516 |

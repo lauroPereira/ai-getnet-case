@@ -210,10 +210,83 @@ def cmd_eval(settings: Settings, args) -> int:
     }
     md, js = write_report(rows, summary, Path(args.out), args.name, config)
     print(json.dumps(summary["overall"], indent=1))
+    if not args.no_conversations:
+        from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
+
+        conversations = run_conversations(orchestrator, scenarios / "followup.jsonl")
+        append_conversation_report(md, js, conversations)
+        print(f"conversations: {sum(c['passed'] for c in conversations)}/{len(conversations)} passed")
     print(f"report: {md}")
     print(f"results: {js}")
     if hasattr(orchestrator, "close"):
         orchestrator.close()
+    return 0
+
+
+def cmd_migrate(settings: Settings, args) -> int:
+    """Moves the database schema to a version (default: latest). Use --to to roll back."""
+    import sqlite3
+
+    from merchant_assistant.data.migrations import current_version, migrate
+
+    settings.db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(settings.db_path, isolation_level=None)
+    try:
+        steps = migrate(conn, args.to)
+        for step in steps or ["nothing to apply"]:
+            print(step)
+        print(f"schema version: {current_version(conn)}")
+    finally:
+        conn.close()
+    return 0
+
+
+def cmd_mcp(settings: Settings, args) -> int:
+    """Serves the support tools over MCP (stdio) for one merchant. Nothing else may write to stdout."""
+    from merchant_assistant.data.clock import SystemClock
+    from merchant_assistant.mcp_server import build_server, env_factory_for, serve_stdio
+
+    serve_stdio(build_server(env_factory_for(settings.db_path, args.customer, SystemClock(settings.timezone))))
+    return 0
+
+
+def cmd_mcp_demo(settings: Settings, args) -> int:
+    """Starts the MCP server as a subprocess, lists the tools, calls two of them and shows the isolation error."""
+    import anyio
+    from mcp import Client, StdioServerParameters
+
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "merchant_assistant.cli", "mcp", "--customer", args.customer],
+        env={**__import__("os").environ, "PYTHONUTF8": "1"},
+    )
+    calls = [
+        ("get_receivables_schedule", {"period": "yesterday"}),
+        ("find_authorization_events", {"period": "last_7_days"}),
+        ("get_payout_status", {"receivable_ids": ["rcv_002_0001"]}),  # belongs to another merchant
+    ]
+
+    async def main() -> None:
+        async with Client(params) as client:
+            listed = await client.list_tools()
+            print(f"server tools ({len(listed.tools)}): {', '.join(t.name for t in listed.tools)}")
+            for name, arguments in calls:
+                result = await client.call_tool(name, arguments)
+                payload = json.loads(result.content[0].text)
+                if result.is_error:
+                    summary = f"error {payload['error']['code']}"
+                elif "receivables" in payload:
+                    items = [
+                        f"{r['net_amount']['display']} on {r['expected_payment_date']}" for r in payload["receivables"]
+                    ]
+                    summary = f"{payload['count']} receivables: {'; '.join(items)}"
+                else:
+                    events = payload.get("events", [])
+                    latest = events[0]["reason_category"] if events else "-"
+                    summary = f"{len(events)} events, latest reason {latest}"
+                print(f"call {name}({json.dumps(arguments)}): is_error={result.is_error} -> {summary}")
+
+    anyio.run(main)
     return 0
 
 
@@ -239,6 +312,13 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument("--name", default="avaliacao")
+    p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
+    p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
+    p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")
+    p_mcp = sub.add_parser("mcp", help="Serve the support tools over MCP (stdio) for one merchant.")
+    p_mcp.add_argument("--customer", required=True)
+    p_mcp_demo = sub.add_parser("mcp-demo", help="Run an MCP client against the stdio server.")
+    p_mcp_demo.add_argument("--customer", default="cliente1988")
     p_smoke = sub.add_parser("smoke", help="Send the 10 challenge examples to a running API.")
     p_smoke.add_argument("--url", default="http://localhost:8000")
     args = parser.parse_args(argv)
@@ -251,6 +331,9 @@ def main(argv: list[str] | None = None) -> int:
         "ask": cmd_ask,
         "smoke": cmd_smoke,
         "eval": cmd_eval,
+        "migrate": cmd_migrate,
+        "mcp": cmd_mcp,
+        "mcp-demo": cmd_mcp_demo,
     }
     return handlers[args.command](settings, args)
 

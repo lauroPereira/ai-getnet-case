@@ -194,9 +194,9 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 
 ### Fatias 2 a 4
 
-- [ ] **CA-18** Uma continuação como "já fiz isso e continua igual" usa o histórico, não repete o passo e encaminha no limite de dois ciclos.
-- [ ] **CA-19** Resolução só é marcada com evidência adequada, identificada como `tool_verified` ou `customer_confirmed`.
-- [ ] **CA-20** As ferramentas respondem igual pela camada de domínio e pelo servidor MCP.
+- [x] **CA-18** Uma continuação como "já fiz isso e continua igual" usa o histórico, não repete o passo e encaminha no limite de dois ciclos.
+- [x] **CA-19** Resolução só é marcada com evidência adequada, identificada como `tool_verified` ou `customer_confirmed`.
+- [x] **CA-20** As ferramentas respondem igual pela camada de domínio e pelo servidor MCP.
 - [ ] **CA-21** A jornada de preço demonstra os quatro comportamentos de RF-32 com dados independentes de pricing e cobrança.
 - [ ] **CA-22** Habilitação em andamento com protocolo existente e habilitação ativa com divergência no dispositivo são distinguidas, sem duplicar solicitação.
 - [ ] **CA-23** Pedido de encerramento contratual não aciona ferramentas de venda.

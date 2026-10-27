@@ -8,7 +8,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Status = Literal["answered", "needs_clarification", "handoff", "refused"]
 Route = Literal[
-    "knowledge", "support", "knowledge_and_support", "general_web", "clarify", "human_handoff", "out_of_scope"
+    "knowledge",
+    "support",
+    "knowledge_and_support",
+    "general_web",
+    "clarify",
+    "human_handoff",
+    "out_of_scope",
+    "acknowledgement",
 ]
 ResolutionState = Literal["in_progress", "awaiting_customer", "resolved", "handoff"]
 
@@ -49,7 +56,7 @@ class Source(BaseModel):
 
 class Resolution(BaseModel):
     state: ResolutionState
-    evidence: str | None = None
+    evidence: Literal["customer_confirmed", "tool_verified"] | None = None
 
 
 class Handoff(BaseModel):

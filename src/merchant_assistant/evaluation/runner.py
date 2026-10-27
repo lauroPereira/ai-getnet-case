@@ -237,3 +237,97 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
     md_path = out_dir / f"{name}.md"
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return md_path, json_path
+
+
+# --- multi-turn conversations -------------------------------------------------------------------------------------
+
+
+def _accepts(expected, value) -> bool:
+    if expected is None:
+        return True
+    return value in expected if isinstance(expected, list) else value == expected
+
+
+def run_conversations(orchestrator, path: Path, user_id: str = "cliente1988") -> list[dict]:
+    """Each scenario is one conversation; every turn is checked for route, status, case state and evidence."""
+    rows = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        scenario = json.loads(line)
+        conversation_id, protocols, turns = None, [], []
+        for spec in scenario["turns"]:
+            request_id = f"req_evalfu{uuid.uuid4().hex[:10]}"
+            response = orchestrator.handle(
+                MessageRequest(message=spec["message"], user_id=user_id, conversation_id=conversation_id), request_id
+            )
+            conversation_id = response.conversation_id
+            trace = orchestrator.trace(request_id)
+            if response.handoff:
+                protocols.append(response.handoff.protocol)
+            checks = {
+                "route_ok": response.route in spec["accepted_routes"],
+                "status_ok": _accepts(spec.get("expected_status"), response.status),
+                "state_ok": _accepts(spec.get("expected_case_state"), response.resolution.state),
+                "evidence_ok": _accepts(spec.get("expected_evidence"), response.resolution.evidence)
+                if spec.get("expected_evidence")
+                else True,
+                "same_protocol_ok": len(set(protocols)) <= 1 if spec.get("same_protocol") else True,
+                "grounded_ok": not trace["detail"].get("output_violations"),
+            }
+            turns.append(
+                {
+                    "message": spec["message"],
+                    "route": response.route,
+                    "status": response.status,
+                    "case_state": response.resolution.state,
+                    "evidence": response.resolution.evidence,
+                    "answer": response.answer,
+                    "duration_ms": trace["duration_ms"],
+                    "cost_usd": trace["cost_usd"],
+                    **checks,
+                    "passed": all(checks.values()),
+                }
+            )
+        rows.append(
+            {
+                "id": scenario["id"],
+                "split": scenario["split"],
+                "language": scenario["language"],
+                "description": scenario["description"],
+                "turns": turns,
+                "passed": all(t["passed"] for t in turns),
+                "cost_usd": round(sum(t["cost_usd"] or 0 for t in turns), 6),
+            }
+        )
+    return rows
+
+
+def append_conversation_report(md_path: Path, json_path: Path, rows: list[dict]) -> None:
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    data["conversations"] = rows
+    passed = sum(r["passed"] for r in rows)
+    data["summary"]["conversations"] = {
+        "n": len(rows),
+        "passed": passed,
+        "cost_usd": round(sum(r["cost_usd"] for r in rows), 5),
+    }
+    json_path.write_text(json.dumps(data, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+    lines = [
+        "",
+        "## Conversas de vários turnos",
+        "",
+        f"{passed} de {len(rows)} conversas aprovadas em todos os turnos.",
+        "",
+        "| Conversa | Turno | Rota | Status | Caso | Aprovado | Falhas |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    keys = ["route_ok", "status_ok", "state_ok", "evidence_ok", "same_protocol_ok", "grounded_ok"]
+    for r in rows:
+        for i, t in enumerate(r["turns"], start=1):
+            failed = [k.removesuffix("_ok") for k in keys if not t[k]]
+            lines.append(
+                f"| {r['id']} | {i} | {t['route']} | {t['status']} | {t['case_state']} | "
+                f"{'sim' if t['passed'] else 'não'} | {', '.join(failed) or '-'} |"
+            )
+    md_path.write_text(md_path.read_text(encoding="utf-8") + "\n".join(lines) + "\n", encoding="utf-8")

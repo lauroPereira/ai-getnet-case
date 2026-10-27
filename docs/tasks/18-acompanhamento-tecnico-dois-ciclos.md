@@ -28,16 +28,16 @@ Conduzir problemas técnicos em até dois ciclos de orientação, sem repetir pa
 
 ## Critérios de conclusão
 
-- [ ] "Já fiz isso e continua igual" não repete o passo (UC-19).
-- [ ] No limite de dois ciclos, encaminha com o histórico completo.
-- [ ] Pedido de atendente a qualquer momento encaminha sem esperar o limite.
+- [x] "Já fiz isso e continua igual" não repete o passo (UC-19).
+- [x] No limite de dois ciclos, encaminha com o histórico completo.
+- [x] Pedido de atendente a qualquer momento encaminha sem esperar o limite.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: passos registrados por ciclo (`steps_given`), resultado marcado pelo retorno do lojista, sem repetição, limite de dois ciclos e encaminhamento com as tentativas; caso encaminhado reaproveita o protocolo (migração 0004). O identificador estável dos passos é o rótulo curto dado pelo modelo, não um id do procedimento. Rodada real registrada. Ver [evidência](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md). Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

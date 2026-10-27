@@ -11,6 +11,7 @@ from merchant_assistant.api.schemas import Route, Status
 Topic = Literal["receivables", "device", "authorization", "contract", "general"]
 Language = Literal["pt", "en"]
 Safety = Literal["none", "unsafe", "sensitive", "injection"]
+CaseSignal = Literal["none", "resolved", "still_failing", "thanks_only"]
 
 
 class RouterDecision(BaseModel):
@@ -20,6 +21,10 @@ class RouterDecision(BaseModel):
     intents: list[str] = Field(description="Short labels of what the merchant wants.")
     safety: Safety
     clarification_question: str | None = Field(description="Only for route=clarify: one objective question.")
+    case_signal: CaseSignal = Field(
+        description="Merchant's reaction to the assistant's previous reply in this conversation: resolved, "
+        "still_failing, thanks_only, or none."
+    )
 
 
 class KnowledgeDraft(BaseModel):
@@ -52,9 +57,17 @@ class SupportDraft(BaseModel):
     missing: list[str] = Field(description="Information still needed from the merchant.")
     escalate: bool = Field(description="True when a human must take over.")
     escalation_reason: str | None
+    steps_given: list[str] = Field(
+        description="Short labels of the troubleshooting steps suggested in this reply (empty if none)."
+    )
+    issue_verified_by_tool: bool = Field(
+        description="True only when a tool result directly confirms the merchant's issue is solved."
+    )
 
 
 class SupportResult(SupportDraft):
+    steps_given: list[str] = []
+    issue_verified_by_tool: bool = False
     tools_used: list[str] = []
 
 
@@ -82,6 +95,9 @@ class GraphState(BaseModel):
     user_id: str
     customer_known: bool
     message: str
+    history: list[dict] = []
+    case: dict = {}
+    prefix_cache: dict | None = None
     guard_findings: list[str] = []
     guard_blocked: bool = False
     decision: RouterDecision | None = None
@@ -96,3 +112,4 @@ class GraphState(BaseModel):
     agents: list[str] = []
     errors: list[str] = []
     output_violations: list[str] = []
+    case_next: dict = {}

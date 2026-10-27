@@ -33,6 +33,11 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     key = hashlib.sha256(f"{state.conversation_id}|{state.message}|{reason}".encode()).hexdigest()
     conn = ctx.tools.conn
     existing = conn.execute("SELECT * FROM handoff_cases WHERE idempotency_key = ?", (key,)).fetchone()
+    if existing is None and state.case.get("state") == "handoff":  # already with a human: one case per conversation
+        existing = conn.execute(
+            "SELECT * FROM handoff_cases WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1",
+            (state.conversation_id,),
+        ).fetchone()
     if existing is not None:
         payload = json.loads(existing["payload"])
         result = EscalationResult(
@@ -53,6 +58,8 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         "queries": outcomes_for_case(ctx),
         "support_findings": state.support.points if state.support else [],
         "knowledge_points": state.knowledge.points if state.knowledge else [],
+        "troubleshooting_attempts": state.case.get("attempts", []),
+        "conversation": state.history[-8:],
     }
     p = prompt(ctx, "escalation")
     ctx.step_notes["prompt"] = p.ref
@@ -82,8 +89,8 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         "simulated": True,
     }
     conn.execute(
-        "INSERT INTO handoff_cases (case_id, protocol, customer_id, idempotency_key, reason, payload, created_at) "
-        "VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO handoff_cases (case_id, protocol, customer_id, idempotency_key, reason, payload, created_at, "
+        "conversation_id) VALUES (?,?,?,?,?,?,?,?)",
         (
             case_id,
             protocol,
@@ -92,6 +99,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             reason,
             json.dumps(payload, ensure_ascii=False, default=str),
             ctx.clock.now().isoformat(timespec="seconds"),
+            state.conversation_id,
         ),
     )
     result = EscalationResult(
