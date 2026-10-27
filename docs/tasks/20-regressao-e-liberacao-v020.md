@@ -28,16 +28,16 @@ Comprovar que a v0.2.0 não regrediu o núcleo, registrar o changelog com instru
 
 ## Critérios de conclusão
 
-- [ ] Núcleo sem regressão nas verificações automáticas.
-- [ ] Cenários de memória, acompanhamento e MCP aprovados.
-- [ ] Changelog com instruções de retorno.
+- [x] Núcleo sem regressão nas verificações automáticas.
+- [x] Cenários de memória, acompanhamento e MCP aprovados.
+- [x] Changelog com instruções de retorno.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: 141 testes sem rede e validação estrita do template; regressão real com 27/27 casos do núcleo e 4/4 conversas (duas rodadas, defeitos da primeira corrigidos); Docker em ambiente limpo com smoke 10/10 e MCP no container; `CHANGELOG.md` da 0.2.0 com instruções de retorno; versão 0.2.0. Ver [evidência](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md) e [relatório](../evidence/2026-10-26-regressao-v020.md). PR, merge e tag `v0.2.0` aguardam autorização. Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

@@ -69,7 +69,7 @@ def deterministic_answer(state: GraphState, language: str, case_state: str | Non
     parts: list[str] = []
     if state.policy:
         parts.append(state.policy)
-    if state.knowledge:
+    if state.knowledge and state.knowledge.mode != "procedure":  # procedure points are guidance for the support agent
         parts += state.knowledge.points or (
             [policy("no_evidence", language)] if state.knowledge.mode != "web" else [policy("unavailable", language)]
         )

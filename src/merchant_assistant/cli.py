@@ -210,6 +210,12 @@ def cmd_eval(settings: Settings, args) -> int:
     }
     md, js = write_report(rows, summary, Path(args.out), args.name, config)
     print(json.dumps(summary["overall"], indent=1))
+    if not args.no_conversations:
+        from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
+
+        conversations = run_conversations(orchestrator, scenarios / "followup.jsonl")
+        append_conversation_report(md, js, conversations)
+        print(f"conversations: {sum(c['passed'] for c in conversations)}/{len(conversations)} passed")
     print(f"report: {md}")
     print(f"results: {js}")
     if hasattr(orchestrator, "close"):
@@ -306,6 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument("--name", default="avaliacao")
+    p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
     p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
     p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")
     p_mcp = sub.add_parser("mcp", help="Serve the support tools over MCP (stdio) for one merchant.")

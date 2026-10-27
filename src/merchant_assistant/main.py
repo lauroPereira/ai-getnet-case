@@ -24,7 +24,7 @@ def openai_client(settings: Settings):
 
     if not settings.has_openai:
         raise RuntimeError("OPENAI_API_KEY is not set. Copy .env.example to .env and add your key.")
-    return OpenAI(api_key=settings.openai_api_key.get_secret_value(), timeout=45, max_retries=2)
+    return OpenAI(api_key=settings.openai_api_key.get_secret_value(), timeout=30, max_retries=1)
 
 
 def build_orchestrator(

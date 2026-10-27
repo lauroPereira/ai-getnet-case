@@ -34,3 +34,14 @@ Nenhuma violação na guarda de saída. Custo: US$0,0064 nas duas rodadas.
 - `route` ganhou o valor `acknowledgement` (reação a uma resposta anterior, sem pedido novo).
 - `resolution.evidence` passa a ser `customer_confirmed` ou `tool_verified` quando o caso é resolvido.
 - `POST /messages` responde 404 `conversation_not_found` para conversa de outro cliente.
+
+## Regressão da v0.2.0
+
+[Relatório](2026-10-26-regressao-v020.md) (última rodada): 27/27 casos do núcleo e 4/4 conversas de vários turnos nas verificações automáticas; p50 7,0 s, p95 13,4 s; rubrica por modelo 4,26 / 4,74 / 4,26.
+
+A primeira rodada passou 25/27. O EX03 foi falso negativo do avaliador ("Neither… is confirmed… yet"), e a lista de expressões foi ampliada. O PT08 revelou dois defeitos, corrigidos antes da rodada final:
+
+- uma chamada ao provedor travou e o cliente HTTP esperou três tentativas de 45 s, estourando os 90 s da requisição. Agora cada chamada respeita o tempo restante (até 30 s, uma nova tentativa);
+- a resposta de contingência mostrava ao lojista as instruções internas do procedimento. Agora ela só usa pontos destinados ao lojista.
+
+Docker em ambiente limpo: saudável em 18 s, smoke 10/10 e `mcp-demo` dentro do container.

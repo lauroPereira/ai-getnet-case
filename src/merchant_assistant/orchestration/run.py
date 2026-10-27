@@ -55,6 +55,9 @@ class RunContext:
         if time.perf_counter() - self.started > self.settings.max_request_seconds:
             raise LimitExceeded("time")
 
+    def remaining_seconds(self) -> float:
+        return self.settings.max_request_seconds - (time.perf_counter() - self.started)
+
     # --- Meter protocol -------------------------------------------------------------------------------------------
 
     def reserve(

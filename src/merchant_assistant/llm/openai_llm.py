@@ -25,17 +25,29 @@ def _usage(response: Any) -> Usage:
     return Usage(u.input_tokens, u.output_tokens, cached, web)
 
 
+CALL_TIMEOUT_S = 30.0
+
+
+def _call_timeout(meter: Meter | None) -> float:
+    remaining = getattr(meter, "remaining_seconds", None)
+    if remaining is None:
+        return CALL_TIMEOUT_S
+    return max(3.0, min(CALL_TIMEOUT_S, remaining() - 2.0))
+
+
 class OpenAILLM:
     def __init__(self, client: Any, model: str) -> None:
         self.client, self.model = client, model
 
-    def _common(self, spec: CallSpec) -> dict:
+    def _common(self, spec: CallSpec, meter: Meter | None = None) -> dict:
         kwargs: dict = {
             "model": self.model,
             "instructions": spec.instructions,
             "max_output_tokens": spec.max_output_tokens,
             "store": False,
             "reasoning": {"effort": spec.effort},
+            # Never wait longer than what is left of the request's time budget.
+            "timeout": _call_timeout(meter),
         }
         if spec.effort != "none":
             kwargs["include"] = ["reasoning.encrypted_content"]
@@ -49,7 +61,7 @@ class OpenAILLM:
             max_output_tokens=spec.max_output_tokens,
         )
         try:
-            response = self.client.responses.parse(input=spec.input, text_format=schema, **self._common(spec))
+            response = self.client.responses.parse(input=spec.input, text_format=schema, **self._common(spec, meter))
         except Exception as exc:  # provider errors become LLMError; usage unknown -> settle as reserved
             meter.settle(reservation, None)
             raise LLMError(f"{spec.agent}: {type(exc).__name__}: {exc}") from exc
@@ -87,7 +99,7 @@ class OpenAILLM:
                     text_format=schema,
                     tools=tools,
                     tool_choice="auto" if allow_tools else "none",
-                    **self._common(spec),
+                    **self._common(spec, meter),
                 )
             except Exception as exc:
                 meter.settle(reservation, None)
@@ -128,7 +140,7 @@ class OpenAILLM:
             web_search_calls=max_calls,
         )
         try:
-            kwargs = self._common(spec)
+            kwargs = self._common(spec, meter)
             kwargs["include"] = [*kwargs.get("include", []), "web_search_call.action.sources"]
             response = self.client.responses.create(
                 input=spec.input, tools=[{"type": "web_search"}], max_tool_calls=max_calls, **kwargs
