@@ -29,15 +29,15 @@ Implementar o Customer Support Agent com prefixo determinístico, uso das ferram
 
 ## Critérios de conclusão
 
-- [ ] Testes determinísticos de UC-03, 05, 08, 13 e 17 conferem ferramentas chamadas, fatos e status.
-- [ ] Nenhuma afirmação de crédito sem confirmação do repasse.
+- [x] Testes determinísticos de UC-03, 05, 08, 13 e 17 conferem ferramentas chamadas, fatos e status.
+- [x] Nenhuma afirmação de crédito sem confirmação do repasse.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

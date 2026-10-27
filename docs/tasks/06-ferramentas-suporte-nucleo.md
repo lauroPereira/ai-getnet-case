@@ -30,16 +30,16 @@ Implementar as sete ferramentas do núcleo como funções de domínio com víncu
 
 ## Critérios de conclusão
 
-- [ ] Cada ferramenta tem testes de caminho feliz, resultado vazio, outro cliente, argumento inválido e falha.
-- [ ] O schema exposto ao modelo não contém `customer_id`.
-- [ ] Cliente desconhecido recebe resultado conforme RF-21.
+- [x] Cada ferramenta tem testes de caminho feliz, resultado vazio, outro cliente, argumento inválido e falha.
+- [x] O schema exposto ao modelo não contém `customer_id`.
+- [x] Cliente desconhecido recebe resultado conforme RF-21.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: `tests/unit/tools/test_tools.py` (14 testes) cobre caminho feliz, período vazio, argumento inválido, recurso de outro cliente (bloqueado e auditado), seleção de dispositivo, cliente desconhecido, falha injetada, lista de permissões e ausência de identificador do cliente nos schemas. As sete ferramentas ficaram num único módulo de domínio (`tools/domain.py`) em vez de um arquivo por ferramenta. Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

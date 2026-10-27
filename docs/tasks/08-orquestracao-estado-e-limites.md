@@ -32,17 +32,17 @@ Montar o grafo com estado tipado e nós provisórios para todas as rotas, a inte
 
 ## Critérios de conclusão
 
-- [ ] Testes com modelo programado percorrem as sete rotas.
-- [ ] Limite atingido gera resposta controlada.
-- [ ] A reserva impede ultrapassar um teto simulado.
-- [ ] O trace mostra cada etapa com duração.
+- [x] Testes com modelo programado percorrem as sete rotas.
+- [x] Limite atingido gera resposta controlada.
+- [x] A reserva impede ultrapassar um teto simulado.
+- [x] O trace mostra cada etapa com duração.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

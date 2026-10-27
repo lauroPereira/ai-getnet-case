@@ -1,0 +1,178 @@
+{
+ "k": 6,
+ "overall": {
+  "n": 14,
+  "recall_at_k": 1.0,
+  "mrr": 1.0
+ },
+ "by_language": {
+  "en": {
+   "n": 7,
+   "recall_at_k": 1.0,
+   "mrr": 1.0
+  },
+  "pt": {
+   "n": 7,
+   "recall_at_k": 1.0,
+   "mrr": 1.0
+  }
+ },
+ "cases": [
+  {
+   "id": "R-UC01-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-todas-as-maquininhas",
+    "pub:site-getnet-com-br-duvidas",
+    "pub:site-getnet-com-br-get-tap"
+   ],
+   "top_score": 0.441
+  },
+  {
+   "id": "R-UC01-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-todas-as-maquininhas",
+    "pub:site-getnet-com-br-duvidas",
+    "pub:site-getnet-com-br-todas-as-maquininhas"
+   ],
+   "top_score": 0.544
+  },
+  {
+   "id": "R-UC04-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-pix-como-habilitar-o-recebimento-de-vendas-via-pix-no-aplicativo-getnet-brasil",
+    "pub:site-getnet-com-br-get-ajuda-pix-como-fazer-uma-venda-com-pix-na-maquininha",
+    "pub:site-getnet-com-br-pix"
+   ],
+   "top_score": 0.584
+  },
+  {
+   "id": "R-UC04-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-pix-como-fazer-uma-venda-com-pix-na-maquininha",
+    "pub:site-getnet-com-br-get-ajuda-pix-como-habilitar-o-recebimento-de-vendas-via-pix-no-aplicativo-getnet-brasil",
+    "pub:site-getnet-com-br-pix"
+   ],
+   "top_score": 0.723
+  },
+  {
+   "id": "R-UC05-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+    "pub:site-getnet-com-br-duvidas",
+    "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-1-50"
+   ],
+   "top_score": 0.427
+  },
+  {
+   "id": "R-UC05-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+    "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+    "pub:site-getnet-com-br-get-ajuda-erros-maquininha"
+   ],
+   "top_score": 0.583
+  },
+  {
+   "id": "R-UC06-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+    "pub:site-getnet-com-br-duvidas",
+    "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-habilitar-antecipacao-automatica-pelo-app"
+   ],
+   "top_score": 0.588
+  },
+  {
+   "id": "R-UC06-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+    "pub:site-getnet-com-br-get-ajuda-reserva-financeira-antecipacao-reserva-financeira",
+    "pub:site-getnet-com-br-duvidas"
+   ],
+   "top_score": 0.716
+  },
+  {
+   "id": "R-UC08-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "demo:KB-DEMO-AUTHORIZATIONS-001",
+    "pub:site-getnet-com-br-get-ajuda-gestao-de-vendas-quais-possiveis-status-das-minhas-vendas",
+    "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-91"
+   ],
+   "top_score": 0.572
+  },
+  {
+   "id": "R-UC08-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "demo:KB-DEMO-AUTHORIZATIONS-001",
+    "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-91",
+    "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-1-50"
+   ],
+   "top_score": 0.659
+  },
+  {
+   "id": "R-UC09-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-crediario",
+    "pub:site-getnet-com-br-crediario",
+    "pub:site-getnet-com-br-crediario"
+   ],
+   "top_score": 0.603
+  },
+  {
+   "id": "R-UC09-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-crediario",
+    "pub:site-getnet-com-br-crediario",
+    "pub:site-getnet-com-br-crediario"
+   ],
+   "top_score": 0.599
+  },
+  {
+   "id": "R-UC10-en",
+   "language": "en",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+    "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+    "pub:site-getnet-com-br-todas-as-maquininhas"
+   ],
+   "top_score": 0.543
+  },
+  {
+   "id": "R-UC10-pt",
+   "language": "pt",
+   "rank": 1,
+   "top": [
+    "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+    "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+    "pub:site-getnet-com-br-link-de-pagamento"
+   ],
+   "top_score": 0.65
+  }
+ ],
+ "embedding_model": "text-embedding-3-small",
+ "embedding_tokens": 37351
+}

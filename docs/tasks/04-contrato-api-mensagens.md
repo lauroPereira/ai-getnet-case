@@ -28,16 +28,16 @@ Expor `POST /messages` com schemas de entrada e saída, corpo de erro documentad
 
 ## Critérios de conclusão
 
-- [ ] Contrato visível em `/docs` com os exemplos.
-- [ ] Testes de contrato passam.
-- [ ] O orquestrador pode ser trocado sem alterar a camada HTTP.
+- [x] Contrato visível em `/docs` com os exemplos.
+- [x] Testes de contrato passam.
+- [x] O orquestrador pode ser trocado sem alterar a camada HTTP.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: testes de contrato em `tests/integration/test_messages_contract.py` (sucesso, campo ausente, limites, campo desconhecido, exemplos no OpenAPI, rota de traces só em modo demonstração) passaram. Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

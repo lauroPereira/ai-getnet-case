@@ -29,16 +29,16 @@ Criar o pacote `merchant_assistant` com configuração, lint, testes e uma aplic
 
 ## Critérios de conclusão
 
-- [ ] `pytest` e `ruff check` passam.
-- [ ] `python tools/scripts/lint_and_tests.py --strict` passa.
-- [ ] Nenhum segredo nos arquivos.
+- [x] `pytest` e `ruff check` passam.
+- [x] `python tools/scripts/lint_and_tests.py --strict` passa.
+- [x] Nenhum segredo nos arquivos.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: `pytest` (8 testes) e `ruff check` passaram; `python tools/scripts/lint_and_tests.py --strict` concluiu sem falhas. Ruff com linha de 120 caracteres. Revisão não independente (mesma sessão).
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

@@ -1,0 +1,50 @@
+[project]
+name = "merchant-assistant"
+version = "0.1.0"
+description = "Multi-agent support system for Getnet merchants (AI Hardcore Engineer challenge)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162",
+    "uvicorn[standard]>=0.54",
+    "pydantic>=2.14",
+    "pydantic-settings>=2.16",
+    "langgraph>=1.2",
+    "openai>=3.39",
+    "qdrant-client>=1.20",
+    "httpx>=0.28",
+    "python-dotenv>=1.2",
+]
+
+[project.optional-dependencies]
+ingest = [
+    "trafilatura>=2.3",
+    "beautifulsoup4>=4.15",
+]
+dev = [
+    "pytest>=9.1",
+    "ruff>=0.17",
+]
+
+[project.scripts]
+merchant-assistant = "merchant_assistant.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/merchant_assistant"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --import-mode=importlib"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["discovery", ".claude", ".agents", "skills"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["UP046", "SIM905"]
