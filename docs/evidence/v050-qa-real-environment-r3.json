@@ -1,0 +1,146 @@
+{
+  "round": "v0.5.0 real QA r3 focused recovery",
+  "created_at_utc": "2026-10-27T20:47:25Z",
+  "result": "aptos_publicados; recovery criterion passed in real UI; optional marker probe inconclusive",
+  "classification_audit": {
+    "audited_at_utc": "2026-10-27T20:53:53Z",
+    "criteria_source": "docs/specs/incrementos-pos-nucleo.md CA-41; docs/specs/base-versionada-v050.md; docs/historias/base-versionada-v050.md v1",
+    "operational_probe_source": "docs/evidence/v050-qa-preparacao.md; optional exploratory marker is not a published acceptance requirement",
+    "mandatory_requirement_left_unproven": false,
+    "r1_r2_mandatory_evidence_reused": true,
+    "r3_get_recovery_revalidated": true,
+    "audit_note": "The code 91 marker probe was refused before Knowledge and does not prove content retrieval. No published criterion requires reproducing the marker in the answer, so this is recorded as an additional limitation rather than a global blocker."
+  },
+  "candidate": "v0.5.0-local-r7",
+  "candidate_manifest": "v050-candidato-r7.json",
+  "candidate_source_fingerprint_sha256": "ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c",
+  "source_integrity_after": {
+    "backend_files": 46,
+    "backend_mismatches": 0,
+    "web_files": 85,
+    "web_mismatches": 0,
+    "combined_fingerprint_recomputed": "ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c"
+  },
+  "backend": {
+    "root": "C:\\workspace\\ai-getnet-case",
+    "branch": "codex/v0.5.0-base-versionada",
+    "head_sha": "ea2355b5ba8fa8dcff66200f34461ae063183250",
+    "python": "3.13.3",
+    "openai_sdk": "3.39.0",
+    "api": "http://127.0.0.1:18853",
+    "api_pid": 6932,
+    "health_before_stop": 200,
+    "ready_before_stop": 200,
+    "runtime_fingerprint_sha256": "22556665c215a837fa5d9cc1b7b8dacd52fa3b06b40ed46e8e1b86b9ef40ce0e",
+    "runtime_file_count": 128,
+    "build_fingerprint_sha256": "c74764b0d0932851a123ff8f5f13b11e96e266f8530b2a4ae5ee2e1016d1c3a5",
+    "build_input_count": 129
+  },
+  "web": {
+    "root": "C:\\workspace\\ai-getnet-case-web",
+    "branch": "codex/v0.5.0-base-versionada",
+    "head_sha": "40ff199f7441a09b0fa28925bcfd0038e4b6ccbe",
+    "python_executable": "C:\\workspace\\ai-getnet-case-web\\.venv-v040\\Scripts\\python.exe",
+    "streamlit": "1.66.1",
+    "url": "http://127.0.0.1:18553",
+    "launcher_pid": 25800,
+    "listener_pid": 20048
+  },
+  "fixtures": {
+    "url": "http://127.0.0.1:18854",
+    "pid": 26544,
+    "scope": "synthetic mock service"
+  },
+  "transport_harness": {
+    "url": "http://127.0.0.1:18855",
+    "launcher_pid": 10896,
+    "listener_pid": 13540,
+    "behavior": "forwards to real QA API; drops only first response to POST /v1/messages after upstream completion; all later GET requests pass through",
+    "event_log": ".pytest_cache/v050-qa-real-runtime/proxy-r3-events.jsonl",
+    "conversation_id": "conv_f39ad7fb154045938a4c",
+    "request_id": "req_94760ac013534e08a82d",
+    "post_count_for_conversation": 1,
+    "manual_recovery_get_count": 1,
+    "manual_recovery_get_status": 200,
+    "post_after_recovery": false
+  },
+  "runtime_isolation": ".pytest_cache/v050-qa-real-runtime",
+  "optional_probe_browser_limitation": {
+    "observation": "Edge displayed Not Responding; browser inventory empty",
+    "recovery_attempt": "new visible CUA IAB tab for http://127.0.0.1:18553",
+    "result": "Browser is not available",
+    "additional_paid_query_sent": false,
+    "blocks_published_acceptance": false
+  },
+  "paid_guard": {
+    "campaign_ledger": ".pytest_cache/v050-qa-control/budget.sqlite3",
+    "cap_id": "v050-qa",
+    "campaign_cap_usd": 0.25,
+    "primary_ledger": "data/runtime/budget.sqlite3",
+    "primary_limit_file": "data/runtime/budget.sqlite3.limit",
+    "primary_limit_usd": 1.0,
+    "combined_guard_preserved": true,
+    "sdk_max_retries": 0,
+    "keys_written_or_logged": false
+  },
+  "costs": {
+    "campaign_before_r3": {
+      "entries": 33,
+      "actual_usd": 0.00532161
+    },
+    "campaign_after_r3": {
+      "entries": 35,
+      "actual_usd": 0.00553883,
+      "gross_reserved_usd": 0.01518454,
+      "open_reservations": 0
+    },
+    "primary_before_r3": {
+      "entries": 883,
+      "actual_usd": 0.34831122
+    },
+    "primary_after_r3": {
+      "entries": 885,
+      "actual_usd": 0.34852844,
+      "open_reservations": 0
+    },
+    "r3_delta_same_provider_calls_usd": 0.00021722,
+    "cap_remaining_usd": 0.24446117,
+    "historical_project_baseline_usd": 0.59283583,
+    "reconciled_project_total_usd": 0.59837466,
+    "reconciliation_note": "campaign and primary ledger deltas reconcile the same real provider call and are not added together; project total is historical baseline plus total campaign actual"
+  },
+  "trace": {
+    "request_id": "req_94760ac013534e08a82d",
+    "conversation_id": "conv_f39ad7fb154045938a4c",
+    "at_utc": "2026-10-27T20:41:09Z",
+    "route": "out_of_scope",
+    "status": "refused",
+    "duration_ms": 4983,
+    "cost_usd": 0.00021722,
+    "model_calls": 2,
+    "tool_calls": 0,
+    "knowledge_step_or_hits": false
+  },
+  "docker_reference": {
+    "manifest": "v050-docker-r7.json",
+    "image_reused_not_executed_for_r3": true,
+    "runtime_build_maps_identical_to_candidate": true
+  },
+  "scope": {
+    "story": "docs/historias/base-versionada-v050.md",
+    "story_version": 1,
+    "spec": "docs/specs/base-versionada-v050.md",
+    "plan": "docs/specs/base-versionada-v050-plano.md",
+    "contract": "docs/specs/api-kb-v050-proposta.md",
+    "review": "docs/evidence/v050-reviewer-ui-r3.md",
+    "prior_qa": [
+      "docs/evidence/v050-qa-r1.md",
+      "docs/evidence/v050-qa-r2.md"
+    ],
+    "tasks": [
+      "docs/tasks/52-recuperar-conversa-get-ui-v050.md",
+      "docs/tasks/53-consumir-contrato-real-conversa-v050.md"
+    ]
+  },
+  "process_end_state": "QA r3 Streamlit launcher PID 25800/listener PID 20048 and transport proxy launcher PID 10896/listener PID 13540 were already stopped. After final criteria audit, API PID 6932 on 18853 and fixtures PID 26544 on 18854 were stopped after PID, executable, commandline identity and listening ports were confirmed; ports 18853, 18854, 18553, 18855 are no longer listening. Runtime, proxy logs, payload, campaign and primary ledgers remain preserved. No commit, push, merge, publication, cleanup, key change, credit purchase or extra agent."
+}

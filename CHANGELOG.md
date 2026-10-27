@@ -2,6 +2,37 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.5.0] — 2026-10-27 (validated candidate r7; approved for Git integration)
+
+Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), tasks 39–53).
+
+### Added
+- Knowledge base registry seeded from the existing public snapshots and fictitious demo corpus. Only `simulated_internal` documents are editable; origin and identity are assigned by the server, and official sources stay read-only.
+- Drafts with optimistic revisions and diffs; candidate versions built into their own Qdrant collection with a frozen manifest (documents, hashes, embedding model and dimension) and an explicit test step.
+- Explicit activation and rollback with expected-active comparison, integrity check of the collection against its manifest, and an event log with actor, time and evidence.
+- Each run captures one identified knowledge base version at its start; the trace and run snapshot record it, and a run in progress finishes on that version even if another one is activated.
+- Embedding batches (build and test) reserve budget before the provider call and settle once afterwards; unknown cost keeps the reservation. Estimates and confirmed caps are required before a build or test.
+- Persistent per-ledger ceiling in `<ledger>.limit`, written once on first use (1.00 for a ledger that predates it, 5.00 absolute maximum); a later configuration can never raise it.
+- Streamlit administration for documents, editor and diff, estimate and confirmation, build, test, activation and rollback; confirmations are reset when the confirmed cap changes.
+- Manual conversation recovery in the web client: a transport failure after `POST /v1/messages` keeps the question pending and offers a GET-only refresh, never an automatic resend.
+
+### Changed (contracts and data)
+- Additive `/v1/kb/*` routes (documents, drafts, diff, version estimate, build, list, detail, test, activate, rollback), admin-only for writes; OpenAPI snapshot 0.5.0 in the web project. Legacy `POST /messages` and MCP are unchanged.
+- Reversible migration 0007 adds `kb_documents`, `kb_drafts`, `kb_versions`, `kb_state` and `kb_events`; schema version 7. `bootstrap`/`index` never rebuild or replace an existing collection.
+
+### Validation
+- Backend strict script: **293 tests passed** (Reviewer r2); web: **20 tests passed** with external Ruff. Independent reviews and three real QA rounds are linked from the [result record](docs/evidence/v050-resultado.md).
+- Real QA covered embeddings, baseline build, the full draft → candidate → test → activation → rollback cycle in the UI, 403/409/429 protections, concurrent version capture, a real DeepSeek/JEV Router comparison and conversation recovery with a single POST.
+- Paid calls in this version: **US$0.00553883**; project total US$0.59837466 of US$5.
+
+### Limitations
+- An optional probe of the edited fictitious text did not reach Knowledge and remains inconclusive; it was not a published criterion and is not claimed as demonstrated.
+- Low-severity review findings (task 46) remain open. The web strict script exits 2 because Ruff is not installed in the web virtual environment; Ruff passed when run externally.
+- Real inferences ran in the native environment; the canonical Docker image built for r3 was inspected but not used for provider calls.
+
+### Return to 0.4.0
+- Stop the stack and run `merchant-assistant migrate --to 6` against the synthetic runtime before checking out `v0.4.0`. Knowledge base tables are dropped; Qdrant collections are kept and the reference collection keeps working.
+
 ## [0.4.0] — 2026-10-27 (approved for Git integration)
 
 ### Added

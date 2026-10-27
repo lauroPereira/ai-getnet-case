@@ -355,3 +355,12 @@ estados documentais foram alinhados. [Hashes Git](v040-git-integracao.json)
 conferem após commit e normalização de texto. Serviços de QA próprios foram
 identificados e parados antes da troca de branches; imagens/evidências
 preservadas. Checks e merge ainda são ações a confirmar neste registro.
+
+Confirmação posterior: ambos os PRs merged; main backend
+`ea2355b5ba8fa8dcff66200f34461ae063183250`, web
+`40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`, iguais local/remoto. Nenhum check/
+status/job no GitHub; árvores e ancestralidade conferidas antes do push.
+Branches v0.5 criadas somente depois de pull das mains integradas. A primeira
+tentativa de criar branches teve timeout de revisão automática antes de
+executar; a única repetição permitida concluiu normalmente. Sem bloqueio
+remanescente de permissão. [Registro final](v040-integracao-confirmada.json).

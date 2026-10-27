@@ -1,0 +1,38 @@
+{
+  "confirmed_at_utc": "2026-10-27 14:58:18 UTC",
+  "backend": {
+    "pr": "https://github.com/lauroPereira/ai-getnet-case/pull/5",
+    "head": "a253523e7068efb61281a91de9010cb8881f4d7f",
+    "merge": "ea2355b5ba8fa8dcff66200f34461ae063183250",
+    "remote_main_verified": true,
+    "tree_matches_pr_head": true,
+    "visibility": "private"
+  },
+  "web": {
+    "pr": "https://github.com/lauroPereira/ai-getnet-case-web/pull/1",
+    "head": "b76d415dbbc611cc767c7a5be43d00cf28232a68",
+    "merge": "40ff199f7441a09b0fa28925bcfd0038e4b6ccbe",
+    "remote_main_verified": true,
+    "tree_matches_pr_head": true,
+    "visibility": "private",
+    "baseline": "2cf57ba7ee9c128c0467fe6ddc738197bf40a2d3"
+  },
+  "identity": "lauroPereira <lauro.s.pereira@gmail.com>",
+  "checks": {
+    "backend": [],
+    "web": [],
+    "note": "No provider checks/statuses/jobs; local validation and independent role evidence retained."
+  },
+  "next_version": {
+    "version": "0.5.0",
+    "backend_branch": "codex/v0.5.0-base-versionada",
+    "web_branch": "codex/v0.5.0-base-versionada",
+    "mains_pulled_before_branch": true,
+    "paid_qa_authorized": true,
+    "implementation_plan_pending_approval": true
+  },
+  "paid_calls_v040": 0,
+  "recorded_project_spend_usd": 0.59283583,
+  "tag_created": false,
+  "public_deployment": false
+}

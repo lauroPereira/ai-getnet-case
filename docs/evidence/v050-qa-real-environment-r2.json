@@ -1,0 +1,112 @@
+{
+  "round": "v0.5.0 real QA r2",
+  "created_at_utc": "2026-10-27T20:25:28.227217+00:00",
+  "candidate": "v0.5.0-local-r6",
+  "candidate_manifest": "v050-candidato-r6.json",
+  "source_fingerprint_sha256": "45073733de04247748d583f5a57af01bfa3180979d8915616bd7db0af971aaa3",
+  "source_maps": {
+    "backend_files": 44,
+    "backend_mismatches": 0,
+    "web_files": 84,
+    "web_mismatches": 0,
+    "verification": "recomputed SHA-256 of all mapped source files after the run"
+  },
+  "backend": {
+    "root": "C:\\workspace\\ai-getnet-case",
+    "branch": "codex/v0.5.0-base-versionada",
+    "head_sha": "ea2355b5ba8fa8dcff66200f34461ae063183250",
+    "python": "3.13.3",
+    "openai_sdk": "3.39.0",
+    "api": "http://127.0.0.1:18853",
+    "api_pid": 6932,
+    "runtime_fingerprint_sha256": "22556665c215a837fa5d9cc1b7b8dacd52fa3b06b40ed46e8e1b86b9ef40ce0e",
+    "runtime_file_count": 128,
+    "build_fingerprint_sha256": "c74764b0d0932851a123ff8f5f13b11e96e266f8530b2a4ae5ee2e1016d1c3a5",
+    "build_input_count": 129
+  },
+  "web": {
+    "root": "C:\\workspace\\ai-getnet-case-web",
+    "branch": "codex/v0.5.0-base-versionada",
+    "head_sha": "40ff199f7441a09b0fa28925bcfd0038e4b6ccbe",
+    "python_executable": "C:\\workspace\\ai-getnet-case-web\\.venv-v040\\Scripts\\python.exe",
+    "packages": {
+      "streamlit": "1.66.1",
+      "httpx": "0.28.1",
+      "pytest": "8.4.2",
+      "pandas": "3.1.0",
+      "altair": "6.3.0",
+      "tornado": "6.6"
+    },
+    "streamlit": "1.66.1",
+    "url": "http://127.0.0.1:18553",
+    "launcher_pid": 2052,
+    "listener_pid": 26080
+  },
+  "fixtures": {
+    "url": "http://127.0.0.1:18854",
+    "pid": 26544,
+    "scope": "synthetic mock service"
+  },
+  "transport_harness": {
+    "url": "http://127.0.0.1:18855",
+    "pid_launcher": 19916,
+    "pid_listener": 21044,
+    "behavior": "forwards to real QA API; drops only the response to the first POST /v1/messages after upstream completion; later GET passes through",
+    "event_log": ".pytest_cache/v050-qa-real-runtime/proxy-r2-events.jsonl"
+  },
+  "runtime_isolation": ".pytest_cache/v050-qa-real-runtime",
+  "paid_guard": {
+    "campaign_ledger": ".pytest_cache/v050-qa-control/budget.sqlite3",
+    "cap_id": "v050-qa",
+    "campaign_cap_usd": 0.25,
+    "primary_ledger": "data/runtime/budget.sqlite3",
+    "primary_limit_file": "data/runtime/budget.sqlite3.limit",
+    "primary_limit_usd": 1.0,
+    "combined_guard_installed_before_real_calls": true,
+    "sdk_max_retries": 0,
+    "keys_written_or_logged": false
+  },
+  "costs": {
+    "campaign_before_r2": {
+      "entries": 17,
+      "actual_usd": 0.00282289
+    },
+    "campaign_after_r2": {
+      "entries": 33,
+      "actual_usd": 0.00532161,
+      "gross_reserved_usd": 0.01383384,
+      "open_reservations": 0
+    },
+    "r2_delta_usd": 0.00249872,
+    "cap_remaining_usd": 0.24467839,
+    "primary_after_r2": {
+      "entries": 883,
+      "actual_usd": 0.34831122,
+      "gross_reserved_usd": 0.60836678,
+      "open_reservations": 0
+    },
+    "primary_before_r2": {
+      "entries": 867,
+      "actual_usd": 0.3458125
+    },
+    "primary_delta_usd": 0.00249872,
+    "historical_baseline_usd": 0.59283583,
+    "reconciled_project_total_usd": 0.59815744,
+    "reconciliation_note": "campaign and primary deltas cover the same provider calls; do not add both"
+  },
+  "docker_reference": {
+    "image_id": "sha256:852e5c4ec8448fc686bed994e9feb00c246d1a6483e1a1f8147e0a8cdf6ece2b",
+    "image_tag": "getnet-v050-test:r3-20261027",
+    "reused_not_executed_for_r2": true,
+    "runtime_build_maps_identical": true
+  },
+  "scope": {
+    "story": "docs/historias/base-versionada-v050.md",
+    "story_version": 1,
+    "plan": "docs/specs/base-versionada-v050-plano.md",
+    "contract": "docs/specs/api-kb-v050-proposta.md",
+    "review": "docs/evidence/v050-reviewer-ui-r2.md",
+    "older_round": "docs/evidence/v050-qa-r1.md"
+  },
+  "process_end_state": "After report save, only QA Streamlit and proxy were stopped: Streamlit listener PID 26080 and launcher PID 2052; proxy listener PID 21044 and launcher PID 19916. API PID 6932 remains healthy on 18853 (/health and /ready 200); fixtures PID 26544 remains active on 18854 (no /health route; 404 expected). Runtime, proxy logs, sanitized payload and both guard ledgers preserved for authorized correction/revalidation."
+}
