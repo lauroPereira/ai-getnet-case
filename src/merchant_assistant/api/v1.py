@@ -41,6 +41,7 @@ from merchant_assistant.profiles import (
     publish,
     update_draft,
 )
+from merchant_assistant.rag.kb import KBBuildFailure
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
 
 router = APIRouter(prefix="/v1", tags=["v1"])
@@ -116,6 +117,36 @@ class ModelCatalogResponse(BaseModel):
     models: list[ModelCatalogItem]
     verified_at: str
     sources: dict[str, str]
+
+
+class KBDraftRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    content: str = Field(min_length=1, max_length=65536)
+    expected_revision: int = Field(ge=0)
+
+
+class KBEstimateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    revisions: dict[str, int] = Field(default_factory=dict)
+
+
+class KBBuildRequest(KBEstimateRequest):
+    expected_active_version_id: str
+    expected_digest: str
+    confirmed: bool
+    max_cost_usd: float = Field(ge=0, le=5)
+
+
+class KBTestRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirmed: bool
+    max_cost_usd: float = Field(ge=0, le=5)
+
+
+class KBTransitionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_active_version_id: str
+    confirmed: bool
 
 
 def _db(request: Request) -> sqlite3.Connection:
@@ -304,6 +335,166 @@ def profiles(request: Request, principal=AUTH):
         return {"profiles": list_profiles(conn, role=principal["role"])}
     finally:
         conn.close()
+
+
+def _kb(request: Request):
+    service = getattr(request.app.state.orchestrator, "knowledge_base", None)
+    if service is None:
+        return None
+    return service
+
+
+@router.get("/kb/documents")
+def kb_documents(request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    service = _kb(request)
+    return (
+        service.list_documents(admin=principal["role"] == "admin")
+        if service
+        else _error(503, "kb_unavailable", "Knowledge base is unavailable.", request)
+    )
+
+
+@router.get("/kb/documents/{document_id}")
+def kb_document(document_id: str, request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).document(document_id, admin=principal["role"] == "admin")
+    except LookupError:
+        return _error(404, "not_found", "Document not found.", request)
+
+
+@router.put("/kb/drafts/{document_id}")
+def kb_save_draft(document_id: str, payload: KBDraftRequest, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).save_draft(document_id, payload.content, payload.expected_revision)
+    except LookupError:
+        return _error(404, "not_found", "Document not found.", request)
+    except PermissionError:
+        return _error(403, "source_read_only", "Official source documents are read-only.", request)
+    except RuntimeError:
+        return _error(409, "version_conflict", "Draft revision changed; reload before saving.", request)
+    except ValueError as exc:
+        return _error(422, "invalid_document", str(exc), request)
+
+
+@router.get("/kb/drafts/{document_id}/diff")
+def kb_diff(document_id: str, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).diff(document_id)
+    except LookupError:
+        return _error(404, "not_found", "Draft not found.", request)
+
+
+@router.post("/kb/versions/estimate")
+def kb_estimate(payload: KBEstimateRequest, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).estimate(payload.revisions)
+    except LookupError:
+        return _error(404, "not_found", "Document not found.", request)
+    except RuntimeError:
+        return _error(409, "version_conflict", "Draft revision changed; reload the estimate.", request)
+    except Exception:
+        return _error(503, "estimate_unavailable", "Could not estimate this candidate.", request)
+
+
+@router.post("/kb/versions", status_code=201)
+def kb_build(payload: KBBuildRequest, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).create_version(
+            payload.revisions,
+            payload.expected_active_version_id,
+            payload.expected_digest,
+            payload.confirmed,
+            payload.max_cost_usd,
+        )
+    except BudgetExceeded:
+        return _error(429, "budget_exceeded", "The candidate exceeds the confirmed budget.", request)
+    except LookupError:
+        return _error(404, "not_found", "Document not found.", request)
+    except KBBuildFailure:
+        return _error(503, "candidate_build_failed", "Candidate build failed; active version was preserved.", request)
+    except RuntimeError as exc:
+        return _error(409, "version_conflict", str(exc), request)
+    except Exception:
+        return _error(503, "candidate_build_failed", "Candidate build failed; active version was preserved.", request)
+
+
+@router.get("/kb/versions")
+def kb_versions(request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    return _kb(request).versions(admin=principal["role"] == "admin")
+
+
+@router.get("/kb/versions/{version_id}")
+def kb_version(version_id: str, request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).version(version_id, admin=principal["role"] == "admin")
+    except LookupError:
+        return _error(404, "not_found", "Version not found.", request)
+
+
+@router.post("/kb/versions/{version_id}/test")
+def kb_test(version_id: str, payload: KBTestRequest, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).test_version(version_id, confirmed=payload.confirmed, max_cost_usd=payload.max_cost_usd)
+    except BudgetExceeded:
+        return _error(429, "budget_exceeded", "The test exceeds the confirmed budget.", request)
+    except (LookupError, RuntimeError):
+        return _error(409, "version_not_testable", "This version is not ready to test.", request)
+    except ValueError:
+        return _error(422, "confirmation_required", "Explicit confirmation is required.", request)
+
+
+@router.post("/kb/versions/{version_id}/activate")
+def kb_activate(version_id: str, payload: KBTransitionRequest, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).transition(
+            version_id,
+            action="activate",
+            expected_active=payload.expected_active_version_id,
+            confirmed=payload.confirmed,
+            actor=principal["principal_id"],
+        )
+    except (LookupError, RuntimeError):
+        return _error(409, "version_conflict", "Version is not activatable or the active version changed.", request)
+    except ValueError:
+        return _error(422, "confirmation_required", "Explicit confirmation is required.", request)
+
+
+@router.post("/kb/versions/{version_id}/rollback")
+def kb_rollback(version_id: str, payload: KBTransitionRequest, request: Request, principal=ADMIN):
+    if _ensure_not_error(principal):
+        return principal
+    try:
+        return _kb(request).transition(
+            version_id,
+            action="rollback",
+            expected_active=payload.expected_active_version_id,
+            confirmed=payload.confirmed,
+            actor=principal["principal_id"],
+        )
+    except (LookupError, RuntimeError):
+        return _error(409, "version_conflict", "Version is not the intact previous version or active changed.", request)
+    except ValueError:
+        return _error(422, "confirmation_required", "Explicit confirmation is required.", request)
 
 
 @router.post("/profiles", status_code=201)
@@ -652,6 +843,8 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
                 "cost_estimate_usd": trace_data.get("detail", {}).get("cost_estimate_usd"),
                 "cost_estimate_basis": trace_data.get("detail", {}).get("cost_estimate_basis", {}),
                 "cost_is_estimate": True,
+                "knowledge_base_version_id": trace_data.get("detail", {}).get("knowledge_base_version_id"),
+                "knowledge_base_collection": trace_data.get("detail", {}).get("knowledge_base_collection"),
             }
             if selected:
                 trace_summary["effective_parameters_by_agent"] = dict(

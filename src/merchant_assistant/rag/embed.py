@@ -6,7 +6,6 @@ import hashlib
 import math
 import re
 import unicodedata
-from collections.abc import Callable
 from typing import Protocol
 
 
@@ -18,19 +17,37 @@ class Embedder(Protocol):
 
 
 class OpenAIEmbedder:
-    def __init__(
-        self, client, model: str, dim: int = 1536, batch: int = 64, on_usage: Callable[[str, int], None] | None = None
-    ) -> None:
-        self.client, self.model, self.dim, self.batch, self.on_usage = client, model, dim, batch, on_usage
+    """Paid embeddings: every provider batch reserves budget first and settles that reservation exactly once."""
+
+    def __init__(self, client, model: str, dim: int = 1536, batch: int = 64, budget=None) -> None:
+        self.client, self.model, self.dim, self.batch, self.budget = client, model, dim, batch, budget
         self.tokens_used = 0
 
     def embed(self, texts: list[str]) -> list[list[float]]:
+        if self.budget is None:  # never reach the provider without a persistent guard
+            raise RuntimeError("Paid embeddings require a persistent budget guard.")
+        from merchant_assistant.llm.pricing import PriceUnknown, model_price
+
         vectors: list[list[float]] = []
         for i in range(0, len(texts), self.batch):
-            response = self.client.embeddings.create(model=self.model, input=texts[i : i + self.batch])
-            self.tokens_used += response.usage.total_tokens
-            if self.on_usage:
-                self.on_usage(self.model, response.usage.total_tokens)
+            batch = texts[i : i + self.batch]
+            price = model_price(self.model)
+            estimated_tokens = sum(max(1, (len(text.encode("utf-8")) + 2) // 3) for text in batch)
+            estimate = estimated_tokens * price["input_per_mtok"] / 1_000_000
+            if estimate <= 0:
+                raise PriceUnknown(f"No usable price registered for embedding model {self.model}")
+            reservation = self.budget.reserve(request_id=None, agent="embeddings", model=self.model, amount=estimate)
+            try:
+                response = self.client.embeddings.create(model=self.model, input=batch)
+            except Exception:
+                self.budget.settle(reservation, None)  # usage unknown: the reservation stays as spent
+                raise
+            tokens = getattr(getattr(response, "usage", None), "total_tokens", None)
+            if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens < 0:
+                self.budget.settle(reservation, None)  # unusable usage report: keep the conservative reservation
+            else:
+                self.tokens_used += tokens
+                self.budget.settle(reservation, tokens * price["input_per_mtok"] / 1_000_000)
             vectors.extend(d.embedding for d in sorted(response.data, key=lambda d: d.index))
         return vectors
 

@@ -23,7 +23,7 @@ from merchant_assistant.data.db import connect
 from merchant_assistant.guardrails.input import check_input
 from merchant_assistant.llm.base import LLM, OutputTokenLimitLLM
 from merchant_assistant.observability.traces import TraceRecorder, TraceStore
-from merchant_assistant.orchestration.budget import BudgetGuard
+from merchant_assistant.orchestration.budget import BudgetGuard, CombinedBudgetGuard
 from merchant_assistant.orchestration.run import RunContext
 from merchant_assistant.orchestration.state import GraphState, RouterDecision
 from merchant_assistant.rag.index import KnowledgeIndex
@@ -163,13 +163,15 @@ class Orchestrator:
         llm: LLM,
         index: KnowledgeIndex | None,
         clock: Clock,
-        budget: BudgetGuard,
+        budget: BudgetGuard | CombinedBudgetGuard,
         traces: TraceStore,
         faults: dict[str, str] | None = None,
         mock_services: object | None = None,
         llm_factory: Callable[[str, str], LLM] | None = None,
+        knowledge_base=None,
     ) -> None:
         self.settings, self.llm, self.index, self.clock = settings, llm, index, clock
+        self.knowledge_base = knowledge_base
         self.budget, self.traces, self.faults = budget, traces, faults or {}
         self.mock_services = mock_services
         self.llm_factory = llm_factory
@@ -184,6 +186,9 @@ class Orchestrator:
         router_llm: LLM | None = None,
         router_decision: RouterDecision | None = None,
     ) -> MessageResponse:
+        captured_index, knowledge_version_id = (
+            self.knowledge_base.capture_active() if self.knowledge_base else (self.index, None)
+        )
         conn = connect(self.settings.db_path)
         try:
             store = ConversationStore(conn, self.clock)
@@ -201,11 +206,12 @@ class Orchestrator:
                 request_id=request_id,
                 settings=self.settings,
                 llm=self.llm,
-                index=self.index,
+                index=captured_index,
                 budget=self.budget,
                 trace=TraceRecorder(request_id),
                 tools=env,
                 clock=self.clock,
+                knowledge_version_id=knowledge_version_id,
                 agent_llms={
                     name: (
                         router_llm if name == "router" and router_llm is not None else self._profile_llm(name, config)
@@ -329,6 +335,8 @@ class Orchestrator:
                 "cost_estimate_usd": ctx.summary()["cost_estimate_usd"],
                 "cost_estimate_basis": ctx.summary()["cost_estimate_basis"],
                 "cost_is_estimate": True,
+                "knowledge_base_version_id": ctx.knowledge_version_id,
+                "knowledge_base_collection": ctx.index.collection if ctx.index else None,
             },
         }
         try:
@@ -348,11 +356,13 @@ class Orchestrator:
 
     def readiness(self) -> dict:
         index_chunks = 0
+        db_ok = self.settings.db_path.exists()
         try:
-            index_chunks = self.index.count() if self.index else 0
+            # Observe the index of the version that is active now, not the one the runtime started with.
+            active = self.knowledge_base.capture_active()[0] if self.knowledge_base and db_ok else self.index
+            index_chunks = active.count() if active else 0
         except Exception as exc:  # pragma: no cover - reported, not raised
             log.warning("index readiness failed: %s", exc)
-        db_ok = self.settings.db_path.exists()
         return {
             "ready": bool(index_chunks and db_ok),
             "index_chunks": index_chunks,

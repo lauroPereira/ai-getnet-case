@@ -37,20 +37,29 @@ def offline_orchestrator(
     seed(conn, clock)
     conn.close()
     index = None
+    budget = BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd)
     if with_index:
         index = KnowledgeIndex(
             open_qdrant(":memory:", settings.runtime_path), settings.qdrant_collection, HashEmbedder()
         )
         index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
+    from merchant_assistant.rag.kb import KnowledgeBase
+
+    knowledge_base = (
+        KnowledgeBase(db_path=settings.db_path, index=index, data_dir=settings.data_dir, budget=budget)
+        if index
+        else None
+    )
     llm = ScriptedLLM(handler or default_handler)
     orchestrator = Orchestrator(
         settings=settings,
         llm=llm,
         index=index,
         clock=clock,
-        budget=BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd),
+        budget=budget,
         traces=TraceStore(settings.runtime_path / "traces.sqlite3"),
         faults=faults,
         mock_services=in_process_client(),
+        knowledge_base=knowledge_base,
     )
     return orchestrator, llm

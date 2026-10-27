@@ -11,7 +11,7 @@ from merchant_assistant.data.clock import Clock
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import LLM, Usage
 from merchant_assistant.observability.traces import TraceRecorder
-from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard
+from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard, CombinedBudgetGuard
 from merchant_assistant.orchestration.state import RouterDecision
 from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import ToolEnv
@@ -26,7 +26,7 @@ class LimitExceeded(Exception):
 
 @dataclass
 class Reservation:
-    ledger_id: int
+    ledger_id: int | tuple[int, int]
     agent: str
     model: str
     amount: float
@@ -38,10 +38,11 @@ class RunContext:
     settings: Settings
     llm: LLM
     index: KnowledgeIndex | None
-    budget: BudgetGuard
+    budget: BudgetGuard | CombinedBudgetGuard
     trace: TraceRecorder
     tools: ToolEnv
     clock: Clock
+    knowledge_version_id: str | None = None
     agent_llms: dict[str, LLM] = field(default_factory=dict)
     router_override: RouterDecision | None = None
     model_calls: int = 0

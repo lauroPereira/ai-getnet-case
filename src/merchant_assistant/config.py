@@ -8,6 +8,8 @@ from pathlib import Path
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from merchant_assistant.orchestration.budget import ABSOLUTE_BUDGET_LIMIT_USD
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -41,7 +43,7 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 6
     retrieval_min_score: float = 0.30
 
-    budget_limit_usd: float = 1.00
+    budget_limit_usd: float = Field(default=1.00, ge=0, le=ABSOLUTE_BUDGET_LIMIT_USD, allow_inf_nan=False)
     max_request_cost_usd: float = 0.05
     max_model_calls: int = 8
     max_tool_calls: int = 8

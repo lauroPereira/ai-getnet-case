@@ -425,6 +425,7 @@ def test_migration_0006_round_trip_preserves_legacy_synthetic_records(settings):
     from merchant_assistant.data.seed import seed
 
     conn = connect(settings.db_path)
+    assert migrate(conn, 6) == ["down 0007_kb_versions"]
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT customer_id, display_name FROM customers ORDER BY customer_id").fetchall()
     assert current_version(conn) == 6
@@ -432,4 +433,121 @@ def test_migration_0006_round_trip_preserves_legacy_synthetic_records(settings):
     assert conn.execute("SELECT customer_id, display_name FROM customers ORDER BY customer_id").fetchall() == before
     assert migrate(conn, 6) == ["up 0006_profiles_api"]
     assert current_version(conn) == 6
+    assert migrate(conn, 7) == ["up 0007_kb_versions"]
+    assert current_version(conn) == 7
     conn.close()
+
+
+def test_kb_draft_build_test_activate_and_rollback_stay_isolated(settings, offline):
+    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    client, orchestrator, _ = offline()
+    admin = {"Authorization": f"Bearer {login(client, ADMIN_KEY)}"}
+    demo = {"Authorization": f"Bearer {login(client, DEMO_KEY)}"}
+
+    docs = client.get("/v1/kb/documents", headers=admin).json()["documents"]
+    fictional = next(item for item in docs if item["source_kind"] == "simulated_internal")
+    official = next(item for item in docs if item["source_kind"] == "public_official")
+    assert client.get(f"/v1/kb/documents/{official['document_id']}", headers=demo).status_code == 200
+    assert (
+        client.put(
+            f"/v1/kb/drafts/{official['document_id']}",
+            headers=admin,
+            json={"content": "attempt", "expected_revision": 0},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.put(
+            f"/v1/kb/drafts/{fictional['document_id']}",
+            headers=demo,
+            json={"content": "attempt", "expected_revision": 0},
+        ).status_code
+        == 403
+    )
+
+    original = client.get(f"/v1/kb/documents/{fictional['document_id']}", headers=admin).json()["content"]
+    edited = original + "\n\n## Synthetic note\nThis is a fictional operational note for the demo."
+    saved = client.put(
+        f"/v1/kb/drafts/{fictional['document_id']}", headers=admin, json={"content": edited, "expected_revision": 0}
+    )
+    assert saved.status_code == 200 and saved.json()["revision"] == 1
+    assert client.get(f"/v1/kb/drafts/{fictional['document_id']}/diff", headers=admin).json()["diff"]
+    assert (
+        client.put(
+            f"/v1/kb/drafts/{fictional['document_id']}", headers=admin, json={"content": edited, "expected_revision": 0}
+        ).status_code
+        == 409
+    )
+
+    estimated = client.post(
+        "/v1/kb/versions/estimate", headers=admin, json={"revisions": {fictional["document_id"]: 1}}
+    )
+    assert estimated.status_code == 200
+    estimate = estimated.json()
+    before = orchestrator.knowledge_base.capture_active()
+    built = client.post(
+        "/v1/kb/versions",
+        headers=admin,
+        json={
+            "revisions": {fictional["document_id"]: 1},
+            "expected_active_version_id": estimate["active_version_id"],
+            "expected_digest": estimate["digest"],
+            "confirmed": True,
+            "max_cost_usd": 0.0,
+        },
+    )
+    assert built.status_code == 201 and built.json()["state"] == "testing"
+    assert orchestrator.knowledge_base.capture_active()[1] == before[1]
+    assert (
+        client.post(
+            f"/v1/kb/versions/{built.json()['version_id']}/activate",
+            headers=demo,
+            json={"expected_active_version_id": before[1], "confirmed": True},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            f"/v1/kb/versions/{built.json()['version_id']}/test",
+            headers=admin,
+            json={"confirmed": False, "max_cost_usd": 0.0},
+        ).status_code
+        == 422
+    )
+    tested = client.post(
+        f"/v1/kb/versions/{built.json()['version_id']}/test",
+        headers=admin,
+        json={"confirmed": True, "max_cost_usd": 0.0},
+    )
+    assert tested.status_code == 200 and tested.json()["passed"]
+    activated = client.post(
+        f"/v1/kb/versions/{built.json()['version_id']}/activate",
+        headers=admin,
+        json={"expected_active_version_id": before[1], "confirmed": True},
+    )
+    assert activated.status_code == 200
+    captured, captured_version = orchestrator.knowledge_base.capture_active()
+    assert captured_version == built.json()["version_id"]
+    assert captured.collection != before[0].collection
+    from merchant_assistant.api.schemas import MessageRequest
+
+    orchestrator.handle(
+        MessageRequest(message="Olá, preciso de orientação.", user_id=settings.api_demo_customer_id),
+        "req_kb_version_capture",
+    )
+    assert orchestrator.trace("req_kb_version_capture")["detail"]["knowledge_base_version_id"] == captured_version
+    assert before[0].count() > 0
+    stale_activate = client.post(
+        f"/v1/kb/versions/{built.json()['version_id']}/activate",
+        headers=admin,
+        json={"expected_active_version_id": before[1], "confirmed": True},
+    )
+    assert stale_activate.status_code == 409
+    rollback = client.post(
+        f"/v1/kb/versions/{before[1]}/rollback",
+        headers=admin,
+        json={"expected_active_version_id": captured_version, "confirmed": True},
+    )
+    assert rollback.status_code == 200
+    assert orchestrator.knowledge_base.capture_active()[1] == before[1]

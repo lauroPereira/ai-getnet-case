@@ -297,6 +297,42 @@ DROP TABLE IF EXISTS profile_versions;
 DROP TABLE IF EXISTS profiles;
 """
 
+KB_VERSIONS_UP = """
+CREATE TABLE kb_documents (
+    document_id TEXT PRIMARY KEY, title TEXT NOT NULL, source_kind TEXT NOT NULL
+      CHECK(source_kind IN ('public_official','simulated_internal')),
+    url TEXT, metadata TEXT NOT NULL, content TEXT NOT NULL, content_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE kb_drafts (
+    document_id TEXT PRIMARY KEY REFERENCES kb_documents(document_id), revision INTEGER NOT NULL,
+    content TEXT NOT NULL, content_hash TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE kb_versions (
+    version_id TEXT PRIMARY KEY, parent_version_id TEXT, collection_name TEXT NOT NULL UNIQUE,
+    state TEXT NOT NULL CHECK(state IN ('building','testing','ready','active','retired','failed')),
+    manifest TEXT NOT NULL, snapshot TEXT NOT NULL, test_result TEXT, error TEXT,
+    created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE kb_state (
+    singleton INTEGER PRIMARY KEY CHECK(singleton=1), active_version_id TEXT,
+    previous_version_id TEXT, revision INTEGER NOT NULL DEFAULT 0
+);
+INSERT INTO kb_state(singleton, active_version_id, previous_version_id, revision) VALUES(1,NULL,NULL,0);
+CREATE TABLE kb_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT NOT NULL, action TEXT NOT NULL,
+    from_version_id TEXT, to_version_id TEXT, evidence TEXT NOT NULL, created_at TEXT NOT NULL
+);
+"""
+
+KB_VERSIONS_DOWN = """
+DROP TABLE IF EXISTS kb_events;
+DROP TABLE IF EXISTS kb_state;
+DROP TABLE IF EXISTS kb_versions;
+DROP TABLE IF EXISTS kb_drafts;
+DROP TABLE IF EXISTS kb_documents;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -304,6 +340,7 @@ MIGRATIONS: list[Migration] = [
     Migration(4, "handoff_conversation", HANDOFF_CONVERSATION_UP, HANDOFF_CONVERSATION_DOWN),
     Migration(5, "business_journeys", JOURNEYS_UP, JOURNEYS_DOWN),
     Migration(6, "profiles_api", PROFILES_API_UP, PROFILES_API_DOWN),
+    Migration(7, "kb_versions", KB_VERSIONS_UP, KB_VERSIONS_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

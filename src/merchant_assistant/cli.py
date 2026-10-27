@@ -15,7 +15,13 @@ def _openai_client(settings: Settings):
 
     if not settings.has_openai:
         raise SystemExit("OPENAI_API_KEY is required for this command.")
-    return OpenAI(api_key=settings.openai_api_key.get_secret_value())
+    return OpenAI(api_key=settings.openai_api_key.get_secret_value(), max_retries=0)
+
+
+def _budget_guard(settings: Settings):
+    from merchant_assistant.orchestration.budget import BudgetGuard
+
+    return BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd)
 
 
 def build_embedder(settings: Settings, *, fake: bool = False, budget=None):
@@ -23,8 +29,9 @@ def build_embedder(settings: Settings, *, fake: bool = False, budget=None):
 
     if fake:
         return HashEmbedder()
-    on_usage = budget.record_embedding if budget else None
-    return OpenAIEmbedder(_openai_client(settings), settings.embedding_model, settings.embedding_dim, on_usage=on_usage)
+    if budget is None:  # a paid embedding without the persistent guard must fail before any provider contact
+        raise SystemExit("Paid embeddings require the persistent budget guard.")
+    return OpenAIEmbedder(_openai_client(settings), settings.embedding_model, settings.embedding_dim, budget=budget)
 
 
 def cmd_ingest(settings: Settings, args) -> int:
@@ -42,6 +49,12 @@ def cmd_ingest(settings: Settings, args) -> int:
     return 1 if failed else 0
 
 
+_IMMUTABLE_HINT = (
+    "The CLI never replaces or rebuilds an existing collection (published knowledge base versions are immutable); "
+    "create a new version through the admin API (POST /v1/kb/versions)."
+)
+
+
 def build_index(settings: Settings, *, fake: bool = False, budget=None) -> dict:
     from merchant_assistant.rag.chunk import chunk_document
     from merchant_assistant.rag.documents import load_all
@@ -50,16 +63,19 @@ def build_index(settings: Settings, *, fake: bool = False, budget=None) -> dict:
     docs = load_all(settings.data_dir)
     chunks = [c for d in docs for c in chunk_document(d)]
     embedder = build_embedder(settings, fake=fake, budget=budget)
-    index = KnowledgeIndex(
-        open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant"), settings.qdrant_collection, embedder
-    )
-    manifest = index.rebuild(chunks, settings.runtime_path / "index_manifest.json")
-    index.client.close()
-    return manifest
+    client = open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant")
+    index = KnowledgeIndex(client, settings.qdrant_collection, embedder)
+    try:
+        if index.exists():
+            raise SystemExit(f"Collection '{settings.qdrant_collection}' already exists. {_IMMUTABLE_HINT}")
+        return index.rebuild(chunks, settings.runtime_path / "index_manifest.json")
+    finally:
+        client.close()
 
 
 def cmd_index(settings: Settings, args) -> int:
-    print(json.dumps(build_index(settings, fake=args.fake), indent=1))
+    budget = None if args.fake else _budget_guard(settings)
+    print(json.dumps(build_index(settings, fake=args.fake, budget=budget), indent=1))
     return 0
 
 
@@ -69,7 +85,7 @@ def cmd_eval_retrieval(settings: Settings, args) -> int:
     from merchant_assistant.rag.documents import load_all
     from merchant_assistant.rag.index import KnowledgeIndex, open_qdrant
 
-    embedder = build_embedder(settings, fake=args.fake)
+    embedder = build_embedder(settings, fake=args.fake, budget=None if args.fake else _budget_guard(settings))
     index = KnowledgeIndex(open_qdrant(":memory:", settings.runtime_path), "eval_retrieval", embedder)
     index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
     report = evaluate(index, load_cases(PROJECT_ROOT / "tests" / "scenarios" / "retrieval.jsonl"), k=args.k)
@@ -101,6 +117,16 @@ def _index_is_current(settings: Settings) -> bool:
         client.close()
 
 
+def _collection_exists(settings: Settings) -> bool:
+    from merchant_assistant.rag.index import KnowledgeIndex, open_qdrant
+
+    client = open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant")
+    try:
+        return KnowledgeIndex(client, settings.qdrant_collection, embedder=None).exists()
+    finally:
+        client.close()
+
+
 def _wait_for_qdrant(url: str, attempts: int = 30) -> None:
     import time
 
@@ -121,7 +147,6 @@ def cmd_bootstrap(settings: Settings, args) -> int:
     from merchant_assistant.data.clock import SystemClock
     from merchant_assistant.data.db import connect
     from merchant_assistant.data.seed import seed
-    from merchant_assistant.orchestration.budget import BudgetGuard
 
     if settings.qdrant_url and settings.qdrant_url != ":memory:":
         _wait_for_qdrant(settings.qdrant_url)
@@ -129,11 +154,17 @@ def cmd_bootstrap(settings: Settings, args) -> int:
     counts = seed(conn, SystemClock(settings.timezone))
     conn.close()
     print(f"seeded synthetic data: {counts}")
-    if _index_is_current(settings) and not args.force_index:
-        print("knowledge index is current; skipping rebuild")
+    if _collection_exists(settings):
+        if args.force_index:
+            raise SystemExit(
+                f"Refusing --force-index: collection '{settings.qdrant_collection}' exists. {_IMMUTABLE_HINT}"
+            )
+        if _index_is_current(settings):
+            print("knowledge index is current; skipping rebuild")
+        else:
+            print(f"knowledge index differs from the current sources and was left untouched. {_IMMUTABLE_HINT}")
         return 0
-    budget = BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd)
-    manifest = build_index(settings, budget=budget)
+    manifest = build_index(settings, budget=_budget_guard(settings))
     print(f"knowledge index built: {manifest['chunks']} chunks from {manifest['documents']} documents")
     return 0
 
