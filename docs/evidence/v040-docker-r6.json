@@ -1,0 +1,46 @@
+{
+  "candidate": "v0.4.0-local-r6",
+  "source_fingerprint_sha256": "d54fbd3799cecfefd0c467be217eb841e59d4ae9c89f607dc1a64967ae4d9367",
+  "backend_runtime_fingerprint_sha256": "b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5",
+  "image_id": "sha256:3dc18d777ae79407363fddd4f5ca65c862b2cbb059f5af61a08e2d9e362d5c85",
+  "created_at_utc": "2026-10-27 13:49:16 UTC",
+  "image_reused_from": "v040-docker-r5.json",
+  "new_build_performed": false,
+  "canonical_dockerfile_rebuilt": false,
+  "build_mode": "reuse pinned installed r5 image; backend runtime/build maps identical",
+  "backend_build_fingerprint_sha256": "ed67d7ff81f6ed49042e9f3aa332ac145fdd004fa38d6b99e7a05072155d816d",
+  "container_name": "getnet-v040-synthetic-r6",
+  "container_id": "84fe01827a345d8b57fbd7a8c6fa2e137e14d34f3b2101bc784a4b66c62b6879",
+  "api_url": "http://127.0.0.1:18841",
+  "runtime": "tmpfs /app/.pytest_cache/v040-docker-r6/api",
+  "installed_verification": {
+    "installed_files_checked": 124,
+    "mismatches": [],
+    "python": "3.13.13 (main, May 19 2026, 23:47:56) [GCC 14.2.0]",
+    "packages": {
+      "fastapi": "0.162.0",
+      "starlette": "1.10.0",
+      "pydantic": "2.14.1",
+      "openai": "3.39.0",
+      "qdrant-client": "1.20.0",
+      "langgraph": "1.2.18",
+      "mcp": "2.3.0"
+    },
+    "candidate": "v0.4.0-local-r6",
+    "runtime_fingerprint": "b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5",
+    "configuration_inputs_verified_at_build": [
+      "Dockerfile",
+      "docker-compose.yml",
+      "pyproject.toml"
+    ]
+  },
+  "ready_status": 200,
+  "versions": {
+    "app": "0.4.0",
+    "schema": 6,
+    "index_chunks": 145
+  },
+  "provider_keys_configured": false,
+  "paid_provider_calls": 0,
+  "scope": "Frontend-only correction. Reuses the incrementally installed r5 image after complete runtime/build map equality was confirmed. Fresh isolated synthetic tmpfs; 124 installed files match r6. No fresh canonical Docker rebuild or real-provider validation is claimed."
+}

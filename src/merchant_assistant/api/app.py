@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from merchant_assistant import __version__
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
+from merchant_assistant.api.v1 import router as v1_router
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
 
@@ -77,6 +78,7 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     )
     app.state.orchestrator = orchestrator or PlaceholderOrchestrator()
     app.state.settings = settings
+    app.include_router(v1_router)
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):

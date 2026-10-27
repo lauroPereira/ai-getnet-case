@@ -1,0 +1,51 @@
+{
+  "candidate": "v0.4.0-local-r6",
+  "verified_at_utc": "2026-10-27T13:58:33.179064+00:00",
+  "branch": "codex/v0.4.0-perfis-interface",
+  "head": "bd549cc921ccffb37bd304a0959b8a4b690d6421",
+  "manifest_sha256": "ff7b12e6f226114d8913620e4b84502892d1ed4bafd223deac669e13dc9f17e3",
+  "source_fingerprint_sha256": "d54fbd3799cecfefd0c467be217eb841e59d4ae9c89f607dc1a64967ae4d9367",
+  "runtime_fingerprint_sha256": "b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5",
+  "build_fingerprint_sha256": "ed67d7ff81f6ed49042e9f3aa332ac145fdd004fa38d6b99e7a05072155d816d",
+  "maps_checked": {
+    "backend": 51,
+    "web": 84,
+    "runtime": 127,
+    "build": 128
+  },
+  "source_mismatches": [],
+  "web_protected_files_checked": 29,
+  "protected_changes": [],
+  "web_git_initialized": false,
+  "installed_files_checked": 124,
+  "installed_mismatches": [],
+  "image_id": "sha256:3dc18d777ae79407363fddd4f5ca65c862b2cbb059f5af61a08e2d9e362d5c85",
+  "api_ready_status": 200,
+  "web_health_status": 200,
+  "evidence_sha256": {
+    "v040-developer-r5.md": "934322ae0a3346e88caaba50c7ef7a1cd56718fd4cd0b9bb78fdb24a936c7cc1",
+    "v040-developer-r6.md": "68a1afdf16aef3d167f4a1df469b5ce4730d4b2eea8c4757f2a6f9a74e82ec75",
+    "v040-reviewer-r5.md": "17f50336d9204736ac790b90d1796ebb202bc1dd389e9e205aec9008b0f9b69e",
+    "v040-reviewer-r6.md": "e02008c7d503f92d5f061dda292ef7f4eded0acb039e58c42c66b5b271533a63",
+    "v040-qa-r5.md": "a40c9d9714bb13debc5fd2c267ce904dc17ae61bbf227c098385d52eef7bf021",
+    "v040-qa-r6.md": "b952bd138dc9c092fac288c1d800da96a4778a124251ad518e8c7e63e1a1834c"
+  },
+  "application_paid_calls_in_v040": 0,
+  "agent_configuration": {
+    "agents": [
+      "/root/developer_v040",
+      "/root/reviewer_v040",
+      "/root/qa_v040"
+    ],
+    "model": "gpt-6-luna",
+    "effort": "high",
+    "sequential_roles": true
+  },
+  "limits": [
+    "CA32 real JEV not exercised",
+    "Authenticated model metadata not verified",
+    "Canonical Dockerfile not freshly rebuilt: installed r5 incremental image reused by identical runtime/build inputs",
+    "No v040 commit/push/tag/publication authorized or performed"
+  ],
+  "scope": "Post-QA source/environment reconciliation; not a release or real-provider validation."
+}

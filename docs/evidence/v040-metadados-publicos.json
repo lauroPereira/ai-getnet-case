@@ -1,0 +1,9 @@
+{
+  "scope": "Somente GET de metadados públicos sem Authorization, sem credencial, prompt, embedding, judge ou endpoint de inferência. Nenhuma chamada autenticada ou paga foi autorizada por esta verificação.",
+  "results": [
+    {"provider": "openai", "url": "https://api.openai.com/v1/models", "status": 401, "authorization_sent": false, "model_ids": []},
+    {"provider": "deepseek", "url": "https://api.deepseek.com/models", "status": 401, "authorization_sent": false, "model_ids": []},
+    {"provider": "typesafe", "url": "https://api.typesafe.ai/v1/models", "status": 403, "authorization_sent": false, "model_ids": []}
+  ],
+  "conclusion": "Não foi possível obter IDs por acesso público sem credenciais. Esta evidência não substitui consulta autenticada nem comprova gratuidade dessa consulta. O catálogo continua sustentado pelas fontes oficiais documentadas, com essa lacuna explícita."
+}

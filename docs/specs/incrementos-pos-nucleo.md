@@ -184,7 +184,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - [x] **CA-28** Os critérios do núcleo continuam passando em cada versão (testes e avaliação de regressão). Comprovado na v0.2.0; refazer a cada versão.
 - [x] **CA-29** UC-19 a UC-21 demonstrados com testes sem custo e com uma rodada real registrada (complementa CA-18 e CA-19).
 - [x] **CA-30** Demonstração MCP verificável conforme RF-45 (complementa CA-20).
-- [ ] **CA-31** Os quatro comportamentos de preço, a habilitação e o cancelamento demonstrados com dados sintéticos (complementa CA-21 a CA-23).
+- [x] **CA-31** Os quatro comportamentos de preço, a habilitação e o cancelamento demonstrados com dados sintéticos (complementa CA-21 a CA-23). Comprovado na v0.3.0; [resultado e limites](../evidence/v030-resultado.md).
 - [ ] **CA-32** Toggle LLM/JEV real funcionando no Streamlit, com mecanismo, versão, duração e custo registrados (complementa CA-24).
 - [ ] **CA-33** Indisponibilidade do JEV produz erro explícito, sem troca silenciosa.
 - [ ] **CA-34** A comparação de roteamento executa só os Routers; o atendimento roda uma vez.

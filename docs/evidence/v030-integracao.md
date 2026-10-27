@@ -57,3 +57,33 @@ não inferir conclusão somente da autorização ou deste documento preparatóri
 Recuperação por commit de reversão; migração 0005→0004 comprovada somente em
 bancos sintéticos isolados. A próxima versão parte de main atualizada após
 esta integração, com plano e aprovações próprias para novos contratos e dados.
+
+## Conclusão confirmada — 2026-10-27
+
+[PR #4](https://github.com/lauroPereira/ai-getnet-case/pull/4) integrado e
+fechado pelo provedor. Merge local com autor/committer do projeto:
+`bd549cc921ccffb37bd304a0959b8a4b690d6421`. A árvore do merge é idêntica
+à ponta aprovada do PR (`6b758949e0a3b144b73c6db5a99dbaac7eef28cb`).
+Main remota e tag anotada `v0.3.0` apontam para esse merge. Objeto da tag:
+`e6e137c2b22bb2a0bbcf3339e2d9d34d68579e0b`; identidade do tagger confere.
+Nenhuma chamada paga nesta etapa; repositório permanece privado.
+
+[Manifesto Git](v030-git-integracao.json) registra hashes SHA256 dos blobs
+versionados, reproduzíveis no commit/tag. Os manifestos anteriores calculam
+bytes de arquivos locais antes do commit. O atributo Git `text=auto` normaliza
+finais de linha ao adicionar/retirar arquivos; por isso a comparação literal
+dos hashes locais após checkout pode diferir, inclusive em arquivos antes
+com finais de linha mistos. Nenhum arquivo de produto mudou entre o primeiro
+commit validado e o merge; isso foi conferido diretamente nas árvores Git.
+
+Fingerprints canônicos de blobs: fonte (49 arquivos)
+`45e3d233e177e6aeb5c95ef9188b791b0cfc45893ce614c967e4946b4449c5f2`;
+runtime (31) `d26e1e2b22dc175561f9c3262bc8655a7616adc018e2a379c5f4b62c0bb8660e`;
+insumos Docker (126) `f615434d444915569d7fa188e13d90da315c8a73e3c248dba197c39323c69df8`.
+O algoritmo continua SHA256 do mapa JSON ordenado, compacto e `ensure_ascii=True`.
+Esses fingerprints também constam na anotação da tag.
+
+Após conferir a tag, main foi atualizada (`Already up to date`) e criada a
+branch `codex/v0.4.0-perfis-interface`, na mesma base, antes de qualquer
+documentação da próxima versão. Esta conclusão documental foi adicionada
+nessa branch; não altera a tag já enviada.

@@ -2,6 +2,33 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.4.0] — 2026-10-27 (approved for Git integration)
+
+### Added
+- Reversible migration 0006 for model profiles, immutable published versions, API principals and sessions, router comparisons and run snapshots.
+- Authenticated `/v1` API with opaque 60-minute session tokens stored only as SHA-256 digests, backend-enforced roles/ownership, revocation and atomic one-time comparison consumption.
+- Reference, Hybrid and Adjusted profiles validated against a dated provider catalog; JEV System One adapter is Router-only and has no silent provider fallback.
+- Separate Streamlit client, generated route map from the OpenAPI snapshot, Simulated and Recorded fixtures, and explicit Real (API) HTTP mode.
+- Peak-conservative DeepSeek estimates and per-run price basis; trace values label cost as an estimate.
+- Per-agent `max_output_tokens` for supported OpenAI/DeepSeek models, bounded by the agent's existing cap and applied identically to budget reservation and provider payload. Profile versions and run snapshots retain configured/effective values.
+- JEV's internal 80-token reservation estimate is excluded from effective-parameter maps because System One's request contract does not accept that parameter; comparison and reused-run snapshots preserve the distinction.
+- Changing the selected Router after a comparison discards the stale result. A new comparison requires an explicit click; the valid decision is consumed once with its original method and identifier.
+
+### Changed (contracts and data)
+- Backend package reports version 0.4.0; schema version 6 is reversible to version 5 while preserving prior business data.
+- `/v1` endpoints and Bearer security are described by `ai-getnet-case-web/openapi-v1.json`. Session revocation returns an empty 204 response; subsequent unauthorized requests on the same keep-alive connection receive a complete 401 response. Legacy `POST /messages` remains unchanged.
+
+### Validation
+- Backend strict script: **216 tests passed**, Ruff and skill checks passed; see the Developer r5 passage.
+- Web Ruff check/format passed; web pytest: **14 passed**. Independent Reviewer and QA rechecked both directions of Router selection changes; earlier QA covered Simulated/Recorded labels, compatible profile publication, effective parameters and rejection without a version change.
+- Synthetic HTTP client flow passed login, profile read, two-router comparison, selected message, run inspection, one-time consumption and authorization/revocation checks. No model-provider HTTP inference was sent.
+- Candidate r6, independent passages, installed-image checks and limits are linked from `docs/evidence/v040-resultado.md`.
+
+### Limitations
+- CA-32 live JEV request remains pending; no paid/provider inference API call was made. The catalog follows dated official documentation; no provider-account `GET /models` was sent because a free call could not be established from official pricing evidence.
+- The owner authorized private PRs and merges with these limits retained. Paid QA is authorized starting in v0.5.0 within the persistent US$5 project ceiling; v0.4.0 did not use that authorization retroactively.
+- Docker validation used an incremental installed image and identical backend inputs; a fresh canonical Docker rebuild is not claimed.
+
 ## [0.3.0] — 2026-10-27 (validated; approved for release)
 
 ### Added

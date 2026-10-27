@@ -124,7 +124,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         context={"contributions": data, "status": status, "language": language},
     )
     try:
-        draft = ctx.llm.parse(spec, PersonalityOutput, ctx).value.answer.strip()
+        draft = ctx.llm_for("personality").parse(spec, PersonalityOutput, ctx).value.answer.strip()
         source = "personality"
     except RECOVERABLE as exc:
         ctx.step_notes["error"] = str(exc)

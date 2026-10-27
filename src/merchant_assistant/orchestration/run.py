@@ -12,6 +12,7 @@ from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import LLM, Usage
 from merchant_assistant.observability.traces import TraceRecorder
 from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard
+from merchant_assistant.orchestration.state import RouterDecision
 from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import ToolEnv
 from merchant_assistant.tools.registry import ToolOutcome, execute
@@ -41,13 +42,20 @@ class RunContext:
     trace: TraceRecorder
     tools: ToolEnv
     clock: Clock
+    agent_llms: dict[str, LLM] = field(default_factory=dict)
+    router_override: RouterDecision | None = None
     model_calls: int = 0
     tool_calls: int = 0
     cost_usd: float = 0.0
     outcomes: list[ToolOutcome] = field(default_factory=list)
     usage_by_agent: dict[str, dict] = field(default_factory=dict)
+    cost_basis_by_model: dict[str, str] = field(default_factory=dict)
+    effective_parameters_by_agent: dict[str, dict[str, int]] = field(default_factory=dict)
     step_notes: dict[str, Any] = field(default_factory=dict)
     started: float = field(default_factory=time.perf_counter)
+
+    def llm_for(self, agent: str) -> LLM:
+        return self.agent_llms.get(agent, self.llm)
 
     # --- limits ---------------------------------------------------------------------------------------------------
 
@@ -61,7 +69,14 @@ class RunContext:
     # --- Meter protocol -------------------------------------------------------------------------------------------
 
     def reserve(
-        self, *, agent: str, model: str, est_input_tokens: int, max_output_tokens: int, web_search_calls: int = 0
+        self,
+        *,
+        agent: str,
+        model: str,
+        est_input_tokens: int,
+        max_output_tokens: int,
+        web_search_calls: int = 0,
+        effective_parameters: dict[str, int] | None = None,
     ) -> Reservation:
         self.check_time()
         if self.model_calls >= self.settings.max_model_calls:
@@ -71,6 +86,8 @@ class RunContext:
             raise BudgetExceeded("request", amount, self.settings.max_request_cost_usd - self.cost_usd)
         ledger_id = self.budget.reserve(request_id=self.request_id, agent=agent, model=model, amount=amount)
         self.model_calls += 1
+        if effective_parameters:
+            self.effective_parameters_by_agent[agent] = dict(effective_parameters)
         return Reservation(ledger_id, agent, model, amount)
 
     def settle(self, reservation: Reservation | None, usage: Usage | None) -> None:
@@ -80,10 +97,15 @@ class RunContext:
         self.budget.settle(reservation.ledger_id, actual)
         spent = reservation.amount if actual is None else actual
         self.cost_usd += spent
+        price_info = pricing.model_price(reservation.model)
+        basis = price_info.get("tier", "catalog-rate")
+        self.cost_basis_by_model[reservation.model] = basis
         agg = self.usage_by_agent.setdefault(
             reservation.agent,
-            {"calls": 0, "input_tokens": 0, "output_tokens": 0, "web_search_calls": 0, "cost_usd": 0.0},
+            {"calls": 0, "input_tokens": 0, "output_tokens": 0, "web_search_calls": 0, "cost_usd": 0.0, "models": []},
         )
+        if reservation.model not in agg["models"]:
+            agg["models"].append(reservation.model)
         agg["calls"] += 1
         agg["cost_usd"] = round(agg["cost_usd"] + spent, 8)
         if usage:
@@ -118,5 +140,9 @@ class RunContext:
             "model_calls": self.model_calls,
             "tool_calls": self.tool_calls,
             "cost_usd": round(self.cost_usd, 8),
+            "cost_estimate_usd": round(self.cost_usd, 8),
+            "cost_estimate_basis": self.cost_basis_by_model,
+            "cost_is_estimate": True,
             "usage_by_agent": self.usage_by_agent,
+            "effective_parameters_by_agent": self.effective_parameters_by_agent,
         }

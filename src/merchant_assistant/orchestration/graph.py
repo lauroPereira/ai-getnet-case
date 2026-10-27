@@ -21,7 +21,7 @@ from merchant_assistant.conversations import Conversation, ConversationStore
 from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
 from merchant_assistant.guardrails.input import check_input
-from merchant_assistant.llm.base import LLM
+from merchant_assistant.llm.base import LLM, OutputTokenLimitLLM
 from merchant_assistant.observability.traces import TraceRecorder, TraceStore
 from merchant_assistant.orchestration.budget import BudgetGuard
 from merchant_assistant.orchestration.run import RunContext
@@ -167,13 +167,23 @@ class Orchestrator:
         traces: TraceStore,
         faults: dict[str, str] | None = None,
         mock_services: object | None = None,
+        llm_factory: Callable[[str, str], LLM] | None = None,
     ) -> None:
         self.settings, self.llm, self.index, self.clock = settings, llm, index, clock
         self.budget, self.traces, self.faults = budget, traces, faults or {}
         self.mock_services = mock_services
+        self.llm_factory = llm_factory
         self.graph = build_graph()
 
-    def handle(self, request: MessageRequest, request_id: str) -> MessageResponse:
+    def handle(
+        self,
+        request: MessageRequest,
+        request_id: str,
+        *,
+        agent_models: dict[str, dict] | None = None,
+        router_llm: LLM | None = None,
+        router_decision: RouterDecision | None = None,
+    ) -> MessageResponse:
         conn = connect(self.settings.db_path)
         try:
             store = ConversationStore(conn, self.clock)
@@ -196,6 +206,13 @@ class Orchestrator:
                 trace=TraceRecorder(request_id),
                 tools=env,
                 clock=self.clock,
+                agent_llms={
+                    name: (
+                        router_llm if name == "router" and router_llm is not None else self._profile_llm(name, config)
+                    )
+                    for name, config in (agent_models or {}).items()
+                },
+                router_override=router_decision,
             )
             initial = GraphState(
                 request_id=request_id,
@@ -218,6 +235,27 @@ class Orchestrator:
             return response
         finally:
             conn.close()
+
+    def _profile_llm(self, agent: str, config: dict) -> LLM:
+        if self.llm_factory is None:
+            # Scripted tests remain deterministic for every catalogued profile.
+            if (config.get("provider") == "openai" and config.get("model") == self.llm.model) or type(
+                self.llm
+            ).__name__ == "ScriptedLLM":
+                llm = self.llm
+            else:
+                raise RuntimeError(f"provider {config.get('provider')} is not configured")
+        else:
+            provider, model = config["provider"], config["model"]
+            if provider == "typesafe" and agent != "router":
+                raise RuntimeError("TypeSafe is supported only for the router agent")
+            llm = self.llm_factory(provider, model)
+        parameters = config.get("parameters") or {}
+        if parameters:
+            if set(parameters) != {"max_output_tokens"} or config.get("provider") not in {"openai", "deepseek"}:
+                raise RuntimeError(f"unsupported parameters for {config.get('provider')}:{config.get('model')}")
+            llm = OutputTokenLimitLLM(llm, parameters["max_output_tokens"])
+        return llm
 
     def _persist(self, store: ConversationStore, conv: Conversation, state: GraphState) -> None:
         """Stores the turn: feedback on earlier attempts, new attempts, case state, cached prefix and messages."""
@@ -286,6 +324,11 @@ class Orchestrator:
                 "output_violations": state.output_violations,
                 "tools": [o.name for o in ctx.outcomes],
                 "conversation_id": state.conversation_id,
+                "models_by_agent": ctx.summary()["usage_by_agent"],
+                "effective_parameters_by_agent": ctx.summary()["effective_parameters_by_agent"],
+                "cost_estimate_usd": ctx.summary()["cost_estimate_usd"],
+                "cost_estimate_basis": ctx.summary()["cost_estimate_basis"],
+                "cost_is_estimate": True,
             },
         }
         try:

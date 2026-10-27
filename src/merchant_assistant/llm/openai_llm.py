@@ -59,6 +59,7 @@ class OpenAILLM:
             model=self.model,
             est_input_tokens=estimate_tokens(spec.instructions, spec.input),
             max_output_tokens=spec.max_output_tokens,
+            effective_parameters={"max_output_tokens": spec.max_output_tokens},
         )
         try:
             response = self.client.responses.parse(input=spec.input, text_format=schema, **self._common(spec, meter))
@@ -92,6 +93,7 @@ class OpenAILLM:
                 model=self.model,
                 est_input_tokens=estimate_tokens(spec.instructions, tools_text, str(items)),
                 max_output_tokens=spec.max_output_tokens,
+                effective_parameters={"max_output_tokens": spec.max_output_tokens},
             )
             try:
                 response = self.client.responses.parse(
@@ -138,6 +140,7 @@ class OpenAILLM:
             est_input_tokens=estimate_tokens(spec.instructions, spec.input),
             max_output_tokens=spec.max_output_tokens,
             web_search_calls=max_calls,
+            effective_parameters={"max_output_tokens": spec.max_output_tokens},
         )
         try:
             kwargs = self._common(spec, meter)

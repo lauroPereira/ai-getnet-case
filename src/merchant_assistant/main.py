@@ -35,6 +35,7 @@ def build_orchestrator(
     clock: Clock | None = None,
     faults: dict[str, str] | None = None,
 ) -> Orchestrator:
+    from merchant_assistant.llm.jev import JevRouter
     from merchant_assistant.llm.openai_llm import OpenAILLM
     from merchant_assistant.mocks.clients import MockServiceClient
     from merchant_assistant.rag.embed import OpenAIEmbedder
@@ -50,6 +51,28 @@ def build_orchestrator(
     index = KnowledgeIndex(
         open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant"), settings.qdrant_collection, embedder
     )
+
+    def llm_factory(provider: str, model: str) -> LLM:
+        if provider == "openai":
+            return OpenAILLM(openai_client(settings), model)
+        if provider == "deepseek":
+            if not settings.deepseek_api_key:
+                raise RuntimeError("DEEPSEEK_API_KEY is not configured")
+            from openai import OpenAI
+
+            deepseek_client = OpenAI(
+                api_key=settings.deepseek_api_key.get_secret_value(),
+                base_url="https://api.deepseek.com",
+                timeout=30,
+                max_retries=1,
+            )
+            return OpenAILLM(deepseek_client, model)
+        if provider == "typesafe" and model == "jev-1.14.0":
+            if not settings.typesafe_api_key:
+                raise RuntimeError("TYPESAFE_API_KEY is not configured")
+            return JevRouter(settings.typesafe_api_key.get_secret_value())
+        raise RuntimeError("model provider or identifier is not available")
+
     return Orchestrator(
         settings=settings,
         llm=llm,
@@ -59,6 +82,7 @@ def build_orchestrator(
         traces=TraceStore(settings.runtime_path / "traces.sqlite3"),
         faults=faults,
         mock_services=MockServiceClient(settings.mocks_url, timeout=2.0),
+        llm_factory=llm_factory,
     )
 
 

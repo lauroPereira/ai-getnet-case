@@ -13,13 +13,9 @@ curl -s localhost:8000/messages -H 'content-type: application/json' \
   -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?", "user_id": "cliente1988"}'
 ```
 
-**Status:** v0.3.0 has been validated and approved by the owner for release; integration and tag execution are tracked in the
-[central validation record](docs/evidence/v030-resultado.md). The local r6 strict run passed 191 tests.
-Independent technical review and QA both returned a passing assessment. Validation re-evaluated 40 original real HTTP responses by deterministic replay and repeated
-four multi-turn conversations live (4/4); these are separate checks. See the [Developer r6 passage](docs/evidence/v030-developer-r6.md),
-[Reviewer r6](docs/evidence/v030-reviewer-r6.md), [QA r6](docs/evidence/v030-qa-r6.md),
-[HTTP replay](docs/evidence/v030-real-http-r2-replay.md) and [live conversations](docs/evidence/v030-real-conversations-r3.md).
-The release adds conversation memory, technical follow-up, MCP and synthetic pricing, card-scheme enablement and sale-cancellation journeys.
+**Status:** v0.4.0 is approved for Git integration with its real-provider validation limits recorded. The backend has **216 passing tests** and the web suite **14 passing tests**, with independent review and functional QA of the corrected flows. Profile output limits, publication, effective snapshots, Simulated/Recorded labels and comparison selection are covered. Changing a comparison choice discards the old result and requires an explicit new comparison; reruns do not trigger one. No paid/provider inference call was made in v0.4.0. Live JEV (CA-32) and authenticated model availability remain open for the next version's authorized QA. See the [validation result](docs/evidence/v040-resultado.md), [integration record](docs/evidence/v040-integracao.md), [catalog evidence](docs/evidence/v040-catalogo-fontes.md), [parameter evidence](docs/evidence/v040-parametros-modelo-fontes.md) and [API contract](docs/contracts/api-v040.md).
+
+The v0.3.0 release history and its evidence remain below as historical context; they do not validate the v0.4.0 candidate.
 
 ---
 
@@ -81,6 +77,19 @@ uvicorn --factory merchant_assistant.main:create_application --reload
 merchant-assistant ask "Qual a cotação do euro hoje?" --trace  # one message, in process, with its trace
 ```
 
+### Streamlit interface
+
+The separate `ai-getnet-case-web` sibling project (see its README) is a Streamlit client of the versioned `/v1` API. It never reads backend files or receives provider keys. Use **Simulado** or **Gravado** for fixture-only behavior, or select **Real (API)** and enter a backend URL plus a demo/admin access key configured on that backend. The client reuses one HTTP client per Streamlit session, closes it at logout, and sends requests only after explicit actions.
+
+```powershell
+# In the web project, with its own Python environment:
+python -m pip install -e ".[test]"
+$env:BACKEND_API_URL = "http://localhost:8000"
+streamlit run app.py
+```
+
+For a no-key local HTTP exercise, use the synthetic backend harness with a new runtime directory under `.pytest_cache`, then point `BACKEND_API_URL` to that loopback server. The harness has programmed providers, a fresh isolated SQLite/Qdrant runtime, and no provider credentials; it is not a production configuration. Detailed commands are in the [developer passage](docs/evidence/v040-developer-r1.md).
+
 ### MCP server
 
 The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
@@ -102,7 +111,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 ### Tests and evaluation
 
 ```bash
-pytest                                   # 191 tests in the validated v0.3.0 release; no network or cost
+pytest                                   # backend tests; use tools/scripts/lint_and_tests.py --strict for strict validation
 ruff check .
 merchant-assistant eval --scripted       # end-to-end evaluation offline (wiring only, zero cost)
 merchant-assistant eval --judge          # real evaluation; paid, check the current budget before running
@@ -128,7 +137,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `DEMO_MODE` | `false` (`true` in compose) | Enables `GET /traces/{id}` |
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
 
-`TYPESAFE_API_KEY` and `DEEPSEEK_API_KEY` are optional and unused by the core (planned router comparison).
+`TYPESAFE_API_KEY` and `DEEPSEEK_API_KEY` are optional provider credentials used only by the v0.4.0 backend Router adapters. `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` configure the backend `/v1` session bootstrap; keep them private and leave them empty in the repository example. The web app accepts only one of these backend access keys and never accepts a provider key.
 
 ## Architecture
 
@@ -399,9 +408,8 @@ merchant's language while code, prompts and this README are in English.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
-- Planned ([increments spec](docs/specs/incrementos-pos-nucleo.md)): v0.4.0 the Jev Router toggle, per-agent models and the
-  Streamlit interface; v0.5.0–v0.7.0 knowledge-base versions, per-step evaluation with supervised improvement,
-  experiments and sharing.
+- v0.4.0 implements the Jev Router toggle, per-agent profiles and Streamlit interface. Real JEV validation (CA-32), independent review/QA and release approval remain open; see the [developer passage](docs/evidence/v040-developer-r1.md).
+- Planned after v0.4.0: v0.5.0–v0.7.0 knowledge-base versions, per-step evaluation with supervised improvement, experiments and sharing.
 - `user_id` is not authentication. Production would bind it to an authenticated session and authorize every tool
   call against it.
 
