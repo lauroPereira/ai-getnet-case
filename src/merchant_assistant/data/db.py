@@ -102,8 +102,16 @@ CREATE TABLE IF NOT EXISTS audit_events (
 """
 
 SYNTHETIC_TABLES = (
-    "audit_events", "authorization_events", "payouts", "receivables", "sales",
-    "devices", "support_cases", "contracts", "response_codes", "customers",
+    "audit_events",
+    "authorization_events",
+    "payouts",
+    "receivables",
+    "sales",
+    "devices",
+    "support_cases",
+    "contracts",
+    "response_codes",
+    "customers",
 )
 
 

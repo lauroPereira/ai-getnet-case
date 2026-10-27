@@ -41,9 +41,11 @@ POLICY = {
     },
     "account_not_found": {
         "pt": "Não localizei sua conta no ambiente de demonstração, então não consigo consultar dados do seu "
-        "negócio. Posso responder dúvidas gerais sobre os produtos Getnet.",
+        "negócio. Confira se o identificador de usuário está correto ou peça para falar com um atendente. Enquanto "
+        "isso, posso responder dúvidas gerais sobre os produtos Getnet.",
         "en": "I couldn't find your account in the demo environment, so I can't check your business data. "
-        "I can still answer general questions about Getnet products.",
+        "Please check that your user ID is correct, or ask to talk to an agent. Meanwhile, I can answer general "
+        "questions about Getnet products.",
     },
     "no_evidence": {
         "pt": "Não encontrei essa informação nas fontes oficiais da Getnet que consultei.",

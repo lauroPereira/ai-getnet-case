@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -6,7 +6,7 @@ from merchant_assistant.data.clock import FixedClock, add_business_days, resolve
 
 
 def test_fixed_clock_uses_sao_paulo_time_zone():
-    clock = FixedClock(datetime(2026, 10, 27, 1, 30, tzinfo=timezone.utc))
+    clock = FixedClock(datetime(2026, 10, 27, 1, 30, tzinfo=UTC))
     # 01:30 UTC is still the previous day in São Paulo (UTC-3).
     assert today(clock) == date(2026, 10, 26)
 

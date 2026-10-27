@@ -17,14 +17,34 @@ MAIN_CUSTOMER = "cliente1988"
 OTHER_CUSTOMER = "cliente_demo_002"
 
 RESPONSE_CODES = [
-    ("05", "issuer_declined", "Transação não autorizada pelo banco emissor do cartão.",
-     "Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.", 0),
-    ("51", "insufficient_funds", "Saldo ou limite insuficiente no cartão do comprador.",
-     "Ofereça outro meio de pagamento, como outro cartão ou Pix.", 0),
-    ("57", "not_permitted", "Transação não permitida para este cartão.",
-     "Confirme se a bandeira e a modalidade estão habilitadas; se estiverem, peça outro meio de pagamento.", 0),
-    ("91", "issuer_unavailable", "Emissor do cartão temporariamente indisponível.",
-     "Aguarde alguns minutos e tente novamente.", 1),
+    (
+        "05",
+        "issuer_declined",
+        "Transação não autorizada pelo banco emissor do cartão.",
+        "Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.",
+        0,
+    ),
+    (
+        "51",
+        "insufficient_funds",
+        "Saldo ou limite insuficiente no cartão do comprador.",
+        "Ofereça outro meio de pagamento, como outro cartão ou Pix.",
+        0,
+    ),
+    (
+        "57",
+        "not_permitted",
+        "Transação não permitida para este cartão.",
+        "Confirme se a bandeira e a modalidade estão habilitadas; se estiverem, peça outro meio de pagamento.",
+        0,
+    ),
+    (
+        "91",
+        "issuer_unavailable",
+        "Emissor do cartão temporariamente indisponível.",
+        "Aguarde alguns minutos e tente novamente.",
+        1,
+    ),
 ]
 
 
@@ -54,10 +74,20 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
         conn.executemany(
             "INSERT INTO contracts VALUES (?,?,?,?,?)",
             [
-                (MAIN_CUSTOMER, json.dumps(["get_smart", "pix", "link_de_pagamento", "get_conta"]), "get_conta",
-                 "debit_d1_credit_d2", (d0 - timedelta(days=400)).isoformat()),
-                (OTHER_CUSTOMER, json.dumps(["get_classica", "get_tap", "pix"]), "bank_account",
-                 "debit_d1_credit_d30", (d0 - timedelta(days=90)).isoformat()),
+                (
+                    MAIN_CUSTOMER,
+                    json.dumps(["get_smart", "pix", "link_de_pagamento", "get_conta"]),
+                    "get_conta",
+                    "debit_d1_credit_d2",
+                    (d0 - timedelta(days=400)).isoformat(),
+                ),
+                (
+                    OTHER_CUSTOMER,
+                    json.dumps(["get_classica", "get_tap", "pix"]),
+                    "bank_account",
+                    "debit_d1_credit_d30",
+                    (d0 - timedelta(days=90)).isoformat(),
+                ),
             ],
         )
 
@@ -80,13 +110,25 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
 
         y = d0 - timedelta(days=1)
         receivables = [
-            receivable("rcv_1988_0001", "sale_1988_0001", MAIN_CUSTOMER, 14806, 194, add_business_days(y, 1), "LOT_DONE"),
-            receivable("rcv_1988_0002", "sale_1988_0002", MAIN_CUSTOMER, 116220, 3780, add_business_days(y, 2),
-                       "LOT_DONE"),
+            receivable(
+                "rcv_1988_0001", "sale_1988_0001", MAIN_CUSTOMER, 14806, 194, add_business_days(y, 1), "LOT_DONE"
+            ),
+            receivable(
+                "rcv_1988_0002", "sale_1988_0002", MAIN_CUSTOMER, 116220, 3780, add_business_days(y, 2), "LOT_DONE"
+            ),
             receivable("rcv_1988_0003", "sale_1988_0003", MAIN_CUSTOMER, 8000, 0, y, "SETTLED"),
-            receivable("rcv_1988_0004", "sale_1988_0004", MAIN_CUSTOMER, 48425, 1575,
-                       add_business_days(d0 - timedelta(days=6), 2), "SETTLED"),
-            receivable("rcv_002_0001", "sale_002_0001", OTHER_CUSTOMER, 95436, 3564, y + timedelta(days=30), "LOT_DONE"),
+            receivable(
+                "rcv_1988_0004",
+                "sale_1988_0004",
+                MAIN_CUSTOMER,
+                48425,
+                1575,
+                add_business_days(d0 - timedelta(days=6), 2),
+                "SETTLED",
+            ),
+            receivable(
+                "rcv_002_0001", "sale_002_0001", OTHER_CUSTOMER, 95436, 3564, y + timedelta(days=30), "LOT_DONE"
+            ),
             receivable("rcv_002_0002", "sale_002_0002", OTHER_CUSTOMER, 4441, 59, add_business_days(y, 1), "LOT_DONE"),
         ]
         conn.executemany("INSERT INTO receivables VALUES (?,?,?,?,?,?,?,?)", receivables)
@@ -103,18 +145,47 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
         conn.executemany(
             "INSERT INTO devices VALUES (?,?,?,?,?,?,?)",
             [
-                ("dev_1988_gs01", MAIN_CUSTOMER, "Get Smart", "wifi", "offline", _iso(now - timedelta(hours=3)),
-                 json.dumps({"wifi_configured": True, "mobile_data": "available", "firmware": "demo-4.2"})),
-                ("dev_002_gc01", OTHER_CUSTOMER, "Get Clássica", "chip_3g", "online",
-                 _iso(now - timedelta(minutes=4)), json.dumps({"wifi_configured": False, "firmware": "demo-3.9"})),
-                ("dev_002_tap01", OTHER_CUSTOMER, "Get Tap", "mobile", "online", _iso(now - timedelta(minutes=9)),
-                 json.dumps({"android": "14"})),
+                (
+                    "dev_1988_gs01",
+                    MAIN_CUSTOMER,
+                    "Get Smart",
+                    "wifi",
+                    "offline",
+                    _iso(now - timedelta(hours=3)),
+                    json.dumps({"wifi_configured": True, "mobile_data": "available", "firmware": "demo-4.2"}),
+                ),
+                (
+                    "dev_002_gc01",
+                    OTHER_CUSTOMER,
+                    "Get Clássica",
+                    "chip_3g",
+                    "online",
+                    _iso(now - timedelta(minutes=4)),
+                    json.dumps({"wifi_configured": False, "firmware": "demo-3.9"}),
+                ),
+                (
+                    "dev_002_tap01",
+                    OTHER_CUSTOMER,
+                    "Get Tap",
+                    "mobile",
+                    "online",
+                    _iso(now - timedelta(minutes=9)),
+                    json.dumps({"android": "14"}),
+                ),
             ],
         )
 
         events = [
-            ("txn_1988_0101", MAIN_CUSTOMER, "dev_1988_gs01", now - timedelta(hours=3, minutes=10), 23000, "credit",
-             "declined", "51"),
+            (
+                "txn_1988_0101",
+                MAIN_CUSTOMER,
+                "dev_1988_gs01",
+                now - timedelta(hours=3, minutes=10),
+                23000,
+                "credit",
+                "declined",
+                "51",
+            ),
             ("txn_1988_0100", MAIN_CUSTOMER, "dev_1988_gs01", at(-3, 16, 2), 4590, "debit", "declined", "05"),
             ("txn_1988_0099", MAIN_CUSTOMER, "dev_1988_gs01", at(-1, 13, 5), 120000, "credit", "approved", "00"),
             ("txn_002_0201", OTHER_CUSTOMER, "dev_002_gc01", at(-1, 10, 0), 99000, "credit", "approved", "00"),
@@ -127,12 +198,26 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
         conn.executemany(
             "INSERT INTO support_cases VALUES (?,?,?,?,?,?,?,?)",
             [
-                ("case_1988_001", MAIN_CUSTOMER, "device", "closed",
-                 "Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.",
-                 json.dumps([{"step": "Reconfigurar o Wi-Fi da maquininha", "result": "resolveu"}]),
-                 _iso(at(-60, 10, 0)), _iso(at(-60, 10, 25))),
-                ("case_002_001", OTHER_CUSTOMER, "receivables", "open", "Dúvida sobre prazo de recebimento em 30 dias.",
-                 json.dumps([]), _iso(at(-2, 9, 0)), None),
+                (
+                    "case_1988_001",
+                    MAIN_CUSTOMER,
+                    "device",
+                    "closed",
+                    "Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.",
+                    json.dumps([{"step": "Reconfigurar o Wi-Fi da maquininha", "result": "resolveu"}]),
+                    _iso(at(-60, 10, 0)),
+                    _iso(at(-60, 10, 25)),
+                ),
+                (
+                    "case_002_001",
+                    OTHER_CUSTOMER,
+                    "receivables",
+                    "open",
+                    "Dúvida sobre prazo de recebimento em 30 dias.",
+                    json.dumps([]),
+                    _iso(at(-2, 9, 0)),
+                    None,
+                ),
             ],
         )
         conn.execute("COMMIT")

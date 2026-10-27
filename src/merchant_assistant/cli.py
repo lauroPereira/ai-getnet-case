@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from merchant_assistant.config import PROJECT_ROOT, Settings, get_settings
 
@@ -100,6 +101,21 @@ def _index_is_current(settings: Settings) -> bool:
         client.close()
 
 
+def _wait_for_qdrant(url: str, attempts: int = 30) -> None:
+    import time
+
+    from qdrant_client import QdrantClient
+
+    for attempt in range(attempts):
+        try:
+            QdrantClient(url=url, timeout=3).get_collections()
+            return
+        except Exception:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(2)
+
+
 def cmd_bootstrap(settings: Settings, args) -> int:
     """Seeds the synthetic data (dates relative to today) and builds the index only when needed."""
     from merchant_assistant.data.clock import SystemClock
@@ -107,6 +123,8 @@ def cmd_bootstrap(settings: Settings, args) -> int:
     from merchant_assistant.data.seed import seed
     from merchant_assistant.orchestration.budget import BudgetGuard
 
+    if settings.qdrant_url and settings.qdrant_url != ":memory:":
+        _wait_for_qdrant(settings.qdrant_url)
     conn = connect(settings.db_path)
     counts = seed(conn, SystemClock(settings.timezone))
     conn.close()
@@ -153,6 +171,52 @@ def cmd_smoke(settings: Settings, args) -> int:
     return 1 if failures else 0
 
 
+def cmd_eval(settings: Settings, args) -> int:
+    """End-to-end evaluation. --scripted runs offline at zero cost; otherwise the real system is used (paid)."""
+    import tempfile
+
+    from merchant_assistant.evaluation.runner import BudgetMeter, load_cases, run, summarize, write_report
+
+    scenarios = PROJECT_ROOT / "tests" / "scenarios"
+    cases = load_cases([scenarios / "challenge_examples.jsonl", scenarios / "core_cases.jsonl"])
+    if args.split != "all":
+        cases = [c for c in cases if c.split == args.split]
+    if args.scripted:
+        from merchant_assistant.testing import offline_orchestrator
+
+        tmp = Path(tempfile.mkdtemp(prefix="eval-"))
+        offline = settings.model_copy(
+            update={"runtime_dir": tmp, "qdrant_url": ":memory:", "retrieval_min_score": 0.05}
+        )
+        orchestrator, _ = offline_orchestrator(offline)
+        judge_llm, meter, mode = None, None, "scripted"
+    else:
+        from merchant_assistant.main import build_orchestrator
+
+        orchestrator = build_orchestrator(settings)
+        judge_llm = orchestrator.llm if args.judge else None
+        meter, mode = BudgetMeter(orchestrator.budget), "real"
+    rows = run(orchestrator, cases, judge_llm=judge_llm, prompts_dir=settings.prompts_dir, judge_meter=meter)
+    summary = summarize(rows)
+    if meter:
+        summary["judge_cost_usd"] = round(meter.cost_usd, 5)
+    config = {
+        "mode": mode,
+        "model": orchestrator.llm.model,
+        "embedding": settings.embedding_model,
+        "split": args.split,
+        "judge": bool(judge_llm),
+        "cases": len(cases),
+    }
+    md, js = write_report(rows, summary, Path(args.out), args.name, config)
+    print(json.dumps(summary["overall"], indent=1))
+    print(f"report: {md}")
+    print(f"results: {js}")
+    if hasattr(orchestrator, "close"):
+        orchestrator.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="merchant-assistant")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -169,6 +233,12 @@ def main(argv: list[str] | None = None) -> int:
     p_ask.add_argument("--user-id", default="cliente1988")
     p_ask.add_argument("--conversation-id", default=None)
     p_ask.add_argument("--trace", action="store_true")
+    p_evalx = sub.add_parser("eval", help="End-to-end evaluation over the labeled scenarios.")
+    p_evalx.add_argument("--scripted", action="store_true", help="Offline scripted model (zero cost).")
+    p_evalx.add_argument("--judge", action="store_true", help="Add a model-graded rubric (paid).")
+    p_evalx.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
+    p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
+    p_evalx.add_argument("--name", default="avaliacao")
     p_smoke = sub.add_parser("smoke", help="Send the 10 challenge examples to a running API.")
     p_smoke.add_argument("--url", default="http://localhost:8000")
     args = parser.parse_args(argv)
@@ -180,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
         "bootstrap": cmd_bootstrap,
         "ask": cmd_ask,
         "smoke": cmd_smoke,
+        "eval": cmd_eval,
     }
     return handlers[args.command](settings, args)
 

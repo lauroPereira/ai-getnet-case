@@ -171,24 +171,26 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; 
 
 ### Núcleo (fatias 0 e 1)
 
-- [ ] **CA-01** Os 10 exemplos, enviados exatamente como no enunciado, retornam HTTP 200 com a rota esperada ou uma rota equivalente aceita no conjunto rotulado, resposta no idioma da mensagem e fontes ou fatos verificáveis. Comprovado por teste de integração determinístico e por uma rodada real limitada.
-- [ ] **CA-02** As variantes em português (UC-11) atendem os mesmos critérios.
-- [ ] **CA-03** UC-05 e UC-08 mostram Knowledge e Customer Support contribuindo na mesma requisição.
-- [ ] **CA-04** A ingestão indexa `https://www.getnet.net/en` e as páginas brasileiras verificadas; cada fragmento mantém seus metadados; Recall@k medido no conjunto rotulado e relatado com o tamanho da amostra.
-- [ ] **CA-05** Perguntas gerais não executam histórico nem healthcheck e não enviam identificador do cliente à busca.
-- [ ] **CA-06** Tentativas de acessar outro cliente são bloqueadas pela ferramenta e registradas.
-- [ ] **CA-07** Com relógio fixo, os testes de datas são determinísticos; na demonstração, `cliente1988` tem vendas do dia anterior à data de execução.
-- [ ] **CA-08** `user_id` desconhecido segue RF-21.
-- [ ] **CA-09** UC-12 e UC-16 recebem o tratamento esperado; dados sensíveis aparecem mascarados nos logs.
-- [ ] **CA-10** UC-14 gera um único caso por requisição repetida, com todos os campos do pacote.
-- [ ] **CA-11** Falhas simuladas de UC-15 produzem resposta controlada e registrada.
-- [ ] **CA-12** Limites de chamadas, tempo e orçamento interrompem a execução com resposta útil; custo por requisição registrado.
-- [ ] **CA-13** Em ambiente limpo, com apenas `OPENAI_API_KEY`, `docker compose up --build` deixa a API pronta e os 10 exemplos executáveis; passos no README.
-- [ ] **CA-14** A suíte de testes executa sem rede e sem chamadas pagas; lint limpo.
-- [ ] **CA-15** Logs e traces por `request_id` mostram rota, agentes, ferramentas, duração por etapa, tokens e custo.
-- [ ] **CA-16** O README cobre build, configuração, execução, testes, arquitetura, fluxo de mensagens, pipeline RAG (ingestão → armazenamento → recuperação → geração), uso de ferramentas pelos modelos, estratégia de testes, avaliação e observabilidade.
-- [ ] **CA-17** Um relatório de avaliação registra configuração, amostra, resultado por caso, custo e latência, separando medições de metas.
-- [ ] **CA-26** Toda resposta passa pela etapa Personality; a verificação de saída confirma que valores, datas e fontes continuam iguais aos das contribuições dos agentes.
+Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipeline RAG, execução real, avaliação do núcleo e smoke do Docker.
+
+- [x] **CA-01** Os 10 exemplos, enviados exatamente como no enunciado, retornam HTTP 200 com a rota esperada ou uma rota equivalente aceita no conjunto rotulado, resposta no idioma da mensagem e fontes ou fatos verificáveis. Comprovado por teste de integração determinístico e por uma rodada real limitada.
+- [x] **CA-02** As variantes em português (UC-11) atendem os mesmos critérios.
+- [x] **CA-03** UC-05 e UC-08 mostram Knowledge e Customer Support contribuindo na mesma requisição.
+- [x] **CA-04** A ingestão indexa `https://www.getnet.net/en` e as páginas brasileiras verificadas; cada fragmento mantém seus metadados; Recall@k medido no conjunto rotulado e relatado com o tamanho da amostra.
+- [x] **CA-05** Perguntas gerais não executam histórico nem healthcheck e não enviam identificador do cliente à busca.
+- [x] **CA-06** Tentativas de acessar outro cliente são bloqueadas pela ferramenta e registradas.
+- [x] **CA-07** Com relógio fixo, os testes de datas são determinísticos; na demonstração, `cliente1988` tem vendas do dia anterior à data de execução.
+- [x] **CA-08** `user_id` desconhecido segue RF-21.
+- [x] **CA-09** UC-12 e UC-16 recebem o tratamento esperado; dados sensíveis aparecem mascarados nos logs.
+- [x] **CA-10** UC-14 gera um único caso por requisição repetida, com todos os campos do pacote.
+- [x] **CA-11** Falhas simuladas de UC-15 produzem resposta controlada e registrada.
+- [x] **CA-12** Limites de chamadas, tempo e orçamento interrompem a execução com resposta útil; custo por requisição registrado.
+- [x] **CA-13** Em ambiente limpo, com apenas `OPENAI_API_KEY`, `docker compose up --build` deixa a API pronta e os 10 exemplos executáveis; passos no README.
+- [x] **CA-14** A suíte de testes executa sem rede e sem chamadas pagas; lint limpo.
+- [x] **CA-15** Logs e traces por `request_id` mostram rota, agentes, ferramentas, duração por etapa, tokens e custo.
+- [x] **CA-16** O README cobre build, configuração, execução, testes, arquitetura, fluxo de mensagens, pipeline RAG (ingestão → armazenamento → recuperação → geração), uso de ferramentas pelos modelos, estratégia de testes, avaliação e observabilidade.
+- [x] **CA-17** Um relatório de avaliação registra configuração, amostra, resultado por caso, custo e latência, separando medições de metas.
+- [x] **CA-26** Toda resposta passa pela etapa Personality; a verificação de saída confirma que valores, datas e fontes continuam iguais aos das contribuições dos agentes.
 
 ### Fatias 2 a 4
 

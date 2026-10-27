@@ -43,7 +43,7 @@ addopts = "-q --import-mode=importlib"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = ["discovery", "data", ".claude", ".agents", "skills"]
+extend-exclude = ["discovery", ".claude", ".agents", "skills"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]

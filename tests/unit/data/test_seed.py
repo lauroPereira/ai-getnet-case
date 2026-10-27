@@ -47,6 +47,7 @@ def test_customers_have_distinct_data(tmp_path):
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     owners = {r["customer_id"] for r in conn.execute("SELECT customer_id FROM devices")}
     assert owners == {MAIN_CUSTOMER, OTHER_CUSTOMER}
-    declined = conn.execute("SELECT COUNT(*) FROM authorization_events WHERE status='declined' AND customer_id=?",
-                            (MAIN_CUSTOMER,)).fetchone()[0]
+    declined = conn.execute(
+        "SELECT COUNT(*) FROM authorization_events WHERE status='declined' AND customer_id=?", (MAIN_CUSTOMER,)
+    ).fetchone()[0]
     assert declined == 2
