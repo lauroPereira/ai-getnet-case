@@ -29,15 +29,15 @@ O desafio pede um serviço com pelo menos três agentes cooperando para interpre
 
 ## Escopo
 
-A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; as fatias 3 e 4 são cortáveis conforme o prazo.
+A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável. O núcleo (fatias 0 e 1) foi entregue como versão 0.1.0. Desde 2026-10-26, as fatias 2 a 4 são detalhadas, ampliadas e **promovidas a obrigatórias** pela [especificação complementar](incrementos-pos-nucleo.md), organizada nas versões 0.2.0 a 0.7.0.
 
 | Fatia | Conteúdo | Obrigatoriedade |
 | --- | --- | --- |
 | 0 — Verificação | Fontes oficiais dos exemplos, imagem do enunciado, acesso e preços dos modelos | Pré-requisito |
 | 1 — Núcleo | API, Router com guardrails, Knowledge com RAG e busca web, Customer Support com ferramentas do núcleo, Escalation Agent, Personality, orquestração com limites, logs e traces, Docker, testes e avaliação dos 10 exemplos | Obrigatória |
-| 2 — Confiabilidade e acompanhamento | Histórico curto por conversa, estados de atendimento com evidência de resolução, acompanhamento técnico em até dois ciclos, servidor MCP para as ferramentas | Recomendada |
-| 3 — Profundidade | Preço e contestação com serviço de pricing fictício, habilitação de bandeiras, consulta de cancelamento de venda | Opcional |
-| 4 — Demonstração | Seletor do mecanismo do Router (LLM ou Jev), interface de demonstração, README final e vídeo | README e vídeo obrigatórios; demais opcionais |
+| 2 — Confiabilidade e acompanhamento | Histórico curto por conversa, estados de atendimento com evidência de resolução, acompanhamento técnico em até dois ciclos, servidor MCP para as ferramentas | Obrigatória (ver especificação complementar) |
+| 3 — Profundidade | Preço e contestação com serviço de pricing fictício, habilitação de bandeiras, consulta de cancelamento de venda | Obrigatória (ver especificação complementar) |
+| 4 — Demonstração | Seletor do mecanismo do Router (LLM ou Jev), interface de demonstração, README final e vídeo | Obrigatória (ver especificação complementar) |
 
 ## Fora do escopo
 
@@ -123,7 +123,7 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável; 
 
 ### Fatia 4 — Demonstração
 
-- **RF-35** Seletor do mecanismo de decisão do Router (LLM ou Jev) por requisição, habilitado só em modo demonstração, com comparação lado a lado que não executa ferramentas nem encaminhamentos duas vezes.
+- **RF-35** (Obrigatório; detalhado por RF-47 e RF-48 da especificação complementar.) Seletor do mecanismo de decisão do Router (LLM ou Jev) por requisição, habilitado só em modo demonstração, com comparação lado a lado que não executa ferramentas nem encaminhamentos duas vezes.
 - **RF-36** Interface de demonstração que separa o chat do lojista do painel técnico (rota, traces, custo).
 
 ## Requisitos não funcionais
@@ -220,8 +220,8 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 
 | ID | Questão | Responsável | Bloqueia |
 | --- | --- | --- | --- |
-| Q1 | Prazo de entrega | Empresa / responsável | Corte das fatias 3 e 4 |
+| Q1 | Prazo de entrega | Empresa / responsável | Calendário das versões 0.2.0 a 0.7.0 (sem corte de escopo) |
 | Q2 | Idioma do README final e do vídeo (proposta: inglês) | Responsável | Fatia 4 |
 | Q3 | Visibilidade final do repositório (criado como privado em 2026-10-26) | Responsável | Entrega |
-| Q4 | Acesso e crédito no Jev | Responsável | RF-35 |
+| Q4 | ~~Acesso e crédito no Jev~~ Acesso confirmado na tarefa 02 (`jev-latest` → `jev-1.14.0`) | Tarefa 02 | — |
 | Q5 | ~~Conteúdo da imagem incorporada ao enunciado~~ Resolvida em 2026-10-26: diagrama com etapa Personality antes da saída (RF-37) | Tarefa 01 | — |

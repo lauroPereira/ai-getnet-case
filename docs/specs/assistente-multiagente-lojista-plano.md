@@ -185,10 +185,12 @@ Cada etapa é uma tarefa em `docs/tasks/`. As fatias 2 a 4 serão detalhadas em 
 13. [Docker e README inicial](../tasks/13-docker-e-readme-inicial.md)
 14. [Avaliação dos exemplos do desafio](../tasks/14-avaliacao-exemplos-desafio.md)
 
-**Fatia 2 — Confiabilidade e acompanhamento (a detalhar):** histórico e estados de atendimento (RF-28, RF-29), acompanhamento técnico (RF-30), servidor MCP (RF-31).
+**Fatias 2 a 4:** substituídas pelo [plano dos incrementos](incrementos-pos-nucleo-plano.md) (versões 0.2.0 a 0.7.0), que mantém os requisitos abaixo e acrescenta os novos.
 
-**Fatia 3 — Profundidade (a detalhar, cortável):** pricing fictício e cobrança (RF-32), habilitação de bandeiras (RF-33), cancelamento de venda (RF-34).
+**Fatia 2 — Confiabilidade e acompanhamento:** histórico e estados de atendimento (RF-28, RF-29), acompanhamento técnico (RF-30), servidor MCP (RF-31) → v0.2.0.
 
-**Fatia 4 — Demonstração (a detalhar):** seletor LLM/Jev (RF-35), interface (RF-36), README final, revisão de privacidade antes do primeiro push e vídeo (CA-16, CA-25).
+**Fatia 3 — Profundidade:** pricing fictício e cobrança (RF-32), habilitação de bandeiras (RF-33), cancelamento de venda (RF-34) → v0.3.0.
+
+**Fatia 4 — Demonstração:** seletor LLM/Jev (RF-35) → v0.4.0; interface (RF-36) → v0.4.0 a v0.7.0; README final, revisão de privacidade e vídeo (CA-16, CA-25) → v0.7.0.
 
 Dependências: 03 antes de tudo na fatia 1; 05 antes de 06; 01 antes de 07; 04 e 08 antes de 09 a 12; 06 antes de 11; 07 antes de 10; 12b depois de 09 a 12; 13 e 14 por último.
