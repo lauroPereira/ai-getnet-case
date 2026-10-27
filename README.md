@@ -77,6 +77,24 @@ uvicorn --factory merchant_assistant.main:create_application --reload
 merchant-assistant ask "Qual a cotação do euro hoje?" --trace  # one message, in process, with its trace
 ```
 
+### MCP server
+
+The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
+same domain functions, validation, customer isolation, audit log and structured errors. The merchant is fixed when
+the server starts, never passed as a tool argument.
+
+```bash
+merchant-assistant mcp --customer cliente1988     # stdio server (for an MCP client such as Claude Desktop)
+merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
+```
+
+The demo lists the five tools, reads yesterday's receivables and recent declines, and shows that a receivable of
+another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
+
+```json
+{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp", "--customer", "cliente1988"]}}}
+```
+
 ### Tests and evaluation
 
 ```bash
