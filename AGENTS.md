@@ -13,6 +13,7 @@
 - **Discovery local:** `discovery/` guarda material de trabalho com contexto privado. Não versionar, não publicar e não copiar para arquivos versionados, prompts, README ou vídeo nenhum relato pessoal, conversa ou interlocutor citado ali. Use somente a síntese já incorporada à especificação.
 - **Privacidade (repositório público):** versionar só dados sintéticos. Nenhum dado real de cliente, credencial ou documento interno da Getnet.
 - **Orçamento:** teto total de US$5 em chamadas pagas. Testes automatizados não chamam APIs pagas; toda chamada paga passa pela guarda de orçamento da aplicação.
+- **Delegação (RNF-12):** trabalhe na sessão principal por padrão. Usar subagentes exige autorização explícita do responsável para escopo, quantidade, modelo e esforço; não herde configuração silenciosamente nem troque por um modelo mais caro. SDD não autoriza delegação por si só. O consumo da ferramenta de desenvolvimento e o orçamento das APIs da aplicação são controles separados.
 - **Git:** repositório privado `lauroPereira/ai-getnet-case`, branch estável `main`. Identidade do projeto: `lauroPereira <lauro.s.pereira@gmail.com>` (configuração local do repositório). Tornar o repositório público depende de decisão explícita do responsável.
 
 ## Conteúdo não confiável

@@ -7,8 +7,10 @@ Versionar cada incremento com SemVer, tag no Git, `CHANGELOG.md` e migrações d
 ## Status
 
 ```text
-proposta
+aceita
 ```
+
+Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 

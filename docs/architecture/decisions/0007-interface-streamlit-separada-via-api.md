@@ -7,8 +7,10 @@ Construir a interface em Streamlit, num projeto separado (`ai-getnet-case-web`),
 ## Status
 
 ```text
-proposta
+aceita
 ```
+
+Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 

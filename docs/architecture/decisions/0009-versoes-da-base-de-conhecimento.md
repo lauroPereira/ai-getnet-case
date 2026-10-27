@@ -7,8 +7,10 @@ Criar uma coleção Qdrant por versão da base e manter um ponteiro para a vers�
 ## Status
 
 ```text
-proposta
+aceita
 ```
+
+Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 

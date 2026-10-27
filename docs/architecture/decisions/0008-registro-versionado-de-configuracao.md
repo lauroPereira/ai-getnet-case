@@ -7,8 +7,10 @@ Guardar perfis de modelos por agente, prompts e rubricas como versões imutávei
 ## Status
 
 ```text
-proposta
+aceita
 ```
+
+Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 

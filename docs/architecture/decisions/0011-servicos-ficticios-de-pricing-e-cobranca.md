@@ -7,8 +7,10 @@ Implementar o PRaaS fictício e a fonte de cobrança como uma app HTTP separada 
 ## Status
 
 ```text
-proposta
+aceita
 ```
+
+Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 

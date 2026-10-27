@@ -7,8 +7,10 @@ Expor as ferramentas de suporte por um servidor MCP local com o SDK oficial `mcp
 ## Status
 
 ```text
-proposta
+aceita
 ```
+
+Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 
