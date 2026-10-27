@@ -217,6 +217,24 @@ def cmd_eval(settings: Settings, args) -> int:
     return 0
 
 
+def cmd_migrate(settings: Settings, args) -> int:
+    """Moves the database schema to a version (default: latest). Use --to to roll back."""
+    import sqlite3
+
+    from merchant_assistant.data.migrations import current_version, migrate
+
+    settings.db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(settings.db_path, isolation_level=None)
+    try:
+        steps = migrate(conn, args.to)
+        for step in steps or ["nothing to apply"]:
+            print(step)
+        print(f"schema version: {current_version(conn)}")
+    finally:
+        conn.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="merchant-assistant")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -239,6 +257,8 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument("--name", default="avaliacao")
+    p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
+    p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")
     p_smoke = sub.add_parser("smoke", help="Send the 10 challenge examples to a running API.")
     p_smoke.add_argument("--url", default="http://localhost:8000")
     args = parser.parse_args(argv)
@@ -251,6 +271,7 @@ def main(argv: list[str] | None = None) -> int:
         "ask": cmd_ask,
         "smoke": cmd_smoke,
         "eval": cmd_eval,
+        "migrate": cmd_migrate,
     }
     return handlers[args.command](settings, args)
 

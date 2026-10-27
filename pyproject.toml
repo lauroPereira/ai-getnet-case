@@ -1,6 +1,6 @@
 [project]
 name = "merchant-assistant"
-version = "0.1.0"
+version = "0.2.0.dev0"
 description = "Multi-agent support system for Getnet merchants (AI Hardcore Engineer challenge)"
 readme = "README.md"
 requires-python = ">=3.12"

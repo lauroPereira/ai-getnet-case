@@ -6,6 +6,7 @@ input_guard -> router -> {knowledge | support_prefix -> [knowledge] -> support |
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from collections.abc import Callable
@@ -260,6 +261,38 @@ class Orchestrator:
             "database": db_ok,
             "model": self.llm.model,
             "budget_remaining_usd": round(self.budget.remaining(), 4),
+            "versions": self.versions(),
+        }
+
+    def versions(self) -> dict:
+        """Package, schema, index and prompt versions in use (decision 0006)."""
+        from merchant_assistant import __version__
+        from merchant_assistant.data.migrations import current_version
+        from merchant_assistant.llm.prompts import prompt_versions
+
+        schema = None
+        if self.settings.db_path.exists():
+            conn = connect(self.settings.db_path)
+            try:
+                schema = current_version(conn)
+            finally:
+                conn.close()
+        index = None
+        manifest_path = self.settings.runtime_path / "index_manifest.json"
+        if manifest_path.exists():
+            m = json.loads(manifest_path.read_text(encoding="utf-8"))
+            index = {
+                "collection": m.get("collection"),
+                "embedding_model": m.get("embedding_model"),
+                "corpus": (m.get("corpus_hash") or "")[:12],
+                "chunks": m.get("chunks"),
+                "built_at": m.get("built_at"),
+            }
+        return {
+            "app": __version__,
+            "schema": schema,
+            "index": index,
+            "prompts": prompt_versions(self.settings.prompts_dir),
         }
 
     def trace(self, request_id: str) -> dict | None:

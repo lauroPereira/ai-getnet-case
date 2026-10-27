@@ -22,6 +22,12 @@ class Prompt:
         return f"{self.id}@{self.version}"
 
 
+def prompt_versions(prompts_dir: Path) -> dict[str, str]:
+    """Latest version of every prompt in the directory, as recorded in its front matter."""
+    names = sorted({p.name.split(".v")[0] for p in prompts_dir.glob("*.v*.md")})
+    return {name: load_prompt(prompts_dir, name).version for name in names}
+
+
 @lru_cache
 def load_prompt(prompts_dir: Path, name: str) -> Prompt:
     candidates = sorted(prompts_dir.glob(f"{name}.v*.md"))
