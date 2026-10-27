@@ -10,6 +10,9 @@ from pathlib import Path
 from merchant_assistant.data.migrations import migrate
 
 SYNTHETIC_TABLES = (
+    "sale_cancellations",
+    "enablement_requests",
+    "contract_pricing_context",
     "audit_events",
     "authorization_events",
     "payouts",

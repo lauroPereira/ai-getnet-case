@@ -15,10 +15,28 @@ from merchant_assistant.llm.base import LLMError
 from merchant_assistant.llm.scripted import ScriptedCall, ToolPlan
 
 ROUTE_RULES: list[tuple[str, str, str | None]] = [
+    (
+        r"encerrar (?:o |meu )?contrato|fechar (?:o |meu )?contrato|terminate (?:the )?contract|close (?:my )?contract",
+        "human_handoff",
+        None,
+    ),
     (r"\b(?:atendente|humano|human|attendant|real person|falar com algu[eé]m)\b", "human_handoff", None),
     (r"card number|n[uú]mero (?:do|de) cart[aã]o|\bfraud|fraude|burlar|bypass|antifraud", "out_of_scope", None),
     (r"weather|previs[aã]o do tempo|\bclima\b|forecast", "general_web", None),
     (r"exchange rate|c[aâ]mbio|cota[cç][aã]o|\beuro\b|d[oó]lar", "general_web", None),
+    (r"bandeira|card scheme|habilita[cç][aã]o|enablement|visa|mastercard", "support", "enablement"),
+    (
+        r"cancelamento|cancelar venda|sale cancellation|cancel sale|cancellation status",
+        "support",
+        "cancellation",
+    ),
+    (
+        r"\bfee\b|charge|pricing|cobran[cç]a|"
+        r"(?:taxa|tarifa).{0,50}(?:venda|pix|cr[eé]dito|d[eé]bito|coerente|cobrad)|"
+        r"(?:diverg|insuficiente|comparar).{0,50}(?:taxa|tarifa)",
+        "support",
+        "pricing",
+    ),
     (r"won'?t connect|n[aã]o conecta|sem conex|internet|wi-?fi", "knowledge_and_support", "device"),
     (r"decline|negad|recusad", "knowledge_and_support", "authorization"),
     (
@@ -224,6 +242,127 @@ def _support(call: ScriptedCall) -> ToolPlan:
             }
 
         return ToolPlan([("find_authorization_events", {})], final=final_auth)
+    if topic == "pricing":
+        low = message.casefold()
+        args = {"period": "yesterday"}
+        if any(
+            word in low
+            for word in ("insuficiente", "sem evidência", "no evidence", "not enough evidence", "insufficient")
+        ):
+            args = {"period": "latest", "payment_type": "credit", "installments": 2}
+        elif any(
+            word in low for word in ("diferentes condições", "condições diferentes", "different conditions", "legacy")
+        ):
+            args["payment_type"] = "credit"
+        elif any(word in low for word in ("divergência", "divergente", "diverg", "mismatch")):
+            args["payment_type"] = "pix"
+        else:
+            args["payment_type"] = "debit"
+
+        def final_price(results: list[str]) -> dict:
+            if (bad := failed(results)) is not None:
+                return bad
+            comparison = _load(results, 0).get("comparison", {})
+            result = comparison.get("result", "insufficient_evidence")
+            labels = {
+                "consistent": "A comparação sintética encontrou valores coerentes."
+                if pt
+                else "The synthetic comparison found consistent values.",
+                "different_conditions": (
+                    "As condições registradas diferem das condições simuladas; isso não comprova erro."
+                )
+                if pt
+                else "Recorded conditions differ from the simulated conditions; that does not prove an error.",
+                "divergence": (
+                    "Há uma divergência na comparação sintética. Vou encaminhar para análise; "
+                    "isso não confirma reembolso."
+                )
+                if pt
+                else (
+                    "The synthetic comparison shows a divergence. I will refer it for review; "
+                    "this does not confirm a refund."
+                ),
+                "insufficient_evidence": ("Não há evidência aplicável suficiente para comparar os valores.")
+                if pt
+                else "There is not enough applicable evidence to compare the amounts.",
+            }
+            points = [labels[result]]
+            if comparison.get("expected_fee_display") is not None:
+                if pt:
+                    points.append(
+                        f"Taxa esperada: {comparison['expected_fee_display']}; "
+                        f"cobrada: {comparison['charged_fee_display']}."
+                    )
+                else:
+                    points.append(
+                        f"Expected {comparison['expected_fee_display']}; charged {comparison['charged_fee_display']}."
+                    )
+            if result == "divergence" and comparison.get("difference_display") is not None:
+                points.append(
+                    f"Diferença: {comparison['difference_display']}."
+                    if pt
+                    else f"Difference: {comparison['difference_display']}."
+                )
+            return {
+                "points": points,
+                "needs_selection": False,
+                "missing": [],
+                "escalate": result == "divergence",
+                "escalation_reason": "fee_divergence" if result == "divergence" else None,
+            }
+
+        return ToolPlan([("simulate_pricing", args)], final=final_price)
+    if topic == "enablement":
+        scheme = (
+            "visa"
+            if re.search(r"visa", message, re.I)
+            else "mastercard"
+            if re.search(r"mastercard", message, re.I)
+            else None
+        )
+        return ToolPlan(
+            [("get_enablement_requests", {"scheme": scheme} if scheme else {})],
+            final=lambda r: (
+                failed(r)
+                or {
+                    "points": [
+                        (
+                            f"{item['scheme']}: {item['status']}, protocolo {item['protocol']}; "
+                            f"disponibilidade no equipamento: {item['device_availability']['available']}."
+                            if pt
+                            else f"{item['scheme']}: {item['status']}, protocol {item['protocol']}; "
+                            f"device availability: {item['device_availability']['available']}."
+                        )
+                        for item in _load(r, 0).get("requests", [])
+                    ],
+                    "needs_selection": False,
+                    "missing": [],
+                    "escalate": False,
+                    "escalation_reason": None,
+                }
+            ),
+        )
+    if topic == "cancellation":
+        return ToolPlan(
+            [("get_sale_cancellation_context", {"period": "yesterday"})],
+            final=lambda r: (
+                failed(r)
+                or {
+                    "points": [
+                        (
+                            f"Status do cancelamento da venda: {item['status']}. Consulta sem execução de ação."
+                            if pt
+                            else f"Sale cancellation status: {item['status']}. This is a read-only lookup."
+                        )
+                        for item in _load(r, 0).get("cancellations", [])
+                    ],
+                    "needs_selection": False,
+                    "missing": [],
+                    "escalate": False,
+                    "escalation_reason": None,
+                }
+            ),
+        )
     return ToolPlan(
         [("get_contract_snapshot", {})],
         final=lambda r: (

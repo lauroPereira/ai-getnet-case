@@ -1,0 +1,28 @@
+{
+  "ready": true,
+  "index_chunks": 145,
+  "database": true,
+  "model": "gpt-6-luna",
+  "budget_remaining_usd": 0.0142,
+  "versions": {
+    "app": "0.3.0",
+    "schema": 5,
+    "index": {
+      "collection": "getnet_kb_v1",
+      "embedding_model": "text-embedding-3-small",
+      "corpus": "d7ed966b69d6",
+      "chunks": 145,
+      "built_at": "2026-10-27T04:32:15+00:00"
+    },
+    "prompts": {
+      "escalation": "1",
+      "judge": "2",
+      "knowledge_procedure": "1",
+      "knowledge_rag": "1",
+      "knowledge_web": "2",
+      "personality": "3",
+      "router": "5",
+      "support": "7"
+    }
+  }
+}

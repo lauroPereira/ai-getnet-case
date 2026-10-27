@@ -36,6 +36,7 @@ def build_orchestrator(
     faults: dict[str, str] | None = None,
 ) -> Orchestrator:
     from merchant_assistant.llm.openai_llm import OpenAILLM
+    from merchant_assistant.mocks.clients import MockServiceClient
     from merchant_assistant.rag.embed import OpenAIEmbedder
 
     budget = BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd)
@@ -57,6 +58,7 @@ def build_orchestrator(
         budget=budget,
         traces=TraceStore(settings.runtime_path / "traces.sqlite3"),
         faults=faults,
+        mock_services=MockServiceClient(settings.mocks_url, timeout=2.0),
     )
 
 

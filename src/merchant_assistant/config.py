@@ -32,6 +32,7 @@ class Settings(BaseSettings):
 
     qdrant_url: str | None = None
     qdrant_collection: str = "getnet_kb_v1"
+    mocks_url: str = "http://mocks:8001"
 
     retrieval_top_k: int = 6
     retrieval_min_score: float = 0.30

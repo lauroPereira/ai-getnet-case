@@ -1,0 +1,16 @@
+{
+  "candidate": "v0.3.0-local-r4",
+  "source_fingerprint_sha256": "d626b894b143a496a8f9d67db7d50f5088d4fc84d10e39b51fbd958d90cfef94",
+  "runtime_fingerprint_sha256": "f0c8d937187e8929a214634cafd3416a8f912314ada5c462be5184c77d983d12",
+  "container_images": {
+    "getnet-v030-validation-api-1": "sha256:af1334f5eb9a1e935747411f1e4696b26c5a9d11a13bb0f237ba67870e1e633c",
+    "getnet-v030-validation-mocks-1": "sha256:025584d7927b745f645b15a67e1ec79c581fe7bbd932cd305dc0c60cb6005002",
+    "getnet-v030-validation-qdrant-1": "sha256:e37a07939a01ae09875d5cd58cd05a5e7c393151fce5e0a524c083835570e8e7"
+  },
+  "scenario_sha256": "eb4674308a1657778f5c9ef15686bf408e5af2908a2e4487f34fcfbfe743601f",
+  "harness_sha256": "c2b3b79bbcff33e8a68c2369fd44276a61e53a9eaf501a81112c331a40a6a0f3",
+  "override_sha256": "1c53d6e12d1a033821328920179a60974d3cab7b4c0fc9608d00d00290c9a2af",
+  "entrypoint": "POST /messages via api:8000 in the isolated Compose network",
+  "shared_additional_budget_limit_usd": 0.15,
+  "previous_round_spent_usd": 0.06747249
+}

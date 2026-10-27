@@ -57,9 +57,41 @@ TOOLS: dict[str, ToolSpec] = {
         ),
         ToolSpec(
             "get_contract_snapshot",
-            "Get the merchant's contracted products, settlement account type and settlement plan.",
+            "Get the merchant's contracted products, settlement account, settlement plan and pricing context.",
             domain.ContractArgs,
             domain.get_contract_snapshot,
+            "specialist",
+        ),
+        ToolSpec(
+            "simulate_pricing",
+            "Compare the independent synthetic pricing rule and recorded charge for a sale. Narrow by period, payment "
+            "type, installments or sale date; the server discovers the sale from the bound merchant.",
+            domain.PricingArgs,
+            domain.simulate_pricing,
+            "specialist",
+        ),
+        ToolSpec(
+            "get_fee_breakdown",
+            "Read the independent recorded charge components for a sale. Narrow by period, payment type, "
+            "installments or sale date; the server discovers the sale from the bound merchant.",
+            domain.PricingArgs,
+            domain.get_fee_breakdown,
+            "specialist",
+        ),
+        ToolSpec(
+            "get_enablement_requests",
+            "Read existing card-scheme enablement requests and distinguish request state from device availability. "
+            "Never creates a request.",
+            domain.EnablementArgs,
+            domain.get_enablement_requests,
+            "specialist",
+        ),
+        ToolSpec(
+            "get_sale_cancellation_context",
+            "Read a merchant's existing sale cancellation status. This is a lookup and never executes cancellation "
+            "or contract termination.",
+            domain.CancellationArgs,
+            domain.get_sale_cancellation_context,
             "specialist",
         ),
         ToolSpec(
@@ -86,6 +118,10 @@ AGENT_TOOLS: dict[str, tuple[str, ...]] = {
         "get_device_status",
         "find_authorization_events",
         "get_contract_snapshot",
+        "simulate_pricing",
+        "get_fee_breakdown",
+        "get_enablement_requests",
+        "get_sale_cancellation_context",
     ),
 }
 

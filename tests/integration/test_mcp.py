@@ -19,7 +19,9 @@ def setup(settings, customer="cliente1988"):
     conn = connect(settings.db_path)
     seed(conn, CLOCK)
     conn.close()
-    return build_server(env_factory_for(settings.db_path, customer, CLOCK))
+    from merchant_assistant.mocks.clients import in_process_client
+
+    return build_server(env_factory_for(settings.db_path, customer, CLOCK, in_process_client()))
 
 
 def run(server, calls):
@@ -50,6 +52,36 @@ def test_same_result_as_the_domain_layer(settings):
     )
     assert result.is_error is False
     assert text(result) == json.loads(json.dumps(direct.data, default=str))
+
+
+def test_pricing_tools_match_the_domain_over_mcp(settings):
+    args = {"period": "yesterday", "payment_type": "debit"}
+    _, (result,) = run(setup(settings), [("simulate_pricing", args)])
+    assert result.is_error is False
+    from merchant_assistant.mocks.clients import in_process_client
+
+    conn = connect(settings.db_path)
+    direct = execute(
+        "simulate_pricing",
+        args,
+        ToolEnv(conn, CLOCK, CustomerContext("cliente1988", True), mock_services=in_process_client()),
+    )
+    assert text(result) == json.loads(json.dumps(direct.data, default=str))
+
+
+def test_all_business_journey_tools_are_available_over_mcp(settings):
+    calls = [
+        ("get_fee_breakdown", {"period": "yesterday", "payment_type": "debit"}),
+        ("get_enablement_requests", {"scheme": "visa"}),
+        ("get_sale_cancellation_context", {"period": "yesterday"}),
+    ]
+    listed, results = run(setup(settings), calls)
+    names = {tool.name for tool in listed.tools}
+    assert {name for name, _ in calls} <= names
+    assert all(not result.is_error for result in results)
+    assert "charged_fee_minor" in text(results[0])
+    assert text(results[1])["requests"][0]["protocol"] == "SIM-BND-1988-001"
+    assert text(results[2])["cancellations"][0]["status"] == "requested"
 
 
 def test_other_merchant_resource_is_blocked_and_audited(settings):

@@ -19,6 +19,7 @@ COPY prompts ./prompts
 COPY data/sources ./data/sources
 COPY data/snapshots ./data/snapshots
 COPY data/knowledge-demo ./data/knowledge-demo
+COPY data/mock-services ./data/mock-services
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod 0755 /entrypoint.sh && mkdir -p /app/runtime && chown -R app:app /app/runtime
 USER app

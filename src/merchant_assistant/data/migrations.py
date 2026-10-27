@@ -185,11 +185,49 @@ DROP INDEX IF EXISTS handoff_conversation;
 ALTER TABLE handoff_cases DROP COLUMN conversation_id;
 """
 
+JOURNEYS_UP = """
+CREATE TABLE contract_pricing_context (
+    customer_id TEXT PRIMARY KEY REFERENCES customers(customer_id),
+    pricing_plan TEXT NOT NULL,
+    pricing_version TEXT NOT NULL,
+    effective_from TEXT NOT NULL
+);
+CREATE TABLE enablement_requests (
+    request_id TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+    scheme TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'active', 'rejected')),
+    protocol TEXT NOT NULL UNIQUE,
+    requested_at TEXT NOT NULL,
+    activated_at TEXT
+);
+CREATE INDEX enablement_requests_customer ON enablement_requests(customer_id, requested_at);
+CREATE TABLE sale_cancellations (
+    transaction_id TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+    status TEXT NOT NULL CHECK (status IN ('requested', 'completed', 'rejected', 'unknown')),
+    requested_at TEXT NOT NULL,
+    processed_at TEXT,
+    reason_code TEXT,
+    FOREIGN KEY (transaction_id) REFERENCES sales(sale_id)
+);
+CREATE INDEX sale_cancellations_customer ON sale_cancellations(customer_id, requested_at);
+"""
+
+JOURNEYS_DOWN = """
+DROP INDEX IF EXISTS sale_cancellations_customer;
+DROP TABLE IF EXISTS sale_cancellations;
+DROP INDEX IF EXISTS enablement_requests_customer;
+DROP TABLE IF EXISTS enablement_requests;
+DROP TABLE IF EXISTS contract_pricing_context;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
     Migration(3, "case_attempts", ATTEMPTS_UP, ATTEMPTS_DOWN),
     Migration(4, "handoff_conversation", HANDOFF_CONVERSATION_UP, HANDOFF_CONVERSATION_DOWN),
+    Migration(5, "business_journeys", JOURNEYS_UP, JOURNEYS_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 
