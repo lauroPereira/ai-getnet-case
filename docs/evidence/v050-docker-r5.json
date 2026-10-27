@@ -1,0 +1,21 @@
+{
+  "candidate": "v0.5.0-local-r5",
+  "created_at_utc": "2026-10-27T19:59:12.328177+00:00",
+  "source_fingerprint_sha256": "71818710468cd1ad63a83c49e8eec61e5db28bf5d824381b0e0e3d509e40d76c",
+  "backend_runtime_fingerprint_sha256": "22556665c215a837fa5d9cc1b7b8dacd52fa3b06b40ed46e8e1b86b9ef40ce0e",
+  "backend_build_fingerprint_sha256": "c74764b0d0932851a123ff8f5f13b11e96e266f8530b2a4ae5ee2e1016d1c3a5",
+  "reused_build_evidence": "v050-docker-r3.json",
+  "image_id": "sha256:852e5c4ec8448fc686bed994e9feb00c246d1a6483e1a1f8147e0a8cdf6ece2b",
+  "image_tag": "getnet-v050-test:r3-20261027",
+  "runtime_maps_identical_to_built_candidate": true,
+  "build_maps_identical_to_built_candidate": true,
+  "rebuilt": false,
+  "installed_files_previously_verified": 125,
+  "installed_verification_had_no_mismatches": true,
+  "web_changed_from_r3": [
+    "app.py",
+    "src/getnet_web/api.py",
+    "tests/test_interface.py"
+  ],
+  "scope": "Backend canonical image reused because all runtime/build input maps are identical. Frontend is separate and requires its own code review and native QA; this does not claim paid provider acceptance in Docker."
+}

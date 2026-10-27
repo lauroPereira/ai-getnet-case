@@ -1,0 +1,48 @@
+{
+  "candidate": "v0.5.0-local-r7",
+  "created_at_utc": "2026-10-27T20:56:16.687006+00:00",
+  "maps": {
+    "backend": {
+      "files": 46,
+      "mismatches": []
+    },
+    "web": {
+      "files": 85,
+      "mismatches": []
+    },
+    "runtime": {
+      "files": 128,
+      "mismatches": []
+    },
+    "build": {
+      "files": 129,
+      "mismatches": []
+    }
+  },
+  "ledgers": {
+    "primary": {
+      "entries": 885,
+      "committed_usd": 0.34852844,
+      "open_reservations": 0,
+      "persisted_ceiling": 1.0
+    },
+    "campaign": {
+      "entries": 35,
+      "committed_usd": 0.00553883,
+      "open_reservations": 0,
+      "persisted_ceiling": 0.25
+    }
+  },
+  "campaign_cap": [
+    "v050-qa",
+    0.25
+  ],
+  "project_cumulative_usd": 0.59837466,
+  "os_listener_table_verified_no_listeners_on_ports": [
+    18853,
+    18854,
+    18855,
+    18553
+  ],
+  "tcp_probe_note": "Direct TCP connect attempts timed out; service shutdown is verified by OS listener table and QA process identity checks."
+}

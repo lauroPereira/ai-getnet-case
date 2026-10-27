@@ -26,6 +26,11 @@ def test_new_database_reaches_latest(tmp_path):
         "api_sessions",
         "router_comparisons",
         "run_snapshots",
+        "kb_documents",
+        "kb_drafts",
+        "kb_versions",
+        "kb_state",
+        "kb_events",
     } <= tables(conn)
 
 
@@ -33,6 +38,7 @@ def test_down_and_up_keep_core_data(tmp_path):
     conn = connect(tmp_path / "db.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     assert migrate(conn, 1) == [
+        "down 0007_kb_versions",
         "down 0006_profiles_api",
         "down 0005_business_journeys",
         "down 0004_handoff_conversation",
@@ -47,6 +53,7 @@ def test_down_and_up_keep_core_data(tmp_path):
         "up 0004_handoff_conversation",
         "up 0005_business_journeys",
         "up 0006_profiles_api",
+        "up 0007_kb_versions",
     ]
     assert current_version(conn) == LATEST
 
@@ -80,7 +87,7 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
     conn = connect(tmp_path / "journeys.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT sale_id, gross_minor FROM sales ORDER BY sale_id").fetchall()
-    assert migrate(conn, 4) == ["down 0006_profiles_api", "down 0005_business_journeys"]
+    assert migrate(conn, 4) == ["down 0007_kb_versions", "down 0006_profiles_api", "down 0005_business_journeys"]
     assert "enablement_requests" not in tables(conn)
     assert [tuple(row) for row in conn.execute("SELECT sale_id, gross_minor FROM sales ORDER BY sale_id")] == [
         tuple(row) for row in before

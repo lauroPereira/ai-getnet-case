@@ -1,0 +1,42 @@
+{
+  "candidate": "v0.5.0-local-r1",
+  "created_at_utc": "2026-10-27 16:13:09 UTC",
+  "source_fingerprint_sha256": "0f9a4af3a7026877c7d1764a08f31b585cbe1e00cb6afd123fcdd6eeaaf22f7b",
+  "backend_runtime_fingerprint_sha256": "2168ca8bfcc638034bc9c7c68865878f83fbc8ef36fa89eadee5a47fb16005d5",
+  "backend_build_fingerprint_sha256": "d40d4d3b1cae5a0c6e67baedfb6a7eb402dcb9583f5e7d8d683115f35d57399b",
+  "canonical_dockerfile_built": true,
+  "build_exit_code": 0,
+  "build_log": ".pytest_cache/v050-docker-r1-build.log",
+  "image_tag": "getnet-v050-test:r1-20261027",
+  "image_id": "sha256:d2a2e75273821c7d97d6d72870d82e83f14f198c9a26f5bdab197183b7c40378",
+  "container_name": "getnet-v050-synthetic-r1",
+  "container_id": "f209e06a01bf918b244422b4943571ee0b8855166210b4ced062b33b3eb81af1",
+  "installed_verification": {
+    "installed_files_checked": 125,
+    "mismatches": [],
+    "python": "3.13.13 (main, May 19 2026, 23:47:56) [GCC 14.2.0]",
+    "packages": {
+      "fastapi": "0.162.0",
+      "starlette": "1.10.0",
+      "pydantic": "2.14.1",
+      "openai": "3.40.0",
+      "qdrant-client": "1.20.0",
+      "langgraph": "1.2.18",
+      "mcp": "2.3.0"
+    },
+    "candidate": "v0.5.0-local-r1",
+    "runtime_fingerprint": "2168ca8bfcc638034bc9c7c68865878f83fbc8ef36fa89eadee5a47fb16005d5",
+    "configuration_inputs_verified_at_build": [
+      "Dockerfile",
+      "docker-compose.yml",
+      "pyproject.toml"
+    ]
+  },
+  "native_openai_version": "3.39.0",
+  "ready_status": 200,
+  "app_version": "0.5.0",
+  "schema_version": 7,
+  "index_chunks": 145,
+  "paid_provider_calls": 0,
+  "scope": "Canonical image build and installed runtime readiness with synthetic assembly only. No real provider acceptance or paid QA has begun. SDK versions are recorded; QA must declare its actual execution environment."
+}

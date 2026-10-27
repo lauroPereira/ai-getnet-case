@@ -5,7 +5,9 @@
 **Verificação sem custo do candidato r6 concluída; revisão e revalidação funcional aptas.**
 O responsável aceitou a integração privada com as limitações registradas.
 [PR backend #5](https://github.com/lauroPereira/ai-getnet-case/pull/5) e
-[PR web #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1) abertos.
+[PR web #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1) integrados.
+Mains remotas conferidas em `ea2355b5ba8fa8dcff66200f34461ae063183250`
+e `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`; [confirmação](v040-integracao-confirmada.json).
 CA-32/JEV real e disponibilidade autenticada de modelos permanecem pendentes;
 QA pago foi autorizado a partir da v0.5.0. Não houve inferência paga v0.4.0.
 
@@ -118,6 +120,7 @@ v0.3.0 e pela migração 0006→0005, validada somente em bancos sintéticos iso
 O trabalho de implementação/verificação autorizado sem chamadas pagas está
 fechado nas evidências acima. A integração e o início da v0.5.0 foram aceitos
 explicitamente com as pendências de validação real mantidas; elas não passam
-a concluídas pelo merge. Conferir merge/checks e preparar a próxima versão a
-partir das mains atualizadas. Os manifestos r6 preservam os bytes pré-Git;
+a concluídas pelo merge. Integração confirmada e
+[próxima versão iniciada em planejamento](../specs/base-versionada-v050-plano.md)
+a partir das mains atualizadas. Os manifestos r6 preservam os bytes pré-Git;
 os hashes canônicos e o delta documental ficam nos registros de integração.

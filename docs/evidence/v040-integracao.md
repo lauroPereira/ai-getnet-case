@@ -65,3 +65,16 @@ Checks e resultado efetivo do merge serão reconferidos antes de declarar
 integração concluída. O fechamento pós-merge fica no início da v0.5.0, evitando
 auto-referência de SHA no próprio commit. A próxima versão parte das mains
 integradas/atualizadas, com plano e aprovações específicas de APIs/migração.
+
+## Confirmação pós-merge — registrada na branch v0.5
+
+Os dois PRs estão `closed/merged`. Main local/remota backend:
+`ea2355b5ba8fa8dcff66200f34461ae063183250`; web:
+`40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`. Autor/committer conferem; árvores
+iguais às pontas dos PRs e ancestralidade confirmada. Ambos permanecem privados.
+O GitHub apresenta estado limpo e nenhum check/status/job de CI; testes e
+pareceres acima são evidências locais. [Confirmação estruturada](v040-integracao-confirmada.json).
+
+Após os merges, mains atualizadas e branches `codex/v0.5.0-base-versionada`
+criadas em ambos. O plano da próxima versão fica local aguardando aprovação
+específica; nenhum gasto pago ou produto v0.5 foi executado na preparação.

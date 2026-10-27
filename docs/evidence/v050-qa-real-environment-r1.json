@@ -1,0 +1,72 @@
+{
+  "candidate": "v0.5.0-local-r3",
+  "observed_at_local": "2026-10-27",
+  "backend": {
+    "root": "C:\\workspace\\ai-getnet-case",
+    "branch": "codex/v0.5.0-base-versionada",
+    "head_sha": "ea2355b5ba8fa8dcff66200f34461ae063183250",
+    "python": "3.13.3",
+    "openai_sdk": "3.39.0",
+    "runtime_fingerprint_sha256": "22556665c215a837fa5d9cc1b7b8dacd52fa3b06b40ed46e8e1b86b9ef40ce0e",
+    "runtime_files": 128,
+    "build_fingerprint_sha256": "c74764b0d0932851a123ff8f5f13b11e96e266f8530b2a4ae5ee2e1016d1c3a5",
+    "build_files": 129,
+    "source_fingerprint_sha256": "4fca76056153e40aa2213d03737b2af5f5c351324e8b13ec621e4f6d186b9687",
+    "candidate_map_verification": {
+      "backend_files": 39,
+      "backend_mismatches_after_qa": 0,
+      "web_files": 84,
+      "web_mismatches_after_qa": 0
+    }
+  },
+  "web": {
+    "root": "C:\\workspace\\ai-getnet-case-web",
+    "branch": "codex/v0.5.0-base-versionada",
+    "head_sha": "40ff199f7441a09b0fa28925bcfd0038e4b6ccbe",
+    "python": "3.13.3",
+    "environment": ".venv-v040"
+  },
+  "runtime": {
+    "isolated_root": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v050-qa-real-runtime",
+    "api_url": "http://127.0.0.1:18853",
+    "api_pid_at_handoff": 6932,
+    "fixtures_url": "http://127.0.0.1:18854",
+    "fixtures_pid_at_handoff": 26544,
+    "web_url": "http://127.0.0.1:18553",
+    "web_pid_stopped_at_handoff": 29556,
+    "web_parent_pid_stopped_at_handoff": 26808,
+    "provider_keys_prechecked_present": true,
+    "provider_key_values_recorded": false,
+    "mock_models_used_as_paid_acceptance": false,
+    "models_called": [
+      "text-embedding-3-small",
+      "gpt-6-luna",
+      "deepseek-flash",
+      "jev-1.14.0"
+    ]
+  },
+  "budget": {
+    "primary_ledger": "C:\\workspace\\ai-getnet-case\\data\\runtime\\budget.sqlite3",
+    "primary_limit_usd": 1.0,
+    "campaign_ledger": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v050-qa-control\\budget.sqlite3",
+    "campaign_cap_id": "v050-qa",
+    "campaign_limit_usd": 0.25,
+    "campaign_entries": 17,
+    "campaign_actual_usd": 0.00282289,
+    "campaign_reserved_gross_usd": 0.00504496,
+    "campaign_open_reservations": 0,
+    "primary_entries_after_qa": 867,
+    "primary_actual_usd_after_qa": 0.3458125,
+    "primary_initial_entries": 850,
+    "primary_initial_actual_usd": 0.34298961,
+    "historical_cumulative_before_qa_usd": 0.59283583,
+    "reconciled_cumulative_after_qa_usd": 0.59565872,
+    "ledgers_control_same_calls_do_not_sum_both": true
+  },
+  "services_after_handoff": {
+    "api_18853": "preserved for focused revalidation",
+    "fixtures_18854": "preserved for focused revalidation",
+    "streamlit_18553": "stopped; no source-hash mixing during Developer work",
+    "runtime_files_and_ledgers": "preserved; no cleanup performed"
+  }
+}

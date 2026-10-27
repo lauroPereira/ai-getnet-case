@@ -130,7 +130,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
 | `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
-| `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger) |
+| `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger). Accepted range 0–5.00 (absolute project ceiling); the first limit recorded beside a ledger (`budget.sqlite3.limit`, native 1.00 for a ledger that predates it) can never be raised by a later value |
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
 | `MAX_MODEL_CALLS`, `MAX_TOOL_CALLS`, `MAX_REQUEST_SECONDS` | `8`, `8`, `90` | Per-request limits |
 | `WEB_SEARCH_MAX_CALLS` | `1` | Searches per general question |
@@ -270,7 +270,7 @@ curl -s localhost:8000/messages -H 'content-type: application/json' \
 5. **Chunking.** Section-aware (Markdown headings or paragraphs), ~1,200 characters with overlap; each chunk keeps
    its title, URL, source kind, collection date and hash. 40 documents → 145 chunks.
 6. **Storage.** Qdrant (service in compose, embedded locally, in-memory in tests), `text-embedding-3-small`. The
-   index manifest records model, corpus hash and size; bootstrap rebuilds only when they change.
+   index manifest records model, corpus hash and size; bootstrap builds the index only when its collection does not exist and never rebuilds or replaces an existing one (a new knowledge base version is always a new collection, created through the admin API).
 7. **Retrieval.** Top-6 by cosine similarity with a minimum score and a source-kind filter (official pages only for
    product questions; official + demo procedures for problems).
 8. **Generation.** Numbered passages go to the Knowledge Agent, which must answer only from them, list the passages

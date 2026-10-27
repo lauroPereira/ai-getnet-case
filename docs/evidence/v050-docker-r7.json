@@ -1,0 +1,15 @@
+{
+  "candidate": "v0.5.0-local-r7",
+  "created_at_utc": "2026-10-27T20:35:23.911663+00:00",
+  "source_fingerprint_sha256": "ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c",
+  "backend_runtime_fingerprint_sha256": "22556665c215a837fa5d9cc1b7b8dacd52fa3b06b40ed46e8e1b86b9ef40ce0e",
+  "backend_build_fingerprint_sha256": "c74764b0d0932851a123ff8f5f13b11e96e266f8530b2a4ae5ee2e1016d1c3a5",
+  "reused_build_evidence": "v050-docker-r3.json",
+  "image_id": "sha256:852e5c4ec8448fc686bed994e9feb00c246d1a6483e1a1f8147e0a8cdf6ece2b",
+  "image_tag": "getnet-v050-test:r3-20261027",
+  "runtime_and_build_maps_identical": true,
+  "rebuilt": false,
+  "installed_files_previously_verified": 125,
+  "installed_verification_had_no_mismatches": true,
+  "scope": "Canonical backend image reused by exact maps. Frontend source/fixture changes are separate; functional QA uses the recorded native environment."
+}
