@@ -35,3 +35,8 @@ Validação desta entrega: **US$0,14123583**, incluindo duas rodadas, índices, 
 ## Próxima ação e recuperação
 
 O responsável autorizou integralmente a [integração proposta](v030-integracao-proposta.md): commit na branch, push ao repositório privado, PR para main, merge e tag v0.3.0. Conferir seu efeito real no registro de integração e nos refs Git antes de avançar. Recuperação por commit de reversão e migração de 0005 para 0004, já testada em banco sintético. A próxima versão (v0.4.0) deve partir de main atualizada contendo esta entrega. Runtimes de teste isolados e dados anteriores do responsável preservados.
+
+[PR #4](https://github.com/lauroPereira/ai-getnet-case/pull/4) criado e branch
+enviada, commit de produto `1baff5324458e909bb23be1f89fa7fa6a1f8f2d9`.
+O provedor não apresenta checks/status/jobs de CI; os 191 testes e pareceres
+registrados são validações locais. Confirmar merge e tag nos refs após a execução.

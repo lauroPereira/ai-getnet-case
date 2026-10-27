@@ -40,6 +40,20 @@ merge local → push de main → tag v0.3.0. A tag deve apontar para main conten
 o PR completo. A confirmação final é o estado do PR e os refs local/remoto;
 não inferir conclusão somente da autorização ou deste documento preparatório.
 
+### Operações confirmadas antes do merge
+
+- Commit de implementação e evidências:
+  `1baff5324458e909bb23be1f89fa7fa6a1f8f2d9`, identidade do projeto.
+- Branch enviada e ref remoto conferido com o mesmo SHA.
+- [PR #4](https://github.com/lauroPereira/ai-getnet-case/pull/4) criado para
+  main e anexado ao chat. Base permanece no SHA original; GitHub confirmou
+  `mergeable=true`.
+- Diagnóstico do head acima: nenhum check, status ou job remoto configurado;
+  isso não representa uma execução de CI aprovada. Validação aplicável é a
+  local independente já registrada, sem mudanças funcionais posteriores.
+- Este fechamento de evidência será incluído na mesma branch antes do merge.
+  Merge/tag devem ser conferidos nos refs e no PR depois de executados.
+
 Recuperação por commit de reversão; migração 0005→0004 comprovada somente em
 bancos sintéticos isolados. A próxima versão parte de main atualizada após
 esta integração, com plano e aprovações próprias para novos contratos e dados.
