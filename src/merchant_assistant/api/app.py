@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from merchant_assistant import __version__
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
 from merchant_assistant.config import Settings, get_settings
+from merchant_assistant.conversations import ConversationNotFound
 
 log = logging.getLogger("merchant_assistant.api")
 
@@ -47,6 +48,9 @@ class PlaceholderOrchestrator:
         return {"ready": False, "reason": "orchestrator not configured"}
 
     def trace(self, request_id: str) -> dict | None:
+        return None
+
+    def conversation(self, conversation_id: str) -> dict | None:
         return None
 
 
@@ -103,11 +107,16 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     @app.post(
         "/messages",
         response_model=MessageResponse,
-        responses={422: {"model": ErrorBody}, 500: {"model": ErrorBody}},
+        responses={404: {"model": ErrorBody}, 422: {"model": ErrorBody}, 500: {"model": ErrorBody}},
         tags=["assistant"],
     )
     def messages(payload: MessageRequest, request: Request) -> MessageResponse:
-        return app.state.orchestrator.handle(payload, request.state.request_id)
+        try:
+            return app.state.orchestrator.handle(payload, request.state.request_id)
+        except ConversationNotFound:
+            return _error(
+                404, "conversation_not_found", "Conversation not found for this user.", request.state.request_id
+            )
 
     if settings.demo_mode:
 
@@ -116,6 +125,13 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
             data = app.state.orchestrator.trace(request_id)
             if data is None:
                 return _error(404, "not_found", "Trace not found.", request.state.request_id)
+            return data
+
+        @app.get("/conversations/{conversation_id}", tags=["demo"])
+        def conversation(conversation_id: str, request: Request):
+            data = app.state.orchestrator.conversation(conversation_id)
+            if data is None:
+                return _error(404, "not_found", "Conversation not found.", request.state.request_id)
             return data
 
     return app

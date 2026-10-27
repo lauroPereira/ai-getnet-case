@@ -28,6 +28,15 @@ def guess_language(text: str) -> str:
     return "pt" if pt > en else "en"
 
 
+def format_history(history: list[dict], limit: int | None = None) -> str:
+    """Conversation turns as a data block (oldest first)."""
+    turns = history[-limit:] if limit else history
+    if not turns:
+        return "- (new conversation)"
+    lines = [f"- {t['role']}: {t['text']}" for t in turns]
+    return "\n".join(lines)
+
+
 def prompt(ctx: RunContext, name: str) -> Prompt:
     return load_prompt(ctx.settings.prompts_dir, name)
 
@@ -55,6 +64,14 @@ POLICY = {
         "pt": "Não consegui concluir a consulta agora. Tente novamente em alguns minutos ou peça para falar "
         "com um atendente.",
         "en": "I couldn't complete the check right now. Please try again in a few minutes or ask to talk to an agent.",
+    },
+    "ack": {
+        "pt": "Combinado. Se precisar de mais alguma coisa, é só me chamar.",
+        "en": "Got it. If you need anything else, just let me know.",
+    },
+    "ack_resolved": {
+        "pt": "Que bom que deu certo! Se precisar de mais alguma coisa, é só me chamar.",
+        "en": "Great, glad it worked! If you need anything else, just let me know.",
     },
     "clarify": {
         "pt": "Pode me contar um pouco mais sobre o que você precisa?",

@@ -29,16 +29,16 @@ Controlar o estado do caso (`in_progress`, `awaiting_customer`, `resolved`, `han
 
 ## Critérios de conclusão
 
-- [ ] "Voltou a funcionar" resolve com `customer_confirmed`; "obrigado" não resolve.
-- [ ] Transições inválidas são recusadas.
-- [ ] Tentativas e resultados ficam registrados por caso.
+- [x] "Voltou a funcionar" resolve com `customer_confirmed`; "obrigado" não resolve.
+- [x] Transições inválidas são recusadas.
+- [x] Tentativas e resultados ficam registrados por caso.
 
 ## Validação
 
-A preencher na execução.
+2026-10-26: máquina de estados em `cases.py` (testes em `tests/unit/test_case_states.py`), sinal do caso no Router v2, rota `acknowledgement`, `customer_confirmed` e `tool_verified`, tentativas em `case_attempts` (migração 0003). Verificado com modelo programado e real. Ver [evidência](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md). Revisão não independente.
 
 ## Status
 
 ```text
-pendente
+concluída
 ```

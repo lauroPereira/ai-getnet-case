@@ -35,7 +35,8 @@ def test_seed_is_idempotent_and_keeps_handoffs(tmp_path):
     clock = FixedClock("2026-10-26T10:00:00")
     seed(conn, clock)
     conn.execute(
-        "INSERT INTO handoff_cases VALUES ('h1','SIM-1',?, 'k1','reason','{}','2026-10-26T10:00:00')", (MAIN_CUSTOMER,)
+        "INSERT INTO handoff_cases (case_id, protocol, customer_id, idempotency_key, reason, payload, created_at) VALUES ('h1','SIM-1',?, 'k1','reason','{}','2026-10-26T10:00:00')",
+        (MAIN_CUSTOMER,),
     )
     counts = seed(conn, clock)
     assert counts["customers"] == 2

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import logging
-import uuid
 from collections.abc import Callable
 
 from langchain_core.runnables import RunnableConfig
@@ -18,6 +17,7 @@ from merchant_assistant.agents import escalation, knowledge, personality, router
 from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.api.schemas import Handoff, MessageRequest, MessageResponse, Resolution, Source
 from merchant_assistant.config import Settings
+from merchant_assistant.conversations import Conversation, ConversationStore
 from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
 from merchant_assistant.guardrails.input import check_input
@@ -56,6 +56,7 @@ def input_guard(state: GraphState, ctx: RunContext) -> dict:
                 intents=["blocked_by_input_guard"],
                 safety="injection",
                 clarification_question=None,
+                case_signal="none",
             ),
             "status": "refused",
             "policy": policy("refused", language),
@@ -167,9 +168,11 @@ class Orchestrator:
         self.graph = build_graph()
 
     def handle(self, request: MessageRequest, request_id: str) -> MessageResponse:
-        conversation_id = request.conversation_id or f"conv_{uuid.uuid4().hex[:20]}"
         conn = connect(self.settings.db_path)
         try:
+            store = ConversationStore(conn, self.clock)
+            conv = store.open(request.conversation_id, request.user_id)  # raises ConversationNotFound
+            history = [] if conv.created else store.history(conv.conversation_id)
             known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (request.user_id,)).fetchone()
             env = ToolEnv(conn, self.clock, CustomerContext(request.user_id, known is not None), dict(self.faults))
             ctx = RunContext(
@@ -184,19 +187,51 @@ class Orchestrator:
             )
             initial = GraphState(
                 request_id=request_id,
-                conversation_id=conversation_id,
+                conversation_id=conv.conversation_id,
                 user_id=request.user_id,
                 customer_known=known is not None,
                 message=request.message,
+                history=history,
+                case=conv.case_view(),
+                prefix_cache={"topic": conv.prefix_topic, "at": conv.prefix_at, "data": conv.prefix}
+                if conv.prefix
+                else None,
             )
             final = GraphState.model_validate(
                 self.graph.invoke(initial, config={"configurable": {"ctx": ctx}, "recursion_limit": 30})
             )
+            self._persist(store, conv, final)
             response = self._response(final, ctx)
             self._record(final, ctx, response)
             return response
         finally:
             conn.close()
+
+    def _persist(self, store: ConversationStore, conv: Conversation, state: GraphState) -> None:
+        """Stores the turn: feedback on earlier attempts, new attempts, case state, cached prefix and messages."""
+        signal = state.decision.case_signal if state.decision else "none"
+        if signal == "still_failing":
+            store.record_feedback(conv.conversation_id, "failed", "customer_reported")
+        elif signal == "resolved":
+            store.record_feedback(conv.conversation_id, "worked", "customer_confirmed")
+        steps = state.support.steps_given if state.support else []
+        cycles = conv.technical_cycles + (1 if steps else 0)
+        if steps:
+            store.add_attempts(conv.conversation_id, cycles, steps)
+        topic = (state.decision.topic if state.decision else None) or conv.topic
+        fresh_prefix = state.prefix if state.prefix.get("customer_known") and not state.prefix.get("reused") else None
+        store.save(
+            conv,
+            state=state.case_next.get("state", conv.state),
+            topic=topic,
+            technical_cycles=cycles,
+            evidence=state.case_next.get("evidence"),
+            prefix=fresh_prefix,
+            prefix_topic=state.prefix.get("topic") if fresh_prefix else None,
+        )
+        route = state.decision.route if state.decision else None
+        store.append(conv.conversation_id, state.request_id, "merchant", state.message, route, None)
+        store.append(conv.conversation_id, state.request_id, "assistant", state.answer or "", route, state.status)
 
     def _response(self, state: GraphState, ctx: RunContext) -> MessageResponse:
         language = state.decision.language if state.decision else guess_language(state.message)
@@ -204,6 +239,7 @@ class Orchestrator:
         handoff = None
         if state.escalation:
             handoff = Handoff(protocol=state.escalation.protocol, reason=state.escalation.reason)
+        case_state = state.case_next.get("state") or ("handoff" if status == "handoff" else "awaiting_customer")
         return MessageResponse(
             answer=state.answer or policy("unavailable", language),
             status=status,
@@ -213,9 +249,16 @@ class Orchestrator:
             sources=_sources(state, ctx),
             request_id=state.request_id,
             conversation_id=state.conversation_id,
-            resolution=Resolution(state="handoff" if status == "handoff" else "awaiting_customer"),
+            resolution=Resolution(state=case_state, evidence=state.case_next.get("evidence")),
             handoff=handoff,
         )
+
+    def conversation(self, conversation_id: str) -> dict | None:
+        conn = connect(self.settings.db_path)
+        try:
+            return ConversationStore(conn, self.clock).get(conversation_id)
+        finally:
+            conn.close()
 
     def _record(self, state: GraphState, ctx: RunContext, response: MessageResponse) -> None:
         summary = {

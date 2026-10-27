@@ -30,7 +30,7 @@ def prompt_versions(prompts_dir: Path) -> dict[str, str]:
 
 @lru_cache
 def load_prompt(prompts_dir: Path, name: str) -> Prompt:
-    candidates = sorted(prompts_dir.glob(f"{name}.v*.md"))
+    candidates = sorted(prompts_dir.glob(f"{name}.v*.md"), key=lambda p: int(p.stem.rsplit(".v", 1)[1]))
     if not candidates:
         raise FileNotFoundError(f"prompt not found: {name}")
     raw = candidates[-1].read_text(encoding="utf-8")

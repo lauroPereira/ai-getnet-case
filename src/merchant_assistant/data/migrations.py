@@ -175,10 +175,21 @@ CREATE INDEX IF NOT EXISTS attempts_conversation ON case_attempts(conversation_i
 
 ATTEMPTS_DOWN = "DROP TABLE IF EXISTS case_attempts;"
 
+HANDOFF_CONVERSATION_UP = """
+ALTER TABLE handoff_cases ADD COLUMN conversation_id TEXT;
+CREATE INDEX IF NOT EXISTS handoff_conversation ON handoff_cases(conversation_id);
+"""
+
+HANDOFF_CONVERSATION_DOWN = """
+DROP INDEX IF EXISTS handoff_conversation;
+ALTER TABLE handoff_cases DROP COLUMN conversation_id;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
     Migration(3, "case_attempts", ATTEMPTS_UP, ATTEMPTS_DOWN),
+    Migration(4, "handoff_conversation", HANDOFF_CONVERSATION_UP, HANDOFF_CONVERSATION_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

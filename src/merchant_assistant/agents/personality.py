@@ -9,7 +9,8 @@ import json
 
 from pydantic import ValidationError
 
-from merchant_assistant.agents.common import LANGUAGE_NAME, policy, prompt
+from merchant_assistant.agents.common import LANGUAGE_NAME, format_history, policy, prompt
+from merchant_assistant.cases import Turn, next_state
 from merchant_assistant.data.clock import today
 from merchant_assistant.guardrails.output import drop_unsupported_sentences, unsupported
 from merchant_assistant.llm.base import CallSpec, LLMError
@@ -61,8 +62,10 @@ def contributions(state: GraphState, language: str) -> dict:
     return data
 
 
-def deterministic_answer(state: GraphState, language: str) -> str:
+def deterministic_answer(state: GraphState, language: str, case_state: str | None = None) -> str:
     """Fallback used when the model is unavailable or its text fails the output guard."""
+    if state.decision and state.decision.route == "acknowledgement":
+        return policy("ack_resolved" if case_state == "resolved" else "ack", language)
     parts: list[str] = []
     if state.policy:
         parts.append(state.policy)
@@ -91,7 +94,18 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     language = state.decision.language if state.decision else "en"
     status = final_status(state)
     agents = [*state.agents, "personality"]
+    signal = state.decision.case_signal if state.decision else "none"
+    tool_verified = bool(state.support and state.support.issue_verified_by_tool)
+    case_state, evidence = next_state(
+        state.case.get("state", "in_progress"), state.case.get("evidence"), Turn(status, signal, tool_verified)
+    )
+    case_next = {"state": case_state, "evidence": evidence}
     data = contributions(state, language)
+    data |= {
+        "route": state.decision.route if state.decision else None,
+        "case_signal": signal,
+        "case_state_after_reply": case_state,
+    }
     p = prompt(ctx, "personality")
     ctx.step_notes["prompt"] = p.ref
     spec = CallSpec(
@@ -101,6 +115,8 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             status=status,
             today=today(ctx.clock).isoformat(),
             contributions=json.dumps(data, ensure_ascii=False, indent=1),
+            history=format_history(state.history, limit=4),
+            case_state=case_state,
         ),
         input="Write the final reply to the merchant.",
         effort="none",
@@ -112,22 +128,22 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         source = "personality"
     except RECOVERABLE as exc:
         ctx.step_notes["error"] = str(exc)
-        draft, source = deterministic_answer(state, language), "fallback"
+        draft, source = deterministic_answer(state, language, case_state), "fallback"
     if state.escalation and state.escalation.protocol not in draft:
         draft = f"{draft}\n{HANDOFF_LINE[language].format(protocol=state.escalation.protocol)}"
-    ctx.step_notes["source"] = source
-    return {"draft_answer": draft, "status": status, "agents": agents}
+    ctx.step_notes.update(source=source, case_state=case_state, evidence=evidence)
+    return {"draft_answer": draft, "status": status, "agents": agents, "case_next": case_next}
 
 
 def run_output_guard(state: GraphState, ctx: RunContext) -> dict:
     language = state.decision.language if state.decision else "en"
-    answer = state.draft_answer or deterministic_answer(state, language)
+    answer = state.draft_answer or deterministic_answer(state, language, state.case_next.get("state"))
     ev = evidence(state, ctx)
     ref = today(ctx.clock)
     violations = unsupported(answer, ev, ref)
     ctx.step_notes["violations"] = [f"{v.kind}:{v.value}" for v in violations]
     if violations:
-        fallback = deterministic_answer(state, language)
+        fallback = deterministic_answer(state, language, state.case_next.get("state"))
         if not unsupported(fallback, ev, ref):
             answer = fallback
         else:

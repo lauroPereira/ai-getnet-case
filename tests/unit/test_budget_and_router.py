@@ -62,6 +62,7 @@ def decision(**kw):
         "intents": ["x"],
         "safety": "none",
         "clarification_question": None,
+        "case_signal": "none",
     }
     return RouterDecision.model_validate(base | kw)
 

@@ -19,10 +19,10 @@ def test_new_database_reaches_latest(tmp_path):
 def test_down_and_up_keep_core_data(tmp_path):
     conn = connect(tmp_path / "db.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
-    assert migrate(conn, 1) == ["down 0003_case_attempts", "down 0002_conversations"]
+    assert migrate(conn, 1) == ["down 0004_handoff_conversation", "down 0003_case_attempts", "down 0002_conversations"]
     assert "conversations" not in tables(conn) and current_version(conn) == 1
     assert conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0] == 2
-    assert migrate(conn) == ["up 0002_conversations", "up 0003_case_attempts"]
+    assert migrate(conn) == ["up 0002_conversations", "up 0003_case_attempts", "up 0004_handoff_conversation"]
     assert current_version(conn) == LATEST
 
 
