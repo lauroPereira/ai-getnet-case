@@ -3,9 +3,11 @@
 ## Estado atual
 
 **Verificação sem custo do candidato r6 concluída; revisão e revalidação funcional aptas.**
-Não é uma release. A autorização humana abrange implementação e validação sem
-chamadas pagas; CA-32/JEV real, consulta autenticada de modelos sem gratuidade
-comprovada, integração Git e publicação permanecem pendentes.
+O responsável aceitou a integração privada com as limitações registradas.
+[PR backend #5](https://github.com/lauroPereira/ai-getnet-case/pull/5) e
+[PR web #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1) abertos.
+CA-32/JEV real e disponibilidade autenticada de modelos permanecem pendentes;
+QA pago foi autorizado a partir da v0.5.0. Não houve inferência paga v0.4.0.
 
 [Manifesto r6](v040-candidato-r6.json): backend na branch
 `codex/v0.4.0-perfis-interface`, base/HEAD `bd549cc921ccffb37bd304a0959b8a4b690d6421`,
@@ -106,16 +108,16 @@ Uma tentativa adicional de [metadados públicos sem credenciais](v040-metadados-
 recebeu 401/401/403; nenhum ID foi obtido. Não foi feita consulta autenticada
 nem inferência; o resultado não fecha a lacuna de verificação via API.
 
-Nenhum commit/push, remoto web, tag ou publicação da v0.4.0 foi autorizado ou
-executado. A v0.3.0 permanece integrada e tagueada. Retorno previsto pela tag
+O responsável autorizou commits/pushes necessários aos PRs e merges e a
+criação do remoto web privado. [Registro da integração](v040-integracao.md)
+identifica commits e escopo. A v0.3.0 permanece integrada e tagueada. Retorno previsto pela tag
 v0.3.0 e pela migração 0006→0005, validada somente em bancos sintéticos isolados.
 
 ## Próximo passo
 
 O trabalho de implementação/verificação autorizado sem chamadas pagas está
-fechado nas evidências acima. Permanecem validação real/identificação de
-modelos na conta e aceite da entrega, seguidos de eventual integração Git
-autorizada. Não avançar à v0.5.0 ou
-declarar v0.4.0 completa enquanto requisitos reais e aceite aplicável estiverem
-pendentes. Arquivos de tarefas/README refletem a passagem congelada; este
-registro central acompanha o estado posterior sem alterar o candidato validado.
+fechado nas evidências acima. A integração e o início da v0.5.0 foram aceitos
+explicitamente com as pendências de validação real mantidas; elas não passam
+a concluídas pelo merge. Conferir merge/checks e preparar a próxima versão a
+partir das mains atualizadas. Os manifestos r6 preservam os bytes pré-Git;
+os hashes canônicos e o delta documental ficam nos registros de integração.

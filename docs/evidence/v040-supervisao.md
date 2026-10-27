@@ -339,3 +339,19 @@ incremental/reuso de imagem não é declarado rebuild canônico. Total de gasto
 real do projeto permanece US$0,59283583, nenhuma API paga nesta versão. Sem
 commit, push, tag, remoto web, publicação ou avanço à v0.5.0. Exatamente três
 agentes autorizados mantidos em `gpt-6-luna/high`; nenhuma delegação adicional.
+
+## Integração autorizada
+
+Responsável autorizou PRs/merges e início da v0.5.0, com QA pago apenas a
+partir da próxima versão. Confirmou repositório web privado e identidade
+local Gmail do projeto após divergência da configuração global; global
+preservada. Base web real de 70 arquivos publicada em main, atualizada e
+branch criada antes dos ajustes de integração.
+
+[Backend PR5](https://github.com/lauroPereira/ai-getnet-case/pull/5) e
+[Web PR1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1) abertos e
+anexados ao chat. Código/runtime iguais ao r6; somente README/changelog e
+estados documentais foram alinhados. [Hashes Git](v040-git-integracao.json)
+conferem após commit e normalização de texto. Serviços de QA próprios foram
+identificados e parados antes da troca de branches; imagens/evidências
+preservadas. Checks e merge ainda são ações a confirmar neste registro.

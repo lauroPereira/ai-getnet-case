@@ -51,7 +51,17 @@ foi testada apenas em bancos sintéticos. Não remover dados nem reiniciar ledge
 
 ## Estado
 
-Autorização registrada e preparação em andamento. URLs, SHAs e resultado
-efetivo serão conferidos antes de declarar integração concluída. A v0.5.0
-partirá das mains integradas/atualizadas, com plano e aprovações próprias de
-APIs e migração antes de alterar produto.
+PRs abertos e branches enviadas:
+
+- Backend [PR #5](https://github.com/lauroPereira/ai-getnet-case/pull/5),
+  implementação `be86c5c2b0961c3b47dd760f0b4eee318a2162fa`.
+- Web [PR #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1),
+  implementação `b76d415dbbc611cc767c7a5be43d00cf28232a68`.
+- [Manifesto canônico Git](v040-git-integracao.json): 160 blobs backend e
+  84 de fonte web conferidos, sem divergências; fonte canônica combinada
+  `0e20fff42cf4ec982961a8adf688b365eb69ae27ff0dae0e9f531fc71952dac9`.
+
+Checks e resultado efetivo do merge serão reconferidos antes de declarar
+integração concluída. O fechamento pós-merge fica no início da v0.5.0, evitando
+auto-referência de SHA no próprio commit. A próxima versão parte das mains
+integradas/atualizadas, com plano e aprovações específicas de APIs/migração.
