@@ -2,7 +2,7 @@
 
 # Plano: incrementos pós-núcleo
 
-Versão 0.1 — 2026-10-26 — **rascunho para aprovação**.
+Versão 0.2 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, com a sequência até a v0.7.0. As decisões 0006 a 0012 continuam como proposta até o aceite.
 
 ## Especificação relacionada
 
@@ -27,7 +27,7 @@ Versão 0.1 — 2026-10-26 — **rascunho para aprovação**.
 | --- | --- | --- |
 | 0.2.0 | Migrações; conversas e mensagens; estado do caso; tentativas; ciclo técnico; servidor MCP e cliente de demonstração | — |
 | 0.3.0 | App `mocks` (PRaaS e cobrança); `simulate_pricing`, `get_fee_breakdown`, `get_contract_snapshot` ampliado; comparador em centavos; `get_enablement_requests`; `get_sale_cancellation_context` | — |
-| 0.4.0 | Adaptador JEV; catálogo de modelos e capacidades; adaptadores de provedor por agente; perfis versionados; API `/v1` com autenticação; comparação de Routers | Projeto criado; chat com cenários e estado; seleção de perfil; toggle LLM/JEV; inspeção de execuções; modo com respostas simuladas |
+| 0.4.0 | Adaptador JEV; adaptador DeepSeek; catálogo de modelos e capacidades verificado; perfis versionados; API `/v1` com autenticação; comparação de Routers | Repositório próprio criado a partir do ai-dev-template; chat com cenários e estado; seleção de perfil; toggle LLM/JEV; inspeção de execuções; modo com respostas simuladas |
 | 0.5.0 | Versões da base: documentos, rascunhos, diff, build de índice candidato, teste, ativação e retorno | Lista e editor de documentos; acompanhamento do build; ativação e retorno |
 | 0.6.0 | Registro de execução com evidências mínimas; verificações determinísticas por etapa; Evaluation Agent; propostas; candidatas; regressão; aprovação; ativação | Avaliações por etapa; propostas e aprovação |
 | 0.7.0 | Experimentos (estimativa, execução isolada, repetições); agregações para gráficos; papéis e limites da demonstração | Experimentos; quatro gráficos rastreáveis; acesso do recrutador; README e roteiro do vídeo |
@@ -97,7 +97,7 @@ Cada versão termina com regressão do núcleo, changelog, instruções de retor
 
 **v0.3.0 — Jornadas de negócio (a detalhar):** serviço `mocks`, preço e contestação com os quatro comportamentos, habilitação de bandeiras, cancelamento × encerramento.
 
-**v0.4.0 — JEV, modelos por agente e interface inicial (a detalhar):** adaptador JEV real, catálogo de capacidades, perfis versionados, API `/v1` com papéis, projeto Streamlit com chat, perfis, toggle e inspeção; verificação antecipada de IP público e redirecionamento de porta.
+**v0.4.0 — JEV, modelos por agente e interface inicial (a detalhar):** adaptador JEV real, adaptador DeepSeek (preços e capacidades verificados na documentação oficial antes do uso), catálogo de capacidades, perfis versionados, API `/v1` com papéis, repositório `ai-getnet-case-web` criado com o ai-dev-template, projeto Streamlit com chat, perfis, toggle e inspeção; verificação antecipada de IP público e redirecionamento de porta.
 
 **v0.5.0 — Base editável e versões (a detalhar):** documentos, rascunhos, diff, índice candidato, teste, ativação e retorno.
 

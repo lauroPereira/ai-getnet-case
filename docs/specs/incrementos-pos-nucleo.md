@@ -2,7 +2,7 @@
 
 # Especificação complementar: incrementos pós-núcleo
 
-Versão 0.1 — 2026-10-26 — **rascunho para aprovação**.
+Versão 0.2 — 2026-10-26 — **aprovada pelo responsável em 2026-10-26**, com a sequência de versões até a 0.7.0. A 0.2 registra as respostas às questões Q7, Q9, Q10 e Q12.
 
 Complementa a [especificação principal](assistente-multiagente-lojista.md) (v0.2), cujo núcleo foi entregue e validado como versão 0.1.0 (PR #1, commit `29a0088`). Os requisitos RF-01 a RF-37 e os critérios CA-01 a CA-17 e CA-26 continuam valendo e não podem regredir. O plano técnico está em [incrementos-pos-nucleo-plano.md](incrementos-pos-nucleo-plano.md).
 
@@ -106,7 +106,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 ### Modelos por agente e perfis
 
-- **RF-49** Cada agente (Router, Knowledge, Customer Support, Escalation, Personality e Evaluation) pode ter provedor, modelo e parâmetros próprios, escolhidos entre combinações implementadas e compatíveis com a função (ferramentas, saída estruturada, busca web). Identificadores vêm da API do provedor e da documentação oficial.
+- **RF-49** Cada agente (Router, Knowledge, Customer Support, Escalation, Personality e Evaluation) pode ter provedor, modelo e parâmetros próprios, escolhidos entre combinações implementadas e compatíveis com a função (ferramentas, saída estruturada, busca web). Provedores: OpenAI, DeepSeek e TypeSafe (JEV, só para a decisão do Router). Identificadores, capacidades e preços vêm da API do provedor e da documentação oficial, verificados antes de cada provedor ser oferecido; uma capacidade ausente (por exemplo, busca web) impede o uso do modelo na função que a exige.
 - **RF-50** Perfis de execução são salvos, versionados e imutáveis depois de publicados. Perfis iniciais: Referência; Híbrido (só o Router com JEV); Ajustado (um especialista alterado por vez).
 - **RF-51** A configuração é congelada no início de cada execução; mudanças posteriores não a afetam. O trace registra o perfil, sua versão e o modelo efetivamente usado em cada etapa.
 - **RF-52** O modelo de embeddings é tratado à parte: trocá-lo exige reconstruir e versionar o índice (RF-64).
@@ -156,7 +156,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 - **RNF-09 Compatibilidade:** `POST /messages` mantém o contrato da v0.1.0; campos novos são opcionais. A API da interface é versionada (`/v1`).
 - **RNF-10 Segurança da exposição:** a interface exposta exige autenticação, usa HTTPS quando possível (certificado próprio do Streamlit), limita requisições por sessão e não revela erros internos.
-- **RNF-11 Orçamento:** teto total de US$5 mantido, descontado o já gasto (US$0,31 em 2026-10-26). A demonstração pública tem sublimite próprio, definido pelo responsável.
+- **RNF-11 Orçamento:** teto total de US$5 mantido, descontado o já gasto (US$0,31 em 2026-10-26). A demonstração pública tem sublimite próprio e configurável, inicialmente US$1,00, que pode ser aumentado por decisão do responsável sem ultrapassar o teto total.
 - **RNF-12 Processo de desenvolvimento:** o trabalho ocorre na sessão principal. Subagentes só com autorização explícita de escopo, quantidade, modelo e esforço, sem herança silenciosa nem troca por modelo mais caro. O consumo da ferramenta de desenvolvimento e o orçamento das APIs da aplicação são controles separados.
 - **RNF-13 Testes:** toda funcionalidade nova tem testes sem rede e sem custo; rodadas reais são limitadas e registradas em evidências. Nenhum requisito é dado como concluído só com mock ou documentação.
 
@@ -208,6 +208,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 | Provedor de internet com CGNAT ou roteador sem redirecionamento de porta | Acesso direto pelo IP público impossível | Validar cedo (v0.4.0); registrar o impedimento; túnel como alternativa documentada |
 | Exposição da máquina pessoal na internet | Abuso, consumo de cota, ataque | Só a interface exposta, autenticação, HTTPS, limite por sessão e sublimite de orçamento |
 | JEV com acurácia menor em português | Rotas erradas no modo Híbrido | Medir por idioma; registrar; não esconder o resultado |
+| DeepSeek sem as mesmas capacidades da OpenAI (busca web, formato de saída estruturada) | Perfis inválidos ou respostas fora do contrato | Catálogo de capacidades verificado; validação da saída pelo mesmo código; só dados sintéticos enviados |
 | Quantidade de recursos novos | Atraso e pressa nas últimas versões | Versões pequenas; cada uma utilizável e com critérios próprios |
 | Avaliador por modelo com viés ou visão parcial | Notas enganosas | Critérios determinísticos primeiro; evidências anexadas; falhas críticas isoladas |
 | Experimentos consumirem o orçamento | Ultrapassar o teto | Estimativa e confirmação; reserva atômica; sublimites |
@@ -217,9 +218,9 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 | ID | Questão | Responsável | Bloqueia |
 | --- | --- | --- | --- |
-| Q7 | Aprovar esta especificação e a sequência de versões | Responsável | v0.2.0 |
+| Q7 | ~~Aprovar esta especificação e a sequência de versões~~ Aprovada em 2026-10-26, até a v0.7.0 | Responsável | — |
 | Q8 | Autorizar a tag `v0.1.0` na `main` | Responsável | RF-38 |
-| Q9 | O projeto web terá repositório próprio no GitHub? Usará o ai-dev-template? | Responsável | v0.4.0 |
-| Q10 | Sublimite de gasto da demonstração pública e janela em que ficará disponível | Responsável | v0.7.0 |
+| Q9 | ~~Repositório próprio e template para o projeto web~~ Sim: repositório próprio no GitHub, criado a partir do ai-dev-template | Responsável | — |
+| Q10 | Sublimite de gasto da demonstração: ~~valor~~ inicial US$1,00, aumentável pelo responsável quando necessário (RNF-11). Janela de disponibilidade ainda a definir | Responsável | v0.7.0 (janela) |
 | Q11 | Disponibilidade de redirecionamento de porta no roteador e IP público sem CGNAT | Responsável (verificação na v0.4.0) | RF-71 |
-| Q12 | Provedores além de OpenAI e JEV por agente (ex.: DeepSeek): incluir ou não | Responsável | RF-49 |
+| Q12 | ~~Provedores além de OpenAI e JEV~~ Sim: DeepSeek incluído como provedor por agente (RF-49) | Responsável | — |

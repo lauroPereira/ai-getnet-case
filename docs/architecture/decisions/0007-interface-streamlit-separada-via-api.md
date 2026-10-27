@@ -16,7 +16,7 @@ O responsável pediu Streamlit e um projeto separado. A interface precisa de cha
 
 ## Decisão
 
-- Projeto próprio em `C:\workspace\ai-getnet-case-web`, com Streamlit e um cliente HTTP gerado a partir do OpenAPI do backend.
+- Projeto próprio em `C:\workspace\ai-getnet-case-web`, com repositório próprio no GitHub, criado a partir do ai-dev-template (decisão do responsável em 2026-10-26), com Streamlit e um cliente HTTP gerado a partir do OpenAPI do backend.
 - Nenhum acesso direto a arquivos, SQLite ou Qdrant; nenhuma regra de negócio na interface.
 - API `/v1` versionada; `POST /v1/sessions` emite token de papel `demo` ou `admin`; o backend verifica o papel em cada rota.
 - Modo de respostas simuladas na interface para desenvolver as telas sem o backend.
@@ -29,7 +29,7 @@ O responsável pediu Streamlit e um projeto separado. A interface precisa de cha
 
 ## Consequências
 
-Contratos explícitos e testáveis; a API segue útil sozinha. Exige manter versão de contrato e um segundo projeto (repositório e template a decidir, Q9).
+Contratos explícitos e testáveis; a API segue útil sozinha. Exige manter versão de contrato e um segundo repositório, com seu próprio fluxo SDD.
 
 ## Data
 

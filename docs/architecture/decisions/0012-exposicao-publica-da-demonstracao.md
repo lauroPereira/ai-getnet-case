@@ -19,7 +19,7 @@ O responsável prefere compartilhar a demonstração diretamente pelo IP públic
 - Expor só a porta da interface; API, Qdrant e `mocks` ficam na rede interna.
 - A interface exige login; o papel `demo` vê cenários e perfis autorizados; o papel `admin` é reservado ao responsável e verificado no backend.
 - HTTPS com certificado próprio configurado no Streamlit; sem isso, a credencial de demonstração é de uso único e de baixo privilégio.
-- Limite de requisições por sessão e sublimite de orçamento da demonstração (Q10), com bloqueio explícito ao atingir.
+- Limite de requisições por sessão e sublimite de orçamento da demonstração, inicialmente US$1,00 e aumentável pelo responsável dentro do teto total, com bloqueio explícito ao atingir.
 - Verificar cedo (v0.4.0) IP público, CGNAT e redirecionamento de porta; se impedido, registrar e oferecer túnel como alternativa documentada.
 - Janela de disponibilidade definida; ao fim, fechar a porta.
 
