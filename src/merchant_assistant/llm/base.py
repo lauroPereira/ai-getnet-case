@@ -7,7 +7,7 @@ settles the real usage after it. Implementations: OpenAI (real) and Scripted (de
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Generic, Literal, Protocol, TypeVar
 
 from pydantic import BaseModel
@@ -48,7 +48,14 @@ class WebAnswer(BaseModel):
 
 class Meter(Protocol):
     def reserve(
-        self, *, agent: str, model: str, est_input_tokens: int, max_output_tokens: int, web_search_calls: int = 0
+        self,
+        *,
+        agent: str,
+        model: str,
+        est_input_tokens: int,
+        max_output_tokens: int,
+        web_search_calls: int = 0,
+        effective_parameters: dict[str, int] | None = None,
     ) -> Any: ...
 
     def settle(self, reservation: Any, usage: Usage) -> None: ...
@@ -95,6 +102,66 @@ class LLM(Protocol):
     ) -> LLMResult[T]: ...
 
     def web_search(self, spec: CallSpec, meter: Meter, *, max_calls: int = 1) -> LLMResult[WebAnswer]: ...
+
+
+class OutputTokenLimitLLM:
+    """Apply a profile's output cap before metering and forwarding a model call."""
+
+    def __init__(self, llm: LLM, max_output_tokens: int) -> None:
+        self._llm = llm
+        self.model = llm.model
+        self.max_output_tokens = max_output_tokens
+        self.effective_parameters = {"max_output_tokens": max_output_tokens}
+
+    def _bounded(self, spec: CallSpec) -> CallSpec:
+        return replace(spec, max_output_tokens=min(spec.max_output_tokens, self.max_output_tokens))
+
+    def effective_parameters_for(self, spec: CallSpec) -> dict[str, int]:
+        return {"max_output_tokens": min(spec.max_output_tokens, self.max_output_tokens)}
+
+    def _meter(self, meter: Meter, spec: CallSpec) -> Meter:
+        parameters = {"max_output_tokens": spec.max_output_tokens}
+
+        class EffectiveParameterMeter:
+            def reserve(self, **kwargs: Any) -> Any:
+                kwargs["effective_parameters"] = parameters
+                return meter.reserve(**kwargs)
+
+            def settle(self, reservation: Any, usage: Usage | None) -> None:
+                meter.settle(reservation, usage)
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(meter, name)
+
+        return EffectiveParameterMeter()
+
+    def parse(self, spec: CallSpec, schema: type[T], meter: Meter) -> LLMResult[T]:
+        bounded = self._bounded(spec)
+        return self._llm.parse(bounded, schema, self._meter(meter, bounded))
+
+    def run_tools(
+        self,
+        spec: CallSpec,
+        schema: type[T],
+        meter: Meter,
+        *,
+        tools: list[dict],
+        call_tool: ToolCaller,
+        max_tool_calls: int,
+    ) -> LLMResult[T]:
+        bounded = self._bounded(spec)
+        return self._llm.run_tools(
+            bounded,
+            schema,
+            self._meter(meter, bounded),
+            tools=tools,
+            call_tool=call_tool,
+            max_tool_calls=max_tool_calls,
+        )
+
+    def web_search(self, spec: CallSpec, meter: Meter, *, max_calls: int = 1) -> LLMResult[WebAnswer]:
+        bounded = self._bounded(spec)
+        return self._llm.web_search(bounded, self._meter(meter, bounded), max_calls=max_calls)
 
 
 def estimate_tokens(*texts: str) -> int:

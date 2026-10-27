@@ -53,9 +53,11 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     )
     errors = list(state.errors)
     try:
-        decision = enforce(ctx.llm.parse(spec, RouterDecision, ctx).value, new_conversation=not state.history)
+        result = ctx.router_override or ctx.llm_for("router").parse(spec, RouterDecision, ctx).value
+        decision = enforce(result, new_conversation=not state.history)
     except (LLMError, ValidationError, LimitExceeded, BudgetExceeded) as exc:
         errors.append(f"router: {exc}")
+        ctx.step_notes["router_unavailable"] = True
         language = guess_language(state.message)
         decision = RouterDecision(
             route="clarify",

@@ -1,0 +1,18 @@
+{
+  "authorization": "Apagar somente as nove pastas listadas",
+  "proposal": "v040-limpeza-proposta.json",
+  "removed_directories": 9,
+  "removed_bytes": 184482264,
+  "free_bytes_before": 0,
+  "free_bytes_after": 179695616,
+  "exact_target_names_checked": true,
+  "absolute_paths_and_parent_checked": true,
+  "resolved_paths_checked": true,
+  "reparse_points_found": false,
+  "contents_counts_and_sizes_unchanged_before_removal": true,
+  "all_nine_targets_absent_after": true,
+  "v030_real_runtime_preserved": true,
+  "v040_test_runtime_preserved": true,
+  "scope": "Somente as nove pastas antigas de testes sintéticos aprovadas; nenhum código, relatório, harness, ledger ou runtime real removido.",
+  "method": "Remove-Item -LiteralPath -Recurse -Force em PowerShell, após verificação de todos os alvos; sem composição entre shells."
+}

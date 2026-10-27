@@ -63,7 +63,7 @@ def _web(state: GraphState, ctx: RunContext, language: str) -> KnowledgeResult:
         context={"mode": "web", "message": state.message},
     )
     try:
-        answer = ctx.llm.web_search(spec, ctx, max_calls=ctx.settings.web_search_max_calls).value
+        answer = ctx.llm_for("knowledge").web_search(spec, ctx, max_calls=ctx.settings.web_search_max_calls).value
     except RECOVERABLE as exc:
         ctx.step_notes["error"] = str(exc)
         return KnowledgeResult(mode="web", points=[], evidence_sufficient=False, missing=["web_search_unavailable"])
@@ -121,7 +121,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         },
     )
     try:
-        draft = ctx.llm.parse(spec, KnowledgeDraft, ctx).value
+        draft = ctx.llm_for("knowledge").parse(spec, KnowledgeDraft, ctx).value
     except RECOVERABLE as exc:
         ctx.step_notes["error"] = str(exc)
         result = KnowledgeResult(mode=mode, points=[], evidence_sufficient=False, missing=["knowledge_unavailable"])

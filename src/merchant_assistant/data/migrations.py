@@ -222,12 +222,88 @@ DROP TABLE IF EXISTS enablement_requests;
 DROP TABLE IF EXISTS contract_pricing_context;
 """
 
+PROFILES_API_UP = """
+CREATE TABLE profiles (
+    profile_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    demo_allowed INTEGER NOT NULL DEFAULT 0,
+    draft_version INTEGER NOT NULL DEFAULT 1,
+    published_version INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE profile_versions (
+    profile_id TEXT NOT NULL REFERENCES profiles(profile_id),
+    version INTEGER NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('draft', 'published')),
+    agents TEXT NOT NULL,
+    digest TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (profile_id, version)
+);
+CREATE TABLE api_principals (
+    principal_id TEXT PRIMARY KEY,
+    role TEXT NOT NULL CHECK (role IN ('demo', 'admin')),
+    customer_id TEXT,
+    access_key_digest TEXT NOT NULL UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE api_sessions (
+    session_id TEXT PRIMARY KEY,
+    token_digest TEXT NOT NULL UNIQUE,
+    principal_id TEXT NOT NULL REFERENCES api_principals(principal_id),
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT
+);
+CREATE TABLE router_comparisons (
+    comparison_id TEXT PRIMARY KEY,
+    principal_id TEXT NOT NULL REFERENCES api_principals(principal_id),
+    customer_id TEXT NOT NULL,
+    conversation_id TEXT,
+    message_digest TEXT NOT NULL,
+    state_digest TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    profile_version INTEGER NOT NULL,
+    selected_mechanism TEXT NOT NULL CHECK (selected_mechanism IN ('llm', 'jev')),
+    decisions TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    consumed_at TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE run_snapshots (
+    request_id TEXT PRIMARY KEY,
+    principal_id TEXT NOT NULL REFERENCES api_principals(principal_id),
+    customer_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    profile_version INTEGER NOT NULL,
+    snapshot TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX api_sessions_expiration ON api_sessions(expires_at);
+CREATE INDEX comparisons_owner ON router_comparisons(principal_id, created_at);
+CREATE INDEX snapshots_owner ON run_snapshots(principal_id, created_at);
+"""
+
+PROFILES_API_DOWN = """
+DROP INDEX IF EXISTS snapshots_owner;
+DROP INDEX IF EXISTS comparisons_owner;
+DROP INDEX IF EXISTS api_sessions_expiration;
+DROP TABLE IF EXISTS run_snapshots;
+DROP TABLE IF EXISTS router_comparisons;
+DROP TABLE IF EXISTS api_sessions;
+DROP TABLE IF EXISTS api_principals;
+DROP TABLE IF EXISTS profile_versions;
+DROP TABLE IF EXISTS profiles;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
     Migration(3, "case_attempts", ATTEMPTS_UP, ATTEMPTS_DOWN),
     Migration(4, "handoff_conversation", HANDOFF_CONVERSATION_UP, HANDOFF_CONVERSATION_DOWN),
     Migration(5, "business_journeys", JOURNEYS_UP, JOURNEYS_DOWN),
+    Migration(6, "profiles_api", PROFILES_API_UP, PROFILES_API_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

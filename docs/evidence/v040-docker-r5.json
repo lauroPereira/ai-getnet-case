@@ -1,0 +1,89 @@
+{
+  "candidate": "v0.4.0-local-r5",
+  "created_at_utc": "2026-10-27T13:24:50.793849+00:00",
+  "source_fingerprint_sha256": "a65496ada0c9757e11a581fb61a6236a6606f0fd5a5ed02c31f44ce407999d34",
+  "backend_runtime_fingerprint_sha256": "b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5",
+  "backend_build_fingerprint_sha256": "ed67d7ff81f6ed49042e9f3aa332ac145fdd004fa38d6b99e7a05072155d816d",
+  "build_mode": "incremental application wheel on pinned r2 image",
+  "canonical_dockerfile_rebuilt": false,
+  "unchanged_baseline_inputs": [
+    "Dockerfile",
+    "pyproject.toml",
+    ".dockerignore",
+    "docker/entrypoint.sh",
+    "data inputs",
+    "prompts"
+  ],
+  "base_image_id": "sha256:67f4dc3fa6c06f34950246b4ab64527ae2ffe277fc4f3c758450faec12fa62a1",
+  "image_id": "sha256:3dc18d777ae79407363fddd4f5ca65c862b2cbb059f5af61a08e2d9e362d5c85",
+  "image_tag": "getnet-v040-test:r5-incremental-20261027",
+  "wheel": ".pytest_cache\\v040-wheel-r5\\merchant_assistant-0.4.0-py3-none-any.whl",
+  "wheel_sha256": "012c113706965953c1edd2463322039f65a32c0a56bdf83213818c4d015cc694",
+  "wheel_package_files_checked": 63,
+  "wheel_unexpected_paths": [],
+  "recipe": ".pytest_cache\\v040-wheel-r5\\Dockerfile",
+  "recipe_sha256": "1d656f9df3787b755404334a8ba64cf0ca47a85ed07f41838bb3cc36555ded75",
+  "build_network": "none",
+  "pip_install_flags": [
+    "--no-index",
+    "--no-deps",
+    "--no-cache-dir",
+    "--force-reinstall"
+  ],
+  "build_exit_code": 0,
+  "build_log": ".pytest_cache/v040-docker-r5-build.log",
+  "container_name": "getnet-v040-synthetic-r5",
+  "container_id": "cadea8802f59f3492f3225e5f6844260f4dd69c424ea5ef8532ab852171d6644",
+  "api_url": "http://127.0.0.1:18841",
+  "runtime": "tmpfs /app/.pytest_cache/v040-docker-r5/api",
+  "harness_readonly_bind": "tools/scripts/run_synthetic_v040_api.py",
+  "installed_verification": {
+    "installed_files_checked": 124,
+    "mismatches": [],
+    "python": "3.13.13 (main, May 19 2026, 23:47:56) [GCC 14.2.0]",
+    "packages": {
+      "fastapi": "0.162.0",
+      "starlette": "1.10.0",
+      "pydantic": "2.14.1",
+      "openai": "3.39.0",
+      "qdrant-client": "1.20.0",
+      "langgraph": "1.2.18",
+      "mcp": "2.3.0"
+    },
+    "candidate": "v0.4.0-local-r5",
+    "runtime_fingerprint": "b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5",
+    "configuration_inputs_verified_at_build": [
+      "Dockerfile",
+      "docker-compose.yml",
+      "pyproject.toml"
+    ]
+  },
+  "ready_status": 200,
+  "versions": {
+    "app": "0.4.0",
+    "schema": 6,
+    "index_chunks": 145
+  },
+  "provider_keys_configured": false,
+  "paid_provider_calls": 0,
+  "scope": "Application wheel was built from frozen r5 source, then installed into a new image without duplicating baseline dependencies. All 124 installed package/data/prompt/entrypoint files match r5. This is an incremental installed-app test, not a fresh run of the canonical Dockerfile, production bootstrap or real-provider validation. Synthetic tmpfs ledger is separate from the preserved project ledger.",
+  "default_healthcheck_disabled": true,
+  "source_integrity_after_packaging": {
+    "backend": {
+      "checked": 50,
+      "mismatches": []
+    },
+    "web": {
+      "checked": 84,
+      "mismatches": []
+    },
+    "runtime": {
+      "checked": 127,
+      "mismatches": []
+    },
+    "build": {
+      "checked": 128,
+      "mismatches": []
+    }
+  }
+}

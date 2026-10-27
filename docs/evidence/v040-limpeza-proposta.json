@@ -1,0 +1,52 @@
+{
+  "targets": [
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-r2-strict-20261027",
+      "files": 238,
+      "bytes": 20395630
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-r3-strict-20261027",
+      "files": 239,
+      "bytes": 20579960
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-r3-strict-20261027b",
+      "files": 239,
+      "bytes": 20579960
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-r4-strict-20261027",
+      "files": 239,
+      "bytes": 20579948
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-r5-strict-20261027",
+      "files": 239,
+      "bytes": 20579948
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-r6-strict-20261027",
+      "files": 239,
+      "bytes": 20579960
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-strict-20261027a",
+      "files": 237,
+      "bytes": 20395598
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-strict-20261027b",
+      "files": 238,
+      "bytes": 20395630
+    },
+    {
+      "path": "C:\\workspace\\ai-getnet-case\\.pytest_cache\\v030-strict-20261027c",
+      "files": 238,
+      "bytes": 20395630
+    }
+  ],
+  "total_bytes": 184482264,
+  "scope": "Only old synthetic pytest basetemp directories; excludes v030-real-runtime, v040 directories, root harnesses, code and evidence reports.",
+  "reparse_points": false
+}

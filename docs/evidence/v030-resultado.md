@@ -2,7 +2,7 @@
 
 ## Estado da entrega
 
-**Candidato validado e aprovado pelo responsável para integração em 2026-10-27**, na branch `codex/v0.3.0-jornadas`, a partir da main `8ee14c3a77819a74c3c6de8e75d3bd67f2d6a9c4`. Jornadas de preço, bandeiras e consulta de cancelamento implementadas; revisão técnica, revalidações e QA independente concluídos. A integração e a tag autorizadas são registradas na [passagem de integração](v030-integracao.md).
+**v0.3.0 integrada na main e tag enviada em 2026-10-27**: [PR #4](https://github.com/lauroPereira/ai-getnet-case/pull/4) concluído, merge `bd549cc921ccffb37bd304a0959b8a4b690d6421`, tag anotada `v0.3.0` no mesmo commit local/remoto. Jornadas de preço, bandeiras e consulta de cancelamento implementadas; revisão técnica, revalidações e QA independente concluídos. [Conferência da integração](v030-integracao.md).
 
 [Candidato de release](v030-release.md): 49 arquivos, fingerprint `3de3e863431e81740d014239bd88df093b48e9d37c9614993da59c826767c80a`; runtime `e58e5668172b992ebabf9777237686a2e0357cdccd5c7657436acbbc703b1cde`. O [r6-docs1](v030-candidato-r6-docs1.md) fechou estados/evidências das seis tarefas 21–26; após o aceite humano, somente README/CHANGELOG foram alinhados ao release. História, critérios, contratos, código, cenários e runtime são idênticos ao [r6 original preservado](v030-candidato-r6.md). Imagens validadas continuam r6; único insumo Docker alterado é o README como descrição do pacote, sem novo build declarado.
 
@@ -40,3 +40,9 @@ O responsável autorizou integralmente a [integração proposta](v030-integracao
 enviada, commit de produto `1baff5324458e909bb23be1f89fa7fa6a1f8f2d9`.
 O provedor não apresenta checks/status/jobs de CI; os 191 testes e pareceres
 registrados são validações locais. Confirmar merge e tag nos refs após a execução.
+
+**Conferência final concluída:** PR integrado; refs local/remoto de main/tag
+iguais ao merge acima. [Hashes canônicos Git](v030-git-integracao.json)
+reproduzem os blobs versionados, separadamente dos hashes locais históricos
+anteriores à normalização de finais de linha do Git. A próxima versão foi
+iniciada somente em planejamento, na branch `codex/v0.4.0-perfis-interface`.

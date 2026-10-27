@@ -97,7 +97,7 @@ Cada versão termina com regressão do núcleo, changelog, instruções de retor
 
 **v0.3.0 — Jornadas de negócio:** serviço `mocks`, preço e contestação com os quatro comportamentos, habilitação de bandeiras, cancelamento × encerramento. Detalhamento no [plano da v0.3.0](jornadas-v030-plano.md), tarefas 21 a 24 e [história de uso](../historias/jornadas-v030.md).
 
-**v0.4.0 — JEV, modelos por agente e interface inicial (a detalhar):** adaptador JEV real, adaptador DeepSeek (preços e capacidades verificados na documentação oficial antes do uso), catálogo de capacidades, perfis versionados, API `/v1` com papéis, repositório `ai-getnet-case-web` criado com o ai-dev-template, projeto Streamlit com chat, perfis, toggle e inspeção; verificação antecipada de IP público e redirecionamento de porta.
+**v0.4.0 — JEV, modelos por agente e interface inicial:** [plano detalhado proposto](perfis-interface-v040-plano.md), tarefas 27–32, contratos/sessões e base web apresentados antes da aprovação específica. Adaptador JEV real, adaptador DeepSeek (preços e capacidades verificados na documentação oficial antes do uso), catálogo de capacidades, perfis versionados, API `/v1` com papéis, projeto `ai-getnet-case-web` preparado com o ai-dev-template, Streamlit com chat, perfis, toggle e inspeção. A configuração pública do roteador permanece ação do responsável.
 
 **v0.5.0 — Base editável e versões (a detalhar):** documentos, rascunhos, diff, índice candidato, teste, ativação e retorno.
 

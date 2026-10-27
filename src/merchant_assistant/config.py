@@ -21,6 +21,10 @@ class Settings(BaseSettings):
 
     openai_api_key: SecretStr | None = None
     typesafe_api_key: SecretStr | None = None
+    deepseek_api_key: SecretStr | None = None
+    api_demo_access_key: SecretStr | None = None
+    api_admin_access_key: SecretStr | None = None
+    api_demo_customer_id: str = "cliente1988"
 
     agent_model: str = "gpt-6-luna"
     embedding_model: str = "text-embedding-3-small"

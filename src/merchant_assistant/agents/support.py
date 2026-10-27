@@ -137,7 +137,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     )
     before = len(ctx.outcomes)
     try:
-        draft = ctx.llm.run_tools(
+        draft = ctx.llm_for("support").run_tools(
             spec,
             SupportDraft,
             ctx,

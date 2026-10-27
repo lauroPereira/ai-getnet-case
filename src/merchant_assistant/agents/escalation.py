@@ -72,7 +72,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         context={"reason": reason, "case": case},
     )
     try:
-        draft = ctx.llm.parse(spec, EscalationDraft, ctx).value
+        draft = ctx.llm_for("escalation").parse(spec, EscalationDraft, ctx).value
     except RECOVERABLE as exc:
         ctx.step_notes["error"] = str(exc)
         draft = EscalationDraft(
