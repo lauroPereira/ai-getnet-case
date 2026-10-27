@@ -90,19 +90,64 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
                 ),
             ],
         )
-
+        conn.executemany(
+            "INSERT INTO contract_pricing_context VALUES (?,?,?,?)",
+            [
+                (MAIN_CUSTOMER, "demo_standard", "pricing_mock_v1", (d0 - timedelta(days=400)).isoformat()),
+                (OTHER_CUSTOMER, "demo_extended", "pricing_mock_v1", (d0 - timedelta(days=90)).isoformat()),
+            ],
+        )
+        conn.executemany(
+            "INSERT INTO enablement_requests VALUES (?,?,?,?,?,?,?)",
+            [
+                ("enr_1988_visa_001", MAIN_CUSTOMER, "visa", "pending", "SIM-BND-1988-001", _iso(at(-2, 9, 0)), None),
+                (
+                    "enr_1988_master_001",
+                    MAIN_CUSTOMER,
+                    "mastercard",
+                    "active",
+                    "SIM-BND-1988-002",
+                    _iso(at(-30, 9, 0)),
+                    _iso(at(-29, 9, 0)),
+                ),
+                (
+                    "enr_002_visa_001",
+                    OTHER_CUSTOMER,
+                    "visa",
+                    "active",
+                    "SIM-BND-002-001",
+                    _iso(at(-40, 9, 0)),
+                    _iso(at(-39, 9, 0)),
+                ),
+            ],
+        )
         sales = [
             # sale_id, customer, captured_at, gross, payment_type, installments, channel, device
             ("sale_1988_0001", MAIN_CUSTOMER, at(-1, 9, 42), 15000, "debit", 1, "pos", "dev_1988_gs01"),
             ("sale_1988_0002", MAIN_CUSTOMER, at(-1, 13, 5), 120000, "credit", 1, "pos", "dev_1988_gs01"),
             ("sale_1988_0003", MAIN_CUSTOMER, at(-1, 17, 30), 8000, "pix", 1, "pos", "dev_1988_gs01"),
             ("sale_1988_0004", MAIN_CUSTOMER, at(-6, 11, 15), 50000, "credit", 1, "payment_link", None),
+            ("sale_1988_0005", MAIN_CUSTOMER, at(-2, 14, 30), 20000, "credit", 2, "payment_link", None),
             ("sale_002_0001", OTHER_CUSTOMER, at(-1, 10, 0), 99000, "credit", 3, "pos", "dev_002_gc01"),
             ("sale_002_0002", OTHER_CUSTOMER, at(-1, 15, 20), 4500, "debit", 1, "get_tap", "dev_002_tap01"),
         ]
         conn.executemany(
             "INSERT INTO sales VALUES (?,?,?,?,?,?,?,?,?)",
             [(s[0], s[1], _iso(s[2]), s[3], "BRL", s[4], s[5], s[6], s[7]) for s in sales],
+        )
+        conn.executemany(
+            "INSERT INTO sale_cancellations VALUES (?,?,?,?,?,?)",
+            [
+                ("sale_1988_0002", MAIN_CUSTOMER, "requested", _iso(at(-1, 13, 10)), None, "merchant_request"),
+                (
+                    "sale_002_0001",
+                    OTHER_CUSTOMER,
+                    "completed",
+                    _iso(at(-1, 10, 20)),
+                    _iso(at(-1, 10, 21)),
+                    "duplicate_sale",
+                ),
+            ],
         )
 
         def receivable(rid, sale_id, customer, net, fee, expected, status):
@@ -152,7 +197,14 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
                     "wifi",
                     "offline",
                     _iso(now - timedelta(hours=3)),
-                    json.dumps({"wifi_configured": True, "mobile_data": "available", "firmware": "demo-4.2"}),
+                    json.dumps(
+                        {
+                            "wifi_configured": True,
+                            "mobile_data": "available",
+                            "firmware": "demo-4.2",
+                            "card_schemes": ["visa"],
+                        }
+                    ),
                 ),
                 (
                     "dev_002_gc01",

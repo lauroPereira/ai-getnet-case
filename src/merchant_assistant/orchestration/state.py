@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field
 
 from merchant_assistant.api.schemas import Route, Status
 
-Topic = Literal["receivables", "device", "authorization", "contract", "general"]
+Topic = Literal[
+    "receivables", "device", "authorization", "contract", "general", "pricing", "enablement", "cancellation"
+]
 Language = Literal["pt", "en"]
 Safety = Literal["none", "unsafe", "sensitive", "injection"]
 CaseSignal = Literal["none", "resolved", "still_failing", "thanks_only"]

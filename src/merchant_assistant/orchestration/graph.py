@@ -39,6 +39,10 @@ TOOL_TITLES = {
     "get_device_status": "Card machine status (your account)",
     "find_authorization_events": "Card authorization events (your account)",
     "get_contract_snapshot": "Contracted products (your account)",
+    "simulate_pricing": "Synthetic pricing and independent charge comparison",
+    "get_fee_breakdown": "Recorded fee breakdown (synthetic charge service)",
+    "get_enablement_requests": "Card-scheme enablement requests (your account)",
+    "get_sale_cancellation_context": "Sale cancellation status (your account)",
 }
 
 
@@ -162,9 +166,11 @@ class Orchestrator:
         budget: BudgetGuard,
         traces: TraceStore,
         faults: dict[str, str] | None = None,
+        mock_services: object | None = None,
     ) -> None:
         self.settings, self.llm, self.index, self.clock = settings, llm, index, clock
         self.budget, self.traces, self.faults = budget, traces, faults or {}
+        self.mock_services = mock_services
         self.graph = build_graph()
 
     def handle(self, request: MessageRequest, request_id: str) -> MessageResponse:
@@ -174,7 +180,13 @@ class Orchestrator:
             conv = store.open(request.conversation_id, request.user_id)  # raises ConversationNotFound
             history = [] if conv.created else store.history(conv.conversation_id)
             known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (request.user_id,)).fetchone()
-            env = ToolEnv(conn, self.clock, CustomerContext(request.user_id, known is not None), dict(self.faults))
+            env = ToolEnv(
+                conn,
+                self.clock,
+                CustomerContext(request.user_id, known is not None),
+                dict(self.faults),
+                self.mock_services,
+            )
             ctx = RunContext(
                 request_id=request_id,
                 settings=self.settings,
@@ -344,3 +356,5 @@ class Orchestrator:
     def close(self) -> None:
         if self.index is not None:
             self.index.client.close()
+        if self.mock_services is not None and hasattr(self.mock_services, "close"):
+            self.mock_services.close()

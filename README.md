@@ -13,11 +13,13 @@ curl -s localhost:8000/messages -H 'content-type: application/json' \
   -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?", "user_id": "cliente1988"}'
 ```
 
-**Status:** version 0.2.0 ([changelog](CHANGELOG.md)): the core delivery plus conversation memory, case states,
-technical follow-up and an MCP server. 141 offline tests; the 10 challenge examples, 17 held-out cases and 4
-multi-turn conversations pass the automated checks against the real model
-([regression report](docs/evidence/2026-10-26-regressao-v020.md)). Total API spend so far: US$0.45 of a US$5
-project budget. Next versions are planned in the [increments spec](docs/specs/incrementos-pos-nucleo.md).
+**Status:** v0.3.0 has been validated and approved by the owner for release; integration and tag execution are tracked in the
+[central validation record](docs/evidence/v030-resultado.md). The local r6 strict run passed 191 tests.
+Independent technical review and QA both returned a passing assessment. Validation re-evaluated 40 original real HTTP responses by deterministic replay and repeated
+four multi-turn conversations live (4/4); these are separate checks. See the [Developer r6 passage](docs/evidence/v030-developer-r6.md),
+[Reviewer r6](docs/evidence/v030-reviewer-r6.md), [QA r6](docs/evidence/v030-qa-r6.md),
+[HTTP replay](docs/evidence/v030-real-http-r2-replay.md) and [live conversations](docs/evidence/v030-real-conversations-r3.md).
+The release adds conversation memory, technical follow-up, MCP and synthetic pricing, card-scheme enablement and sale-cancellation journeys.
 
 ---
 
@@ -90,7 +92,7 @@ merchant-assistant mcp --customer cliente1988     # stdio server (for an MCP cli
 merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
 ```
 
-The demo lists the five tools, reads yesterday's receivables and recent declines, and shows that a receivable of
+The demo lists the support tools, reads yesterday's receivables and recent declines, and shows that a receivable of
 another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
 
 ```json
@@ -100,10 +102,10 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 ### Tests and evaluation
 
 ```bash
-pytest                                   # 141 tests, no network, no cost (scripted model + hashing embedder)
+pytest                                   # 191 tests in the validated v0.3.0 release; no network or cost
 ruff check .
 merchant-assistant eval --scripted       # end-to-end evaluation offline (wiring only, zero cost)
-merchant-assistant eval --judge          # real evaluation of the 27 labeled cases (≈ US$0.05)
+merchant-assistant eval --judge          # real evaluation; paid, check the current budget before running
 merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.001)
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
 ```
@@ -118,6 +120,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `AGENT_MODEL` | `gpt-6-luna` | Model used by all agents |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
+| `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
 | `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger) |
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
 | `MAX_MODEL_CALLS`, `MAX_TOOL_CALLS`, `MAX_REQUEST_SECONDS` | `8`, `8`, `90` | Per-request limits |
@@ -271,7 +274,7 @@ used ([evidence](docs/evidence/2026-10-26-pipeline-rag.md)).
 
 ## Support tools and synthetic data
 
-The challenge asks for at least two tools; the Support Agent has five, plus two used by code at case opening.
+The Support Agent has nine tools, plus two used by code at case opening.
 
 | Tool | Arguments from the model | Returns |
 | --- | --- | --- |
@@ -280,6 +283,10 @@ The challenge asks for at least two tools; the Support Agent has five, plus two 
 | `get_device_status` | `device_id` (optional) | Model, connectivity, status, last signal; asks to choose when there are several |
 | `find_authorization_events` | `period`, `status`, `limit` (no transaction id needed) | Declines with documented reason and next step; unknown codes stay unknown |
 | `get_contract_snapshot` | — | Products, settlement account type and plan |
+| `simulate_pricing` | `period`, `payment_type`, `installments`, `sale_date` (optional filters) | Independent pricing rule and charge evidence, compared in integer cents |
+| `get_fee_breakdown` | Same bounded sale filters | Read-only recorded charge components |
+| `get_enablement_requests` | `scheme` (optional) | Existing protocol, request/activation status and device availability |
+| `get_sale_cancellation_context` | `period` | Existing sale cancellation status; no action is executed |
 | `get_complaint_history` *(prefix)* | `topic` | Previous cases and attempts |
 | `run_customer_healthcheck` *(prefix)* | `topic` | Predefined checks: ok, pending, attention, unknown, unavailable |
 
@@ -294,6 +301,14 @@ The challenge asks for at least two tools; the Support Agent has five, plus two 
 - **Status vocabulary.** Original status names are preserved and mapped by a versioned glossary (for example
   `LOT_DONE` = batch processed, *not* money in the account). The agent only says a credit is confirmed when the
   payout tool says so.
+- **Pricing services.** Compose runs an internal `mocks` HTTP service with separate versioned pricing and charge
+  fixtures. The app selects sales from the bound merchant's synthetic records; no tool accepts a customer ID or
+  requires a sale ID from the merchant. Comparisons require matching customer, transaction, currency, conditions
+  and internally consistent component/instalment totals. The four outcomes are consistent, different conditions,
+  divergence and insufficient evidence. All values and rules are fictional.
+- **Read-only journeys.** A pending card-scheme request reuses its protocol; account activation and device
+  availability remain separate facts. Sale cancellation is a lookup. Contract termination goes to an attendant and
+  does not call sale tools. No financial, enablement, cancellation or contract action is executed.
 
 ## How the LLM tools are used
 
@@ -347,7 +362,7 @@ tests), with `store=false`:
 | Unit | Tools (binding, filters, dates, errors), clock and seed, chunking, guards, pricing, budget atomicity, Router rules | 0 |
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
 | Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
-| Evaluation (real) | 27 labeled scenarios and 4 multi-turn conversations through the real system: route, status, language, expected tools, required values, required/forbidden content, sources, guard violations, latency, cost, plus a model-graded rubric | ≈ US$0.05 |
+| Release validation (real) | 40 original real HTTP responses re-evaluated by deterministic replay, plus 4 multi-turn conversations repeated live (4/4); see the [central record](docs/evidence/v030-resultado.md) | Historical responses use no new calls; live revalidation was paid |
 | Retrieval | Recall@k and MRR on labeled questions | ≈ US$0.001 |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
@@ -355,19 +370,11 @@ The scripted model follows simple rules for each agent, so the whole system (rou
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Latest real evaluation** ([report](docs/evidence/2026-10-26-avaliacao-nucleo.md), [analysis of the three runs](docs/evidence/2026-10-26-avaliacao-analise.md)):
-
-| Split | Cases | Passed all checks |
-| --- | --- | --- |
-| Challenge examples (dev, English) | 10 | 10 |
-| Held-out (Portuguese variants + 7 edge cases) | 17 | 17 |
-| **Total** | **27** | **27** |
-
-Latency p50 7.8 s and p95 15.7 s per request (sequential model calls); cost US$0.051 for the 27 cases.
-
-Model-graded rubric (1–5, not a human review): answers the question 4.48, clarity and tone 4.70, honesty 4.22.
-The analysis explains run-to-run variance (one earlier run passed 25/27), the prompt changes it led to, and the
-judge's limitations.
+**Validated v0.3.0 evidence:** the final automated suite passed **191 tests**. The 40 HTTP answers are the same recorded
+real responses rechecked against the corrected deterministic rubric; this replay made no model calls and retained the 17
+holdouts. The four multi-turn conversations were repeated live against the validated release and passed **4/4**, including
+continuity after handoff. The [central record](docs/evidence/v030-resultado.md) links the full reports, independent review and QA;
+older real-evaluation reports remain historical and are not presented as fresh measurements.
 
 ## Design decisions
 
@@ -392,8 +399,7 @@ merchant's language while code, prompts and this README are in English.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
-- Planned ([increments spec](docs/specs/incrementos-pos-nucleo.md)): v0.3.0 pricing/contestation, card-brand
-  enablement and sale cancellation over synthetic back-ends; v0.4.0 the Jev Router toggle, per-agent models and the
+- Planned ([increments spec](docs/specs/incrementos-pos-nucleo.md)): v0.4.0 the Jev Router toggle, per-agent models and the
   Streamlit interface; v0.5.0–v0.7.0 knowledge-base versions, per-step evaluation with supervised improvement,
   experiments and sharing.
 - `user_id` is not authentication. Production would bind it to an authenticated session and authorize every tool

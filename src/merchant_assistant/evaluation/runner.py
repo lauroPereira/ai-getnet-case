@@ -4,6 +4,7 @@ plus an optional model-graded rubric (clearly labeled as model judgment, not hum
 from __future__ import annotations
 
 import json
+import re
 import statistics
 import uuid
 from dataclasses import dataclass, field
@@ -33,6 +34,47 @@ class Case:
     expect_sources: bool
     must_not_include: list[str] = field(default_factory=list)
     user_id: str = "cliente1988"
+    must_not_assert: list[str] = field(default_factory=list)
+
+
+_CLAUSE_BOUNDARIES = re.compile(
+    r"[.!?;,:\n]+|\b(?:but|however|whereas|although|yet|mas|porém|contudo|entretanto|todavia)\b",
+    re.IGNORECASE,
+)
+_QUALIFIED_ASSERTION_PREFIXES = (
+    re.compile(
+        r"\b(?:cannot|can't|could not|couldn't|am not able to|is not able to|unable to)\s+"
+        r"(?:confirm|verify|determine|tell)\s+(?:whether|if)\b[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(?:not sure|uncertain|not clear)\s+(?:whether|if|that)\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:cannot|can't|couldn't)\s+say\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(
+        r"\b(?:não foi possível|não é possível|não consigo|não podemos|não pude|não dá para)\s+"
+        r"(?:confirmar|verificar|determinar|saber)\s+se\b[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(?:não sei|não tenho certeza|incerto|não está claro)\s+se\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:não posso|não dá para)\s+dizer\b[^.!?;,]{0,100}$", re.IGNORECASE),
+)
+
+
+def _assertion_is_present(answer: str, assertion: str) -> bool:
+    """Match a forbidden EN/PT assertion, allowing only a small set of scoped uncertainty forms.
+
+    This intentionally handles a bounded set of English and Portuguese constructions; it is not
+    a general-purpose natural-language negation detector. Clause boundaries prevent an earlier
+    lack-of-evidence statement from qualifying a later assertion.
+    """
+    normalized_assertion = assertion.casefold()
+    for clause in _CLAUSE_BOUNDARIES.split(answer.casefold()):
+        start = 0
+        while (index := clause.find(normalized_assertion, start)) >= 0:
+            prefix = clause[:index]
+            if not any(pattern.search(prefix) for pattern in _QUALIFIED_ASSERTION_PREFIXES):
+                return True
+            start = index + len(normalized_assertion)
+    return False
 
 
 def load_cases(paths: list[Path]) -> list[Case]:
@@ -80,7 +122,8 @@ def _checks(case: Case, body: dict, trace: dict) -> dict:
         "tools_ok": set(case.expected_tools) <= set(tools),
         "amounts_ok": set(case.must_include_amounts) <= found_amounts,
         "content_ok": all(any(t.lower() in lower for t in group) for group in case.must_include_any),
-        "forbidden_ok": not any(t.lower() in lower for t in case.must_not_include),
+        "forbidden_ok": not any(t.lower() in lower for t in case.must_not_include)
+        and not any(_assertion_is_present(answer, assertion) for assertion in case.must_not_assert),
         "sources_ok": bool(body["sources"]) if case.expect_sources else True,
         "grounded_ok": not trace["detail"].get("output_violations"),
         "tools_called": tools,

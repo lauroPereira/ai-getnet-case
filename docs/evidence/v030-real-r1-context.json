@@ -1,0 +1,13 @@
+{
+  "report": "v030-real-r1.json",
+  "candidate": "v0.3.0-local-r1",
+  "source_fingerprint_sha256": "ad1bfc9dc7c945453c0d3093cc1e8524a95f84185c8fecd50f79b4ff319c4284",
+  "docker_api_image": "sha256:4f05365ed614a52f04d3b77f6c4bad3bbf70110d28edca43f287aff0c14445db",
+  "docker_mocks_image": "sha256:eba11f0d2f7206697342e89c58d17a915b3c727ed1acc0b8cd62e05096b901c3",
+  "business_scenarios_sha256": "e827d882091481583f20a806694434956eb95e2aaf09a5fb54396197a2fdb454",
+  "harness_sha256": "c666ad414d254fb30b2c5f9fd00c8d38482b169af945c75fa94f903200b6433e",
+  "clock": "SystemClock America/Sao_Paulo; seed relativo ao início da rodada",
+  "budget_limit_usd": 0.15,
+  "spent_usd": 0.06747249,
+  "validity": "Rodada anterior à correção P2 e aos ajustes da tarefa 25; preservar resultados originais e revalidar escopo afetado."
+}

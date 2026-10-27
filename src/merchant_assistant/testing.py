@@ -10,6 +10,7 @@ from merchant_assistant.data.clock import Clock, FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import seed
 from merchant_assistant.llm.scripted import ScriptedCall, ScriptedLLM
+from merchant_assistant.mocks.clients import in_process_client
 from merchant_assistant.observability.traces import TraceStore
 from merchant_assistant.orchestration.budget import BudgetGuard
 from merchant_assistant.orchestration.graph import Orchestrator
@@ -50,5 +51,6 @@ def offline_orchestrator(
         budget=BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd),
         traces=TraceStore(settings.runtime_path / "traces.sqlite3"),
         faults=faults,
+        mock_services=in_process_client(),
     )
     return orchestrator, llm

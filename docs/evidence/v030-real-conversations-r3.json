@@ -1,0 +1,257 @@
+{
+  "mode": "real_http",
+  "candidate": "v0.3.0-local-r6",
+  "source_fingerprint_sha256": "f8efcec3918320c287b3b6c2faef2f38edca4847a02b19bcd781ed7e920a1af9",
+  "runtime_fingerprint_sha256": "e58e5668172b992ebabf9777237686a2e0357cdccd5c7657436acbbc703b1cde",
+  "ready": {
+    "ready": true,
+    "index_chunks": 145,
+    "database": true,
+    "model": "gpt-6-luna",
+    "budget_remaining_usd": 0.0142,
+    "versions": {
+      "app": "0.3.0",
+      "schema": 5,
+      "index": {
+        "collection": "getnet_kb_v1",
+        "embedding_model": "text-embedding-3-small",
+        "corpus": "d7ed966b69d6",
+        "chunks": 145,
+        "built_at": "2026-10-27T04:32:15+00:00"
+      },
+      "prompts": {
+        "escalation": "1",
+        "judge": "2",
+        "knowledge_procedure": "1",
+        "knowledge_rag": "1",
+        "knowledge_web": "2",
+        "personality": "3",
+        "router": "5",
+        "support": "7"
+      }
+    }
+  },
+  "conversations": [
+    {
+      "id": "FU01",
+      "split": "holdout",
+      "language": "pt",
+      "description": "Problema técnico resolvido no primeiro ciclo",
+      "turns": [
+        {
+          "message": "Minha maquininha não conecta na internet, o que eu faço?",
+          "route": "knowledge_and_support",
+          "status": "answered",
+          "case_state": "awaiting_customer",
+          "evidence": null,
+          "answer": "O sinal mais recente indica que a Get Smart está offline. O último sinal foi recebido às 00:07 de hoje. Não consigo testar a conexão remotamente, mas você pode verificar o Wi-Fi na máquina:\n\n1. Na tela inicial, toque em “Wi-Fi” e depois em “Procurar Redes”.\n2. Selecione sua rede, digite a senha e confirme.\n3. Verifique se o Wi-Fi está funcionando e se a senha foi digitada corretamente.",
+          "duration_ms": 16222,
+          "cost_usd": 0.00102938,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        },
+        {
+          "message": "Deu certo, voltou a funcionar!",
+          "route": "acknowledgement",
+          "status": "answered",
+          "case_state": "resolved",
+          "evidence": "customer_confirmed",
+          "answer": "Certo. Se precisar de mais ajuda com a maquininha, estou à disposição.",
+          "duration_ms": 3297,
+          "cost_usd": 0.00013626,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "cost_usd": 0.001166
+    },
+    {
+      "id": "FU02",
+      "split": "holdout",
+      "language": "en",
+      "description": "Technical problem that persists until handoff",
+      "turns": [
+        {
+          "message": "My card machine won't connect to the internet, what should I do?",
+          "route": "knowledge_and_support",
+          "status": "answered",
+          "case_state": "awaiting_customer",
+          "evidence": null,
+          "answer": "Your Get Smart is set up for Wi‑Fi but is showing as offline. Its last signal was at 00:07 today, so this may not reflect its current connection.\n\n1. On the home screen, tap “Wi-Fi,” then “Procurar Redes.”\n2. Choose your network, enter the password carefully, and confirm.\n3. Check that your Wi‑Fi is working and the password is correct. A stable connection is needed for uninterrupted operations.",
+          "duration_ms": 11584,
+          "cost_usd": 0.00077367,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        },
+        {
+          "message": "I already tried that and it still has no connection.",
+          "route": "knowledge_and_support",
+          "status": "handoff",
+          "case_state": "handoff",
+          "evidence": null,
+          "answer": "Your Get Smart is still reporting offline, and its last signal was at 00:07 today. You’ve already tried reconnecting to Wi-Fi and checking the network and password, so this needs follow-up from support. I couldn’t confirm whether it is currently connected. I’ve handed your case to a human agent. Protocol: SIM-20261027-7F03F5. This is a simulated protocol for this demo.",
+          "duration_ms": 10972,
+          "cost_usd": 0.00071194,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        },
+        {
+          "message": "Still the same, nothing works.",
+          "route": "knowledge_and_support",
+          "status": "handoff",
+          "case_state": "handoff",
+          "evidence": null,
+          "answer": "Your case has already been handed to a human agent for follow-up. I couldn’t confirm any further information about the connection issue. Protocol: SIM-20261027-7F03F5. This is a simulated protocol for this demo.",
+          "duration_ms": 3583,
+          "cost_usd": 0.00018836,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "cost_usd": 0.001674
+    },
+    {
+      "id": "FU03",
+      "split": "holdout",
+      "language": "pt",
+      "description": "Agradecimento não resolve",
+      "turns": [
+        {
+          "message": "Em quantas parcelas posso vender no crediário?",
+          "route": "knowledge",
+          "status": "answered",
+          "case_state": "awaiting_customer",
+          "evidence": null,
+          "answer": "O Crediário permite parcelamento em até 48x. O limite efetivo de parcelas é definido pelo emissor do cartão, conforme as políticas de crédito.",
+          "duration_ms": 6786,
+          "cost_usd": 0.00041986,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        },
+        {
+          "message": "Obrigado",
+          "route": "acknowledgement",
+          "status": "answered",
+          "case_state": "awaiting_customer",
+          "evidence": null,
+          "answer": "Por nada! Se precisar de mais alguma informação, estou à disposição.",
+          "duration_ms": 2818,
+          "cost_usd": 0.00012046,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "cost_usd": 0.00054
+    },
+    {
+      "id": "FU04",
+      "split": "holdout",
+      "language": "pt",
+      "description": "Pedido de atendente no meio do ciclo e caso já encaminhado",
+      "turns": [
+        {
+          "message": "Minha maquininha está mostrando erro de transação negada.",
+          "route": "knowledge_and_support",
+          "status": "answered",
+          "case_state": "awaiting_customer",
+          "evidence": null,
+          "answer": "Encontrei duas transações negadas recentemente:\n\n- Em 26/10, a compra no crédito de R$ 230,00 recebeu o código 51, que indica saldo ou limite insuficiente no cartão. Ofereça outro cartão ou Pix.\n- Em 24/10, a compra no débito de R$ 45,90 recebeu o código 05: o banco emissor não autorizou. Peça ao comprador que fale com o banco ou use outro meio de pagamento.",
+          "duration_ms": 14310,
+          "cost_usd": 0.00101108,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        },
+        {
+          "message": "Quero falar com um atendente",
+          "route": "human_handoff",
+          "status": "handoff",
+          "case_state": "handoff",
+          "evidence": null,
+          "answer": "Encaminhei seu caso para um atendente. O protocolo SIM-20261027-EFE6FC é simulado nesta demonstração.",
+          "duration_ms": 5894,
+          "cost_usd": 0.00035606,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        },
+        {
+          "message": "Alguma novidade sobre o meu caso?",
+          "route": "support",
+          "status": "handoff",
+          "case_state": "handoff",
+          "evidence": null,
+          "answer": "Seu caso continua encaminhado para um atendente. O protocolo SIM-20261027-EFE6FC é simulado nesta demonstração.\n\nNa consulta recente, constam duas transações negadas: em 26/10, uma compra de R$ 230,00 no crédito, por saldo ou limite insuficiente. Para essa compra, ofereça outro cartão ou Pix. Em 24/10, uma compra de R$ 45,90 no débito não foi autorizada pelo banco emissor; peça ao comprador que fale com o banco ou use outro meio de pagamento.",
+          "duration_ms": 8569,
+          "cost_usd": 0.00063825,
+          "route_ok": true,
+          "status_ok": true,
+          "state_ok": true,
+          "evidence_ok": true,
+          "same_protocol_ok": true,
+          "grounded_ok": true,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "cost_usd": 0.002005
+    }
+  ],
+  "summary": {
+    "n": 4,
+    "passed": 4
+  },
+  "budget": {
+    "limit_usd": 0.15,
+    "spent_before_usd": 0.13584893,
+    "spent_usd": 0.14123583,
+    "round_spent_usd": 0.0053869,
+    "remaining_usd": 0.008764169999999988
+  }
+}

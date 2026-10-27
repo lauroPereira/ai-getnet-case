@@ -1,0 +1,30 @@
+{
+  "mode": "scripted, zero paid calls, real internal HTTP mocks",
+  "url": "http://127.0.0.1:18031",
+  "container": "getnet-v030-qa-http-r6",
+  "image": "sha256:f3181423b249dd14368e4b49bb09790c376371097cabc723fbaaba49b41e3699",
+  "ready": {
+    "ready": true,
+    "index_chunks": 145,
+    "database": true,
+    "model": "scripted-v1",
+    "budget_remaining_usd": 1.0,
+    "versions": {
+      "app": "0.3.0",
+      "schema": 5,
+      "index": null,
+      "prompts": {
+        "escalation": "1",
+        "judge": "2",
+        "knowledge_procedure": "1",
+        "knowledge_rag": "1",
+        "knowledge_web": "2",
+        "personality": "3",
+        "router": "5",
+        "support": "7"
+      }
+    }
+  },
+  "clock": "FixedClock 2026-10-26T10:00:00 America/Sao_Paulo",
+  "harness_sha256": "2127b0a982ccfc74c1ee1e8e88d8fa58af070f41a70a9efa1822a21e2d136b51"
+}

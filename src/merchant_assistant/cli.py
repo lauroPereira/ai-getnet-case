@@ -178,7 +178,9 @@ def cmd_eval(settings: Settings, args) -> int:
     from merchant_assistant.evaluation.runner import BudgetMeter, load_cases, run, summarize, write_report
 
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
-    cases = load_cases([scenarios / "challenge_examples.jsonl", scenarios / "core_cases.jsonl"])
+    cases = load_cases(
+        [scenarios / "challenge_examples.jsonl", scenarios / "core_cases.jsonl", scenarios / "business_journeys.jsonl"]
+    )
     if args.split != "all":
         cases = [c for c in cases if c.split == args.split]
     if args.scripted:
@@ -245,8 +247,12 @@ def cmd_mcp(settings: Settings, args) -> int:
     """Serves the support tools over MCP (stdio) for one merchant. Nothing else may write to stdout."""
     from merchant_assistant.data.clock import SystemClock
     from merchant_assistant.mcp_server import build_server, env_factory_for, serve_stdio
+    from merchant_assistant.mocks.clients import MockServiceClient
 
-    serve_stdio(build_server(env_factory_for(settings.db_path, args.customer, SystemClock(settings.timezone))))
+    services = MockServiceClient(settings.mocks_url, timeout=2.0)
+    serve_stdio(
+        build_server(env_factory_for(settings.db_path, args.customer, SystemClock(settings.timezone), services))
+    )
     return 0
 
 

@@ -56,14 +56,14 @@ def build_server(env_factory: Callable[[], ToolEnv]) -> Server:
     )
 
 
-def env_factory_for(db_path, customer_id: str, clock) -> Callable[[], ToolEnv]:
+def env_factory_for(db_path, customer_id: str, clock, mock_services=None) -> Callable[[], ToolEnv]:
     from merchant_assistant.data.db import connect
     from merchant_assistant.tools.base import CustomerContext
 
     def factory() -> ToolEnv:
         conn = connect(db_path)
         known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (customer_id,)).fetchone() is not None
-        return ToolEnv(conn, clock, CustomerContext(customer_id, known))
+        return ToolEnv(conn, clock, CustomerContext(customer_id, known), mock_services=mock_services)
 
     return factory
 

@@ -7,6 +7,7 @@ Resources of another customer are never returned: the call fails with FORBIDDEN_
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -17,7 +18,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from merchant_assistant.data.clock import Period, resolve_period
 from merchant_assistant.tools.base import ToolEnv, ToolError, audit, money
 
-Topic = Literal["receivables", "device", "authorization", "contract", "general"]
+Topic = Literal[
+    "receivables", "device", "authorization", "contract", "general", "pricing", "enablement", "cancellation"
+]
 
 
 @lru_cache
@@ -246,7 +249,11 @@ class ContractArgs(_Args):
 
 
 def get_contract_snapshot(env: ToolEnv, args: ContractArgs) -> dict:
-    row = env.conn.execute("SELECT * FROM contracts WHERE customer_id = ?", (env.customer.customer_id,)).fetchone()
+    row = env.conn.execute(
+        """SELECT c.*, p.pricing_plan, p.pricing_version FROM contracts c
+           LEFT JOIN contract_pricing_context p USING (customer_id) WHERE c.customer_id = ?""",
+        (env.customer.customer_id,),
+    ).fetchone()
     if row is None:
         raise ToolError("NOT_FOUND", "No contract found for this merchant.")
     return {
@@ -254,8 +261,268 @@ def get_contract_snapshot(env: ToolEnv, args: ContractArgs) -> dict:
         "settlement_account_type": row["settlement_account_type"],
         "settlement_plan": row["settlement_plan"],
         "effective_from": row["effective_from"],
+        "pricing_context": {
+            "plan": row["pricing_plan"],
+            "version": row["pricing_version"],
+            "source": "ContractPricingContextMock",
+        },
         "source": "ContractsMock",
         "observed_at": _observed(env),
+    }
+
+
+# --- pricing, enablement and cancellation journeys --------------------------------------------------------------
+
+
+class PricingArgs(_Args):
+    period: Literal["latest", "today", "yesterday", "last_7_days"] = "latest"
+    payment_type: Literal["debit", "credit", "pix"] | None = None
+    installments: int | None = Field(default=None, ge=1, le=24)
+    sale_date: date | None = None
+
+
+def _select_sale(env: ToolEnv, args: PricingArgs) -> sqlite3.Row:
+    cid = env.customer.customer_id
+    rows = env.conn.execute(
+        "SELECT * FROM sales WHERE customer_id = ? ORDER BY captured_at DESC, sale_id", (cid,)
+    ).fetchall()
+    if args.period != "latest":
+        start = args.sale_date or resolve_period(args.period, env.clock)[0]
+        end = start if args.sale_date else resolve_period(args.period, env.clock)[1]
+        rows = [r for r in rows if start.isoformat() <= r["captured_at"][:10] <= end.isoformat()]
+    elif args.sale_date:
+        rows = [r for r in rows if r["captured_at"][:10] == args.sale_date.isoformat()]
+    if args.payment_type:
+        rows = [r for r in rows if r["payment_type"] == args.payment_type]
+    if args.installments:
+        rows = [r for r in rows if r["installments"] == args.installments]
+    if not rows:
+        raise ToolError("NOT_FOUND", "No sale matches the selected period and conditions.")
+    if args.period == "latest" and not args.sale_date and not args.payment_type and not args.installments:
+        return rows[0]
+    if len(rows) > 1:
+        raise ToolError("INVALID_ARGUMENT", "Several sales match. Add a payment type, installment count, or sale date.")
+    return rows[0]
+
+
+def _sale_conditions(env: ToolEnv, row: sqlite3.Row) -> dict:
+    plan = env.conn.execute(
+        "SELECT pricing_plan, pricing_version FROM contract_pricing_context WHERE customer_id = ?",
+        (env.customer.customer_id,),
+    ).fetchone()
+    return {
+        "payment_type": row["payment_type"],
+        "installments": row["installments"],
+        "channel": row["channel"],
+        "pricing_plan": plan["pricing_plan"] if plan else "unknown",
+    }
+
+
+def _service(env: ToolEnv):
+    if env.mock_services is None:
+        raise ToolError("UNAVAILABLE", "Synthetic pricing and charges services are unavailable.")
+    return env.mock_services
+
+
+def _compare_pricing(
+    pricing: dict, charge: dict, *, customer_id: str, transaction_id: str, gross_minor: int, currency: str
+) -> dict:
+    def valid_evidence(item: dict, amount_field: str, recorded: bool = True) -> bool:
+        amount = item.get(amount_field)
+        if not recorded or amount is None or not item.get("transaction_id") or not item.get("customer_id"):
+            return False
+        if sum(c["amount_minor"] for c in item["components"]) != amount:
+            return False
+        if item["installments"]:
+            if sum(i["fee_minor"] for i in item["installments"]) != amount:
+                return False
+            if any(i["gross_minor"] != i["fee_minor"] + i["net_minor"] for i in item["installments"]):
+                return False
+        return True
+
+    valid = (
+        pricing["applicable"]
+        and charge["recorded"]
+        and pricing["customer_id"] == charge["customer_id"]
+        and pricing["customer_id"] == customer_id
+        and pricing["transaction_id"] == charge["transaction_id"]
+        and pricing["transaction_id"] == transaction_id
+        and pricing["currency"] == charge["currency"]
+        and pricing["currency"] == currency
+        and valid_evidence(pricing, "expected_fee_minor")
+        and valid_evidence(charge, "charged_fee_minor")
+        and sum(i["gross_minor"] for i in pricing["installments"]) == gross_minor
+        and sum(i["gross_minor"] for i in charge["installments"]) == gross_minor
+    )
+    if not valid:
+        result, delta = "insufficient_evidence", None
+    elif pricing["conditions"] != charge["conditions"]:
+        result, delta = "different_conditions", None
+    else:
+        delta = charge["charged_fee_minor"] - pricing["expected_fee_minor"]
+        result = "consistent" if delta == 0 else "divergence"
+    return {
+        "result": result,
+        "expected_fee_minor": pricing["expected_fee_minor"],
+        "charged_fee_minor": charge["charged_fee_minor"],
+        "difference_minor": delta,
+        "currency": pricing["currency"],
+        "expected_fee_display": money(pricing["expected_fee_minor"], pricing["currency"])["display"]
+        if pricing["expected_fee_minor"] is not None
+        else None,
+        "charged_fee_display": money(charge["charged_fee_minor"], charge["currency"])["display"]
+        if charge["charged_fee_minor"] is not None
+        else None,
+        "difference_display": money(delta, pricing["currency"])["display"] if delta is not None else None,
+        "comparison_method": "integer_minor_units",
+    }
+
+
+def _normalized_source_amounts(item: dict, fee_field: str) -> dict:
+    currency = item["currency"]
+    amount = item[fee_field]
+    return {
+        "fee": money(amount, currency) if amount is not None else None,
+        "components": [
+            {"name": component["name"], "amount": money(component["amount_minor"], currency)}
+            for component in item["components"]
+        ],
+        "installments": [
+            {
+                "number": installment["number"],
+                "gross_amount": money(installment["gross_minor"], currency),
+                "fee_amount": money(installment["fee_minor"], currency),
+                "net_amount": money(installment["net_minor"], currency),
+            }
+            for installment in item["installments"]
+        ],
+    }
+
+
+def simulate_pricing(env: ToolEnv, args: PricingArgs) -> dict:
+    row = _select_sale(env, args)
+    cond = _sale_conditions(env, row)
+    request = {
+        "customer_id": env.customer.customer_id,
+        "transaction_id": row["sale_id"],
+        "operation": "sale_fee",
+        "gross_amount_minor": row["gross_minor"],
+        "currency": row["currency"],
+        "conditions": cond,
+        "pricing_version": env.conn.execute(
+            "SELECT pricing_version FROM contract_pricing_context WHERE customer_id = ?",
+            (env.customer.customer_id,),
+        ).fetchone()["pricing_version"],
+    }
+    pricing = _service(env).simulate(request)
+    charge = _service(env).charge(row["sale_id"], env.customer.customer_id)
+    if pricing["customer_id"] != env.customer.customer_id or charge["customer_id"] != env.customer.customer_id:
+        audit(env, "simulate_pricing", row["sale_id"], "forbidden")
+        raise ToolError("FORBIDDEN_RESOURCE", "Pricing or charge evidence does not belong to this merchant.")
+    comparison = _compare_pricing(
+        pricing,
+        charge,
+        customer_id=env.customer.customer_id,
+        transaction_id=row["sale_id"],
+        gross_minor=row["gross_minor"],
+        currency=row["currency"],
+    )
+    financial_evidence = {
+        "sale": {
+            "gross_amount": money(row["gross_minor"], row["currency"])
+            if row["currency"] == "BRL"
+            else None
+        },
+        "pricing": None,
+        "charge": None,
+    }
+    if comparison["result"] != "insufficient_evidence" and row["currency"] == "BRL":
+        financial_evidence["pricing"] = _normalized_source_amounts(pricing, "expected_fee_minor")
+        financial_evidence["charge"] = _normalized_source_amounts(charge, "charged_fee_minor")
+    audit(env, "simulate_pricing", row["sale_id"], "ok")
+    return {
+        "sale": {"sale_date": row["captured_at"][:10], "gross_amount_minor": row["gross_minor"], **cond},
+        "pricing": pricing,
+        "charge": charge,
+        "comparison": comparison,
+        "financial_evidence": financial_evidence,
+        "source": "independent_synthetic_pricing_and_charge_services",
+        "observed_at": _observed(env),
+        "note": "A comparison does not execute a correction, refund, or financial action.",
+    }
+
+
+def get_fee_breakdown(env: ToolEnv, args: PricingArgs) -> dict:
+    row = _select_sale(env, args)
+    record = _service(env).charge(row["sale_id"], env.customer.customer_id)
+    if record["customer_id"] != env.customer.customer_id:
+        audit(env, "get_fee_breakdown", row["sale_id"], "forbidden")
+        raise ToolError("FORBIDDEN_RESOURCE", "Charge evidence does not belong to this merchant.")
+    audit(env, "get_fee_breakdown", row["sale_id"], "ok")
+    return {**record, "source": "independent_synthetic_charge_service", "observed_at": _observed(env)}
+
+
+class EnablementArgs(_Args):
+    scheme: str | None = Field(default=None, min_length=2, max_length=32)
+
+
+def get_enablement_requests(env: ToolEnv, args: EnablementArgs) -> dict:
+    params: list = [env.customer.customer_id]
+    clause = ""
+    if args.scheme:
+        clause = "AND scheme = ?"
+        params.append(args.scheme.casefold())
+    rows = env.conn.execute(
+        f"SELECT * FROM enablement_requests WHERE customer_id = ? {clause} ORDER BY requested_at DESC",
+        params,
+    ).fetchall()
+    devices = env.conn.execute(
+        "SELECT device_id, config FROM devices WHERE customer_id = ?", (env.customer.customer_id,)
+    ).fetchall()
+    availability = {}
+    for device in devices:
+        config = json.loads(device["config"])
+        for scheme in config.get("card_schemes", []):
+            availability[scheme.casefold()] = {"device_id": device["device_id"], "available": True}
+    return {
+        "requests": [
+            {
+                "request_id": r["request_id"],
+                "scheme": r["scheme"],
+                "status": r["status"],
+                "protocol": r["protocol"],
+                "requested_at": r["requested_at"],
+                "activated_at": r["activated_at"],
+                "device_availability": availability.get(r["scheme"].casefold(), {"available": False}),
+            }
+            for r in rows
+        ],
+        "source": "EnablementRequestsMock",
+        "observed_at": _observed(env),
+        "note": "Read-only status; no new request or terminal configuration is created.",
+    }
+
+
+class CancellationArgs(_Args):
+    period: Literal["today", "yesterday", "last_7_days"] = "last_7_days"
+
+
+def get_sale_cancellation_context(env: ToolEnv, args: CancellationArgs) -> dict:
+    start, end = resolve_period(args.period, env.clock)
+    rows = env.conn.execute(
+        """SELECT c.* FROM sale_cancellations c JOIN sales s ON s.sale_id = c.transaction_id
+           WHERE c.customer_id = ? AND s.customer_id = ?
+             AND substr(s.captured_at,1,10) BETWEEN ? AND ?
+           ORDER BY c.requested_at DESC""",
+        (env.customer.customer_id, env.customer.customer_id, start.isoformat(), end.isoformat()),
+    ).fetchall()
+    return {
+        "cancellations": [dict(r) for r in rows],
+        "date_from": start.isoformat(),
+        "date_to": end.isoformat(),
+        "source": "SaleCancellationMock",
+        "observed_at": _observed(env),
+        "note": "Read-only lookup. No sale cancellation or contract termination is executed.",
     }
 
 

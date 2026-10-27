@@ -2,9 +2,35 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
-## [Unreleased]
+## [0.3.0] — 2026-10-27 (validated; approved for release)
 
-Next: 0.3.0 — pricing and contestation, card-brand enablement and sale cancellation journeys.
+### Added
+- Internal `mocks` HTTP service with separate synthetic pricing rules and recorded charge fixtures; no public port.
+- Read-only fee comparison, card-scheme enablement and sale cancellation tools, shared through the domain and MCP.
+- Reversible migration 0005 for contract pricing context, enablement requests and sale cancellation records.
+- Versioned Router and Support prompts, including filters for identifiable fee comparisons and recent authorization history; deterministic business-journey cases.
+
+### Changed (contracts)
+- `get_contract_snapshot` additively includes the merchant's synthetic pricing plan and rule version.
+- Support tool schemas add four tools; price tools expose bounded sale filters and never accept a customer identifier.
+- `POST /messages` retains its v0.2.0 request and response contract.
+
+### Data
+- New `contract_pricing_context`, `enablement_requests` and `sale_cancellations` tables; downgrade 0005 → 0004 preserves earlier tables and rows.
+- Independent synthetic service fixtures live in `data/mock-services/`.
+
+### Validation
+- The owner approved v0.3.0 for release. Integration and tag execution are tracked in the [central validation record](docs/evidence/v030-resultado.md); this changelog does not claim that PR, merge or tag actions have already occurred.
+- The final [Developer r6 passage](docs/evidence/v030-developer-r6.md) records the strict validation: **191 tests**. Independent [Reviewer r6](docs/evidence/v030-reviewer-r6.md) and [QA r6](docs/evidence/v030-qa-r6.md) are apt.
+- **40 recorded real HTTP responses** were re-evaluated by deterministic replay of the corrected rubric, with no new model calls; the original answers and holdouts were preserved ([replay report](docs/evidence/v030-real-http-r2-replay.md)). Separately, **4 multi-turn conversations** were repeated live through HTTP and passed **4/4** ([conversation report](docs/evidence/v030-real-conversations-r3.md)).
+- The [r1 real evaluation](docs/evidence/v030-real-r1.md) is preserved as historical evidence and is not the final release result.
+
+### Limitations
+- Pricing values, rules, protocols and cancellation statuses are fictitious and not Getnet terms.
+- No fee adjustment, refund, enablement, sale cancellation or contract termination is executed.
+
+### Return to 0.2.0
+- Stop the stack and run `merchant-assistant migrate --to 4` against the synthetic runtime before checking out `v0.2.0`; pricing and cancellation journey data is dropped with migration 0005.
 
 ## [0.2.0] — 2026-10-26
 

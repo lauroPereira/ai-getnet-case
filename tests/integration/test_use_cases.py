@@ -211,5 +211,74 @@ def test_readiness(offline):
     client, _, _ = offline()
     ready = client.get("/ready").json()
     assert ready["ready"] is True and ready["index_chunks"] > 100
-    assert ready["versions"]["schema"] == 4 and ready["versions"]["app"].startswith("0.2.0")
+    assert ready["versions"]["schema"] == 5 and ready["versions"]["app"].startswith("0.3.0")
     assert ready["versions"]["prompts"]["router"]
+
+
+@pytest.mark.parametrize(
+    ("message", "expected", "status"),
+    [
+        ("Is the fee on yesterday's debit sale consistent?", "consistent", "answered"),
+        ("Were different conditions used for yesterday's credit charge?", "conditions differ", "answered"),
+        ("Is there a divergence in yesterday's Pix charge?", "divergence", "handoff"),
+        (
+            "Is there insufficient evidence for a 2-installment credit fee?",
+            "not enough applicable evidence",
+            "answered",
+        ),
+    ],
+)
+def test_price_contestation_journey_returns_deterministic_result(offline, message, expected, status):
+    client, orchestrator, _ = offline()
+    body = post(client, message)
+    assert body["status"] == status
+    assert expected in body["answer"].lower()
+    assert "tool:simulate_pricing" in tool_steps(orchestrator, body["request_id"])
+
+
+def test_enablement_and_sale_cancellation_are_read_only(offline):
+    client, orchestrator, _ = offline()
+    pending = post(client, "I already requested Visa enablement; can you check it?")
+    assert "SIM-BND-1988-001" in pending["answer"]
+    assert "tool:get_enablement_requests" in tool_steps(orchestrator, pending["request_id"])
+    cancellation = post(client, "Can you check the cancellation status for yesterday's sale?")
+    assert "requested" in cancellation["answer"]
+    assert "tool:get_sale_cancellation_context" in tool_steps(orchestrator, cancellation["request_id"])
+
+
+def test_contract_termination_does_not_call_sale_tools(offline):
+    client, orchestrator, _ = offline()
+    response = post(client, "I want to close my contract.")
+    steps = tool_steps(orchestrator, response["request_id"])
+    assert response["status"] == "handoff"
+    assert "tool:get_sale_cancellation_context" not in steps
+    assert "tool:simulate_pricing" not in steps
+    assert "tool:get_fee_breakdown" not in steps
+
+
+@pytest.mark.parametrize(
+    ("message", "expected", "status"),
+    [
+        ("A taxa da venda de débito de ontem está coerente?", "valores coerentes", "answered"),
+        (
+            "A cobrança de crédito de ontem foi feita em condições diferentes?",
+            "condições registradas diferem",
+            "answered",
+        ),
+        ("Há divergência na taxa do Pix de ontem?", "divergência", "handoff"),
+        (
+            "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+            "evidência aplicável suficiente",
+            "answered",
+        ),
+        ("Já pedi habilitação Visa, qual é o protocolo?", "sim-bnd-1988-001", "answered"),
+        ("Qual o status do cancelamento da venda de ontem?", "status do cancelamento da venda", "answered"),
+        ("Quero encerrar meu contrato.", "atendente", "handoff"),
+    ],
+)
+def test_business_journeys_answer_in_portuguese(offline, message, expected, status):
+    client, _, _ = offline()
+    body = post(client, message)
+    assert body["language"] == "pt"
+    assert body["status"] == status
+    assert expected in body["answer"].lower()

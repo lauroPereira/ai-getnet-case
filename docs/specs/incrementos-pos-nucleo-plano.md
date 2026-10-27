@@ -95,7 +95,7 @@ Cada versão termina com regressão do núcleo, changelog, instruções de retor
 19. [Servidor MCP e demonstração](../tasks/19-servidor-mcp-e-demonstracao.md)
 20. [Regressão e liberação da v0.2.0](../tasks/20-regressao-e-liberacao-v020.md)
 
-**v0.3.0 — Jornadas de negócio (a detalhar):** serviço `mocks`, preço e contestação com os quatro comportamentos, habilitação de bandeiras, cancelamento × encerramento.
+**v0.3.0 — Jornadas de negócio:** serviço `mocks`, preço e contestação com os quatro comportamentos, habilitação de bandeiras, cancelamento × encerramento. Detalhamento no [plano da v0.3.0](jornadas-v030-plano.md), tarefas 21 a 24 e [história de uso](../historias/jornadas-v030.md).
 
 **v0.4.0 — JEV, modelos por agente e interface inicial (a detalhar):** adaptador JEV real, adaptador DeepSeek (preços e capacidades verificados na documentação oficial antes do uso), catálogo de capacidades, perfis versionados, API `/v1` com papéis, repositório `ai-getnet-case-web` criado com o ai-dev-template, projeto Streamlit com chat, perfis, toggle e inspeção; verificação antecipada de IP público e redirecionamento de porta.
 

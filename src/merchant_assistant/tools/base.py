@@ -33,6 +33,7 @@ class ToolEnv:
     clock: Clock
     customer: CustomerContext
     faults: dict[str, str] = field(default_factory=dict)  # tool name -> error code, for failure tests
+    mock_services: object | None = None
 
 
 class ToolError(Exception):

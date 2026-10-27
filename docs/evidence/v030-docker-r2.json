@@ -1,0 +1,201 @@
+{
+  "mode": "scripted model with real HTTP between containers",
+  "paid_calls": 0,
+  "cases": 17,
+  "passed": 17,
+  "results": [
+    {
+      "id": "CORE-01",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "Está com dúvidas? nós podemos te ajudar! sua maquininha sem dúvidas Há alguma taxa extra para usar o Aplicativo Getnet Brasil? saiba mais Como faço para baixar o Aplicativo Getnet Brasil? R: Baixe através da App Store"
+    },
+    {
+      "id": "CORE-02",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00)."
+    },
+    {
+      "id": "CORE-03",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "get_receivables_schedule",
+        "get_payout_status"
+      ],
+      "failed_tools": [],
+      "answer": "debit: R$ 148,06 — 2026-10-26 — credit not confirmed yet\ncredit: R$ 1.162,20 — 2026-10-27 — credit not confirmed yet\npix: R$ 80,00 — 2026-10-25 — credit confirmed"
+    },
+    {
+      "id": "CORE-04",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "O Pix é uma forma rápida, prática e segura de receber pagamentos. Com o aplicativo Getnet Brasil, você pode habilitar o recebimento via Pix em poucos minutos. Veja o passo a passo completo: Como habilitar o Pix por meio"
+    },
+    {
+      "id": "CORE-05",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "get_device_status"
+      ],
+      "failed_tools": [],
+      "answer": "## Procedimento  Após histórico e healthcheck, conferir modelo e sinais disponíveis. Usar o histórico para evitar\nO Pix é uma forma rápida, prática e segura de receber pagamentos. Com o aplicativo Getnet Brasil, você pode habilitar o\nCondições para a contratação da Oferta O valor do desconto na utilização das maquininhas do mês vigente será concedido\nComo realizo venda digitada? Como realizo venda digitada? Acesse Menu > Bandeiras > Produtos > Crédito > Inserir Valor\nGet Smart: offline (180 min)\n## Procedimento  Após histórico e healthcheck, conferir modelo e sinais disponív\nO Pix é uma forma rápida, prática e segura de receber pagamentos. Com o aplicati"
+    },
+    {
+      "id": "CORE-06",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "Com a conta digital, vai dar negócio Você no controle da operação Cartão virtual grátis Receba todos os pagamentos na mesma conta Antecipação de recebíveis Mais benefícios Escolha o melhor produto e abra a sua conta A"
+    },
+    {
+      "id": "CORE-07",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00)."
+    },
+    {
+      "id": "CORE-08",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "find_authorization_events"
+      ],
+      "failed_tools": [],
+      "answer": "Quais relatórios consigo imprimir no POS? Quais relatórios consigo imprimir no POS? RESUMO DO DIA Mostra um resumo das\nVamos começar o seu atendimento? Ainda não é cliente? Adquira agora e venda mais! CENTRAL DE VENDAS Já é nosso cliente?\n# Habilitação de bandeiras e produtos  Documento operacional fictício, válido somente na demonstração.  >\n1 Prepare-se com Link de Pagamento para Black Friday - Link personalizável - Segurança antifraude - Venda online -\nR$ 230,00: Saldo ou limite insuficiente no cartão do comprador.\nOfereça outro meio de pagamento, como outro cartão ou Pix."
+    },
+    {
+      "id": "CORE-09",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "Lembrando que a simulação é apenas para consulta, sendo sujeita a análise de crédito, portanto, cabe ao emissor do cartão aprovar a transação no momento da contratação. Onde visualizo o pagamento e em que prazo eu"
+    },
+    {
+      "id": "CORE-10",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [],
+      "failed_tools": [],
+      "answer": "A partir de 15/01 , por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado. O que muda para você, cliente da Getnet? Caso você tenha um pacote de"
+    },
+    {
+      "id": "PRICE-CONSISTENT",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "simulate_pricing"
+      ],
+      "failed_tools": [],
+      "answer": "The synthetic comparison found consistent values.\nExpected R$ 1,94; charged R$ 1,94."
+    },
+    {
+      "id": "PRICE-CONDITIONS",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "simulate_pricing"
+      ],
+      "failed_tools": [],
+      "answer": "Recorded conditions differ from the simulated conditions; that does not prove an error.\nExpected R$ 36,00; charged R$ 37,80."
+    },
+    {
+      "id": "PRICE-DIVERGENCE",
+      "ok": true,
+      "http_status": 200,
+      "status": "handoff",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "simulate_pricing"
+      ],
+      "failed_tools": [],
+      "answer": "The synthetic comparison shows a divergence. I will refer it for review; this does not confirm a refund.\nExpected R$ 0,00; charged R$ 0,75.\nDifference: R$ 0,75.\nI've handed your case to a human agent (simulated in this demo). Protocol: SIM-20261026-B69DF8."
+    },
+    {
+      "id": "PRICE-INSUFFICIENT",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "simulate_pricing"
+      ],
+      "failed_tools": [],
+      "answer": "There is not enough applicable evidence to compare the amounts."
+    },
+    {
+      "id": "ENABLEMENT",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "get_enablement_requests"
+      ],
+      "failed_tools": [],
+      "answer": "visa: pending, protocol SIM-BND-1988-001; device availability: True."
+    },
+    {
+      "id": "CANCELLATION",
+      "ok": true,
+      "http_status": 200,
+      "status": "answered",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck",
+        "get_sale_cancellation_context"
+      ],
+      "failed_tools": [],
+      "answer": "Sale cancellation status: requested. This is a read-only lookup."
+    },
+    {
+      "id": "CONTRACT",
+      "ok": true,
+      "http_status": 200,
+      "status": "handoff",
+      "tools": [
+        "get_complaint_history",
+        "run_customer_healthcheck"
+      ],
+      "failed_tools": [],
+      "answer": "I've handed your case to a human agent (simulated in this demo). Protocol: SIM-20261026-6E838E."
+    }
+  ]
+}
