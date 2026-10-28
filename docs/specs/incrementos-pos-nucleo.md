@@ -2,7 +2,7 @@
 
 # Especificação complementar: incrementos pós-núcleo
 
-Versão 0.2 — 2026-10-26 — **aprovada pelo responsável em 2026-10-26**, com a sequência de versões até a 0.7.0. A 0.2 registra as respostas às questões Q7, Q9, Q10 e Q12.
+Versão 0.3 — 2026-10-27 — **recorte final aprovado pelo responsável em 2026-10-27**: as antigas v0.6.0 e v0.7.0 foram substituídas por uma única v0.6.0 de simplificação, demonstração e fechamento (seção [Recorte final](#recorte-final-v060)). A 0.2 (2026-10-26) aprovou a sequência até a 0.7.0 e registrou as respostas às questões Q7, Q9, Q10 e Q12; seu texto é preservado abaixo com as marcações de tratamento.
 
 Complementa a [especificação principal](assistente-multiagente-lojista.md) (v0.2), cujo núcleo foi entregue e validado como versão 0.1.0 (PR #1, commit `29a0088`). Os requisitos RF-01 a RF-37 e os critérios CA-01 a CA-17 e CA-26 continuam valendo e não podem regredir. O plano técnico está em [incrementos-pos-nucleo-plano.md](incrementos-pos-nucleo-plano.md).
 
@@ -60,8 +60,33 @@ Entrega em versões pequenas, cada uma utilizável e com changelog e instruçõe
 | 0.3.0 | Jornadas de preço, bandeiras e cancelamento | RF-32 a RF-34, RF-46 |
 | 0.4.0 | Router JEV, modelos por agente, perfis, API da interface e projeto Streamlit com chat, perfis e toggle | RF-35, RF-41 a RF-43, RF-47 a RF-53 |
 | 0.5.0 | Versões da base e editor de documentos | RF-63 a RF-66 |
-| 0.6.0 | Evaluation Agent por etapa e ciclo de melhoria supervisionada | RF-54 a RF-62 |
-| 0.7.0 | Experimentos e gráficos, compartilhamento com o recrutador, README, changelog e roteiro de vídeo finais | RF-36, RF-67 a RF-75 |
+| ~~0.6.0~~ | ~~Evaluation Agent por etapa e ciclo de melhoria supervisionada~~ — substituída na 0.3 | ~~RF-54 a RF-62~~ |
+| ~~0.7.0~~ | ~~Experimentos e gráficos, compartilhamento com o recrutador, README, changelog e roteiro de vídeo finais~~ — retirada da entrega na 0.3 | ~~RF-36, RF-67 a RF-75~~ |
+| 0.6.0 | Simplificação, demonstração e fechamento (recorte final) | RF-76 a RF-79 e os mantidos/simplificados do mapa abaixo |
+
+## Recorte final (v0.6.0)
+
+Decidido pelo responsável em 2026-10-27, depois da v0.5.0 integrada (tag `v0.5.0`). Objetivo: um case compreensível, confiável e demonstrável, sem somar os escopos antigos da 0.6.0 e da 0.7.0. Após o aceite da v0.6.0, a expansão funcional do case termina; pendências não essenciais ficam documentadas e não originam uma v0.7.0.
+
+A retirada do Evaluation Agent e do ciclo de propostas foi escolha expressa do responsável. Ativação, autoria e retorno da base de conhecimento (v0.5.0) continuam e não saem junto com o workflow de propostas. Especificação derivada: [fechamento-v060.md](fechamento-v060.md).
+
+| Requisito anterior | Tratamento | Como fica |
+| --- | --- | --- |
+| RF-36, RF-67 | Simplificados | Interface em três áreas (RF-76); sem propostas nem experimentos genéricos |
+| RF-54 | Mantido | Trace, snapshot e agregação por agente já existentes; sem tabela nova de evidências |
+| RF-55 | Substituído por RF-77 | Sem Evaluation Agent; verificações determinísticas e avaliador por modelo já existentes |
+| RF-56 | Mantido | Aplicado ao registro de avaliação sob demanda |
+| RF-57 | Simplificado | Verificações determinísticas onde há cenário rotulado; avaliação por modelo só sob demanda, sobre a resposta persistida |
+| RF-58 | Simplificado | Falhas críticas sempre visíveis e fora das médias; não há aprovação de proposta para bloquear |
+| RF-59, RF-60, RF-61 | Adiados (fora da entrega) | Workflow de propostas, candidatas e aprovações de melhorias retirado |
+| RF-62 | Mantido só para a base | Autoria, momento, versão e evidência de ativação e retorno já registrados pela v0.5.0 |
+| RF-63 a RF-66 | Mantidos (v0.5.0) | Acrescido o critério de efeito no comportamento (RF-79, CA-49) |
+| RF-68 | Simplificado | Dois gráficos e uma tabela (RF-78); mapa de resultados e linha do tempo adiados |
+| RF-69 | Simplificado | Comparação pequena e rastreável (RF-78), sem plataforma de experimentos |
+| RF-70 a RF-75 | Mantidos | Navegação sem custo, compartilhamento, papéis, estimativa e guarda |
+| RNF-09 a RNF-13 | Mantidos | — |
+
+Os IDs anteriores são preservados. Nenhum requisito retirado ou adiado é marcado como implementado.
 
 ## Fora do escopo
 
@@ -70,6 +95,7 @@ Entrega em versões pequenas, cada uma utilizável e com changelog e instruçõe
 - Treinamento ou ajuste fino de modelos; melhoria autônoma sem aprovação humana.
 - Hospedagem paga, compra de créditos ou contratação de serviços.
 - Alterar configurações globais da máquina ou do roteador do responsável (abrir portas no roteador é ação do responsável).
+- Desde a 0.3: novo Evaluation Agent; workflow genérico de propostas, candidatas e aprovações de melhorias; treinamento, otimização ou melhoria autônoma; plataforma de experimentos e exploração de combinações; mapa de calor e outros gráficos adicionais; novas jornadas de negócio, provedores ou integrações; refatoração ampla motivada só por preferência de arquitetura.
 
 ## Requisitos funcionais
 
@@ -114,6 +140,8 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 ### Registro e avaliação por etapa
 
+> Tratamento 0.3: RF-54 e RF-56 mantidos; RF-55 substituído por RF-77; RF-57 e RF-58 simplificados.
+
 - **RF-54** Cada execução gera um registro determinístico das etapas, agentes, ferramentas, modelos usados, duração, tokens e custo, extraído da execução e dos retornos dos provedores, com as evidências mínimas para avaliação (identificadores dos trechos, resultados das ferramentas, decisões estruturadas).
 - **RF-55** Um Evaluation Agent, fora do caminho do atendimento, avalia as etapas com critérios próprios: Router (rota e esclarecimento), Knowledge (relevância das fontes e sustentação das afirmações), Customer Support (ferramentas, consistência dos fatos, orientação), Personality (clareza e preservação de fatos, valores, datas e fontes) e Escalation (contexto, motivo e pendências).
 - **RF-56** Cada avaliação registra critério, resultado, evidência, método (determinístico ou modelo), versão da rubrica e custo. Sem evidência suficiente, o resultado é "não avaliado".
@@ -121,6 +149,8 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - **RF-58** Falhas críticas (vazamento entre clientes, valor sem evidência, promessa financeira, recusa indevida) aparecem individualmente e bloqueiam a aprovação, independentemente da média.
 
 ### Melhoria supervisionada
+
+> Tratamento 0.3: RF-59 a RF-61 adiados, fora da entrega; RF-62 mantido só para ativação e retorno da base (v0.5.0).
 
 - **RF-59** O ciclo é: execução → avaliação → proposta → versão candidata → testes de regressão → aprovação humana → ativação, com retorno à versão anterior.
 - **RF-60** Propostas do avaliador alteram somente documentos fictícios, prompts ou perfis, e contêm problema observado, evidências, alteração sugerida e critério de melhoria. Permissões, guardrails, orçamento e regras financeiras não podem ser alterados por proposta.
@@ -135,6 +165,8 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - **RF-66** Documentos recuperados continuam sendo evidência: editá-los não concede ferramentas, não muda instruções dos agentes e não substitui o PRaaS como autoridade financeira.
 
 ### Interface e comparação gráfica (complementa RF-36)
+
+> Tratamento 0.3: RF-67 a RF-69 simplificados por RF-76 e RF-78; RF-70 mantido.
 
 - **RF-67** A interface oferece: chat com seleção de cenários sintéticos; continuidade e estado do atendimento; seleção e configuração de perfis; toggle LLM/JEV; execução explícita de experimentos; edição e publicação controlada de documentos; avaliações e propostas; inspeção de execuções (fontes, ferramentas, versões, falhas), sem mostrar raciocínio interno dos modelos.
 - **RF-68** Gráficos prioritários: custo × qualidade por perfil com tempo de resposta; custo por agente e modelo; mapa de resultados por cenário e critério; linha do tempo das etapas executadas. Cada ponto abre os registros que o explicam.
@@ -152,11 +184,18 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 - **RF-75** Antes de cada experimento ou avaliação por modelo, a interface mostra o número de execuções e o custo estimado e exige confirmação. Embeddings, busca, JEV, comparações e avaliações passam pela mesma guarda persistente; custo desconhecido bloqueia a chamada e nunca aparece como zero.
 
+### Fechamento v0.6.0 (novos na 0.3)
+
+- **RF-76** A interface se organiza em três áreas: **Atendimento** (cenário, perfil publicado, toggle LLM/JEV, conversa e estado do caso), **Resultados** (execuções, fontes, ferramentas, versões, custos, duração e avaliações) e **Administração** (perfis e documentos, só para o administrador, verificado no backend). Reaproveita telas e contratos existentes; detalhes técnicos ficam acessíveis sem dominar o atendimento. Poucos perfis preparados para a demonstração; mensagens de erro dizem o que aconteceu e como recuperar; execução real, simulada e gravada continuam distintas.
+- **RF-77** Uma execução persistida pode ser avaliada sob demanda sem repetir o atendimento: verificações determinísticas existentes (com o cenário rotulado como origem, quando houver) e, por ação explícita com estimativa, confirmação e reserva, o avaliador por modelo existente. A avaliação registra método, rubrica e versão, evidências, configuração do avaliador e custo próprio, separado do custo do atendimento. Sem avaliação, o resultado é "não avaliado"; falhas críticas aparecem individualmente, independentemente de médias. Não há nota por etapa que as verificações existentes não sustentem.
+- **RF-78** Comparação pequena de dois ou três perfis publicados sobre um conjunto explícito de cenários rotulados: reaproveita execuções compatíveis; novas execuções só por ação explícita, com estimativa e reserva; efeitos isolados do atendimento original; configurações, versões, repetições e falhas registradas; demais fatores fixos quando se compara a troca de modelo. Entrega dois gráficos — custo × qualidade por perfil (com duração e tamanho da amostra) e custo por agente/modelo, que abre as execuções correspondentes — e uma tabela com cenário, perfil, resultado, duração e custo. Qualidade só com a mesma rubrica e critérios comparáveis; comparação só dos Routers é apresentada à parte do atendimento completo.
+- **RF-79** A demonstração prova efeito da documentação no comportamento: V1 → edição fictícia → candidata → teste → ativação → mudança observável → retorno, em conversas independentes com o mesmo cenário, perfil, prompts e ferramentas, variando só a versão da base. A diferença esperada é definida antes (orientação útil e, quando o procedimento prevê, consulta verificável de ferramenta já autorizada) e comprovada por documento/trecho recuperado, versão usada, fatos e ferramentas. Texto recuperado não concede ferramenta, não cria prazo oficial e não altera regra financeira (RF-66).
+
 ## Requisitos não funcionais
 
 - **RNF-09 Compatibilidade:** `POST /messages` mantém o contrato da v0.1.0; campos novos são opcionais. A API da interface é versionada (`/v1`).
 - **RNF-10 Segurança da exposição:** a interface exposta exige autenticação, usa HTTPS quando possível (certificado próprio do Streamlit), limita requisições por sessão e não revela erros internos.
-- **RNF-11 Orçamento:** teto total de US$5 mantido, descontado o já gasto (US$0,31 em 2026-10-26). A demonstração pública tem sublimite próprio e configurável, inicialmente US$1,00, que pode ser aumentado por decisão do responsável sem ultrapassar o teto total.
+- **RNF-11 Orçamento:** teto total de US$5 mantido, descontado o já gasto (US$0,31 em 2026-10-26; US$0,59837466 reconciliado ao fim da v0.5.0). A demonstração pública tem sublimite próprio e configurável, inicialmente US$1,00, que pode ser aumentado por decisão do responsável sem ultrapassar o teto total. Na 0.3, o sublimite efetivo é o menor entre esse valor e o saldo do teto persistente do ledger da instalação.
 - **RNF-12 Processo de desenvolvimento:** o trabalho ocorre na sessão principal. Subagentes só com autorização explícita de escopo, quantidade, modelo e esforço, sem herança silenciosa nem troca por modelo mais caro. O consumo da ferramenta de desenvolvimento e o orçamento das APIs da aplicação são controles separados.
 - **RNF-13 Testes:** toda funcionalidade nova tem testes sem rede e sem custo; rodadas reais são limitadas e registradas em evidências. Nenhum requisito é dado como concluído só com mock ou documentação.
 
@@ -173,10 +212,12 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 | UC-25 | "Quero encerrar meu contrato" | Não chama ferramentas de venda; oferece esclarecimento e atendente |
 | UC-26 | Toggle JEV numa requisição | Decisão pelo JEV registrada; especialistas inalterados |
 | UC-27 | JEV indisponível | Erro explícito; nenhuma troca silenciosa |
-| UC-28 | Experimento de perfis | Estimativa, confirmação, execução isolada e gráfico rastreável |
+| UC-28 | Experimento de perfis (simplificado na 0.3 para comparação pequena, RF-78) | Estimativa, confirmação, execução isolada e gráfico rastreável |
 | UC-29 | Edição de documento fictício | Rascunho, comparação, índice candidato, teste, ativação e retorno |
-| UC-30 | Proposta do avaliador | Candidata testada, aprovação registrada, ativação e retorno |
+| ~~UC-30~~ | ~~Proposta do avaliador~~ — adiado na 0.3 | — |
 | UC-31 | Recrutador acessa pelo IP público | Usa cenários autorizados dentro do limite; não vê administração |
+| UC-32 | Avaliar uma execução já gravada (0.3) | Estimativa, confirmação, resultado com método e rubrica; atendimento não repetido |
+| UC-33 | Mesma pergunta antes e depois de editar a base (0.3) | Mudança prevista na orientação e na ferramenta consultada; retorno restaura o comportamento anterior |
 
 ## Critérios de aceitação
 
@@ -185,21 +226,29 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - [x] **CA-29** UC-19 a UC-21 demonstrados com testes sem custo e com uma rodada real registrada (complementa CA-18 e CA-19).
 - [x] **CA-30** Demonstração MCP verificável conforme RF-45 (complementa CA-20).
 - [x] **CA-31** Os quatro comportamentos de preço, a habilitação e o cancelamento demonstrados com dados sintéticos (complementa CA-21 a CA-23). Comprovado na v0.3.0; [resultado e limites](../evidence/v030-resultado.md).
-- [ ] **CA-32** Toggle LLM/JEV real funcionando no Streamlit, com mecanismo, versão, duração e custo registrados (complementa CA-24).
-- [ ] **CA-33** Indisponibilidade do JEV produz erro explícito, sem troca silenciosa.
-- [ ] **CA-34** A comparação de roteamento executa só os Routers; o atendimento roda uma vez.
-- [ ] **CA-35** A interface rotula cada resultado como real, simulado ou gravado.
-- [ ] **CA-36** Três perfis versionados (Referência, Híbrido, Ajustado), com configuração congelada por execução e modelo efetivo por etapa no trace.
-- [ ] **CA-37** Combinações incompatíveis ou não implementadas não aparecem na interface e são recusadas pela API.
-- [ ] **CA-38** Avaliação por etapa com critério, resultado, evidência, método, versão da rubrica e "não avaliado" quando cabível; custos de atendimento e de avaliação separados.
-- [ ] **CA-39** Uma falha crítica isolada aparece e bloqueia a aprovação mesmo com média alta.
-- [ ] **CA-40** Ciclo completo demonstrado: proposta, candidata, regressão, aprovação, ativação e retorno, com autoria e evidências.
-- [ ] **CA-41** Edição de documento fictício com rascunho, comparação, índice candidato, teste, ativação e retorno; fontes oficiais não editáveis; versão da base no trace.
-- [ ] **CA-42** Os quatro gráficos prioritários abrem os registros que os explicam; navegar não gera chamadas pagas.
-- [ ] **CA-43** Compartilhamento pelo IP público validado de fora da rede local, ou impedimento concreto registrado; perfil de demonstração sem acesso administrativo.
-- [ ] **CA-44** Estados de carregamento, ausência de dados, erro e indisponibilidade tratados nas telas.
-- [ ] **CA-45** Gasto total dentro de US$5, com custo estimado antes de experimentos e bloqueio de custo desconhecido.
-- [ ] **CA-46** README, changelog e roteiro de vídeo atualizados; nenhum dado privado do discovery publicado.
+- [x] **CA-32** Toggle LLM/JEV real funcionando no Streamlit, com mecanismo, versão, duração e custo registrados (complementa CA-24). Comprovado na v0.6.0 após a correção do P1-QA-01 ([resultado](../evidence/v060-resultado.md)).
+- [ ] **CA-33** Indisponibilidade do JEV produz erro explícito, sem troca silenciosa. *Coberto por testes e revisão; não exercitado ao vivo.*
+- [x] **CA-34** A comparação de roteamento executa só os Routers; o atendimento roda uma vez. Comprovado com provedores reais na v0.5.0 e na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
+- [x] **CA-35** A interface rotula cada resultado como real, simulado ou gravado. Verificado na interface da v0.6.0 ([resultado](../evidence/v060-resultado.md)).
+- [x] **CA-36** Três perfis versionados (Referência, Híbrido, Ajustado), com configuração congelada por execução e modelo efetivo por etapa no trace. Verificado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
+- [x] **CA-37** Combinações incompatíveis ou não implementadas não aparecem na interface e são recusadas pela API. Comprovado por HTTP real na v0.4.0 ([QA r5](../evidence/v040-qa-r5.md)); os modelos oferecidos responderam aos provedores reais na v0.5.0 e na v0.6.0.
+- [ ] ~~**CA-38**~~ Avaliação por etapa com critério, resultado, evidência, método, versão da rubrica e "não avaliado" quando cabível; custos de atendimento e de avaliação separados. — *Substituído na 0.3 por CA-50.*
+- [ ] ~~**CA-39**~~ Uma falha crítica isolada aparece e bloqueia a aprovação mesmo com média alta. — *Substituído na 0.3 por CA-50 (falha crítica visível, sem aprovação a bloquear).*
+- [ ] ~~**CA-40**~~ Ciclo completo demonstrado: proposta, candidata, regressão, aprovação, ativação e retorno, com autoria e evidências. — *Adiado na 0.3; fora da entrega.*
+- [x] **CA-41** Edição de documento fictício com rascunho, comparação, índice candidato, teste, ativação e retorno; fontes oficiais não editáveis; versão da base no trace. Comprovado na v0.5.0 ([resultado](../evidence/v050-resultado.md)); a sonda opcional do marcador permanece inconclusiva e não é convertida em reprovação.
+- [ ] ~~**CA-42**~~ Os quatro gráficos prioritários abrem os registros que os explicam; navegar não gera chamadas pagas. — *Substituído na 0.3 por CA-48.*
+- [ ] **CA-43** Compartilhamento pelo IP público validado de fora da rede local, ou impedimento concreto registrado; perfil de demonstração sem acesso administrativo. *Papel demo sem administração comprovado na v0.6.0; teste de outra rede pendente com o responsável.*
+- [x] **CA-44** Estados de carregamento, ausência de dados, erro e indisponibilidade tratados nas telas. Verificado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
+- [x] **CA-45** Gasto total dentro de US$5, com custo estimado antes de experimentos e bloqueio de custo desconhecido. Acumulado US$0,68637953 ao fim da v0.6.0 ([resultado](../evidence/v060-resultado.md)).
+- [x] **CA-46** README, changelog e roteiro de vídeo atualizados; nenhum dado privado do discovery publicado. Fechado na v0.6.0 ([resultado](../evidence/v060-resultado.md)); a gravação do vídeo segue em CA-25.
+
+Critérios novos da 0.3, formalizados antes do QA da v0.6.0 (detalhes em [fechamento-v060.md](fechamento-v060.md)):
+
+- [x] **CA-47** Na interface, o atendimento usa cenário, perfil publicado e toggle LLM/JEV; mostra conversa e estado do caso; recupera a resposta após falha de transporte só por GET; erros explicam como recuperar; navegação e reruns não geram POST, inferência ou publicação.
+- [x] **CA-48** Comparação de dois ou três perfis em cenários explícitos, com os dois gráficos e a tabela de RF-78; cada ponto abre as execuções; configurações, versões, repetições e falhas registradas; novas execuções só com estimativa, confirmação e reserva; nenhum caso ou encaminhamento criado no atendimento original; Router-only separado.
+- [x] **CA-49** Mesma pergunta, cenário, perfil, prompts e ferramentas em conversas independentes com V1, V2 editada e V1 restaurada: a diferença prevista antes da edição aparece em V2 e some no retorno, comprovada por trecho e versão recuperados, fatos e ferramentas; nenhuma ferramenta nova, prazo oficial ou regra financeira vinda do texto.
+- [x] **CA-50** Avaliação sob demanda de execução persistida sem novo agente e sem repetir o atendimento: estimativa, confirmação, método, rubrica, evidências, configuração do avaliador e custo separado; "não avaliado" quando ausente; falha crítica visível apesar de média alta.
+- [ ] **CA-51** A versão empacotada em Docker é exercitada (distinta de testes nativos e inspeção de imagem); um guia único inicia backend e Streamlit e conduz a demonstração; compartilhamento pelo IP público e porta testado de outra rede, ou impedimento concreto registrado; limitações explícitas. *Docker e guia comprovados na v0.6.0; teste de outra rede pendente com o responsável.*
 
 ## Riscos
 
@@ -221,6 +270,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 | Q7 | ~~Aprovar esta especificação e a sequência de versões~~ Aprovada em 2026-10-26, até a v0.7.0 | Responsável | — |
 | Q8 | Autorizar a tag `v0.1.0` na `main` | Responsável | RF-38 |
 | Q9 | ~~Repositório próprio e template para o projeto web~~ Sim: repositório próprio no GitHub, criado a partir do ai-dev-template | Responsável | — |
-| Q10 | Sublimite de gasto da demonstração: ~~valor~~ inicial US$1,00, aumentável pelo responsável quando necessário (RNF-11). Janela de disponibilidade ainda a definir | Responsável | v0.7.0 (janela) |
-| Q11 | Disponibilidade de redirecionamento de porta no roteador e IP público sem CGNAT | Responsável (verificação na v0.4.0) | RF-71 |
+| Q10 | Sublimite de gasto da demonstração: ~~valor~~ inicial US$1,00, aumentável pelo responsável quando necessário (RNF-11). Janela de disponibilidade ainda a definir | Responsável | v0.6.0 (janela, desde a 0.3) |
+| Q11 | Disponibilidade de redirecionamento de porta no roteador e IP público sem CGNAT | Responsável (verificação no QA da v0.6.0) | RF-71, CA-51 |
+| Q13 | ~~Recorte final~~ Aprovado em 2026-10-27: v0.6.0 única; v0.7.0 retirada; Evaluation Agent e propostas fora da entrega; contratos `/v1` aditivos, migração 0008 e controles de exposição aceitos | Responsável | — |
 | Q12 | ~~Provedores além de OpenAI e JEV~~ Sim: DeepSeek incluído como provedor por agente (RF-49) | Responsável | — |

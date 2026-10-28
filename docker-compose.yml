@@ -27,7 +27,7 @@ services:
       mocks:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"  # only the Streamlit interface is exposed outside this host (ADR 0015)
     env_file:
       - path: .env
         required: false

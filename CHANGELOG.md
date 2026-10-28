@@ -2,6 +2,64 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.6.0] — 2026-10-28 (validated: review and real QA apt)
+
+Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md), [plan](docs/specs/fechamento-v060-plano.md), [ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md), tasks 54–58). After acceptance, functional expansion ends.
+
+### Added
+- Short catalog of ten labeled synthetic scenarios (`data/scenarios/catalog.json`), derived from the evaluation cases and including the documentation-effect question; `GET /v1/scenarios` and optional `scenario_id` in `POST /v1/messages` (validated, message must match, stored in the run snapshot).
+- Results data in `GET /v1/runs/{id}`: steps with retrieved passages (chunk id and excerpt), route, prompts used, deterministic checks reusing the existing evaluation checks (scenario labels when present; otherwise only grounding, errors and cross-customer markers, the rest "not evaluated") with critical failures listed one by one, and recorded evaluations.
+- On-demand model evaluation of a persisted reply (`POST /v1/runs/{id}/evaluations/estimate` and `POST /v1/runs/{id}/evaluations`): existing `judge` rubric and `JudgeScore`, fixed evaluator from the backend settings, confirmed estimate, budget reservation and separate cost, idempotent unless `repeat=true`, failed attempts recorded without scores. No Evaluation Agent and no new attendance.
+- Small profile comparison (`POST /v1/comparisons/estimate`, `POST /v1/comparisons`, `GET /v1/comparisons/{id}`): 2–3 profiles, up to 3 scenarios and 2 repetitions (18 cells), reuse of compatible recorded runs, one captured knowledge-base version, execution in a thread of the API process, domain effects in a temporary copy of the synthetic database, traces and snapshots marked `purpose=comparison`, budget denial stops the remaining cells, interrupted comparisons become `failed` on the next read, exploratory flag when profiles differ in more than one agent, model-judge quality only when every run of a profile was judged with one evaluator.
+- Documentation-effect demonstration prepared without cost: V2 text of the fictitious devices document (`data/scenarios/kb-demo-devices-v2.md`), expected difference recorded before editing ([QA preparation](docs/evidence/v060-qa-preparacao.md)) and an integration test V1 → V2 → V1 with a programmed policy.
+- Demo session limit of paid actions (`DEMO_SESSION_MESSAGE_LIMIT`, default 20), enforced by the backend with `429 demo_message_limit_reached`: messages, new comparison executions, Router comparisons and AI evaluations count; refusals without a model call (for example a stale comparison `409`, a budget refusal before the first call, or comparison cells skipped by a knowledge-base change, the confirmed cap or a budget refusal) do not count or are given back.
+- Web: three areas (Atendimento, Resultados, Administração only for admin), catalog scenarios, Results with checks, evaluations and the two comparison charts plus a table, error messages with the recovery action, optional `LOCK_BACKEND_URL` for a shared interface. Reference, Hybrid and Adjusted are published on new databases.
+- Single [demonstration guide](docs/guia-demonstracao.md), [manual test script](docs/roteiro-teste-manual.md) and [video script](docs/roteiro-video.md).
+
+### Fixed (task 54)
+- R2-01: the persistent ceiling is written with an exact round-trip representation; the first mount never refuses its own value.
+- R2-02: the ceiling file is published atomically (temporary file and hard link) and never overwritten.
+- R2-03: readiness and per-request capture are read-only once the knowledge-base registry exists.
+- R2-05: explicit 30 s timeout in the CLI OpenAI client; R2-08 regressions for `max_retries == 0` in the three real clients and for a legacy manifest with an empty collection.
+- R2-07: `BudgetGuard.record` and `record_embedding` (no callers, no reservation) removed.
+- Web timeout: 105 s (backend `MAX_REQUEST_SECONDS` 90 + margin) for operations that wait for paid work, 20 s for reads, both configurable; GET recovery preserved. Unstructured gateway errors no longer break the client.
+- `BudgetMeter` accepts the `effective_parameters` argument sent by the OpenAI adapter (the paid judge path of `eval --judge` would otherwise fail).
+- Strict validation scripts skip `.pytest_cache` and `_tmp`; the web script also skips `.venv*` environments and Ruff is a web test dependency.
+
+### Fixed (review r1, task 60)
+- A comparison read never overwrites a final state recorded at the same time (conditional update while `running`).
+- On-demand evaluation claims a `running` row atomically: simultaneous requests with the same configuration make one paid call (`409 evaluation_running`); stale claims expire after 10 minutes.
+- Comparisons reuse only independent runs (`history_turns = 0`); missing costs stay unknown instead of zero; an agent that used several models in one run keeps one combined cost.
+- The catalog covers card-scheme enablement and sale cancellation (10 scenarios).
+- Web: transport failures in Administração (build, test, activation, rollback and loads) show the recovery action and discard estimate and confirmations; chart points and table cells (including failed ones) open their runs by GET; Simulado offers only the demo role when `LOCK_BACKEND_URL` is on.
+
+### Fixed (QA r1, task 61)
+- The JEV toggle runs the TypeSafe adapter in direct messages and profile comparisons; before, the Router was served by the default LLM while the snapshot said JEV. Snapshot, trace, ledger and Results now agree on the effective Router model.
+- The demo-limit refund is decided by the ledger rows of the request and never happens when they cannot be read.
+- `/ready` reports the active knowledge-base version and collection (`knowledge_base`).
+- Web: amounts in reais are shown literally (no formula), the case state follows a recovered reply, the profile selector starts on Referência with Portuguese names, the candidate test cap is pre-filled with the build estimate and the cost × quality chart keeps its labels in the legend.
+
+### Changed (contracts and data)
+- Additive `/v1` routes above; the OpenAPI snapshot in the web project is regenerated (31 paths, 28 client operations). Legacy `POST /messages`, MCP and existing `/v1` behaviour are unchanged.
+- Reversible migration 0008 adds `run_evaluations`, `comparisons` and `api_sessions.message_count`; schema version 8. Trace detail gains `purpose`, `scenario_id`, `citations` and passage excerpts; run snapshots gain `scenario_id`, `purpose`, the masked `message` and the `prompt_set`.
+- Compose publishes the API only on `127.0.0.1:8000`.
+- The approved v0.6.0 QA campaign cap is US$0.50: `FixedBudgetGuard` accepts up to US$0.50 (was US$0.25).
+- R2-04 (Qdrant I/O inside `BEGIN IMMEDIATE` during activation) is an accepted risk, without code change.
+
+### Validation
+- Backend strict script: **349 tests passed**, Ruff and skill checks passed. Web: **42 tests passed**, Ruff passed, strict script exit 0. Migration 0007 → 0008 → 0007 tested on a synthetic SQLite database. Independent review apt in five rounds; real QA (two rounds, candidate r5) apt on the ten acceptance items through the real UI, ledgers and the packaged Docker stack (API only on loopback, schema 8). Highlights: the edited document changed tool use with a real model (V2 retrieved the new passage first and called `get_contract_snapshot`; the restored V1 did not); JEV toggle confirmed by `jev-1.14.0` ledger rows; recovery with one POST and one GET; on-demand evaluation reused without cost. Real regression: core and challenge cases 27/27, conversations 4/4. QA campaign cost **US$0.08800487** of its US$0.50 cap; project total US$0.68637953 of US$5. See the [result record](docs/evidence/v060-resultado.md).
+
+### Limitations
+- Model evaluation is a judge over the persisted reply, not human review. The comparison estimate is an upper bound; comparisons depend on the API process staying up.
+- Results shows the runs of the current browser session; no general run listing (`GET /v1/runs` was not approved).
+- Public sharing depends on the owner's router, firewall and the absence of CGNAT; the docs describe a tunnel as an alternative. Access from another network was not tested yet.
+- Business journeys in the real regression: 7/13 by the literal rubric. Four pricing cases miss only literal wording (tool, amounts and status are right); the English price-conditions question goes to `clarify` with the real Router (the Portuguese one passes). Router and prompts were not changed in v0.6.0.
+- The cost × quality chart legend shows profile identifiers (`reference`, `hybrid`, `adjusted`) instead of the Portuguese names.
+- `/v1` login against the Docker stack requires `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` in `.env`.
+
+### Return to 0.5.0
+- Stop the stack and run `merchant-assistant migrate --to 7` against the synthetic runtime before checking out `v0.5.0`; evaluations, comparisons and the session message counter are dropped, all earlier data is kept. Compose of 0.5.0 publishes the API on all interfaces again.
+
 ## [0.5.0] — 2026-10-27 (validated candidate r7; approved for Git integration)
 
 Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), tasks 39–53).

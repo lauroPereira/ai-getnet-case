@@ -417,4 +417,6 @@ def handler(call: ScriptedCall):
         return {"summary": "Lojista pediu atendimento humano.", "pending_question": "Retornar ao lojista."}
     if agent == "personality":
         return _personality(call)
+    if agent == "judge":  # deterministic stand-in for the model judge; says nothing about real quality
+        return {"answers_question": 4, "clarity_and_tone": 4, "honesty": 4, "comment": "Scripted judge."}
     raise AssertionError(f"unexpected agent {agent}")

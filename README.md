@@ -13,9 +13,9 @@ curl -s localhost:8000/messages -H 'content-type: application/json' \
   -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?", "user_id": "cliente1988"}'
 ```
 
-**Status:** v0.4.0 is approved for Git integration with its real-provider validation limits recorded. The backend has **216 passing tests** and the web suite **14 passing tests**, with independent review and functional QA of the corrected flows. Profile output limits, publication, effective snapshots, Simulated/Recorded labels and comparison selection are covered. Changing a comparison choice discards the old result and requires an explicit new comparison; reruns do not trigger one. No paid/provider inference call was made in v0.4.0. Live JEV (CA-32) and authenticated model availability remain open for the next version's authorized QA. See the [validation result](docs/evidence/v040-resultado.md), [integration record](docs/evidence/v040-integracao.md), [catalog evidence](docs/evidence/v040-catalogo-fontes.md), [parameter evidence](docs/evidence/v040-parametros-modelo-fontes.md) and [API contract](docs/contracts/api-v040.md).
+**Status:** v0.6.0 is validated: independent review apt and real QA apt on all ten acceptance items, with access from another network still to be tested by the owner ([result](docs/evidence/v060-resultado.md)). It closes the case: the interface has three areas (Attendance, Results, Administration), labeled catalog scenarios, Results with deterministic checks and on-demand model evaluation of persisted runs, a small profile comparison with two charts, and a zero-cost proof that editing the fictitious documentation changes tool use and that rollback restores it. Offline validation: backend strict script **349 tests passed**, web **42 tests passed** with Ruff. Real QA of the version cost **US$0.08800487** (project total US$0.68637953 of US$5). Start with the [demonstration guide](docs/guia-demonstracao.md) (Portuguese).
 
-The v0.3.0 release history and its evidence remain below as historical context; they do not validate the v0.4.0 candidate.
+Earlier release notes and evidence below are historical context; they do not validate the v0.6.0 candidate.
 
 ---
 
@@ -77,6 +77,23 @@ uvicorn --factory merchant_assistant.main:create_application --reload
 merchant-assistant ask "Qual a cotação do euro hoje?" --trace  # one message, in process, with its trace
 ```
 
+### Demonstration (v0.6.0)
+
+The [demonstration guide](docs/guia-demonstracao.md) is the single entry point: backend with Docker, Streamlit run natively, catalog scenarios, the demonstration flow and sharing by public IP. Additive `/v1` routes in this version:
+
+| Route | Role | Behaviour |
+| --- | --- | --- |
+| `GET /v1/scenarios` | demo, admin | Short catalog of labeled synthetic scenarios (`data/scenarios/catalog.json`) |
+| `POST /v1/messages` + `scenario_id` | demo, admin | Optional; validated against the catalog (message must match) and stored in the run; demo sessions limited by `DEMO_SESSION_MESSAGE_LIMIT` (`429 demo_message_limit_reached`) |
+| `GET /v1/runs/{id}` | owner | Adds `steps` (with retrieved passages), `route`, `prompts_used`, deterministic `checks` (scenario labels or label-independent, critical failures listed one by one) and `evaluations` |
+| `POST /v1/runs/{id}/evaluations/estimate` | owner | Price of one `judge` call over the persisted reply; no paid call |
+| `POST /v1/runs/{id}/evaluations` | owner | Confirmed estimate required; reserves, grades the stored reply with the fixed evaluator and records method, rubric, evaluator, evidence and a separate cost; same configuration returns the existing record unless `repeat=true` |
+| `POST /v1/comparisons/estimate` | demo, admin | 2–3 published profiles × up to 3 scenarios × up to 2 repetitions: cells, reused recorded runs, new executions, fixed factors, exploratory flag and an upper-bound estimate |
+| `POST /v1/comparisons` | demo, admin | Confirmed estimate required; `202` and execution in a thread of the API process with one knowledge-base version, domain effects in a temporary copy of the synthetic database and traces/snapshots marked `purpose=comparison` |
+| `GET /v1/comparisons/{id}` | owner | State, configuration, cells, failures and aggregates for the cost × quality and cost-by-agent/model charts |
+
+Migration 0008 (reversible) adds `run_evaluations`, `comparisons` and `api_sessions.message_count`. Legacy `POST /messages`, MCP and the existing `/v1` behaviour are unchanged. In Compose the API is published only on `127.0.0.1:8000`.
+
 ### Streamlit interface
 
 The separate `ai-getnet-case-web` sibling project (see its README) is a Streamlit client of the versioned `/v1` API. It never reads backend files or receives provider keys. Use **Simulado** or **Gravado** for fixture-only behavior, or select **Real (API)** and enter a backend URL plus a demo/admin access key configured on that backend. The client reuses one HTTP client per Streamlit session, closes it at logout, and sends requests only after explicit actions.
@@ -136,6 +153,8 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `WEB_SEARCH_MAX_CALLS` | `1` | Searches per general question |
 | `DEMO_MODE` | `false` (`true` in compose) | Enables `GET /traces/{id}` |
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
+| `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
+| `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
 
 `TYPESAFE_API_KEY` and `DEEPSEEK_API_KEY` are optional provider credentials used only by the v0.4.0 backend Router adapters. `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` configure the backend `/v1` session bootstrap; keep them private and leave them empty in the repository example. The web app accepts only one of these backend access keys and never accepts a provider key.
 
@@ -408,8 +427,10 @@ merchant's language while code, prompts and this README are in English.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
-- v0.4.0 implements the Jev Router toggle, per-agent profiles and Streamlit interface. Real JEV validation (CA-32), independent review/QA and release approval remain open; see the [developer passage](docs/evidence/v040-developer-r1.md).
-- Planned after v0.4.0: v0.5.0–v0.7.0 knowledge-base versions, per-step evaluation with supervised improvement, experiments and sharing.
+- v0.6.0 closes the functional scope (ADR 0015): no Evaluation Agent, no improvement-proposal workflow and no experiment platform. Model evaluation is an on-demand judge over persisted replies and is not human review.
+- Profile comparisons are small and run in a thread of the API process; restarting the API marks a running comparison as failed. The comparison estimate is an upper bound (request cost cap per new execution).
+- The Results area lists the runs of the current browser session; there is no general run listing.
+- Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.
 - `user_id` is not authentication. Production would bind it to an authenticated session and authorize every tool
   call against it.
 

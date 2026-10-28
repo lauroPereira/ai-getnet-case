@@ -62,4 +62,4 @@ Implementação local concluída. Regressão sintética e validação web regist
 
 ## Status
 
-Implementada — aguardando revisão independente e revalidação QA; não declarar aceite.
+Concluída — revisada ([Reviewer UI r1/r2](../evidence/v050-reviewer-ui-r2.md)) e revalidada no [QA r2](../evidence/v050-qa-r2.md); integrada na v0.5.0.

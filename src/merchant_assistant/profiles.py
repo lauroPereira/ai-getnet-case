@@ -100,10 +100,12 @@ def _defaults() -> dict[str, dict]:
 
 
 def bootstrap_profiles(conn: sqlite3.Connection) -> None:
-    """Install immutable Reference/Hybrid versions and an editable Adjusted draft."""
+    """Install the three published demonstration profiles (Reference, Hybrid and Adjusted) on a new database.
+
+    Existing databases keep their rows; an Adjusted draft from v0.4/v0.5 is published by an administrator."""
     stamp = now()
     for profile_id, agents in _defaults().items():
-        published = 0 if profile_id == "adjusted" else 1
+        published = 1
         exists = conn.execute("SELECT 1 FROM profiles WHERE profile_id=?", (profile_id,)).fetchone()
         if exists:
             continue
@@ -136,7 +138,10 @@ def validate_agents(value: dict) -> dict:
             spec = supported[parameter]
             maximum = spec["maximum_by_agent"].get(name)
             if maximum is None:
-                raise ValueError(f"{parameter} is unavailable for agent {name}; Evaluation is reserved for v0.6.0")
+                raise ValueError(
+                    f"{parameter} is unavailable for agent {name}; the evaluation field is kept but not used "
+                    "by the attendance"
+                )
             if type(raw_value) is not int:
                 raise ValueError(f"{parameter} for agent {name} must be an integer")
             if not spec["minimum"] <= raw_value <= maximum:

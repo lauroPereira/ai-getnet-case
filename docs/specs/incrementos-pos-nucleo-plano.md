@@ -2,7 +2,7 @@
 
 # Plano: incrementos pós-núcleo
 
-Versão 0.2 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, com a sequência até a v0.7.0. As decisões 0006 a 0012 continuam como proposta até o aceite.
+Versão 0.3 — 2026-10-27 — **recorte final aprovado pelo responsável em 2026-10-27**: as linhas 0.6.0 e 0.7.0 antigas foram substituídas por uma única v0.6.0 ([plano detalhado](fechamento-v060-plano.md), [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md)). A 0.2 (2026-10-26) aprovou a sequência até a v0.7.0; as decisões 0006 a 0012 foram aceitas depois.
 
 ## Especificação relacionada
 
@@ -19,7 +19,8 @@ Versão 0.2 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, com
 | MCP | SDK oficial `mcp` (2.x), transporte stdio, sobre a mesma camada de domínio | [0010](../architecture/decisions/0010-servidor-mcp-sobre-o-dominio.md) |
 | Serviços fictícios | PRaaS e cobrança como app HTTP separada no compose, consumida por clientes com timeout | [0011](../architecture/decisions/0011-servicos-ficticios-de-pricing-e-cobranca.md) |
 | Exposição pública | Só a interface exposta, autenticação, HTTPS quando possível, limites por sessão e sublimite de orçamento | [0012](../architecture/decisions/0012-exposicao-publica-da-demonstracao.md) |
-| Avaliação por etapa | Registro determinístico por execução + Evaluation Agent assíncrono, rubricas versionadas | Este plano (v0.6.0) |
+| ~~Avaliação por etapa~~ | ~~Registro determinístico por execução + Evaluation Agent assíncrono, rubricas versionadas~~ — substituída na 0.3 | — |
+| Recorte final | Sem Evaluation Agent nem propostas; avaliação sob demanda com verificações e avaliador existentes; comparação pequena; persistência mínima (migração 0008) | [0015](../architecture/decisions/0015-recorte-final-v060.md) |
 
 ## Componentes por versão
 
@@ -29,8 +30,8 @@ Versão 0.2 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, com
 | 0.3.0 | App `mocks` (PRaaS e cobrança); `simulate_pricing`, `get_fee_breakdown`, `get_contract_snapshot` ampliado; comparador em centavos; `get_enablement_requests`; `get_sale_cancellation_context` | — |
 | 0.4.0 | Adaptador JEV; adaptador DeepSeek; catálogo de modelos e capacidades verificado; perfis versionados; API `/v1` com autenticação; comparação de Routers | Repositório próprio criado a partir do ai-dev-template; chat com cenários e estado; seleção de perfil; toggle LLM/JEV; inspeção de execuções; modo com respostas simuladas |
 | 0.5.0 | Versões da base: documentos, rascunhos, diff, build de índice candidato, teste, ativação e retorno | Lista e editor de documentos; acompanhamento do build; ativação e retorno |
-| 0.6.0 | Registro de execução com evidências mínimas; verificações determinísticas por etapa; Evaluation Agent; propostas; candidatas; regressão; aprovação; ativação | Avaliações por etapa; propostas e aprovação |
-| 0.7.0 | Experimentos (estimativa, execução isolada, repetições); agregações para gráficos; papéis e limites da demonstração | Experimentos; quatro gráficos rastreáveis; acesso do recrutador; README e roteiro do vídeo |
+| ~~0.6.0 / 0.7.0~~ | ~~Evaluation Agent, propostas, experimentos e quatro gráficos~~ — substituídos na 0.3 | — |
+| 0.6.0 | Catálogo curto de cenários; avaliação sob demanda de execução persistida; comparação pequena isolada; estabilização (tarefa 46 e pendências); limite por sessão demo; API do compose só local | Três áreas (Atendimento, Resultados, Administração); avaliação sob demanda; dois gráficos e tabela; guia de execução e compartilhamento |
 
 ## Modelo de dados
 
@@ -42,8 +43,8 @@ Migrações numeradas em `src/merchant_assistant/data/migrations/`, com versão 
 | 0.3.0 | No serviço `mocks`: `pricing_rules`, `pricing_contexts`, `charges`, `charge_installments`; no backend: `enablement_requests`, `sale_cancellations` |
 | 0.4.0 | `profiles` e `profile_versions` (agente → provedor, modelo, parâmetros); `api_principals` (demo/admin); `router_comparisons` |
 | 0.5.0 | `kb_documents`, `kb_drafts`, `kb_versions` (estado: building, testing, ready, active, retired; coleção; manifesto) |
-| 0.6.0 | `runs` (snapshot do perfil, versões de prompts e base), `run_evidence`, `evaluations` (critério, resultado, evidência, método, rubrica, custo), `proposals`, `activations` |
-| 0.7.0 | `experiments`, `experiment_runs`, `demo_sessions` (consumo por sessão) |
+| ~~0.6.0 / 0.7.0~~ | ~~`runs`, `run_evidence`, `evaluations`, `proposals`, `activations`, `experiments`, `experiment_runs`, `demo_sessions`~~ — substituídas na 0.3 |
+| 0.6.0 | Migração 0008 reversível: `run_evaluations` (método, rubrica, evidências, avaliador, custo) e `comparisons` (configuração, versões, repetições, falhas e execuções); contador de mensagens por sessão demo, se não couber em tabela existente |
 
 ## APIs ou interfaces
 
@@ -55,8 +56,8 @@ Migrações numeradas em `src/merchant_assistant/data/migrations/`, com versão 
 | 0.3.0 | Serviço `mocks`: `POST /pricing/simulations`, `GET /charges/{transaction_id}` (rede interna do compose) |
 | 0.4.0 | `POST /v1/sessions` (token demo ou admin); `GET /v1/catalog/models`; `GET/POST /v1/profiles`, `POST /v1/profiles/{id}/publish`; `POST /v1/messages` com `profile` e `router_mechanism`; `POST /v1/router/compare`; `GET /v1/runs/{id}` |
 | 0.5.0 | `GET /v1/kb/documents`; `PUT /v1/kb/drafts/{doc}`; `GET /v1/kb/drafts/{doc}/diff`; `POST /v1/kb/versions` (build); `POST /v1/kb/versions/{id}/test`, `/activate`, `/rollback` |
-| 0.6.0 | `POST /v1/evaluations` (sob demanda, com estimativa); `GET /v1/runs/{id}/evaluations`; `POST /v1/proposals/{id}/candidate`, `/test`, `/approve`, `/activate`, `/rollback` |
-| 0.7.0 | `POST /v1/experiments/estimate`; `POST /v1/experiments` (exige confirmação do custo); `GET /v1/experiments/{id}/results`; endpoints de agregação para os gráficos |
+| ~~0.6.0 / 0.7.0~~ | ~~`/v1/evaluations`, `/v1/proposals/*`, `/v1/experiments/*` e agregações~~ — substituídos na 0.3 |
+| 0.6.0 | `GET /v1/scenarios`; `scenario_id` opcional em `POST /v1/messages`; `POST /v1/runs/{id}/evaluations/estimate`, `POST /v1/runs/{id}/evaluations`; `POST /v1/comparisons/estimate`, `POST /v1/comparisons`, `GET /v1/comparisons/{id}` |
 
 Toda rota `/v1` exige token; as de escrita administrativa exigem papel `admin`, verificado no backend.
 
@@ -69,7 +70,7 @@ Toda rota `/v1` exige token; as de escrita administrativa exigem papel `admin`, 
 | Integração sem custo | todas | Conversas multi-turno com modelo programado; MCP com cliente em memória; JEV simulado (sucesso, timeout, decisão inválida); experimento com modelo programado não cria casos; editor → índice candidato com embedder lexical |
 | Interface | 0.4.0+ | Testes do Streamlit (`AppTest`) contra respostas simuladas; nenhuma chamada paga em reexecução |
 | Real limitada | cada versão | Rodada de regressão do núcleo (27 casos) e dos cenários novos, com custo registrado |
-| Externa | 0.7.0 | Acesso pelo IP público a partir de outra rede |
+| Externa | 0.6.0 (era 0.7.0) | Acesso pelo IP público a partir de outra rede |
 
 ## Riscos técnicos
 
@@ -99,10 +100,10 @@ Cada versão termina com regressão do núcleo, changelog, instruções de retor
 
 **v0.4.0 — JEV, modelos por agente e interface inicial:** [plano detalhado proposto](perfis-interface-v040-plano.md), tarefas 27–32, contratos/sessões e base web apresentados antes da aprovação específica. Adaptador JEV real, adaptador DeepSeek (preços e capacidades verificados na documentação oficial antes do uso), catálogo de capacidades, perfis versionados, API `/v1` com papéis, projeto `ai-getnet-case-web` preparado com o ai-dev-template, Streamlit com chat, perfis, toggle e inspeção. A configuração pública do roteador permanece ação do responsável.
 
-**v0.5.0 — Base editável e versões (a detalhar):** documentos, rascunhos, diff, índice candidato, teste, ativação e retorno.
+**v0.5.0 — Base editável e versões:** [plano](base-versionada-v050-plano.md), tarefas 39–53; integrada e com tag `v0.5.0`.
 
-**v0.6.0 — Avaliação por etapa e melhoria supervisionada (a detalhar):** registro de evidências, verificações determinísticas, Evaluation Agent, propostas e ciclo completo.
+~~**v0.6.0 — Avaliação por etapa e melhoria supervisionada**~~ e ~~**v0.7.0 — Experimentos, gráficos e compartilhamento**~~: substituídas na 0.3.
 
-**v0.7.0 — Experimentos, gráficos e compartilhamento (a detalhar):** experimentos com estimativa, quatro gráficos, acesso do recrutador, README, changelog e roteiro do vídeo.
+**v0.6.0 — Simplificação, demonstração e fechamento:** [plano detalhado](fechamento-v060-plano.md), tarefas 54–59 e [história](../historias/fechamento-v060.md). Última versão com expansão funcional do case.
 
-Dependências: 0.2.0 antes de tudo (migrações e conversas); 0.4.0 depende de 0.2.0 (estado exibido na interface); 0.6.0 depende de 0.4.0 (perfis) e 0.5.0 (versões da base, para propostas de documentos); 0.7.0 depende de 0.6.0 (qualidade nos gráficos). A 0.3.0 pode ser feita em paralelo à 0.4.0 se o prazo exigir.
+Dependências: 0.2.0 antes de tudo (migrações e conversas); 0.4.0 depende de 0.2.0 (estado exibido na interface); 0.6.0 depende de 0.4.0 (perfis) e 0.5.0 (versões da base). A 0.3.0 pôde ser feita em paralelo à 0.4.0.

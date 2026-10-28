@@ -61,4 +61,4 @@ Validação sintética registrada em [evidência Developer](../evidence/v050-dev
 
 ## Status
 
-Implementada — aguardando revisão independente e revalidação QA no r5; não declarar aceite.
+Concluída — recuperação por GET comprovada no navegador no [QA r3](../evidence/v050-qa-r3.md), após a correção da tarefa 53; integrada na v0.5.0.

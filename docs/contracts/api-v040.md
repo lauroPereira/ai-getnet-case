@@ -43,3 +43,22 @@ O adaptador aplica o menor valor entre o limite configurado e o limite da chamad
 ## Escopo de validação
 
 OpenAPI e integração usam dados e modelo programados. Não foi enviada inferência real para OpenAI, DeepSeek ou TypeSafe. CA-32 de execução JEV real continua pendente; também não foi enviado `GET /models` autenticado de conta de provedor.
+
+## Acréscimos da v0.6.0
+
+Rotas aditivas aprovadas no [plano v0.6.0](../specs/fechamento-v060-plano.md#apis-ou-interfaces); as rotas acima mantêm o comportamento. Snapshot OpenAPI 0.6.0 no projeto web (31 caminhos).
+
+| Rota | Acesso | Efeito |
+| --- | --- | --- |
+| `GET /v1/scenarios` | Bearer | catálogo curto de cenários rotulados (ID, título, jornada, idioma, mensagem, verificações e rótulos) |
+| `POST /v1/messages` + `scenario_id?` | Bearer | `scenario_id` validado contra o catálogo (`422 unknown_scenario`; `422 scenario_message_mismatch` se a mensagem diferir) e gravado no snapshot; sessão demo limitada por `DEMO_SESSION_MESSAGE_LIMIT` (`429 demo_message_limit_reached`, antes de qualquer chamada ao modelo) |
+| `GET /v1/runs/{request_id}` | Bearer/dono | acrescenta `steps` (com `hits`: documento, score, `chunk_id`, trecho), `route`, `prompts_used`, `checks` (origem, resultados, não avaliados, falhas críticas individuais) e `evaluations` |
+| `POST /v1/runs/{request_id}/evaluations/estimate` | Bearer/dono | método `model`, rubrica `judge` e versão, avaliador fixo (provedor, modelo, parâmetros), campos de evidência, estimativa e `estimate_digest`; sem chamada paga; preço desconhecido → `503 evaluator_price_unknown` |
+| `POST /v1/runs/{request_id}/evaluations` | Bearer/dono | `{confirmed, max_cost_usd, expected_estimate_digest, repeat}`; `422 confirmation_required`/`max_cost_below_estimate`, `409 estimate_stale`; mesma configuração devolve `200` com o registro existente salvo `repeat=true`; nova avaliação `201`; orçamento negado `429` sem registro; falha do avaliador `503 evaluation_failed` com tentativa registrada sem notas |
+| `POST /v1/comparisons/estimate` | Bearer | `{profiles[2..3], scenario_ids[1..3], repetitions 1..2, router_mechanism, reuse_recorded}`; células, reaproveitadas, novas, fatores fixos, mudanças entre perfis, `exploratory`, estimativa (teto por atendimento × novas) e `estimate_digest`; sem chamada paga |
+| `POST /v1/comparisons` | Bearer | estimativa confirmada (`confirmed`, `max_cost_usd`, `expected_estimate_digest`); `202 {comparison_id, state: running}`; `409 comparison_running`, `409 estimate_stale`, `429` orçamento ou limite demo |
+| `GET /v1/comparisons/{comparison_id}` | Bearer/dono | estado (`running`, `completed`, `partial`, `failed`), configuração, células, falhas e agregados (`profiles`, `cost_by_agent_model`) |
+
+Dados: migração 0008 reversível (`run_evaluations`, `comparisons`, `api_sessions.message_count`). O campo `evaluation` dos perfis permanece no esquema e não é usado no atendimento.
+
+Correções da revisão r1 (tarefa 60): `POST /v1/runs/{id}/evaluations` responde `409 evaluation_running` quando há uma avaliação em andamento com a mesma configuração (reserva atômica; `run_evaluations.state` aceita `running`, liberada como `failed`/`interrupted` após 10 minutos); `POST /v1/router/compare` e `POST /v1/runs/{id}/evaluations` passam a contar no limite demo (`429 demo_message_limit_reached`), e recusas sem inferência não contam; o reuso da comparação só aceita execuções sem histórico de conversa (`history_turns = 0` no snapshot); custos ausentes aparecem como desconhecidos (`cost_mean_usd`/`cost_total_usd` nulos, `cost_unknown_runs`).

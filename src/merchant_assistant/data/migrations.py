@@ -333,6 +333,49 @@ DROP TABLE IF EXISTS kb_drafts;
 DROP TABLE IF EXISTS kb_documents;
 """
 
+DEMO_RESULTS_UP = """
+ALTER TABLE api_sessions ADD COLUMN message_count INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE run_evaluations (
+    evaluation_id TEXT PRIMARY KEY,
+    request_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    method TEXT NOT NULL CHECK (method IN ('deterministic', 'model')),
+    rubric TEXT NOT NULL,
+    rubric_version TEXT NOT NULL,
+    evaluator TEXT NOT NULL,
+    config_digest TEXT NOT NULL,
+    result TEXT NOT NULL,
+    evidence TEXT NOT NULL,
+    critical_failures TEXT NOT NULL,
+    cost_usd REAL,
+    state TEXT NOT NULL CHECK (state IN ('running', 'completed', 'failed')),
+    error TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX run_evaluations_run ON run_evaluations(request_id, created_at);
+CREATE TABLE comparisons (
+    comparison_id TEXT PRIMARY KEY,
+    principal_id TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('running', 'completed', 'failed', 'partial')),
+    config TEXT NOT NULL,
+    cells TEXT NOT NULL,
+    failures TEXT NOT NULL,
+    estimate TEXT NOT NULL,
+    cost_usd REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX comparisons_owner_v060 ON comparisons(principal_id, created_at);
+"""
+
+DEMO_RESULTS_DOWN = """
+DROP INDEX IF EXISTS comparisons_owner_v060;
+DROP TABLE IF EXISTS comparisons;
+DROP INDEX IF EXISTS run_evaluations_run;
+DROP TABLE IF EXISTS run_evaluations;
+ALTER TABLE api_sessions DROP COLUMN message_count;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -341,6 +384,7 @@ MIGRATIONS: list[Migration] = [
     Migration(5, "business_journeys", JOURNEYS_UP, JOURNEYS_DOWN),
     Migration(6, "profiles_api", PROFILES_API_UP, PROFILES_API_DOWN),
     Migration(7, "kb_versions", KB_VERSIONS_UP, KB_VERSIONS_DOWN),
+    Migration(8, "demo_results", DEMO_RESULTS_UP, DEMO_RESULTS_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 
