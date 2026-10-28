@@ -13,9 +13,23 @@ curl -s localhost:8000/messages -H 'content-type: application/json' \
   -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?", "user_id": "cliente1988"}'
 ```
 
-**Status:** v0.6.0 is validated: independent review apt and real QA apt on all ten acceptance items, with access from another network still to be tested by the owner ([result](docs/evidence/v060-resultado.md)). It closes the case: the interface has three areas (Attendance, Results, Administration), labeled catalog scenarios, Results with deterministic checks and on-demand model evaluation of persisted runs, a small profile comparison with two charts, and a zero-cost proof that editing the fictitious documentation changes tool use and that rollback restores it. Offline validation: backend strict script **349 tests passed**, web **42 tests passed** with Ruff. Real QA of the version cost **US$0.08800487** (project total US$0.68637953 of US$5). Start with the [demonstration guide](docs/guia-demonstracao.md) (Portuguese).
+**Status:** v0.6.0, validated by an independent review and a real-model QA ([result](docs/evidence/v060-resultado.md)). Offline, the strict suites pass (backend **349 tests**, web **42 tests**, Ruff clean). Against real models, the challenge examples and core cases pass **27/27** and the multi-turn conversations **4/4**. The whole project spent **US$0.69** of its US$5 cap.
 
-Earlier release notes and evidence below are historical context; they do not validate the v0.6.0 candidate.
+### Where each part of the challenge lives
+
+| Challenge item | Section | Code |
+| --- | --- | --- |
+| Three or more cooperating agents and how they communicate | [Architecture](#architecture), [Message workflow](#message-workflow) | `orchestration/graph.py`, `orchestration/state.py` |
+| Router as entry point and workflow manager | [Architecture](#architecture) | `agents/router.py`, `prompts/router.v5.md` |
+| Knowledge Agent: RAG over Getnet's site plus web search | [RAG pipeline](#rag-pipeline) | `rag/`, `agents/knowledge.py` |
+| Customer Support Agent with tools | [Support tools and data](#support-tools-and-synthetic-data) | `tools/`, `agents/support.py` |
+| HTTP endpoint with a JSON body | [Run it](#run-it), [Message workflow](#message-workflow) | `api/app.py`, `api/schemas.py` |
+| Docker | [Run it](#run-it) | `Dockerfile`, `docker-compose.yml` |
+| Testing strategy | [Testing and evaluation](#testing-and-evaluation) | `tests/`, `evaluation/` |
+| Prompts and use of LLM tools | [How the LLM tools are used](#how-the-llm-tools-are-used) | `prompts/`, `llm/` |
+| Bonus: human escalation agent, guardrails, handoff, evaluation and observability | [Guardrails and reliability](#guardrails-and-reliability), [Observability](#observability), [Testing and evaluation](#testing-and-evaluation) | `agents/escalation.py`, `guardrails/`, `observability/` |
+
+Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `Dockerfile` and `docker-compose.yml` are at the repository root. Features built beyond the challenge (an interface, model profiles, an alternative Router engine, a versioned knowledge base, MCP) are described in [Beyond the challenge](#beyond-the-challenge).
 
 ---
 
@@ -25,7 +39,7 @@ Earlier release notes and evidence below are historical context; they do not val
 4. [Message workflow](#message-workflow) · 5. [RAG pipeline](#rag-pipeline) · 6. [Support tools and data](#support-tools-and-synthetic-data) ·
 7. [How the LLM tools are used](#how-the-llm-tools-are-used) · 8. [Guardrails and reliability](#guardrails-and-reliability) ·
 9. [Observability](#observability) · 10. [Testing and evaluation](#testing-and-evaluation) · 11. [Design decisions](#design-decisions) ·
-12. [Limitations and next steps](#limitations-and-next-steps) · 13. [Repository layout](#repository-layout)
+12. [Beyond the challenge](#beyond-the-challenge) · 13. [Limitations and next steps](#limitations-and-next-steps) · 14. [Repository layout](#repository-layout)
 
 ---
 
@@ -37,7 +51,7 @@ Requirements: Docker with Compose v2 and an OpenAI API key.
 
 ```bash
 cp .env.example .env               # set OPENAI_API_KEY; nothing else is required
-docker compose up --build          # API on http://localhost:8000, Qdrant as a second service
+docker compose up --build          # API on http://localhost:8000, plus Qdrant and an internal mocks service
 ```
 
 On first start the container seeds the synthetic data (dates relative to *today*) and builds the vector index from
@@ -68,6 +82,8 @@ docker compose exec api merchant-assistant smoke --url http://localhost:8000
 
 Stop and clean: `docker compose down` (add `-v` to drop the index, traces and budget ledger).
 
+The optional interface, the `/v1` API and the MCP server are described in [Beyond the challenge](#beyond-the-challenge).
+
 ### Locally (development)
 
 ```bash
@@ -75,54 +91,6 @@ uv venv .venv -p 3.13 && uv pip install -e ".[ingest,dev]"   # or: python -m ven
 merchant-assistant bootstrap                                  # seed data + build the index (embedded Qdrant)
 uvicorn --factory merchant_assistant.main:create_application --reload
 merchant-assistant ask "Qual a cotação do euro hoje?" --trace  # one message, in process, with its trace
-```
-
-### Demonstration (v0.6.0)
-
-The [demonstration guide](docs/guia-demonstracao.md) is the single entry point: backend with Docker, Streamlit run natively, catalog scenarios, the demonstration flow and sharing by public IP. Additive `/v1` routes in this version:
-
-| Route | Role | Behaviour |
-| --- | --- | --- |
-| `GET /v1/scenarios` | demo, admin | Short catalog of labeled synthetic scenarios (`data/scenarios/catalog.json`) |
-| `POST /v1/messages` + `scenario_id` | demo, admin | Optional; validated against the catalog (message must match) and stored in the run; demo sessions limited by `DEMO_SESSION_MESSAGE_LIMIT` (`429 demo_message_limit_reached`) |
-| `GET /v1/runs/{id}` | owner | Adds `steps` (with retrieved passages), `route`, `prompts_used`, deterministic `checks` (scenario labels or label-independent, critical failures listed one by one) and `evaluations` |
-| `POST /v1/runs/{id}/evaluations/estimate` | owner | Price of one `judge` call over the persisted reply; no paid call |
-| `POST /v1/runs/{id}/evaluations` | owner | Confirmed estimate required; reserves, grades the stored reply with the fixed evaluator and records method, rubric, evaluator, evidence and a separate cost; same configuration returns the existing record unless `repeat=true` |
-| `POST /v1/comparisons/estimate` | demo, admin | 2–3 published profiles × up to 3 scenarios × up to 2 repetitions: cells, reused recorded runs, new executions, fixed factors, exploratory flag and an upper-bound estimate |
-| `POST /v1/comparisons` | demo, admin | Confirmed estimate required; `202` and execution in a thread of the API process with one knowledge-base version, domain effects in a temporary copy of the synthetic database and traces/snapshots marked `purpose=comparison` |
-| `GET /v1/comparisons/{id}` | owner | State, configuration, cells, failures and aggregates for the cost × quality and cost-by-agent/model charts |
-
-Migration 0008 (reversible) adds `run_evaluations`, `comparisons` and `api_sessions.message_count`. Legacy `POST /messages`, MCP and the existing `/v1` behaviour are unchanged. In Compose the API is published only on `127.0.0.1:8000`.
-
-### Streamlit interface
-
-The separate `ai-getnet-case-web` sibling project (see its README) is a Streamlit client of the versioned `/v1` API. It never reads backend files or receives provider keys. Use **Simulado** or **Gravado** for fixture-only behavior, or select **Real (API)** and enter a backend URL plus a demo/admin access key configured on that backend. The client reuses one HTTP client per Streamlit session, closes it at logout, and sends requests only after explicit actions.
-
-```powershell
-# In the web project, with its own Python environment:
-python -m pip install -e ".[test]"
-$env:BACKEND_API_URL = "http://localhost:8000"
-streamlit run app.py
-```
-
-For a no-key local HTTP exercise, use the synthetic backend harness with a new runtime directory under `.pytest_cache`, then point `BACKEND_API_URL` to that loopback server. The harness has programmed providers, a fresh isolated SQLite/Qdrant runtime, and no provider credentials; it is not a production configuration. Detailed commands are in the [developer passage](docs/evidence/v040-developer-r1.md).
-
-### MCP server
-
-The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
-same domain functions, validation, customer isolation, audit log and structured errors. The merchant is fixed when
-the server starts, never passed as a tool argument.
-
-```bash
-merchant-assistant mcp --customer cliente1988     # stdio server (for an MCP client such as Claude Desktop)
-merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
-```
-
-The demo lists the support tools, reads yesterday's receivables and recent declines, and shows that a receivable of
-another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
-
-```json
-{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp", "--customer", "cliente1988"]}}}
 ```
 
 ### Tests and evaluation
@@ -143,7 +111,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | — | Required for real calls (agents, embeddings, web search) |
-| `AGENT_MODEL` | `gpt-6-luna` | Model used by all agents |
+| `AGENT_MODEL` | `gpt-6-luna` | Default model for every agent; the `/v1` model profiles can set another model per agent |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
 | `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
@@ -156,7 +124,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
 | `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
 
-`TYPESAFE_API_KEY` and `DEEPSEEK_API_KEY` are optional provider credentials used only by the v0.4.0 backend Router adapters. `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` configure the backend `/v1` session bootstrap; keep them private and leave them empty in the repository example. The web app accepts only one of these backend access keys and never accepts a provider key.
+`DEEPSEEK_API_KEY` and `TYPESAFE_API_KEY` are optional: DeepSeek runs the Router (Hybrid profile) or the Router and Support (Adjusted profile), and TypeSafe JEV is the alternative Router engine; neither is needed for `POST /messages`. `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` configure the backend `/v1` session bootstrap; keep them private and leave them empty in the repository example. The web app accepts only one of these backend access keys and never accepts a provider key.
 
 ## Architecture
 
@@ -169,7 +137,7 @@ flowchart LR
     R -->|support| SP[Case prefix<br/>history + healthcheck]
     R -->|knowledge_and_support| SP
     R -->|human_handoff| SP
-    R -->|clarify / out_of_scope| P
+    R -->|clarify / out_of_scope / acknowledgement| P
     SP -->|support| S[Customer Support Agent<br/>tool calling]
     SP -->|knowledge_and_support| K
     SP -->|human_handoff| E[Escalation Agent]
@@ -186,9 +154,9 @@ the "custom agent" slot filled by the Escalation Agent.
 
 | Component | Kind | Responsibility |
 | --- | --- | --- |
-| Router Agent | LLM, structured output | Picks one of 7 routes, the language, the support topic and a safety label |
+| Router Agent | LLM, structured output | Picks one of the 8 routes below, the language, the support topic and a safety label |
 | Knowledge Agent | LLM + RAG / web search | Answers from retrieved official passages (with citations) or one web search; gives the official procedure on combined routes |
-| Customer Support Agent | LLM + function calling | Looks up the merchant's data with 5 tools and explains it; asks to choose when needed; flags escalation |
+| Customer Support Agent | LLM + function calling | Looks up the merchant's data with 9 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation |
 | Escalation Agent | LLM + persistence | Writes the handover summary and stores an idempotent, clearly simulated case with a protocol |
 | Personality | LLM | Turns the agents' structured contributions into one reply, in the merchant's language, without changing facts |
 | Input / output guards, case prefix | Deterministic code | Masking and injection blocking; history + healthcheck at case opening; evidence check of values |
@@ -354,6 +322,10 @@ tests), with `store=false`:
   and latency down.
 - **Prompts** are versioned files in [`prompts/`](prompts/) (`id` + `version`), and every trace records which
   version ran.
+- **Prompt design.** Each prompt states the agent's role and what it may use (routes with examples, tools, numbered
+  passages), injects the current date and the case facts the code already checked, lists the rules it must never
+  break (no refund promises, no internal IDs asked from the merchant, no gaps filled from outside knowledge) and ends
+  in a typed output schema. Retrieved passages, tool results and history are marked as data, not instructions.
 
 ## Guardrails and reliability
 
@@ -390,7 +362,7 @@ tests), with `store=false`:
 | Unit | Tools (binding, filters, dates, errors), clock and seed, chunking, guards, pricing, budget atomicity, Router rules | 0 |
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
 | Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
-| Release validation (real) | 40 original real HTTP responses re-evaluated by deterministic replay, plus 4 multi-turn conversations repeated live (4/4); see the [central record](docs/evidence/v030-resultado.md) | Historical responses use no new calls; live revalidation was paid |
+| Release validation (real) | The 40 labeled cases and 4 multi-turn conversations against real models on each release candidate, inside a fixed campaign budget; see the [v0.6.0 result](docs/evidence/v060-resultado.md) | Paid and capped (v0.6.0 QA: US$0.088) |
 | Retrieval | Recall@k and MRR on labeled questions | ≈ US$0.001 |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
@@ -398,11 +370,12 @@ The scripted model follows simple rules for each agent, so the whole system (rou
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Validated v0.3.0 evidence:** the final automated suite passed **191 tests**. The 40 HTTP answers are the same recorded
-real responses rechecked against the corrected deterministic rubric; this replay made no model calls and retained the 17
-holdouts. The four multi-turn conversations were repeated live against the validated release and passed **4/4**, including
-continuity after handoff. The [central record](docs/evidence/v030-resultado.md) links the full reports, independent review and QA;
-older real-evaluation reports remain historical and are not presented as fresh measurements.
+**Validated v0.6.0 evidence:** the strict suites pass (backend **349 tests**, web **42 tests**, Ruff clean). The real-model
+regression on the release candidate passed the 10 challenge examples and the 17 core cases (**27/27**) and the 4
+multi-turn conversations (**4/4**). Business journeys passed 7/13 under the literal rubric: four pricing cases used
+different wording with the right tool, values and status, and one English pricing-conditions question went to
+`clarify`. Retrieval: Recall@6 = 1.00 and MRR = 1.00 on 14 labeled questions. The
+[v0.6.0 result](docs/evidence/v060-resultado.md) links the independent review and QA reports.
 
 ## Design decisions
 
@@ -421,6 +394,66 @@ Other choices: a deterministic case prefix (history + healthcheck) instead of le
 as a separate, guarded step (from the challenge diagram) so tone changes cannot alter facts; answers in the
 merchant's language while code, prompts and this README are in English.
 
+## Beyond the challenge
+
+Later increments built on the same core (graph, agents, tools and guards), each with its own specification, independent review and QA. None of them is needed to evaluate the challenge: `POST /messages` works without them.
+
+| Version | Added | Why |
+| --- | --- | --- |
+| v0.2.0 | [Conversations and case follow-up](#conversations-and-case-follow-up); MCP server | Multi-turn continuity; the same tools for external agents |
+| v0.3.0 | Read-only journeys: pricing disputes with an independent pricing service, card-scheme enablement, sale-cancellation status | The questions where a wrong answer becomes a financial promise |
+| v0.4.0 | Authenticated `/v1` API, per-agent model profiles (Reference: all `gpt-6-luna`; Hybrid: Router on DeepSeek; Adjusted: Router and Support on DeepSeek), per-request Router engine (LLM or TypeSafe JEV), Streamlit interface | Controlled configuration and comparison; the same validated Router contract for every engine |
+| v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
+| v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
+
+### Demonstration API (v0.6.0)
+
+These additive `/v1` routes back the Streamlit interface:
+
+| Route | Role | Behaviour |
+| --- | --- | --- |
+| `GET /v1/scenarios` | demo, admin | Short catalog of labeled synthetic scenarios (`data/scenarios/catalog.json`) |
+| `POST /v1/messages` + `scenario_id` | demo, admin | Optional; validated against the catalog (message must match) and stored in the run; demo sessions limited by `DEMO_SESSION_MESSAGE_LIMIT` (`429 demo_message_limit_reached`) |
+| `GET /v1/runs/{id}` | owner | Adds `steps` (with retrieved passages), `route`, `prompts_used`, deterministic `checks` (scenario labels or label-independent, critical failures listed one by one) and `evaluations` |
+| `POST /v1/runs/{id}/evaluations/estimate` | owner | Price of one `judge` call over the persisted reply; no paid call |
+| `POST /v1/runs/{id}/evaluations` | owner | Confirmed estimate required; reserves, grades the stored reply with the fixed evaluator and records method, rubric, evaluator, evidence and a separate cost; same configuration returns the existing record unless `repeat=true` |
+| `POST /v1/comparisons/estimate` | demo, admin | 2–3 published profiles × up to 3 scenarios × up to 2 repetitions: cells, reused recorded runs, new executions, fixed factors, exploratory flag and an upper-bound estimate |
+| `POST /v1/comparisons` | demo, admin | Confirmed estimate required; `202` and execution in a thread of the API process with one knowledge-base version, domain effects in a temporary copy of the synthetic database and traces/snapshots marked `purpose=comparison` |
+| `GET /v1/comparisons/{id}` | owner | State, configuration, cells, failures and aggregates for the cost × quality and cost-by-agent/model charts |
+
+Migration 0008 (reversible) adds `run_evaluations`, `comparisons` and `api_sessions.message_count`. Legacy `POST /messages`, MCP and the existing `/v1` behaviour are unchanged. In Compose the API is published only on `127.0.0.1:8000`.
+
+### Streamlit interface
+
+The separate `ai-getnet-case-web` sibling project (see its README) is a Streamlit client of the versioned `/v1` API. It never reads backend files or receives provider keys. Use **Simulado** or **Gravado** for fixture-only behavior, or select **Real (API)** and enter a backend URL plus a demo/admin access key configured on that backend. The client reuses one HTTP client per Streamlit session, closes it at logout, and sends requests only after explicit actions.
+
+```powershell
+# In the web project, with its own Python environment:
+python -m pip install -e ".[test]"
+$env:BACKEND_API_URL = "http://localhost:8000"
+streamlit run app.py
+```
+
+For a no-key local HTTP exercise, use the synthetic backend harness with a new runtime directory under `.pytest_cache`, then point `BACKEND_API_URL` to that loopback server. The harness has programmed providers, a fresh isolated SQLite/Qdrant runtime, and no provider credentials; it is not a production configuration. Detailed commands are in the [developer passage](docs/evidence/v040-developer-r1.md).
+
+### MCP server
+
+The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
+same domain functions, validation, customer isolation, audit log and structured errors. The merchant is fixed when
+the server starts, never passed as a tool argument.
+
+```bash
+merchant-assistant mcp --customer cliente1988     # stdio server (for an MCP client such as Claude Desktop)
+merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
+```
+
+The demo lists the support tools, reads yesterday's receivables and recent declines, and shows that a receivable of
+another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
+
+```json
+{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp", "--customer", "cliente1988"]}}}
+```
+
 ## Limitations and next steps
 
 - The handoff is simulated (local record and protocol); no real ticketing integration.
@@ -431,6 +464,8 @@ merchant's language while code, prompts and this README are in English.
 - Profile comparisons are small and run in a thread of the API process; restarting the API marks a running comparison as failed. The comparison estimate is an upper bound (request cost cap per new execution).
 - The Results area lists the runs of the current browser session; there is no general run listing.
 - Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.
+- Sale cancellation is read-only: the assistant reports the status of an existing request; asking it to cancel a
+  new sale is not covered.
 - `user_id` is not authentication. Production would bind it to an authenticated session and authorize every tool
   call against it.
 

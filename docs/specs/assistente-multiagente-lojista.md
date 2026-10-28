@@ -201,7 +201,7 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 - [x] **CA-22** Habilitação em andamento com protocolo existente e habilitação ativa com divergência no dispositivo são distinguidas, sem duplicar solicitação.
 - [x] **CA-23** Pedido de encerramento contratual não aciona ferramentas de venda.
 - [x] **CA-24** O seletor alterna LLM e Jev por requisição sem reiniciar, registra o mecanismo usado e a comparação não duplica ferramentas nem encaminhamentos. CA-21 a CA-23 comprovados na v0.3.0 ([resultado](../evidence/v030-resultado.md)) e preservados na regressão da v0.6.0; CA-24 comprovado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
-- [ ] **CA-25** Vídeo com raciocínio, arquitetura, um caso resolvido, uma exceção encaminhada e limitações. *Roteiro pronto em `docs/roteiro-video.md`; gravação com o responsável.*
+- [ ] **CA-25** Vídeo com raciocínio, arquitetura, um caso resolvido, uma exceção encaminhada e limitações. *Roteiro de gravação mantido localmente pelo responsável (a versão integrada na v0.6.0 está no [histórico](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md)); gravação com o responsável.*
 
 ## Riscos
 

@@ -33,8 +33,8 @@ Tarefas 54 a 57 concluídas. Sem chamada paga, abertura de porta ou alteração 
 
 ## Validação
 
-- Guia único [guia-demonstracao.md](../guia-demonstracao.md) (Docker, nativo e testes distinguidos; compartilhamento com `--server.address 0.0.0.0`, `LOCK_BACKEND_URL`, HTTPS opcional, ações do responsável, teste de outra rede, janela, túnel como alternativa).
-- [Roteiro de teste manual](../roteiro-teste-manual.md) pelos momentos da história e [roteiro do vídeo](../roteiro-video.md) com a evolução por versões e as evidências de recuperação.
+- Guia único [guia-demonstracao.md](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/guia-demonstracao.md) (Docker, nativo e testes distinguidos; compartilhamento com `--server.address 0.0.0.0`, `LOCK_BACKEND_URL`, HTTPS opcional, ações do responsável, teste de outra rede, janela, túnel como alternativa).
+- [Roteiro de teste manual](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-teste-manual.md) pelos momentos da história e [roteiro do vídeo](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md) com a evolução por versões e as evidências de recuperação.
 - README dos dois projetos, CHANGELOG 0.6.0 (com retorno à 0.5.0), `.env.example` e contrato (`docs/contracts/api-v040.md`, seção v0.6.0) atualizados; versões 0.6.0 nos dois `pyproject.toml` e no pacote. `Dockerfile` copia `data/scenarios`.
 - `test_shared_interface_can_lock_the_backend_address` cobre o travamento do endereço do backend.
 - Não executado pelo Developer: `docker compose config`/build (o `.env` local não podia ser lido; build fica com o QA), abertura de porta, firewall, roteador e acesso de outra rede (ações do responsável/QA).

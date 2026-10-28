@@ -135,6 +135,8 @@ Commits com a identidade do projeto: backend `cdc1fdc` (produto e SDD) e `4bc0e8
 
 O merge local na `main` foi **bloqueado pelo modo automático da ferramenta** (“Merge Without Review”) e não foi contornado; nada foi executado (mains em `c3a9027`/`4192169`). Merge e tag `v0.6.0` aguardam confirmação explícita do responsável, por merge local com a identidade do projeto (o merge pela interface do GitHub usa o e-mail principal da conta, como no incidente da v0.5.0).
 
+Em 2026-10-28, com confirmação explícita do responsável, a v0.6.0 foi integrada por merge local com a identidade do projeto (autor e committer `lauro.s.pereira@gmail.com` em todos os commits enviados): backend `6773630` e web `601eb4b`, publicados na `main`; os PRs #7 e #3 aparecem como merged. A árvore da `main` ficou idêntica à das branches validadas, por isso as suítes não foram repetidas. Em seguida, por branches curtas a partir da `main`: `.gitignore` com a pasta local `docs/apresentacao/` (`bd78f1c`) e a reorganização do README para o avaliador. O mesmo commit `b34fa9e` registrou a remoção, feita pelo responsável, de `docs/guia-demonstracao.md`, `docs/roteiro-teste-manual.md` e `docs/roteiro-video.md` (a mensagem do commit não a menciona); as referências vivas passaram a apontar para a versão integrada em `6773630`. A tag `v0.6.0` vem depois dessas correções.
+
 ## Próximo responsável
 
-Responsável confirma o merge e a tag da v0.6.0, preenche `API_DEMO_ACCESS_KEY`/`API_ADMIN_ACCESS_KEY`, grava o vídeo e, se quiser, testa o acesso de outra rede.
+Responsável confirma a tag `v0.6.0`, grava o vídeo e, se quiser, testa o acesso de outra rede. O responsável informou ter gerado as chaves `API_DEMO_ACCESS_KEY`/`API_ADMIN_ACCESS_KEY` para o `.env` local.
