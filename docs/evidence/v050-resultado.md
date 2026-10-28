@@ -74,3 +74,10 @@ Candidato local pronto para decisão de integração. O plano aprovado exclui
 integração Git v0.5; ela continua dependendo de autorização específica.
 Tarefa46 registra P3 conhecidos para tratamento posterior. Nenhum commit,
 push, PR, merge, tag ou publicação v0.5 foi executado neste conjunto.
+
+## Integração (registrada na v0.6.0)
+
+Integrada em 2026-10-27 com autorização do responsável: PRs backend #6 e web #2,
+merges locais com a identidade do projeto (`c3a9027`, `4192169`) e tags `v0.4.0`
+e `v0.5.0`. A tarefa 46 foi incorporada à tarefa 54. Detalhes, conferência dos
+blobs e o incidente de identidade corrigido estão em [supervisão v0.6.0](v060-supervisao.md).
