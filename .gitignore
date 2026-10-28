@@ -34,6 +34,9 @@ Thumbs.db
 # Material de discovery local (contexto privado; não publicar)
 discovery/
 
+# Material local de preparação da apresentação (não versionar)
+docs/apresentacao/
+
 # Python: build e cobertura
 *.egg-info/
 build/
