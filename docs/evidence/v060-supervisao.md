@@ -129,6 +129,12 @@ Limpeza Docker executada conforme o pedido do responsável (detalhes no [resulta
 
 Documentação de fechamento: README, CHANGELOG e README web no estado validado; critérios com evidência marcados (CA-21–24, CA-32, CA-34–37, CA-44–50); CA-25 (gravação), CA-33 (sem exercício ao vivo), CA-43 e CA-51 (outra rede) seguem abertos com nota; tarefas 54–61 concluídas; [resultado central](v060-resultado.md).
 
+## Integração da v0.6.0
+
+Commits com a identidade do projeto: backend `cdc1fdc` (produto e SDD) e `4bc0e8d` (evidências); web `ab01b58`. Varredura do diff sem segredos (só placeholders sintéticos de teste), sem arquivos grandes e sem `discovery/`, `data/runtime/`, `.env` ou `_tmp/`. Blobs conferidos contra o r5: todo o código igual; diferenças só nos documentos de fechamento editados depois do QA (o contrato `api-v040.md` difere apenas por normalização de fim de linha). Branches publicadas e PRs abertos: [backend #7](https://github.com/lauroPereira/ai-getnet-case/pull/7) e [web #3](https://github.com/lauroPereira/ai-getnet-case-web/pull/3), limpos e sem checks configurados.
+
+O merge local na `main` foi **bloqueado pelo modo automático da ferramenta** (“Merge Without Review”) e não foi contornado; nada foi executado (mains em `c3a9027`/`4192169`). Merge e tag `v0.6.0` aguardam confirmação explícita do responsável, por merge local com a identidade do projeto (o merge pela interface do GitHub usa o e-mail principal da conta, como no incidente da v0.5.0).
+
 ## Próximo responsável
 
-Supervisor integra a v0.6.0 (commits, PRs, merge local com a identidade do projeto, tag), conforme o pedido do responsável de finalizar o projeto. Depois: responsável preenche as chaves de acesso, grava o vídeo e, se quiser, testa o acesso de outra rede.
+Responsável confirma o merge e a tag da v0.6.0, preenche `API_DEMO_ACCESS_KEY`/`API_ADMIN_ACCESS_KEY`, grava o vídeo e, se quiser, testa o acesso de outra rede.

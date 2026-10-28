@@ -59,6 +59,10 @@ A sonda inconclusiva da v0.5.0 não foi convertida em reprovação; o efeito da 
 - R2-04 aceito como risco: integridade Qdrant verificada dentro da transação de ativação; sem contenção observada.
 - Avaliação por IA não é revisão humana; comparação pequena, dependente do processo da API.
 
+## Integração
+
+Commits e PRs publicados ([backend #7](https://github.com/lauroPereira/ai-getnet-case/pull/7), [web #3](https://github.com/lauroPereira/ai-getnet-case-web/pull/3)). Merge na `main` e tag `v0.6.0` aguardam confirmação explícita do responsável; o merge automático foi bloqueado pela ferramenta e não foi contornado. Detalhes na [supervisão](v060-supervisao.md#integração-da-v060).
+
 ## Limpeza do Docker
 
 A pedido do responsável, depois dos testes: removidos 9 contêineres e 7 imagens de rodadas anteriores (v0.3–v0.5), imagens soltas, todo o cache de build e uma rede sem uso. Ficaram as imagens `ai-getnet-case-api`/`mocks` do r5 e `qdrant`, os três contêineres da stack parados e os volumes `ai-getnet-case_runtime` (ledger), `ai-getnet-case_qdrant_storage` (coleções) e `getnet-v030-validation_qdrant_storage` (coleções da validação v0.3, 374 MB, preservado por precaução). Uso do Docker: imagens 3,18 GB → 0,56 GB; cache 3,6 GB → 0. O arquivo `docker_data.vhdx` só encolhe no C: depois de compactado com o Docker parado.
