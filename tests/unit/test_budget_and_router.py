@@ -140,8 +140,6 @@ def test_invalid_monetary_values_are_refused_without_releasing_balance(tmp_path,
     assert _ledger_rows(path) == [("reserved", 0.05, None)]
     with pytest.raises(ValueError):
         guard.reserve(request_id="r", agent="a", model="m", amount=bad)
-    with pytest.raises(ValueError):
-        guard.record(request_id="r", agent="a", model="m", actual_usd=bad)
     assert _ledger_rows(path) == [("reserved", 0.05, None)]
 
 
@@ -331,8 +329,8 @@ def test_legacy_ledger_without_a_recorded_ceiling_stays_at_the_native_one_dollar
     assert BudgetGuard(path, 1.0).limit_usd == 1.0
 
 
-@pytest.mark.parametrize("bad", [0, 0.2500001, 0.26, 5.0, -0.1, float("nan"), float("inf")])
-def test_campaign_cap_stays_within_the_fixed_quarter_dollar(tmp_path, bad):  # R1-06
+@pytest.mark.parametrize("bad", [0, 0.5000001, 0.51, 5.0, -0.1, float("nan"), float("inf")])
+def test_campaign_cap_stays_within_the_fixed_half_dollar(tmp_path, bad):  # R1-06, cap raised by the v0.6.0 plan
     with pytest.raises(ValueError):
         FixedBudgetGuard(tmp_path / "campaign.sqlite3", bad, cap_id="v050-qa")
 

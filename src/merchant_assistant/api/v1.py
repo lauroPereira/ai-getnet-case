@@ -18,6 +18,8 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
+from merchant_assistant import comparisons
+from merchant_assistant import scenarios as scenario_catalog
 from merchant_assistant.agents.common import format_history
 from merchant_assistant.agents.router import enforce
 from merchant_assistant.api.schemas import ErrorBody, MessageRequest
@@ -80,6 +82,36 @@ class V1MessageRequest(BaseModel):
     profile_version: int = Field(ge=1)
     router_mechanism: str = Field(pattern=r"^(llm|jev)$")
     comparison_id: str | None = None
+    scenario_id: str | None = Field(default=None, min_length=1, max_length=64)
+
+
+class EvaluationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirmed: bool
+    max_cost_usd: float = Field(ge=0, le=5)
+    expected_estimate_digest: str = Field(min_length=1, max_length=128)
+    repeat: bool = False
+
+
+class ComparisonProfileRef(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    profile_id: str = Field(min_length=1, max_length=80)
+    profile_version: int = Field(ge=1)
+
+
+class ComparisonEstimateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    profiles: list[ComparisonProfileRef] = Field(min_length=2, max_length=3)
+    scenario_ids: list[str] = Field(min_length=1, max_length=3)
+    repetitions: int = Field(default=1, ge=1, le=2)
+    router_mechanism: str = Field(default="llm", pattern=r"^(llm|jev)$")
+    reuse_recorded: bool = True
+
+
+class ComparisonCreateRequest(ComparisonEstimateRequest):
+    confirmed: bool
+    max_cost_usd: float = Field(ge=0, le=5)
+    expected_estimate_digest: str = Field(min_length=1, max_length=128)
 
 
 class CompareRequest(BaseModel):
@@ -265,7 +297,8 @@ def create_session(payload: SessionRequest, request: Request):
             (principal_id, role, customer_id, _token_digest(clear_key)),
         )
         conn.execute(
-            "INSERT INTO api_sessions VALUES (?,?,?,?,?,NULL)",
+            "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at,revoked_at) "
+            "VALUES (?,?,?,?,?,NULL)",
             (session_id, _token_digest(token), principal_id, stamp.isoformat(), expires.isoformat()),
         )
         conn.execute("COMMIT")
@@ -659,6 +692,12 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
         return principal
     conn = _db(request)
     request_id = request.state.request_id
+    context, consumed = None, False
+
+    def refund_without_calls():
+        if consumed and (context is None or context.model_calls == 0):
+            refund_demo_messages(conn, principal, 1)
+
     try:
         bootstrap_profiles(conn)
         profile = get_profile(conn, payload.profile_id, payload.profile_version, role=principal["role"])
@@ -674,6 +713,9 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
             SystemClock(request.app.state.settings.timezone),
         )
         spec = _router_spec(request, guarded.masked, history, state)
+        if not consume_demo_messages(conn, principal, 1, request.app.state.settings):
+            return _error(429, "demo_message_limit_reached", DEMO_LIMIT_MESSAGE, request)
+        consumed = True
         context, _ = _new_context(request, conn, request_id, principal["customer_id"] or "admin", profile["agents"])
         started = time.perf_counter()
         llm_result = _decision(request, context, spec, "llm", profile["agents"])
@@ -715,6 +757,7 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
     except ConversationNotFound:
         return _error(404, "not_found", "Conversation not found.", request)
     except BudgetExceeded as exc:
+        refund_without_calls()
         return _error(
             429,
             f"{exc.scope}_budget_exceeded",
@@ -722,6 +765,7 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
             request,
         )
     except RuntimeError:
+        refund_without_calls()
         return _error(503, "provider_unavailable", "A configured model provider is unavailable.", request)
     except LLMError:
         return _error(503, "provider_unavailable", "Router provider failed; no fallback was used.", request)
@@ -729,12 +773,208 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
         conn.close()
 
 
-@router.post("/messages")
+class RunFailure(Exception):
+    """A run that cannot be reported as an answer (for example the selected Router failed)."""
+
+    def __init__(self, status: int, code: str, message: str) -> None:
+        super().__init__(message)
+        self.status, self.code, self.message = status, code, message
+
+
+def _execution_mode(orchestrator) -> str:
+    return "simulated" if type(orchestrator.llm).__name__ == "ScriptedLLM" else "real"
+
+
+def consume_demo_messages(conn: sqlite3.Connection, principal: dict, count: int, settings: Settings) -> bool:
+    """Atomically count `count` paid actions (messages, new comparison executions, Router comparisons and AI
+    evaluations) against the demo session limit; False when it would be exceeded. Refusals that make no model call
+    are not counted: callers consume only after their validations, and refund when the budget refuses first."""
+    if principal["role"] != "demo":
+        return True
+    cursor = conn.execute(
+        "UPDATE api_sessions SET message_count=message_count+? WHERE session_id=? AND message_count+?<=?",
+        (count, principal["session_id"], count, settings.demo_session_message_limit),
+    )
+    return cursor.rowcount == 1
+
+
+def refund_demo_messages(conn: sqlite3.Connection, principal: dict, count: int) -> None:
+    """Give back actions counted for a request that ended without any model call (for example a budget refusal)."""
+    if principal["role"] == "demo" and count:
+        conn.execute(
+            "UPDATE api_sessions SET message_count=MAX(message_count-?,0) WHERE session_id=?",
+            (count, principal["session_id"]),
+        )
+
+
+def model_calls_made(orchestrator, request_id: str) -> int:
+    """Model calls recorded in the trace of a run (informational; 0 when the run left no trace)."""
+    trace = orchestrator.trace(request_id)
+    return int((trace or {}).get("model_calls") or 0)
+
+
+def paid_attempts(budget, request_id: str) -> int | None:
+    """Paid calls reserved for `request_id` in the persistent ledger (reserved or settled; a cancelled reservation
+    never reached the provider). None when the ledger cannot be read: callers then never give an action back."""
+    guard = getattr(budget, "primary", budget)  # CombinedBudgetGuard: the primary row exists only after both
+    guard = getattr(guard, "guard", guard)  # FixedBudgetGuard wraps a BudgetGuard
+    path = getattr(guard, "path", None)
+    if not isinstance(path, str) or not path or path == ":memory:":
+        return None
+    try:
+        conn = sqlite3.connect(path, timeout=10)
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM ledger WHERE request_id=? AND status IN ('reserved','settled')", (request_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return None
+    return int(row[0])
+
+
+DEMO_LIMIT_MESSAGE = (
+    "This demo session reached its limit of paid actions. End the session and start a new one, "
+    "or ask the administrator."
+)
+
+
+def execute_run(
+    app_state,
+    conn: sqlite3.Connection,
+    *,
+    request_id: str,
+    principal: dict,
+    customer_id: str,
+    profile: dict,
+    message: str,
+    mechanism: str,
+    conversation_id: str | None = None,
+    selected: dict | None = None,
+    router_comparison_id: str | None = None,
+    scenario_id: str | None = None,
+    purpose: str = "attendance",
+    profile_comparison_id: str | None = None,
+    domain_db_path=None,
+    knowledge=None,
+    history_turns: int = 0,
+) -> dict:
+    """Run one attendance with a published profile and store its snapshot (shared by messages and comparisons)."""
+    from merchant_assistant.llm.prompts import prompt_versions
+
+    orchestrator, settings = app_state.orchestrator, app_state.settings
+    actual_models = {name: f"{config['provider']}:{config['model']}" for name, config in profile["agents"].items()}
+    if mechanism == "jev":
+        actual_models["router"] = "typesafe:jev-1.14.0"
+    snapshot = {
+        "profile_id": profile["profile_id"],
+        "profile_version": profile["version"],
+        "profile_digest": profile["digest"],
+        "agents": profile["agents"],
+        "models": actual_models,
+        "router_mechanism": mechanism,
+        "prompt_versions": {"router": "router.v5"},
+        "prompt_set": prompt_versions(settings.prompts_dir),
+        "knowledge_base": "current",
+        "execution_mode": _execution_mode(orchestrator),
+        "comparison_id": router_comparison_id,
+        "scenario_id": scenario_id,
+        "purpose": purpose,
+        "message": check_input(message).masked,
+        "history_turns": history_turns,
+        "estimate_basis": "peak-conservative catalog rate",
+        "effective_parameters_by_agent": {},
+    }
+    tags = {"purpose": purpose, "scenario_id": scenario_id}
+    if profile_comparison_id:
+        snapshot["profile_comparison_id"] = profile_comparison_id
+        tags["profile_comparison_id"] = profile_comparison_id
+    conn.execute(
+        "INSERT INTO run_snapshots VALUES (?,?,?,?,?,?,?)",
+        (
+            request_id,
+            principal["principal_id"],
+            customer_id,
+            profile["profile_id"],
+            profile["version"],
+            json.dumps(snapshot, sort_keys=True),
+            _utc().isoformat(),
+        ),
+    )
+    # Every agent of the profile is listed: with mechanism "jev" the orchestrator replaces the Router entry by
+    # `router_llm` (the TypeSafe adapter), so the Router is never served by the default or the profile LLM (P1-QA-01).
+    agent_models = dict(profile["agents"])
+    router_llm = (
+        orchestrator._profile_llm("router", {"provider": "typesafe", "model": "jev-1.14.0"})
+        if mechanism == "jev"
+        else None
+    )
+    response = orchestrator.handle(
+        MessageRequest(message=message, user_id=customer_id, conversation_id=conversation_id),
+        request_id,
+        agent_models=agent_models,
+        router_llm=router_llm,
+        router_decision=RouterDecision.model_validate(selected["decision"]) if selected else None,
+        db_path=domain_db_path,
+        knowledge=knowledge,
+        trace_tags=tags,
+    )
+    trace_data = orchestrator.trace(request_id)
+    if trace_data and any(str(error).startswith("router:") for error in trace_data.get("errors", [])):
+        failure = {"code": "router_unavailable", "message": "Router provider failed; no fallback was used."}
+        conn.execute(
+            "UPDATE run_snapshots SET snapshot=? WHERE request_id=?",
+            (json.dumps(snapshot | {"error": failure}, sort_keys=True), request_id),
+        )
+        raise RunFailure(503, failure["code"], failure["message"])
+    result = {"message": response.model_dump(), "run": snapshot}
+    if trace_data:
+        trace_summary = {
+            "duration_ms": trace_data.get("duration_ms"),
+            "model_calls": trace_data.get("model_calls"),
+            "tool_calls": trace_data.get("tool_calls"),
+            "models_by_agent": trace_data.get("detail", {}).get("models_by_agent", {}),
+            "effective_parameters_by_agent": trace_data.get("detail", {}).get("effective_parameters_by_agent", {}),
+            "tools": trace_data.get("detail", {}).get("tools", []),
+            "sources": [source.model_dump() for source in response.sources],
+            "cost_estimate_usd": trace_data.get("detail", {}).get("cost_estimate_usd"),
+            "cost_estimate_basis": trace_data.get("detail", {}).get("cost_estimate_basis", {}),
+            "cost_is_estimate": True,
+            "knowledge_base_version_id": trace_data.get("detail", {}).get("knowledge_base_version_id"),
+            "knowledge_base_collection": trace_data.get("detail", {}).get("knowledge_base_collection"),
+        }
+        if selected:
+            trace_summary["effective_parameters_by_agent"] = dict(
+                trace_summary["effective_parameters_by_agent"] | {"router": selected.get("effective_parameters", {})}
+            )
+        result["run"].update(trace_summary)
+        snapshot.update(trace_summary)
+    conn.execute(
+        "UPDATE run_snapshots SET snapshot=? WHERE request_id=?",
+        (json.dumps(snapshot | {"result": result["message"]}, sort_keys=True), request_id),
+    )
+    return result
+
+
+@router.get("/scenarios")
+def scenarios_list(request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    data = scenario_catalog.catalog(request.app.state.settings.data_dir)
+    return {
+        "version": data["version"],
+        "scenarios": [scenario_catalog.public_view(item) for item in data["scenarios"].values()],
+    }
+
+
+@router.post("/messages", responses={429: {"model": ErrorBody}})
 def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
     request_id = request.state.request_id
+    settings: Settings = request.app.state.settings
     try:
         bootstrap_profiles(conn)
         profile = get_profile(conn, payload.profile_id, payload.profile_version, role=principal["role"])
@@ -745,10 +985,23 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
             return _error(
                 422, "admin_scope_required", "Admin sessions require a configured synthetic customer.", request
             )
+        if payload.scenario_id is not None:
+            scenario = scenario_catalog.get(settings.data_dir, payload.scenario_id)
+            if scenario is None:
+                return _error(422, "unknown_scenario", "Scenario is not in the catalog; reload the scenarios.", request)
+            if scenario["message"] != payload.message:
+                return _error(
+                    422,
+                    "scenario_message_mismatch",
+                    "The message differs from the selected scenario; send it as a free message instead.",
+                    request,
+                )
         history, state, state_digest = _read_conversation(
-            conn, payload.conversation_id, customer_id, SystemClock(request.app.state.settings.timezone)
+            conn, payload.conversation_id, customer_id, SystemClock(settings.timezone)
         )
         selected = None
+        if not payload.comparison_id and not consume_demo_messages(conn, principal, 1, settings):
+            return _error(429, "demo_message_limit_reached", DEMO_LIMIT_MESSAGE, request)
         if payload.comparison_id:
             conn.execute("BEGIN IMMEDIATE")
             comp = conn.execute(
@@ -768,6 +1021,9 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
             ):
                 conn.execute("ROLLBACK")
                 return _error(409, "comparison_conflict", "Comparison is stale, mismatched, or already used.", request)
+            if not consume_demo_messages(conn, principal, 1, settings):  # same transaction: nothing is consumed
+                conn.execute("ROLLBACK")
+                return _error(429, "demo_message_limit_reached", DEMO_LIMIT_MESSAGE, request)
             decisions = json.loads(comp["decisions"])
             selected = decisions[payload.router_mechanism]
             conn.execute(
@@ -775,89 +1031,27 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
                 (_utc().isoformat(), payload.comparison_id),
             )
             conn.execute("COMMIT")
-        actual_models = {name: f"{config['provider']}:{config['model']}" for name, config in profile["agents"].items()}
-        if payload.router_mechanism == "jev":
-            actual_models["router"] = "typesafe:jev-1.14.0"
-        execution_mode = "simulated" if type(request.app.state.orchestrator.llm).__name__ == "ScriptedLLM" else "real"
-        snapshot = {
-            "profile_id": profile["profile_id"],
-            "profile_version": profile["version"],
-            "profile_digest": profile["digest"],
-            "agents": profile["agents"],
-            "models": actual_models,
-            "router_mechanism": payload.router_mechanism,
-            "prompt_versions": {"router": "router.v5"},
-            "knowledge_base": "current",
-            "execution_mode": execution_mode,
-            "comparison_id": payload.comparison_id,
-            "estimate_basis": "peak-conservative catalog rate",
-            "effective_parameters_by_agent": {},
-        }
-        conn.execute(
-            "INSERT INTO run_snapshots VALUES (?,?,?,?,?,?,?)",
-            (
-                request_id,
-                principal["principal_id"],
-                customer_id,
-                profile["profile_id"],
-                profile["version"],
-                json.dumps(snapshot, sort_keys=True),
-                _utc().isoformat(),
-            ),
-        )
-        agent_models = {
-            key: value
-            for key, value in profile["agents"].items()
-            if key != "router" or payload.router_mechanism == "llm"
-        }
-        router_llm = (
-            request.app.state.orchestrator._profile_llm("router", {"provider": "typesafe", "model": "jev-1.14.0"})
-            if payload.router_mechanism == "jev"
-            else None
-        )
-        response = request.app.state.orchestrator.handle(
-            MessageRequest(message=payload.message, user_id=customer_id, conversation_id=payload.conversation_id),
-            request_id,
-            agent_models=agent_models,
-            router_llm=router_llm,
-            router_decision=RouterDecision.model_validate(selected["decision"]) if selected else None,
-        )
-        trace_data = request.app.state.orchestrator.trace(request_id)
-        if trace_data and any(str(error).startswith("router:") for error in trace_data.get("errors", [])):
-            failure = {"code": "router_unavailable", "message": "Router provider failed; no fallback was used."}
-            conn.execute(
-                "UPDATE run_snapshots SET snapshot=? WHERE request_id=?",
-                (json.dumps(snapshot | {"error": failure}, sort_keys=True), request_id),
+        try:
+            return execute_run(
+                request.app.state,
+                conn,
+                request_id=request_id,
+                principal=principal,
+                customer_id=customer_id,
+                profile=profile,
+                message=payload.message,
+                mechanism=payload.router_mechanism,
+                conversation_id=payload.conversation_id,
+                selected=selected,
+                router_comparison_id=payload.comparison_id,
+                scenario_id=payload.scenario_id,
+                history_turns=len(history),
             )
-            return _error(503, "router_unavailable", failure["message"], request)
-        result = {"message": response.model_dump(), "run": snapshot}
-        if trace_data:
-            trace_summary = {
-                "duration_ms": trace_data.get("duration_ms"),
-                "model_calls": trace_data.get("model_calls"),
-                "tool_calls": trace_data.get("tool_calls"),
-                "models_by_agent": trace_data.get("detail", {}).get("models_by_agent", {}),
-                "effective_parameters_by_agent": trace_data.get("detail", {}).get("effective_parameters_by_agent", {}),
-                "tools": trace_data.get("detail", {}).get("tools", []),
-                "sources": [source.model_dump() for source in response.sources],
-                "cost_estimate_usd": trace_data.get("detail", {}).get("cost_estimate_usd"),
-                "cost_estimate_basis": trace_data.get("detail", {}).get("cost_estimate_basis", {}),
-                "cost_is_estimate": True,
-                "knowledge_base_version_id": trace_data.get("detail", {}).get("knowledge_base_version_id"),
-                "knowledge_base_collection": trace_data.get("detail", {}).get("knowledge_base_collection"),
-            }
-            if selected:
-                trace_summary["effective_parameters_by_agent"] = dict(
-                    trace_summary["effective_parameters_by_agent"]
-                    | {"router": selected.get("effective_parameters", {})}
-                )
-            result["run"].update(trace_summary)
-            snapshot.update(trace_summary)
-        conn.execute(
-            "UPDATE run_snapshots SET snapshot=? WHERE request_id=?",
-            (json.dumps(snapshot | {"result": result["message"]}, sort_keys=True), request_id),
-        )
-        return result
+        except RunFailure as exc:
+            return _error(exc.status, exc.code, exc.message, request)
+        finally:  # the action was counted above; give it back when the run ended without any model call
+            if paid_attempts(request.app.state.orchestrator.budget, request_id) == 0:  # unknown never refunds
+                refund_demo_messages(conn, principal, 1)
     except ConversationNotFound:
         return _error(404, "not_found", "Conversation not found.", request)
     except RuntimeError:
@@ -868,18 +1062,178 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
         conn.close()
 
 
+STEP_DETAIL_FIELDS = ("prompt", "mode", "hits", "citations", "agent", "arguments", "topic", "tools", "failed", "reused")
+
+
+def _steps(trace: dict | None) -> list[dict]:
+    if not trace:
+        return []
+    steps = []
+    for step in trace.get("steps", []):
+        detail = step.get("detail") or {}
+        steps.append(
+            {
+                "seq": step["seq"],
+                "step": step["step"],
+                "status": step["status"],
+                "duration_ms": step["duration_ms"],
+                **{key: detail[key] for key in STEP_DETAIL_FIELDS if key in detail},
+            }
+        )
+    return steps
+
+
+def _owned_snapshot(conn: sqlite3.Connection, request_id: str, principal: dict) -> dict | None:
+    row = conn.execute(
+        "SELECT * FROM run_snapshots WHERE request_id=? AND principal_id=?", (request_id, principal["principal_id"])
+    ).fetchone()
+    return (json.loads(row["snapshot"]) | {"_customer_id": row["customer_id"]}) if row else None
+
+
+def run_checks(app_state, conn: sqlite3.Connection, request_id: str, snapshot: dict, principal: dict) -> dict:
+    """Deterministic checks for a persisted run: scenario labels when present, label-independent otherwise."""
+    from merchant_assistant.evaluation.runner import persisted_checks
+
+    customer_id = snapshot.get("_customer_id") or principal.get("customer_id")
+    markers = [
+        value
+        for row in conn.execute("SELECT customer_id,display_name FROM customers WHERE customer_id<>?", (customer_id,))
+        for value in (row["customer_id"], row["display_name"])
+    ]
+    scenario_id = snapshot.get("scenario_id")
+    scenario = scenario_catalog.get(app_state.settings.data_dir, scenario_id) if scenario_id else None
+    case = scenario_catalog.as_case(scenario, customer_id) if scenario else None
+    return persisted_checks(
+        snapshot.get("result"), app_state.orchestrator.trace(request_id), case, foreign_markers=markers
+    )
+
+
+def list_evaluations(conn: sqlite3.Connection, request_id: str, principal: dict) -> list[dict]:
+    from merchant_assistant.evaluation import on_demand
+
+    return on_demand.list_for(conn, request_id, principal["principal_id"])
+
+
 @router.get("/runs/{request_id}")
 def run(request_id: str, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
     try:
-        row = conn.execute(
-            "SELECT * FROM run_snapshots WHERE request_id=? AND principal_id=?", (request_id, principal["principal_id"])
-        ).fetchone()
-        if row is None:
+        snapshot = _owned_snapshot(conn, request_id, principal)
+        if snapshot is None:
             return _error(404, "not_found", "Run not found.", request)
-        return json.loads(row["snapshot"])
+        trace = request.app.state.orchestrator.trace(request_id)
+        snapshot["checks"] = run_checks(request.app.state, conn, request_id, snapshot, principal)
+        snapshot["evaluations"] = list_evaluations(conn, request_id, principal)
+        snapshot["steps"] = _steps(trace)
+        snapshot["route"] = (snapshot.get("result") or {}).get("route")
+        snapshot["prompts_used"] = sorted({step["prompt"] for step in snapshot["steps"] if step.get("prompt")})
+        snapshot.pop("_customer_id", None)
+        return snapshot
+    finally:
+        conn.close()
+
+
+@router.post("/runs/{request_id}/evaluations/estimate")
+def evaluation_estimate(request_id: str, request: Request, principal=AUTH):
+    from merchant_assistant.evaluation import on_demand
+    from merchant_assistant.llm.pricing import PriceUnknown
+
+    if _ensure_not_error(principal):
+        return principal
+    conn = _db(request)
+    try:
+        snapshot = _owned_snapshot(conn, request_id, principal)
+        if snapshot is None:
+            return _error(404, "not_found", "Run not found.", request)
+        if "result" not in snapshot:
+            return _error(409, "run_not_evaluable", "This run has no persisted reply to evaluate.", request)
+        return on_demand.estimate(request.app.state, conn, request_id, snapshot, principal)
+    except PriceUnknown:
+        return _error(503, "evaluator_price_unknown", "The evaluator price is unknown; evaluation is blocked.", request)
+    finally:
+        conn.close()
+
+
+@router.post("/runs/{request_id}/evaluations", status_code=201, responses={429: {"model": ErrorBody}})
+def evaluation_create(request_id: str, payload: EvaluationRequest, request: Request, principal=AUTH):
+    from merchant_assistant.evaluation import on_demand
+    from merchant_assistant.llm.pricing import PriceUnknown
+
+    if _ensure_not_error(principal):
+        return principal
+    conn = _db(request)
+    try:
+        snapshot = _owned_snapshot(conn, request_id, principal)
+        if snapshot is None:
+            return _error(404, "not_found", "Run not found.", request)
+        if "result" not in snapshot:
+            return _error(409, "run_not_evaluable", "This run has no persisted reply to evaluate.", request)
+        status, body = on_demand.evaluate(
+            request.app.state,
+            conn,
+            request_id,
+            snapshot,
+            principal,
+            confirmed=payload.confirmed,
+            max_cost_usd=payload.max_cost_usd,
+            expected_digest=payload.expected_estimate_digest,
+            repeat=payload.repeat,
+        )
+        if status >= 400:
+            return _error(status, body["code"], body["message"], request)
+        return JSONResponse(status_code=status, content=body)
+    except PriceUnknown:
+        return _error(503, "evaluator_price_unknown", "The evaluator price is unknown; evaluation is blocked.", request)
+    finally:
+        conn.close()
+
+
+@router.post("/comparisons/estimate")
+def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    conn = _db(request)
+    try:
+        bootstrap_profiles(conn)
+        return comparisons.plan(request.app.state, conn, principal, payload.model_dump())
+    except comparisons.ComparisonError as exc:
+        return _error(exc.status, exc.code, exc.message, request)
+    finally:
+        conn.close()
+
+
+@router.post("/comparisons", status_code=202, responses={429: {"model": ErrorBody}})
+def comparison_create(payload: ComparisonCreateRequest, request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    if not principal["customer_id"]:
+        return _error(422, "admin_scope_required", "Admin sessions require a configured synthetic customer.", request)
+    selection = payload.model_dump(exclude={"confirmed", "max_cost_usd", "expected_estimate_digest"})
+    try:
+        comparison_id = comparisons.start(
+            request.app,
+            principal,
+            selection,
+            confirmed=payload.confirmed,
+            max_cost_usd=payload.max_cost_usd,
+            expected_digest=payload.expected_estimate_digest,
+        )
+    except comparisons.ComparisonError as exc:
+        return _error(exc.status, exc.code, exc.message, request)
+    return JSONResponse(status_code=202, content={"comparison_id": comparison_id, "state": "running"})
+
+
+@router.get("/comparisons/{comparison_id}")
+def comparison_read(comparison_id: str, request: Request, principal=AUTH):
+    if _ensure_not_error(principal):
+        return principal
+    conn = _db(request)
+    try:
+        return comparisons.read(request.app.state, conn, principal, comparison_id)
+    except comparisons.ComparisonError as exc:
+        return _error(exc.status, exc.code, exc.message, request)
     finally:
         conn.close()
 

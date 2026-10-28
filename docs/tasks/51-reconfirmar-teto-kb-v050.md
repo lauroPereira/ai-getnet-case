@@ -48,4 +48,4 @@ Regressão sintética e validação web completas em [evidência Developer UI r3
 
 ## Status
 
-Implementada — aguardando revisão independente do r6 e QA; não declarar aceite.
+Concluída — [Reviewer UI r2](../evidence/v050-reviewer-ui-r2.md) apto e teto reconfirmado na UI no [QA r2](../evidence/v050-qa-r2.md); integrada na v0.5.0.

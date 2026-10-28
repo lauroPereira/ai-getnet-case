@@ -6,14 +6,16 @@ requests cannot overspend the installation limit.
 
 from __future__ import annotations
 
+import contextlib
 import math
 import os
 import sqlite3
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
 ABSOLUTE_BUDGET_LIMIT_USD = 5.0  # project-wide ceiling for every paid call; no setting or ledger may exceed it
-CAMPAIGN_CAP_LIMIT_USD = 0.25  # largest additional cap a bounded QA campaign may fix
+CAMPAIGN_CAP_LIMIT_USD = 0.50  # largest additional cap a bounded QA campaign may fix (v0.6.0 plan: v060-qa)
 
 LEDGER_SCHEMA = """
 CREATE TABLE IF NOT EXISTS ledger (
@@ -35,6 +37,23 @@ class BudgetExceeded(Exception):
         self.scope, self.needed, self.remaining = scope, needed, remaining
 
 
+def _publish_ceiling(sidecar: Path, ceiling: float) -> None:
+    """Write the ceiling with an exact round-trip representation and publish it atomically.
+
+    The content is complete before the final name exists (temporary file in the same directory, then a hard link),
+    so a concurrent mount never sees an empty file and an existing ceiling is never overwritten."""
+    fd, temporary = tempfile.mkstemp(prefix=f".{sidecar.name}.", suffix=".tmp", dir=sidecar.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="ascii") as stream:
+            stream.write(f"{ceiling!r}\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        with contextlib.suppress(FileExistsError):  # another process fixed the ceiling first
+            os.link(temporary, sidecar)
+    finally:
+        os.unlink(temporary)
+
+
 class BudgetGuard:
     def __init__(self, path: Path | str, limit_usd: float) -> None:
         if not math.isfinite(limit_usd) or not 0 <= limit_usd <= ABSOLUTE_BUDGET_LIMIT_USD:
@@ -48,13 +67,7 @@ class BudgetGuard:
                 # A pre-existing ledger predates the sidecar and used the native USD 1 ceiling.
                 # Keep that legacy ceiling unless the caller asks for a stricter one.
                 ceiling = min(limit_usd, 1.0) if ledger_path.exists() else limit_usd
-                try:
-                    fd = os.open(sidecar, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                except FileExistsError:  # another process fixed the ceiling first
-                    pass
-                else:
-                    with os.fdopen(fd, "w", encoding="ascii") as stream:
-                        stream.write(f"{ceiling:.12g}\n")
+                _publish_ceiling(sidecar, ceiling)
             try:
                 ceiling = float(sidecar.read_text(encoding="ascii").strip())
             except (OSError, ValueError) as exc:
@@ -147,37 +160,13 @@ class BudgetGuard:
         finally:
             conn.close()
 
-    def record(self, *, request_id: str | None, agent: str, model: str, actual_usd: float) -> None:
-        """Direct entry for tiny costs measured after the fact (e.g. query embeddings)."""
-        if not math.isfinite(actual_usd) or actual_usd < 0:
-            raise ValueError("Recorded amount must be finite and non-negative.")
-        conn = self._conn()
-        try:
-            conn.execute(
-                "INSERT INTO ledger (at, request_id, agent, model, reserved_usd, actual_usd, status) "
-                "VALUES (?,?,?,?,?,?, 'settled')",
-                (datetime.now(UTC).isoformat(timespec="seconds"), request_id, agent, model, actual_usd, actual_usd),
-            )
-        finally:
-            conn.close()
-
-    def record_embedding(self, model: str, tokens: int) -> None:
-        from merchant_assistant.llm.pricing import model_price
-
-        self.record(
-            request_id=None,
-            agent="embeddings",
-            model=model,
-            actual_usd=tokens * model_price(model)["input_per_mtok"] / 1e6,
-        )
-
 
 class FixedBudgetGuard:
     """Persistent one-time cap for a bounded QA campaign."""
 
     def __init__(self, path: Path | str, limit_usd: float, *, cap_id: str) -> None:
-        if not 0 < limit_usd <= CAMPAIGN_CAP_LIMIT_USD:
-            raise ValueError("QA campaign cap must be greater than zero and no more than USD 0.25.")
+        if not math.isfinite(limit_usd) or not 0 < limit_usd <= CAMPAIGN_CAP_LIMIT_USD:
+            raise ValueError("QA campaign cap must be greater than zero and no more than USD 0.50.")
         self.guard = BudgetGuard(path, limit_usd)
         conn = self.guard._conn()
         try:

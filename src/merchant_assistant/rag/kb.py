@@ -54,10 +54,22 @@ class KnowledgeBase:
 
         return connect(self.db_path)
 
+    def _registered(self) -> bool:
+        """Read-only check: documents and an active version are already recorded (no write lock is taken)."""
+        conn = self._connect()
+        try:
+            documents = conn.execute("SELECT EXISTS(SELECT 1 FROM kb_documents)").fetchone()[0]
+            state = conn.execute("SELECT active_version_id FROM kb_state WHERE singleton=1").fetchone()
+            return bool(documents) and state is not None and state[0] is not None
+        finally:
+            conn.close()
+
     def bootstrap(self) -> None:
         """Register source snapshots once; the current collection remains untouched."""
         from merchant_assistant.rag.documents import load_all
 
+        if self._registered():  # readiness and per-request capture stay read-only once the registry exists
+            return
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")

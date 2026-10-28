@@ -15,7 +15,7 @@ def _openai_client(settings: Settings):
 
     if not settings.has_openai:
         raise SystemExit("OPENAI_API_KEY is required for this command.")
-    return OpenAI(api_key=settings.openai_api_key.get_secret_value(), max_retries=0)
+    return OpenAI(api_key=settings.openai_api_key.get_secret_value(), timeout=30, max_retries=0)
 
 
 def _budget_guard(settings: Settings):

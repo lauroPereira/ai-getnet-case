@@ -1,0 +1,110 @@
+{
+  "round": "v0.6.0 QA real r1",
+  "executed_utc": {"start": "2026-10-28T02:10:27Z", "end": "2026-10-28T03:02:00Z"},
+  "candidate": {
+    "id": "v0.6.0-local-r3",
+    "manifest": "docs/evidence/v060-candidato-r3.json",
+    "source_fingerprint_sha256": "d8d9178df2dcc97acd40d5bf4300a9db75f8ba4b641c24f1ffd61e24cabf819d",
+    "backend": {"root": "C:\\workspace\\ai-getnet-case", "branch": "codex/v0.6.0-fechamento", "head": "c3a9027b7c218f560345576770a646d4ec2bc098", "files_checked": 61},
+    "web": {"root": "C:\\workspace\\ai-getnet-case-web", "branch": "codex/v0.6.0-fechamento", "head": "4192169afc8b37f150d88fdf16e3529a0fd33b90", "files_checked": 13},
+    "integrity_before": {"divergent": 0, "missing": 0, "fingerprint_ok": true, "evidence": ".pytest_cache/v060-qa-harness/hashes-before.json"},
+    "integrity_after": {"divergent": 0, "missing": 0, "fingerprint_ok": true, "evidence": ".pytest_cache/v060-qa-harness/hashes-after.json"},
+    "fingerprint_serialization_note": "json.dumps({backend, web}, sort_keys=True) with default separators"
+  },
+  "native_runtime": {
+    "runtime_dir": ".pytest_cache/v060-qa-real-runtime",
+    "created_from_candidate": "r3 (migration 0008 current); new runtime, no reuse of older runtimes",
+    "python": "3.13.3 (.venv backend)",
+    "web_python": "C:\\workspace\\ai-getnet-case-web\\.venv-v040",
+    "qdrant": "local embedded (runtime_dir/qdrant)",
+    "initial_collection": "getnet_v060_qa_initial (40 docs, 145 chunks)",
+    "fixed_clock": "2026-10-27T10:00:00-03:00",
+    "demo_session_message_limit": 3,
+    "access_keys": "synthetic QA-only keys defined in .pytest_cache/v060-qa-harness/qa_common.py (not real credentials)",
+    "provider_keys": "loaded from .env via Settings only; never displayed",
+    "ports": {"api": "127.0.0.1:18863", "mocks": "127.0.0.1:18864", "proxy": "127.0.0.1:18865", "streamlit": "127.0.0.1:18564"},
+    "streamlit_env": {"BACKEND_API_URL": "http://127.0.0.1:18865", "LOCK_BACKEND_URL": "true"},
+    "proxy_behavior": "forwards everything to the API and logs each request; drops only the HTTP response of the next POST /v1/messages after upstream completion when drop-next-message.flag exists",
+    "proxy_log": ".pytest_cache/v060-qa-harness/proxy-events.jsonl",
+    "harness_dir": ".pytest_cache/v060-qa-harness",
+    "browser": "Claude desktop built-in browser (mcp__Claude_Browser), viewport 1400x900",
+    "processes_stopped_at_end": true
+  },
+  "ledgers": {
+    "campaign": {
+      "path": ".pytest_cache/v060-qa-control/budget.sqlite3",
+      "cap_id": "v060-qa", "cap_usd": 0.5, "limit_file": "0.5", "created_utc": "2026-10-28T02:18:05Z",
+      "before": {"entries": 0, "settled_usd": 0.0},
+      "after": {"entries": 316, "settled_usd": 0.08176871, "open_reservations": 0}
+    },
+    "primary": {
+      "path": "data/runtime/budget.sqlite3", "limit_file": "1",
+      "before": {"entries": 885, "settled_usd": 0.34852844, "open_reservations": 0},
+      "after": {"entries": 1201, "settled_usd": 0.43029715, "open_reservations": 0},
+      "delta_usd": 0.08176871,
+      "note": "same calls as the campaign ledger (CombinedBudgetGuard); not added twice"
+    },
+    "docker_volume": {
+      "path": "ai-getnet-case_runtime:/app/runtime/budget.sqlite3",
+      "before": {"entries": 46, "settled_usd": 0.02523039, "open_reservations": 0},
+      "after": {"entries": 55, "settled_usd": 0.02625066, "open_reservations": 0},
+      "delta_usd": 0.00102027,
+      "limit_file_after": "1.0 (created by the candidate on first mount)"
+    },
+    "campaign_total_usd": 0.08278898,
+    "project_accumulated_before_usd": 0.59837466,
+    "project_accumulated_after_usd": 0.68116364
+  },
+  "docker": {
+    "daemon": "29.8.0 (started by the owner after the round began)",
+    "command": "docker compose up --build -d (project ai-getnet-case, existing volumes)",
+    "api_image": "sha256:02c32445ae7f24e79d71c7353e5823b94f56a0d17918718ce70826e2ece73b71",
+    "api_port": "127.0.0.1:8000 only (docker ps and netstat)",
+    "ready": {"app": "0.6.0", "schema": 8, "collection": "getnet_kb_v1", "index_chunks": 145, "corpus": "d7ed966b69d6"},
+    "env_note": "local .env has no API_DEMO_ACCESS_KEY/API_ADMIN_ACCESS_KEY: /v1 sessions return 401 on the published port",
+    "smoke": {
+      "legacy_post_messages_via_port": "req_58b563f532864ec7839c (knowledge, answered, 3 model calls, US$0.00036452)",
+      "v1_in_process_asgi_inside_container": "req_9edd4577e04345739cb8 (demo, SC-RECEIVABLES, support, answered, real; tools get_receivables_schedule, get_payout_status)"
+    },
+    "final_state": "docker compose stop (no -v); ai-getnet-case-api-1, mocks-1, qdrant-1 Exited; volumes and images preserved",
+    "disk_free_before_build": "9.3 GB (96% used)"
+  },
+  "round2": {
+    "executed_utc": {"start": "2026-10-28T04:04:47Z", "end": "2026-10-28T04:16:07Z"},
+    "candidate": {
+      "id": "v0.6.0-local-r5",
+      "manifest": "docs/evidence/v060-candidato-r5.json",
+      "source_fingerprint_sha256": "3b6b697e53623ac08c54a521cc0aa094e2e5cc7e247b83a4c11e3ca9075a2639",
+      "heads": {"backend": "c3a9027b7c218f560345576770a646d4ec2bc098", "web": "4192169afc8b37f150d88fdf16e3529a0fd33b90"},
+      "files_checked": {"backend": 63, "web": 13},
+      "integrity_before": {"divergent": 0, "missing": 0, "fingerprint_ok": true, "evidence": ".pytest_cache/v060-qa-harness/hashes-r5-before.json"},
+      "integrity_after": {"divergent": 0, "missing": 0, "fingerprint_ok": true, "evidence": ".pytest_cache/v060-qa-harness/hashes-r5-after.json"}
+    },
+    "native_runtime": "reused .pytest_cache/v060-qa-real-runtime (migrations unchanged); same ports, harness, keys, demo limit 3 and LOCK_BACKEND_URL=true; restarted API, mocks, proxy and Streamlit; all stopped at the end",
+    "docker": {
+      "command": "docker compose up --build -d (r5)",
+      "api_image": "sha256:3b7b561f074b30efe91cdd5a911fb32f5e31ea73721d238bc70913ac65393e50",
+      "api_port": "127.0.0.1:8000 only",
+      "ready": {"knowledge_base": {"version_id": "kb_initial", "collection": "getnet_kb_v1"}, "app": "0.6.0", "schema": 8},
+      "smoke": "in-container ASGI /v1 demo, SC-RECEIVABLES, Router JEV: req_a2bcc71e79d1424f8334 (ledger router jev-1.14.0)",
+      "volume_ledger": {"before": {"entries": 55, "settled_usd": 0.02625066}, "after": {"entries": 60, "settled_usd": 0.02696424, "open_reservations": 0}, "delta_usd": 0.00071358},
+      "final_state": "docker compose stop (no -v)",
+      "disk_free_before_build": "11 GB"
+    },
+    "ledgers": {
+      "campaign": {"before": {"entries": 316, "settled_usd": 0.08176871}, "after": {"entries": 344, "settled_usd": 0.08627102, "open_reservations": 0}, "delta_usd": 0.00450231},
+      "primary": {"before": {"entries": 1201, "settled_usd": 0.43029715}, "after": {"entries": 1229, "settled_usd": 0.43479946, "open_reservations": 0}, "delta_usd": 0.00450231, "note": "same calls as the campaign; not added twice"},
+      "round2_total_usd": 0.00521589,
+      "campaign_total_usd": 0.08800487,
+      "project_accumulated_after_usd": 0.68637953
+    }
+  },
+  "prices_checked": {
+    "at": "2026-10-28",
+    "sources": ["https://developers.openai.com/api/docs/pricing", "https://api-docs.deepseek.com/quick_start/pricing/", "https://docs.typesafe.ai/models"],
+    "gpt-6-luna": "0.10 / 0.01 cached / 0.50 per MTok (matches prices.json)",
+    "text-embedding-3-small": "0.02 per MTok (matches)",
+    "deepseek-flash": "DeepSeek-V4.1-Flash-1017 peak 0.30 / 0.006 / 1.20 (matches peak-conservative)",
+    "jev-1.14.0": "0.042 per MTok input, output free (matches)"
+  }
+}

@@ -27,6 +27,19 @@ def openai_client(settings: Settings):
     return OpenAI(api_key=settings.openai_api_key.get_secret_value(), timeout=30, max_retries=0)
 
 
+def deepseek_client(settings: Settings):
+    from openai import OpenAI
+
+    if not settings.deepseek_api_key:
+        raise RuntimeError("DEEPSEEK_API_KEY is not configured")
+    return OpenAI(
+        api_key=settings.deepseek_api_key.get_secret_value(),
+        base_url="https://api.deepseek.com",
+        timeout=30,
+        max_retries=0,
+    )
+
+
 def build_orchestrator(
     settings: Settings,
     *,
@@ -55,17 +68,7 @@ def build_orchestrator(
         if provider == "openai":
             return OpenAILLM(openai_client(settings), model)
         if provider == "deepseek":
-            if not settings.deepseek_api_key:
-                raise RuntimeError("DEEPSEEK_API_KEY is not configured")
-            from openai import OpenAI
-
-            deepseek_client = OpenAI(
-                api_key=settings.deepseek_api_key.get_secret_value(),
-                base_url="https://api.deepseek.com",
-                timeout=30,
-                max_retries=0,
-            )
-            return OpenAILLM(deepseek_client, model)
+            return OpenAILLM(deepseek_client(settings), model)
         if provider == "typesafe" and model == "jev-1.14.0":
             if not settings.typesafe_api_key:
                 raise RuntimeError("TYPESAFE_API_KEY is not configured")

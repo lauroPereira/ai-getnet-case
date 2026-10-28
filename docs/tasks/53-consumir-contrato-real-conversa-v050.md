@@ -66,5 +66,4 @@ Ruff no venv web. Ruff externo disponível no venv backend passou em
 
 ## Status
 
-Implementada — aguardando revisão independente no candidato r7 e QA posterior;
-esta passagem não declara aceite.
+Concluída — [Reviewer UI r3](../evidence/v050-reviewer-ui-r3.md) apto e [QA r3](../evidence/v050-qa-r3.md) comprovou a recuperação no navegador; integrada na v0.5.0.

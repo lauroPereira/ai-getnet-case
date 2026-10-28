@@ -99,7 +99,15 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         ctx.step_notes["error"] = f"retrieval: {exc}"
         result = KnowledgeResult(mode=mode, points=[], evidence_sufficient=False, missing=["knowledge_unavailable"])
         return {"knowledge": result, "agents": agents, "errors": [*state.errors, f"knowledge: {exc}"]}
-    ctx.step_notes["hits"] = [{"doc": h.payload.get("doc_id"), "score": round(h.score, 3)} for h in hits]
+    ctx.step_notes["hits"] = [
+        {
+            "doc": h.payload.get("doc_id"),
+            "score": round(h.score, 3),
+            "chunk_id": h.payload.get("chunk_id"),
+            "excerpt": (h.payload.get("text") or "")[:400],
+        }
+        for h in hits
+    ]
     if not hits:
         result = KnowledgeResult(
             mode=mode, points=[], evidence_sufficient=False, missing=[policy("no_evidence", language)]
@@ -127,6 +135,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         result = KnowledgeResult(mode=mode, points=[], evidence_sufficient=False, missing=["knowledge_unavailable"])
         return {"knowledge": result, "agents": agents, "errors": [*state.errors, f"knowledge: {exc}"]}
     citations = _citations(hits, draft.used_passages)
+    ctx.step_notes["citations"] = [c.chunk_id for c in citations]
     used_hits = [hits[n - 1] for n in draft.used_passages if 1 <= n <= len(hits)] or hits
     procedure_id = next((h.payload.get("procedure_id") for h in used_hits if h.payload.get("procedure_id")), None)
     result = KnowledgeResult(

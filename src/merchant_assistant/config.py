@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     max_request_seconds: float = 90.0
     web_search_max_calls: int = 1
 
+    # v0.6.0 demonstration controls
+    demo_session_message_limit: int = Field(default=20, ge=1, le=1000)
+    evaluator_provider: str = "openai"
+    evaluator_model: str = "gpt-6-luna"
+
     user_id_pattern: str = Field(default=r"^[A-Za-z0-9_\-.]{1,64}$")
 
     @property

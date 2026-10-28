@@ -60,7 +60,9 @@ QA real v0.5.0, r1: observação e logs sanitizados em `docs/evidence/v050-qa-r1
 ## Status
 
 ```text
-pendente
+concluída
 ```
+
+O atendimento terminava no backend e a falha era de transporte; a recuperação manual por GET ([tarefa 50](50-recuperacao-manual-chat-v050.md)) passou no [QA r3](../evidence/v050-qa-r3.md). O ajuste do timeout fixo de 20 s do cliente web segue na [tarefa 54](54-estabilizacao-v060.md).
 
 Falha de UI reproduzida; causa temporal ainda não isolada. Recuperação manual GET implementada na tarefa50, aguardando revisão e QA; não alterar timeout por inferência.

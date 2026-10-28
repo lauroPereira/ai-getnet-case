@@ -48,5 +48,5 @@ Reprodução de QA r2 no candidato r6: POST original caiu apenas no transporte a
 ## Status
 
 ```text
-implementada; aguardando revisão independente e revalidação QA no candidato r7
+concluída — corrigida pela tarefa 53, revisada no Reviewer UI r3 e revalidada no QA r3; integrada na v0.5.0
 ```

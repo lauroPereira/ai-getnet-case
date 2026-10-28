@@ -425,7 +425,7 @@ def test_migration_0006_round_trip_preserves_legacy_synthetic_records(settings):
     from merchant_assistant.data.seed import seed
 
     conn = connect(settings.db_path)
-    assert migrate(conn, 6) == ["down 0007_kb_versions"]
+    assert migrate(conn, 6) == ["down 0008_demo_results", "down 0007_kb_versions"]
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT customer_id, display_name FROM customers ORDER BY customer_id").fetchall()
     assert current_version(conn) == 6

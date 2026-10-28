@@ -18,6 +18,7 @@ from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import CallSpec, NullMeter, Usage
 from merchant_assistant.llm.prompts import load_prompt
+from merchant_assistant.orchestration.budget import BudgetExceeded
 
 
 @dataclass
@@ -87,14 +88,24 @@ def load_cases(paths: list[Path]) -> list[Case]:
 class BudgetMeter:
     """Meters judge calls against the installation budget (they are paid calls too)."""
 
-    def __init__(self, budget) -> None:
+    def __init__(self, budget, *, request_id: str = "eval-judge", max_cost_usd: float | None = None) -> None:
         self.budget, self.cost_usd = budget, 0.0
+        self.request_id, self.max_cost_usd = request_id, max_cost_usd
 
     def reserve(
-        self, *, agent: str, model: str, est_input_tokens: int, max_output_tokens: int, web_search_calls: int = 0
+        self,
+        *,
+        agent: str,
+        model: str,
+        est_input_tokens: int,
+        max_output_tokens: int,
+        web_search_calls: int = 0,
+        effective_parameters: dict | None = None,
     ):
         amount = pricing.estimate(model, est_input_tokens, max_output_tokens, web_search_calls)
-        return self.budget.reserve(request_id="eval-judge", agent=agent, model=model, amount=amount), model, amount
+        if self.max_cost_usd is not None and self.cost_usd + amount > self.max_cost_usd:
+            raise BudgetExceeded("evaluation", amount, self.max_cost_usd - self.cost_usd)
+        return self.budget.reserve(request_id=self.request_id, agent=agent, model=model, amount=amount), model, amount
 
     def settle(self, reservation, usage: Usage | None) -> None:
         ledger_id, model, amount = reservation
@@ -108,6 +119,30 @@ class JudgeScore(BaseModel):
     clarity_and_tone: int = Field(description="1-5: clear, concise, polite support language in the right language?")
     honesty: int = Field(description="1-5: avoids unsupported claims, promises and internal jargon; admits gaps?")
     comment: str = Field(description="One short sentence justifying the lowest score.")
+
+
+JUDGE_MAX_OUTPUT_TOKENS = 200
+
+
+def judge_evidence(message: str, body: dict, sources: list[str]) -> dict:
+    """The only data sent to the model judge: question, outcome labels, source titles and the persisted reply."""
+    return {
+        "merchant_message": message,
+        "status": body["status"],
+        "route": body["route"],
+        "sources": sources,
+        "reply": body["answer"],
+    }
+
+
+def judge_spec(judge_prompt, evidence: dict) -> CallSpec:
+    return CallSpec(
+        agent="judge",
+        instructions=judge_prompt.render(),
+        effort="none",
+        max_output_tokens=JUDGE_MAX_OUTPUT_TOKENS,
+        input=json.dumps(evidence, ensure_ascii=False),
+    )
 
 
 def _checks(case: Case, body: dict, trace: dict) -> dict:
@@ -143,6 +178,59 @@ CHECK_KEYS = [
 ]
 
 
+CRITICAL_CHECKS = {
+    "grounded_ok": "unsupported_answer",
+    "forbidden_ok": "forbidden_assertion_or_promise",
+    "isolation_ok": "cross_customer_leak",
+}
+
+
+def persisted_checks(body: dict | None, trace: dict | None, case: Case | None, *, foreign_markers=()) -> dict:
+    """Deterministic checks over a persisted reply and its trace, without any model call.
+
+    With a scenario label every existing check applies; without one only the label-independent checks run
+    (grounding/output violations, errors and cross-customer markers) and the rest is reported as not evaluated.
+    Critical failures are listed one by one and never averaged."""
+    label_independent = ["grounded_ok", "errors_ok", "isolation_ok"]
+    if body is None or trace is None:
+        return {
+            "origin": None,
+            "status": "unavailable",
+            "results": {},
+            "not_evaluated": [*CHECK_KEYS, "errors_ok", "isolation_ok"],
+            "critical_failures": [],
+            "passed": 0,
+            "total": 0,
+            "tools_called": [],
+        }
+    if case is not None:
+        full = _checks(case, body, trace)
+        results = {key: bool(full[key]) for key in CHECK_KEYS}
+        tools_called = full["tools_called"]
+    else:
+        results = {"grounded_ok": not trace["detail"].get("output_violations")}
+        tools_called = [s["step"].removeprefix("tool:") for s in trace["steps"] if s["step"].startswith("tool:")]
+    results["errors_ok"] = not trace.get("errors")
+    lower = body["answer"].casefold()
+    results["isolation_ok"] = not any(marker.casefold() in lower for marker in foreign_markers if marker)
+    critical = [
+        {"code": code, "check": key} for key, code in CRITICAL_CHECKS.items() if results.get(key) is False
+    ]
+    if case is not None and case.expected_status != "refused" and body["status"] == "refused":
+        critical.append({"code": "undue_refusal", "check": "status_ok"})
+    return {
+        "origin": f"scenario:{case.id}" if case is not None else "label_independent",
+        "status": "evaluated",
+        "results": results,
+        "not_evaluated": [key for key in [*CHECK_KEYS, *label_independent] if key not in results],
+        "critical_failures": critical,
+        "passed": sum(results.values()),
+        "total": len(results),
+        "tools_called": tools_called,
+        "violations": trace["detail"].get("output_violations", []),
+    }
+
+
 def run(
     orchestrator, cases: list[Case], *, judge_llm=None, prompts_dir: Path | None = None, judge_meter=None
 ) -> list[dict]:
@@ -173,22 +261,7 @@ def run(
         }
         row["passed"] = all(row[k] for k in CHECK_KEYS)
         if judge_prompt is not None:
-            spec = CallSpec(
-                agent="judge",
-                instructions=judge_prompt.render(),
-                effort="none",
-                max_output_tokens=200,
-                input=json.dumps(
-                    {
-                        "merchant_message": case.message,
-                        "status": body["status"],
-                        "route": body["route"],
-                        "sources": row["sources"],
-                        "reply": body["answer"],
-                    },
-                    ensure_ascii=False,
-                ),
-            )
+            spec = judge_spec(judge_prompt, judge_evidence(case.message, body, row["sources"]))
             try:
                 score = judge_llm.parse(spec, JudgeScore, judge_meter or NullMeter()).value
                 row["judge"] = score.model_dump()

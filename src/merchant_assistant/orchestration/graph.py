@@ -185,11 +185,19 @@ class Orchestrator:
         agent_models: dict[str, dict] | None = None,
         router_llm: LLM | None = None,
         router_decision: RouterDecision | None = None,
+        db_path=None,
+        knowledge: tuple[KnowledgeIndex | None, str | None] | None = None,
+        trace_tags: dict | None = None,
     ) -> MessageResponse:
-        captured_index, knowledge_version_id = (
-            self.knowledge_base.capture_active() if self.knowledge_base else (self.index, None)
-        )
-        conn = connect(self.settings.db_path)
+        """`db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
+        `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace."""
+        if knowledge is not None:
+            captured_index, knowledge_version_id = knowledge
+        else:
+            captured_index, knowledge_version_id = (
+                self.knowledge_base.capture_active() if self.knowledge_base else (self.index, None)
+            )
+        conn = connect(db_path or self.settings.db_path)
         try:
             store = ConversationStore(conn, self.clock)
             conv = store.open(request.conversation_id, request.user_id)  # raises ConversationNotFound
@@ -237,7 +245,7 @@ class Orchestrator:
             )
             self._persist(store, conv, final)
             response = self._response(final, ctx)
-            self._record(final, ctx, response)
+            self._record(final, ctx, response, trace_tags)
             return response
         finally:
             conn.close()
@@ -316,7 +324,7 @@ class Orchestrator:
         finally:
             conn.close()
 
-    def _record(self, state: GraphState, ctx: RunContext, response: MessageResponse) -> None:
+    def _record(self, state: GraphState, ctx: RunContext, response: MessageResponse, tags: dict | None = None) -> None:
         summary = {
             "user_id": state.user_id,
             "route": response.route,
@@ -337,6 +345,8 @@ class Orchestrator:
                 "cost_is_estimate": True,
                 "knowledge_base_version_id": ctx.knowledge_version_id,
                 "knowledge_base_collection": ctx.index.collection if ctx.index else None,
+                "citations": [c.chunk_id for c in state.knowledge.citations] if state.knowledge else [],
+                **(tags or {}),
             },
         }
         try:
@@ -357,13 +367,19 @@ class Orchestrator:
     def readiness(self) -> dict:
         index_chunks = 0
         db_ok = self.settings.db_path.exists()
+        active_version = None
         try:
             # Observe the index of the version that is active now, not the one the runtime started with.
-            active = self.knowledge_base.capture_active()[0] if self.knowledge_base and db_ok else self.index
+            if self.knowledge_base and db_ok:
+                active, version_id = self.knowledge_base.capture_active()
+                active_version = {"version_id": version_id, "collection": active.collection if active else None}
+            else:
+                active = self.index
             index_chunks = active.count() if active else 0
         except Exception as exc:  # pragma: no cover - reported, not raised
             log.warning("index readiness failed: %s", exc)
         return {
+            "knowledge_base": active_version,  # the active version and its collection (versions.index is the boot one)
             "ready": bool(index_chunks and db_ok),
             "index_chunks": index_chunks,
             "database": db_ok,

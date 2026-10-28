@@ -57,4 +57,4 @@ Pendente.
 
 ## Status
 
-Aberta — aguarda o QA real do candidato apto.
+Incorporada à [tarefa 54](54-estabilizacao-v060.md) da v0.6.0 (2026-10-27): R2-01/02/03/05/07/08 serão corrigidos; R2-04 fica como risco aceito, sem contenção observada no QA real r1–r3.

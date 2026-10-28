@@ -20,6 +20,8 @@ REQUIRED_STRUCTURE = (
 )
 EXCLUDED_DIRECTORIES = {
     ".git",
+    ".pytest_cache",  # QA and test artefacts, never project source
+    "_tmp",  # local scratch material, never project source
     ".nox",
     ".tox",
     ".venv",
