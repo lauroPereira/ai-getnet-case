@@ -1,5 +1,7 @@
 # Getnet Merchant Assistant — Multi-Agent Support System
 
+▶ Presentation video (46 min): https://github.com/lauroPereira/ai-getnet-case/releases/download/v0.6.0/apresentacao-final.mp4
+
 A multi-agent assistant that answers Getnet merchants over a single HTTP endpoint. A **Router** decides who handles
 each message; a **Knowledge Agent** answers from Getnet's official website (RAG) or the web; a **Customer Support
 Agent** uses tools over the merchant's (synthetic) account data; an **Escalation Agent** hands the case to a human;
