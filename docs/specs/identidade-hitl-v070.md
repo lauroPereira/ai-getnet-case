@@ -54,6 +54,11 @@ Fixado aqui antes do código. Mudança neste contrato só pelo Supervisor, nesta
 | `demo:default` | `demo` | `merchant-assistant` | como `merchant` (lojista `API_DEMO_CUSTOMER_ID`) |
 | `admin:default` | `admin` | `merchant-assistant` | `kb:admin profiles:admin support:read handoff:create conversation:read` |
 
+### Mensagens e conversa (tarefa 65)
+
+- `POST /messages` e `POST /v1/messages` ganham `via` no nível de cima da resposta: `"agent"` ou `"operator"`; com resposta humana pendente, `route="human_reply"` e `via="operator"`.
+- Em `GET /v1/conversations/{id}` (e na rota de demo), cada turno do assistente traz `via` e, quando `operator`, `operator_action` (`approve`|`reply`|`reject`) e `protocol`. *(Fixado em 2026-11-03, na entrega da 67.)*
+
 ### Webhooks (nos dois sentidos)
 
 - Envelope: `{"id": "evt_…", "type": "<evento>", "created_at": "<ISO 8601 UTC>", "data": {…}}`.
