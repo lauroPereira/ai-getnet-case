@@ -87,20 +87,47 @@ def test_password_grant_issues_tokens_per_principal(offline, settings, caplog):
     assert stored.fetchone() == ("operator", None, '["handoff:operate", "support:read"]')
 
 
-def test_token_endpoint_refusals_do_not_say_which_field_failed(offline):
+def test_token_endpoint_errors_follow_rfc6749_and_do_not_say_which_field_failed(offline):
     client, _, _ = offline()
     wrong_password = token_request(client, grant_type="password", username="cliente1988", password="nope")
     unknown_user = token_request(client, grant_type="password", username="nobody", password="nope")
     for response in (wrong_password, unknown_user):
-        assert response.status_code == 401 and response.json()["error"]["code"] == "invalid_grant"
-    assert wrong_password.json()["error"]["message"] == unknown_user.json()["error"]["message"]
+        assert response.status_code == 400 and response.json()["error"] == "invalid_grant"
+        assert set(response.json()) == {"error", "error_description"}  # RFC 6749 §5.2, not the project envelope
+        assert response.headers["cache-control"] == "no-store"
+    assert wrong_password.json() == unknown_user.json()
     unknown_client = token_request(
         client, grant_type="password", username="cliente1988", password="x", client_id="rogue-app"
     )
-    assert unknown_client.status_code == 401 and unknown_client.json()["error"]["code"] == "invalid_client"
+    assert unknown_client.status_code == 401 and unknown_client.json()["error"] == "invalid_client"
+    assert unknown_client.headers["www-authenticate"].startswith("Basic")
     grant = token_request(client, grant_type="authorization_code", code="x")
-    assert grant.status_code == 400 and grant.json()["error"]["code"] == "unsupported_grant_type"
-    assert token_request(client).status_code == 400
+    assert grant.status_code == 400 and grant.json()["error"] == "unsupported_grant_type"
+    for incomplete in ({}, {"grant_type": "password", "username": "cliente1988"}):
+        response = token_request(client, **incomplete)
+        assert response.status_code == 400 and response.json()["error"] == "invalid_request"
+
+
+def test_token_attempts_are_limited_per_account_and_address(offline, settings):
+    settings.auth_attempts_per_minute = 2
+    client, _, _ = offline()
+    for _ in range(2):
+        assert token_request(client, grant_type="password", username="op_ana", password="wrong").status_code == 400
+    blocked = token_request(
+        client, grant_type="password", username="op_ana", password=TEST_USER_PASSWORDS["op_ana"]
+    )  # even the right password: the attempt is counted before any hashing
+    assert blocked.status_code == 429 and blocked.json()["error"] == "rate_limited"
+    assert 1 <= int(blocked.headers["retry-after"]) <= 60
+    other_user = token_request(
+        client, grant_type="password", username="op_bruno", password=TEST_USER_PASSWORDS["op_bruno"]
+    )
+    assert other_user.status_code == 200
+    for _ in range(2):
+        token_request(client, grant_type="client_credentials", client_id="ticketing-demo", client_secret="wrong")
+    refused = token_request(
+        client, grant_type="client_credentials", client_id="ticketing-demo", client_secret=TEST_TICKETING_SECRET
+    )
+    assert refused.status_code == 429
 
 
 def test_client_credentials_for_the_ticketing_service(offline):
@@ -117,11 +144,12 @@ def test_client_credentials_for_the_ticketing_service(offline):
         "/v1/auth/token", data={"grant_type": "client_credentials"}, auth=("ticketing-demo", TEST_TICKETING_SECRET)
     )
     assert basic.status_code == 200
-    for secret in ("wrong-secret", ""):
-        refused = token_request(
-            client, grant_type="client_credentials", client_id="ticketing-demo", client_secret=secret
-        )
-        assert refused.status_code == 401 and refused.json()["error"]["code"] == "invalid_client"
+    refused = token_request(
+        client, grant_type="client_credentials", client_id="ticketing-demo", client_secret="wrong-secret"
+    )
+    assert refused.status_code == 401 and refused.json()["error"] == "invalid_client"
+    unknown = token_request(client, grant_type="client_credentials", client_id="rogue", client_secret="x")
+    assert unknown.status_code == 401 and unknown.json()["error"] == "invalid_client"
     service = {"Authorization": f"Bearer {issued.json()['access_token']}"}
     assert post(client, DEVICE, service).status_code == 403
     assert llm.calls == []
@@ -193,7 +221,8 @@ def test_operator_session_cannot_send_messages_and_merchant_has_no_operate_scope
     client, _, llm = offline()
     headers = operator_headers(client)
     refused = post(client, DEVICE, headers)
-    assert refused.status_code == 403 and refused.json()["error"]["code"] == "forbidden"
+    assert refused.status_code == 403 and refused.json()["error"]["code"] == "insufficient_scope"
+    assert 'error="insufficient_scope"' in refused.headers["www-authenticate"]
     v1 = client.post(
         "/v1/messages",
         headers=headers,
@@ -202,6 +231,34 @@ def test_operator_session_cannot_send_messages_and_merchant_has_no_operate_scope
     assert v1.status_code == 403
     assert llm.calls == []
     assert "handoff:operate" not in Principal.merchant("cliente1988").scopes
+
+
+def test_merchant_sees_the_demo_profiles_and_shares_the_action_limit(offline, settings):
+    settings.demo_session_message_limit = 1
+    client, _, _ = offline()
+    admin = token_headers(client, ADMIN)
+    agents = next(p["agents"] for p in client.get("/v1/profiles", headers=admin).json()["profiles"])
+    created = client.post(
+        "/v1/profiles", headers=admin, json={"name": "Internal only", "agents": agents, "demo_allowed": False}
+    ).json()
+    published = client.post(
+        f"/v1/profiles/{created['profile_id']}/publish", headers=admin, json={"expected_version": 1}
+    )
+    assert published.status_code == 200
+    merchant = merchant_headers(client)
+    visible = {p["profile_id"] for p in client.get("/v1/profiles", headers=merchant).json()["profiles"]}
+    demo_visible = {
+        p["profile_id"] for p in client.get("/v1/profiles", headers=token_headers(client, DEMO)).json()["profiles"]
+    }
+    assert visible == demo_visible and created["profile_id"] not in visible  # D18
+    body = {"message": "Olá", "profile_id": created["profile_id"], "profile_version": 1, "router_mechanism": "llm"}
+    assert client.post("/v1/messages", headers=merchant, json=body).status_code == 404
+    body |= {"profile_id": "reference"}
+    assert client.post("/v1/messages", headers=merchant, json=body).status_code == 200
+    limited = client.post("/v1/messages", headers=merchant, json=body)
+    assert limited.status_code == 429 and limited.json()["error"]["code"] == "demo_message_limit_reached"
+    fresh = token_headers(client, Principal.merchant("cliente1988"))  # the limit is per token
+    assert client.post("/v1/messages", headers=fresh, json=body).status_code == 200
 
 
 # --- reads of another merchant ------------------------------------------------------------------------------------

@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     password_hash_iterations: int = Field(default=600_000, ge=1_000)
     merchant_assistant_token: SecretStr | None = None  # merchant token for the MCP server and local commands
     rate_limit_per_minute: int = Field(default=30, ge=1, le=10000)
+    auth_attempts_per_minute: int = Field(default=10, ge=1, le=1000)  # D19: per account and address on /v1/auth/token
 
     agent_model: str = "gpt-6-luna"
     embedding_model: str = "text-embedding-3-small"

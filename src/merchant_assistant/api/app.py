@@ -113,7 +113,7 @@ def message_refusal(principal: Principal, user_id: str | None) -> tuple[str, str
     """`POST /messages` for an authenticated principal: only merchant-bound roles, and a `user_id`, when sent, must
     be the principal's merchant. Returns (code, message) of the 403 or None."""
     if principal.role not in MESSAGE_ROLES or not principal.customer_id:
-        return "forbidden", OPERATOR_FORBIDDEN
+        return "insufficient_scope", OPERATOR_FORBIDDEN
     if user_id is not None and user_id != principal.customer_id:
         return "identity_mismatch", "user_id does not match the session's merchant."
     return None
@@ -197,7 +197,10 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
         request_id = request.state.request_id
         caller = Principal.from_session(principal)
         if refusal := message_refusal(caller, payload.user_id):
-            return _error(403, *refusal, request_id)
+            response = _error(403, *refusal, request_id)
+            if refusal[0] == "insufficient_scope":
+                response.headers["WWW-Authenticate"] = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
+            return response
         if limited := rate_limited(request, principal):
             return limited
         bound = payload.model_copy(update={"user_id": caller.customer_id})

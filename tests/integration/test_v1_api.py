@@ -48,7 +48,7 @@ def login(client: TestClient, key: str = DEMO_KEY) -> str:
 def test_v1_authentication_is_closed_by_default_and_messages_require_a_session(settings, offline):
     client, _, _ = offline()
     refused = client.post("/v1/auth/token", data={"grant_type": "password", "username": "demo", "password": "x"})
-    assert refused.status_code == 401
+    assert refused.status_code == 400 and refused.json()["error"] == "invalid_grant"
     assert client.get("/v1/catalog/models").status_code == 401
     assert client.post("/messages", json={"message": "oi", "user_id": "cliente1988"}).status_code == 401  # v0.7.0
 

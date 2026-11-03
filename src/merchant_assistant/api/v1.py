@@ -261,12 +261,18 @@ def _principal(request: Request, authorization: str | None = Header(default=None
     }
 
 
+def insufficient_scope(request: Request, message: str) -> JSONResponse:
+    """`403 insufficient_scope` with the RFC 6750 challenge."""
+    challenge = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
+    return _error(403, "insufficient_scope", message, request, headers={"WWW-Authenticate": challenge})
+
+
 def _require(request: Request, roles: tuple[str, ...] = ("demo", "admin")):
     principal = _principal(request)
     if isinstance(principal, JSONResponse):
         return principal
     if principal["role"] not in roles:
-        return _error(403, "forbidden", "This action is not allowed for this session.", request)
+        return insufficient_scope(request, "This action is not allowed for this token.")
     return principal
 
 
@@ -304,12 +310,21 @@ def _require_header(request: Request, authorization: str | None, roles: tuple[st
     if isinstance(principal, JSONResponse):
         return principal
     if principal["role"] not in roles:
-        return _error(403, "forbidden", "This action is not allowed for this session.", request)
+        return insufficient_scope(request, "This action is not allowed for this token.")
     return principal
 
 
 def _ensure_not_error(principal: dict | JSONResponse):
     return isinstance(principal, JSONResponse)
+
+
+# D18: merchant tokens see the same profiles as the demo and count in the same per-token action limit.
+LIMITED_ROLES = ("demo", "merchant")
+
+
+def profile_role(principal: dict) -> str:
+    """Role used for profile visibility: merchant tokens see what the demo sees."""
+    return "demo" if principal["role"] in LIMITED_ROLES else principal["role"]
 
 
 OPERATOR_FORBIDDEN = "Operators and services act only on the merchant of a handoff case, never on their own."
@@ -318,7 +333,7 @@ OPERATOR_FORBIDDEN = "Operators and services act only on the merchant of a hando
 def operator_forbidden(request: Request, principal: dict) -> JSONResponse | None:
     """Operators and services have no merchant of their own: attendance routes refuse them (spec v0.7.0)."""
     if principal["role"] in ("operator", "service"):
-        return _error(403, "forbidden", OPERATOR_FORBIDDEN, request)
+        return insufficient_scope(request, OPERATOR_FORBIDDEN)
     return None
 
 
@@ -345,11 +360,23 @@ TOKEN_FORM = {
 }
 
 
-def _token_error(request: Request, status: int, code: str, message: str) -> JSONResponse:
-    response = _error(status, code, message, request, headers={"Cache-Control": "no-store", "Pragma": "no-cache"})
-    if code == "invalid_client":
-        response.headers["WWW-Authenticate"] = 'Basic realm="merchant-assistant"'
-    return response
+NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache"}
+
+
+class OAuthError(BaseModel):
+    """RFC 6749 §5.2 error body, used only by the token endpoint."""
+
+    error: Literal["invalid_request", "invalid_client", "invalid_grant", "unsupported_grant_type", "rate_limited"]
+    error_description: str
+
+
+def _token_error(status: int, code: str, description: str, headers: dict[str, str] | None = None) -> JSONResponse:
+    extra = {"WWW-Authenticate": 'Basic realm="merchant-assistant"'} if code == "invalid_client" else {}
+    return JSONResponse(
+        status_code=status,
+        content={"error": code, "error_description": description},
+        headers=NO_STORE | extra | (headers or {}),
+    )
 
 
 def _basic_client(request: Request) -> tuple[str, str] | None:
@@ -367,7 +394,7 @@ def _basic_client(request: Request) -> tuple[str, str] | None:
 @router.post(
     "/auth/token",
     openapi_extra=TOKEN_FORM,
-    responses={400: {"model": ErrorBody}, 401: {"model": ErrorBody}},
+    responses={400: {"model": OAuthError}, 401: {"model": OAuthError}, 429: {"model": OAuthError}},
     tags=["auth"],
 )
 async def auth_token(request: Request):
@@ -377,34 +404,44 @@ async def auth_token(request: Request):
     body = (await request.body()).decode("utf-8", errors="replace")
     form = {key: values[0] for key, values in parse_qs(body, keep_blank_values=True).items()}
     grant = form.get("grant_type", "")
+    if grant == "password":
+        client_id = form.get("client_id") or DEFAULT_PUBLIC_CLIENT
+        subject, secret = form.get("username", ""), form.get("password", "")
+        account = f"user:{subject}"
+    elif grant == "client_credentials":
+        client_id, secret = _basic_client(request) or (form.get("client_id", ""), form.get("client_secret", ""))
+        subject, account = client_id, f"client:{client_id}"
+    elif not grant:
+        return _token_error(400, "invalid_request", "The request is missing a required parameter.")
+    else:
+        return _token_error(400, "unsupported_grant_type", "Use password or client_credentials.")
+    if not subject or not secret:
+        return _token_error(400, "invalid_request", "The request is missing a required parameter.")
+    if grant == "password" and client_id not in PUBLIC_CLIENTS:
+        return _token_error(401, "invalid_client", "Client authentication failed.")
+    settings: Settings = request.app.state.settings
     identity = request.app.state.identity
     conn = _db(request)
     try:
-        if grant == "password":
-            client_id = form.get("client_id") or DEFAULT_PUBLIC_CLIENT
-            if client_id not in PUBLIC_CLIENTS:
-                return _token_error(request, 401, "invalid_client", "Client authentication failed.")
-            username, password = form.get("username", ""), form.get("password", "")
-            principal = identity.authenticate(conn, f"user:{username}", password) if username and password else None
-            if principal is None:
-                return _token_error(request, 401, "invalid_grant", "Invalid username or password.")
-        elif grant == "client_credentials":
-            client_id, secret = _basic_client(request) or (form.get("client_id", ""), form.get("client_secret", ""))
-            principal = (
-                identity.authenticate(conn, f"client:{client_id}", secret)
-                if client_id in SERVICE_CLIENTS and secret
-                else None
+        # D19: attempts per account and client address, counted before any password hashing.
+        address = request.client.host if request.client else "unknown"
+        retry_after = hit_rate_limit(conn, f"auth:{account}@{address}", settings.auth_attempts_per_minute)
+        if retry_after is not None:
+            return _token_error(
+                429, "rate_limited", "Too many attempts; retry later.", headers={"Retry-After": str(retry_after)}
             )
+        if grant == "password":
+            principal = identity.authenticate(conn, account, secret)
             if principal is None:
-                return _token_error(request, 401, "invalid_client", "Client authentication failed.")
+                return _token_error(400, "invalid_grant", "Invalid username or password.")
         else:
-            return _token_error(request, 400, "unsupported_grant_type", "Use password or client_credentials.")
+            principal = identity.authenticate(conn, account, secret) if client_id in SERVICE_CLIENTS else None
+            if principal is None:
+                return _token_error(401, "invalid_client", "Client authentication failed.")
         remember_principal(conn, principal)
     finally:
         conn.close()
-    return JSONResponse(
-        identity.issue(principal, client_id), headers={"Cache-Control": "no-store", "Pragma": "no-cache"}
-    )
+    return JSONResponse(identity.issue(principal, client_id), headers=NO_STORE)
 
 
 @router.post("/auth/revoke", tags=["auth"], responses={401: {"model": ErrorBody}})
@@ -461,7 +498,7 @@ def profiles(request: Request, principal=AUTH):
         return principal
     conn = _db(request)
     try:
-        return {"profiles": list_profiles(conn, role=principal["role"])}
+        return {"profiles": list_profiles(conn, role=profile_role(principal))}
     finally:
         conn.close()
 
@@ -804,7 +841,7 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
 
     try:
         bootstrap_profiles(conn)
-        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=principal["role"])
+        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=profile_role(principal))
         if profile is None:
             return _error(404, "not_found", "Profile not found.", request)
         guarded = check_input(payload.message)
@@ -896,7 +933,7 @@ def consume_demo_messages(conn: sqlite3.Connection, principal: dict, count: int,
     evaluations) against the demo limit of one access token; False when it would be exceeded. Refusals that make no
     model call are not counted: callers consume only after their validations, and refund when the budget refuses
     first. From v0.7.0 the counter row (`api_sessions`) is keyed by the token's `jti`."""
-    if principal["role"] != "demo":
+    if principal["role"] not in LIMITED_ROLES:
         return True
     conn.execute(
         "INSERT OR IGNORE INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at,revoked_at) "
@@ -918,7 +955,7 @@ def consume_demo_messages(conn: sqlite3.Connection, principal: dict, count: int,
 
 def refund_demo_messages(conn: sqlite3.Connection, principal: dict, count: int) -> None:
     """Give back actions counted for a request that ended without any model call (for example a budget refusal)."""
-    if principal["role"] == "demo" and count:
+    if principal["role"] in LIMITED_ROLES and count:
         conn.execute(
             "UPDATE api_sessions SET message_count=MAX(message_count-?,0) WHERE session_id=?",
             (count, principal["session_id"]),
@@ -1100,7 +1137,7 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
     settings: Settings = request.app.state.settings
     try:
         bootstrap_profiles(conn)
-        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=principal["role"])
+        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=profile_role(principal))
         if profile is None:
             return _error(404, "not_found", "Profile not found.", request)
         customer_id = principal["customer_id"]
@@ -1366,7 +1403,7 @@ def conversation(conversation_id: str, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
     if not principal["customer_id"]:
-        return _error(403, "forbidden", "Conversation is outside this session scope.", request)
+        return insufficient_scope(request, "Conversation is outside this token's scope.")
     conn = _db(request)
     try:
         row = conn.execute(
