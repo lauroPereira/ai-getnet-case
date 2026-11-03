@@ -38,10 +38,20 @@ Um sistema de ticketing próprio, separado do assistente, recebe o caso encaminh
 
 ## Validação
 
-A preencher pelo Developer.
+Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-ticketing`, base `fe9d12b`. Detalhes na [passagem](../evidence/v070-developer-time-b.md).
+
+- Pacote `src/merchant_assistant/ticketing/` (`config`, `signing`, `store`, `auth`, `outbox`, `service`), com banco SQLite próprio em `TICKETING_DB_PATH`. Testes novos: `tests/unit/test_ticketing_units.py` (5) e `tests/integration/test_ticketing_service.py` (26 com parâmetros). Os testes usam um assistente falso que segue o contrato: chave RSA gerada no teste, JWKS, `client_credentials` e `POST /v1/integrations/ticketing/events`, que verifica assinatura, token e escopo `handoff:integrate`.
+- CA-47: `test_full_ticket_cycle_with_signed_events_and_service_token` cobre `handoff.created` → `new`, assumir → `open`, `reply` → `pending` com `conversation.replied` recebido durante a própria ação, resolver → `solved` e `handoff.closed` registrado. No histórico, as transições são `new`, `new→open`, `open→pending`, `pending→solved`; há 3 entregas recebidas e 3 enviadas, e um único token de serviço foi emitido.
+- CA-48: mesma `idempotency_key` devolve o registro (`replayed: true`) e o assistente recebe um só `ticket.action`. Os erros do assistente `409 claimed_by_other`, `409 already_resumed` e `422 unknown_operator` voltam com o mesmo código e corpo, e o ticket não muda.
+- Recusas: assinatura errada ou `t` a ±330 s → `401 invalid_signature`, sem efeito; `id` repetido → `200 duplicate`. JWT sem `ticketing` na audiência, de outro emissor, expirado, adulterado, de chave estranha ou com `typ` errado → `401`; sem `handoff:operate` ou de lojista → `403`; sem token em qualquer rota de operador → `401`. Um `kid` novo recarrega o JWKS.
+- Assistente fora do ar: a API devolve `202` com envio pendente e o ticket não muda. As tentativas 2 e 3 vêm depois de 1 s e 2 s e ficam registradas; esgotadas, o envio fica `failed`. Com o assistente de volta, o laço em segundo plano entrega o ato pendente. O token de serviço revogado é renovado uma vez.
+- Arquitetura: `test_ticketing_does_not_import_the_assistant` passa.
+- `docker compose config --quiet` terminou com código 0, sem `.env` no worktree. Não subi o Docker.
+- Suíte estrita: `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-b-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` terminou com código 0 e 380 testes aprovados; ruff limpo.
+- Nenhuma chamada paga. Não toquei em arquivo do Time A.
 
 ## Status
 
 ```text
-pendente
+Implementada pelo Developer (rodada 1); aguarda revisão independente e as respostas do Supervisor às 3 perguntas da passagem.
 ```
