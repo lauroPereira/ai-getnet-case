@@ -81,3 +81,13 @@ P1-1 resolvido (valor do contrato no compose, `.env.example` sem repetir a chave
 - **Números:** suíte estrita (`--basetemp .pytest_cache/v070-b-review-r3-strict`) **394 passed** (eram 393), nenhum pulado, Ruff limpo, código 0.
 - **Mutação:** `broad-except-off` (sobrevivia na rodada 2) agora morta por `test_unexpected_error_while_sending_is_a_recorded_failure`; `local-errors-off` morta. O `RuntimeError` do transporte cai no `except Exception`: `502 delivery_error`, entrega `rejected` com 1 tentativa, sem reenvio, próximo ato funciona.
 - **P3 da rodada 2:** P3-1 e P3-2 atendidos; P3-3 e P3-4 seguem registrados.
+
+## Tarefa 66b, rodada 4 (D26) — apto para QA (mantido)
+
+- **Papel:** revalidação de escopo pelo mesmo Reviewer, sem a passagem do Developer. Contrato: D26 em `bb1659c:docs/specs/identidade-hitl-v070.md`.
+- **Candidato:** HEAD `2c727f3`; diff `5199b61..2c727f3` só em `tests/integration/test_ticketing_service.py` (+53) e na passagem; `git diff 5199b61..2c727f3 -- src/ pyproject.toml docker-compose.yml .env.example` vazio. HEAD e árvore iguais antes e depois.
+- **Números:** suíte estrita (`--basetemp .pytest_cache/v070-b-review-r4-strict`) **396 passed** (eram 394), Ruff limpo, código 0.
+- **Sonda própria:** 2 falhas seguidas de sucesso em `POST /assign` com `500`, `502`, `503 resume_failed`, `504` e `429`: primeira resposta `202` com entrega `pending` e ticket `new` em "envio pendente"; tentativas `pending` → `delivered`; os 3 POSTs com o mesmo `X-Webhook-Id` (= `id` do corpo); ticket termina `open`, entrega `delivered`.
+- **Mutação:** 4/4 mortas (`503-is-final`, `exhausted-rejected`, `no-retry-failed`, `retry-new-event-id`).
+- **Re-derivado:** `_send` levanta `TransientError` para `>= 500` e `429`; `_retry_later` repete a mesma linha (mesmo `event_id`, mesmo corpo, mesma `idempotency_key`); 3 tentativas esgotadas → `failed` (não `rejected`); `retry_failed` recoloca o mesmo `event_id`; o assistente recebe um único evento aceito.
+- **Observação (não é defeito):** `assign` e `solve` não têm `idempotency_key`; após `failed`, novo clique cria evento com `id` novo (fora do escopo da D26).
