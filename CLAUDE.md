@@ -29,7 +29,7 @@ Só então aplique alterações, commits e, quando solicitado, push e pull reque
 - Ao ser chamado como Supervisor, use skills/supervisor/SKILL.md e docs/wiki/agents/supervisor.md: identifique criação, preparação, atualização ou continuidade, sem exigir tecnologia já escolhida.
 - O protocolo em docs/wiki/agents/README.md organiza Supervisor, Developer, Reviewer e QA. A sessão principal coordena; delegação depende de ferramenta e autorização disponíveis, e revisão independente exige contexto novo.
 - Antes de commit, merge ou tag, confira a identidade do Git contra a definida para o projeto; se divergir, pare e pergunte. Integre por merge local quando a conta da interface web usar outra identidade (detalhes em AGENTS.md, "Identidade e integração").
-- As skills dos papéis são portáteis; este template não instala configurações nativas de subagentes. Descrições de papel não concedem permissões nem substituem a política de branches.
+- As skills dos papéis são portáteis. Desde a etapa 0 da evolução pós-feedback (2026-11-03), Developer, Reviewer e QA também existem como subagentes nativos em `.claude/agents/`, com modelo, esforço e ferramentas fixados; a autorização por versão de AGENTS.md diz o que o ciclo faz sozinho e o que espera o responsável. Descrições de papel não concedem permissões nem substituem a política de branches.
 - Leia a documentação pertinente em docs/ antes de modificar código.
 - Não edite, mova, renomeie ou apague arquivos em docs/raw/.
 - Use os scripts determinísticos de tools/scripts/ para validações repetíveis. Para projetos com Python, execute python tools/scripts/lint_and_tests.py quando aplicável.

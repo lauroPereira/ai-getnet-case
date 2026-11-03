@@ -51,5 +51,11 @@
   "enabled_optional_components": [
     "sdd"
   ],
-  "update_policy": "explicit-review-required"
+  "update_policy": "explicit-review-required",
+  "locally_modified_managed_paths": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "tools/scripts/validate-agent-flow.ps1"
+  ],
+  "local_modifications_note": "2026-11-03, etapa 0 da evolução pós-feedback: autorização por versão e agentes nativos (AGENTS.md, CLAUDE.md); default de -ProjectRoot no PowerShell 5.1 (validate-agent-flow.ps1). project-update deve preservar."
 }

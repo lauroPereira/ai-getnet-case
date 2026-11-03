@@ -1,11 +1,16 @@
 [CmdletBinding()]
 param(
-    [string]$ProjectRoot = (Join-Path $PSScriptRoot "..\.."),
+    [string]$ProjectRoot = "",
     [switch]$SkipGeneratedSkills
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+# Local change (2026-11-03): in Windows PowerShell 5.1 $PSScriptRoot is empty inside param defaults.
+if (-not $ProjectRoot) {
+    $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+    $ProjectRoot = Join-Path $scriptDir "..\.."
+}
 $root = [System.IO.Path]::GetFullPath($ProjectRoot).TrimEnd('\', '/')
 $rootPrefix = $root + [System.IO.Path]::DirectorySeparatorChar
 $agentRoot = Join-Path $root "docs\wiki\agents"
