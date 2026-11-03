@@ -66,3 +66,46 @@ Comprovados: ≥ 20 casos, ≥ 50% pt, rotas cobertas, 4 difíceis; valores e fo
 ### Próxima ação
 
 Developer (Time B): corrigir P1-1 e P2-1 a P2-4 e decidir os P3; re-lacrar (novo SHA-256, commit citando o hash), atualizar a derivação e registrar no re-lacre que `git log 07ca28e..main -- prompts/` não tem ajuste de prompt da v0.8.0 (re-lacrar continua legítimo pelo RF-92). O mesmo Reviewer revê na rodada 2 os casos alterados, o teste e o novo lacre.
+
+## Tarefa 72a, rodada 2 — correções necessárias
+
+- **Papel:** mesmo Reviewer, mesmo regime frio; não leu `v080-developer.md` nem a Validação nova; leu o diff da derivação (parte do candidato). Independente.
+- **Candidato:** HEAD `a65a43168363f4eac7feb1cd7aeed87a17ce7023`, árvore limpa; `git diff 2c0fc0f..a65a431` toca só os 6 arquivos da tarefa; contra a rodada 1, `id`, `split`, `message`, `language`, `expected_status`, `must_include_amounts` e `expect_sources` iguais nos 25 casos (mudaram rótulos de 14). Hashes iguais antes e depois: jsonl `a3e7342e…099653d` (confere com o `.sha256` e com o blob), sha256 `0d09b5b4…6f6f`, teste `a38b7c70…e91a`, derivação `aeffbf76…615e`. `git log --all 07ca28e.. -- prompts/` vazio.
+- **Parecer:** correções necessárias — os 5 achados da rodada 1 corrigidos; 1 P2 novo; 3 P3.
+
+### Evidência
+
+1. Suíte estrita (`--basetemp .pytest_cache/v080-b-review-r2-strict`): **357 passed**, Ruff sem achados, código 0.
+2. Sondas de rótulos contra o `_checks` real (34 respostas): as 15 da rodada 1 com o resultado certo; as 6 canônicas corretas passam.
+3. Lacre (14 mutações em cópias isoladas): inalterado 8 passed; byte alterado, linha extra, valor fora da seed, valor de conhecimento errado, valor sem derivação, trecho de página alterado, mensagem copiada e pt < 50% falham; JSONL em CRLF e checkout CRLF simulado com todos os arquivos de texto passam; CRLF com byte alterado falha.
+
+### Rodada 1
+
+P1-1 corrigido (`HO-`, `SIM-` reprova); P2-1 corrigido (as 5 erradas reprovam); P2-2 corrigido (negativa de acesso e proibições; os dois vazamentos reprovam); P2-3 corrigido (as 3 corretas passam); P2-4 corrigido (normalização antes da variante; checkout CRLF passa); P3-1 atendido (derivação por caso e por página com teste); P3-2 registrado; P3-3 atendido; P3-4 atendido.
+
+### P2-5 — `must_not_assert` reprova respostas corretas que negam a afirmação proibida
+
+`_assertion_is_present` (`runner.py:63-78`) só desconta qualificadores fixos ("não consigo verificar se", "can't say"…); lead-ins de negação comuns ("não houve", "não foi", "não há confirmação de que", "não posso afirmar que", "não tenho acesso para informar se", "does not mean", "can't promise", "once … it can") não estão nele, e as frases proibidas novas são as que uma resposta cautelosa nega. Cada caso vira falha crítica (`forbidden_assertion_or_promise`, `runner.py:183`), justamente na postura pedida pelos procedimentos demo 03 e 07.
+
+| Linha | Caso | Resposta correta reprovada |
+| --- | --- | --- |
+| 14 | PRICE-LINK-CONSISTENT | "…é a mesma prevista no plano, então não houve cobrança a mais." (também falta "a mesma" no grupo) |
+| 14 | PRICE-LINK-CONSISTENT | "Sim, a taxa de R$ 15,75 bate com o seu plano; não foi cobrado a mais." |
+| 15 | PRICE-CREDIT-CONDITIONS | "…this does not mean you were overcharged, and an analysis is needed." |
+| 15 | PRICE-CREDIT-CONDITIONS | "…I can't promise you will be refunded before an analysis." |
+| 16 | CANCELLATION-REFUND | "…ainda não há confirmação de que o valor foi devolvido…" |
+| 16 | CANCELLATION-REFUND | "O pedido está pendente; não posso afirmar que o dinheiro foi devolvido." |
+| 17 | ENABLEMENT-MASTERCARD-DEVICE | "…once the terminal is updated it can accept Mastercard cards." |
+| 18 | FOREIGN-DEVICE | "…não tenho acesso para informar se ela está ligada." |
+
+Correção (só nos dados): manter em `must_not_assert` apenas formas que a negação correta não contém (retirar ou ancorar no afirmativo "cobrança a mais", "cobrado a mais", "you were overcharged", "you will be refunded", "valor foi devolvido", "dinheiro foi devolvido", "can accept mastercard", "ela está ligada"); acrescentar "a mesma"/"mesma taxa" ao grupo do caso 14; antes de re-lacrar, rodar uma bateria de respostas corretas com esses lead-ins de negação.
+
+### P3
+
+- **P3-5:** termos amplos ainda aprovam respostas erradas: linha 4 "today" aceita "within 30 days, starting today"; linha 17 "not yet" aceita "accepts Mastercard; it's just not yet shown on the receipt"; linha 16 "O cancelamento foi aprovado e o cliente já recebeu o estorno; o status é solicitado…" passa. Estreitar "today" e "not yet" se for revisar o P2-5.
+- **P3-6:** mutação de valor de outro caso (14806 no caso do link) passa; vínculo por caso, não por registro; aceitável com a tabela da derivação.
+- **P3-2:** sobreposição de cenário com os dev segue registrada.
+
+### Próxima ação
+
+Developer corrige P2-5 (casos 14 a 18) e decide P3-5; re-lacra, atualiza a derivação e registra de novo `prompts/` sem commits. Rodada 3 do Reviewer só sobre esses casos e o lacre.
