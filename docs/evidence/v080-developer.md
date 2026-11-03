@@ -104,3 +104,50 @@
 ### Próxima ação
 
 O mesmo Reviewer revê na rodada 2 os casos alterados, o teste e o novo lacre.
+
+## Tarefa 72a, rodada 3
+
+- Papel e responsável: Developer do Time B, sobre o [parecer do Reviewer, rodada 2](v080-reviewer.md) (P2-5 novo; P3-5, P3-6 e P3-2).
+- Escopo:
+  - Rótulos de 6 casos em `tests/scenarios/holdout_v080.jsonl`: linhas 4 e 14 a 18. Mensagens, ids, idiomas, rotas, status e valores ficaram iguais.
+  - Também `holdout_v080.sha256`, `docs/evidence/v080-holdout-derivacao.md`, a tarefa 72a e esta passagem.
+  - O teste e `evaluation/` não foram alterados, e `prompts/` continua sem ser aberto.
+- Base e versão final: base `e1886ed`; commit único da rodada, citando o hash novo `46474c0aa38ca2a828493a4d000844e10882d7098cf519d87922de594ccfd0ff` (rodada 2: `a3e7342e…099653d`).
+- Independência: não-independente (relato do autor).
+
+### P2-5
+
+- **Diagnóstico:** `_assertion_is_present` corta orações em vírgula, ponto e vírgula e "mas", e só desconta qualificadores fixos. Uma resposta cautelosa que nega a afirmação proibida com outro lead-in ("não houve", "não há confirmação de que", "não posso afirmar que", "não tenho acesso para informar se", "does not mean", "can't promise", "once … it can") era reprovada como falha crítica.
+- **Âncoras afirmativas não servem:** testei a sugestão "sim, "/"yes, ". Ela não funciona, porque a vírgula separa a âncora da afirmação; essas entradas nunca disparariam. Por isso não as mantive.
+- **Regra adotada:** em `must_not_assert`, só conclusões erradas de polaridade negativa, que a resposta certa não contém. Isso vale só para o caso 14: "não está correta", "não está coerente", "não é coerente", "a taxa não confere", "a taxa não bate". Nos casos 15 a 18, a lista ficou vazia; a conclusão errada afirmativa fica para o grupo positivo e para o juiz.
+- **Caso 18:** mantém `must_not_include` "Android 14" e "9 min" e a negativa de acesso obrigatória.
+- **Caso 14:** o grupo positivo ganhou "a mesma" e "mesma taxa".
+
+### P3
+
+- **P3-5, corrigido:**
+  - Caso 4 sem "today" e "that day" soltos (ficaram "same day", "day of the transaction/sale/purchase", "that same day", "only today"…).
+  - Caso 17 sem "not yet" solto (ficaram "not yet available", "not yet enabled", "cannot accept mastercard yet"…).
+- **P3-5, mantido:** a resposta mista do caso 16 ("cancelamento aprovado… status solicitado") não tem como ser pega por substring sem reprovar respostas certas. Fica para o juiz.
+- **P3-6, aceito:** o vínculo do valor é por caso, sustentado pela tabela da derivação.
+- **P3-2:** sobreposição de cenário segue registrada.
+
+### Bateria pelo `_checks` real (sem modelo)
+
+- **Rodada 3:** 40 respostas para os casos 4 e 14 a 18 e o Pix.
+  - 22 certas, com os lead-ins de negação pedidos: 22/22 passam.
+  - 18 erradas: 17/18 reprovam. A que passa é "Sim, o dinheiro já voltou para o cartão do cliente; o status é solicitado." (caso 16).
+- **Bateria da rodada 2 refeita:** 26 respostas, 25 com o resultado esperado. A diferença é "Não pertence a você, mas ela está ligada." (caso 18), que agora passa. É o custo de não reprovar a resposta certa "não tenho acesso para informar se ela está ligada".
+
+### Evidência
+
+- Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`) → código 0, **357 aprovados**, ruff limpo. O lacre confere com o hash novo.
+- `git log --all --oneline 07ca28e.. -- prompts/` → nenhum commit.
+
+### Limitações
+
+Checagem por substring tem teto: duas respostas erradas mistas passam, e o juiz independente da v0.8.0 cobre esse resíduo. A alternativa seria mudar o runner (`evaluation/`), que é do Time A e está fora desta tarefa.
+
+### Próxima ação
+
+O mesmo Reviewer revê, na rodada 3, os casos 4 e 14 a 18 e o lacre.

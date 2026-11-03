@@ -54,8 +54,16 @@ Developer, rodada 2 (2026-11-03), sobre o [parecer do Reviewer](../evidence/v080
 - Re-lacre: SHA-256 `a3e7342ea15854356c5378b7ba00bb6c6cd58319d7d610bceb3cd2a5e099653d`. `git log 07ca28e..main -- prompts/` e o mesmo em todas as branches: nenhum commit.
 - Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`): código 0, 357 aprovados, ruff limpo.
 
+Developer, rodada 3 (2026-11-03), sobre o [parecer da rodada 2](../evidence/v080-reviewer.md) (base `e1886ed`):
+
+- P2-5: `must_not_assert` dos casos 15 a 18 esvaziado. O caso 14 ficou só com conclusões erradas de polaridade negativa ("não está correta", "a taxa não confere"…), que a resposta certa não contém. Âncoras "sim, "/"yes, " não funcionam: o runner corta orações na vírgula. O caso 14 ganhou "a mesma"/"mesma taxa".
+- P3-5: sem "today" solto (caso 4) e sem "not yet" solto (caso 17).
+- Bateria pelo `_checks` real: 40 respostas. Certas com lead-ins de negação: 22/22 passam. Erradas: 17/18 reprovam. Resíduo: uma resposta mista do caso 16, que fica para o juiz.
+- Re-lacre: SHA-256 `46474c0aa38ca2a828493a4d000844e10882d7098cf519d87922de594ccfd0ff`. `git log --all --oneline 07ca28e.. -- prompts/`: nenhum commit. `evaluation/` não alterado.
+- Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`): código 0, 357 aprovados.
+
 ## Status
 
 ```text
-Rodada 2 implementada pelo Developer; aguarda a revisão da rodada 2.
+Rodada 3 implementada pelo Developer; aguarda a revisão da rodada 3.
 ```
