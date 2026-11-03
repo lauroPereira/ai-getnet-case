@@ -124,7 +124,7 @@ Cinco entregas curtas e um fechamento, cada uma com spec complementar curta, tar
 - **RF-89** Rubrica `judge` v3 com quatro critérios (groundedness, correção factual, relevância, utilidade) em escala 1–5, cada um com justificativa curta, e um veredito crítico booleano para afirmação sem suporte; o juiz recebe o conteúdo das evidências (trechos e resultados de ferramenta), não só os títulos.
 - **RF-90** Juiz independente: provedor ou modelo diferente do perfil avaliado, registrado em cada avaliação; a campanha roda cada caso três vezes e reporta média, dispersão e concordância.
 - **RF-91** Calibração humana: o responsável avalia uma amostra (mínimo 24 respostas) com a mesma rubrica; o relatório traz a concordância humano × juiz por critério.
-- **RF-92** Holdout de respostas: conjunto novo (mínimo 20 casos, metade em português), escrito depois do congelamento dos prompts e nunca usado em ajuste; resultados reportados separados dos casos de desenvolvimento.
+- **RF-92** Holdout de respostas: conjunto novo (mínimo 20 casos, metade em português), escrito por quem não ajusta prompts e lacrado por hash antes de qualquer ajuste de prompt da v0.8.0; nunca usado em ajuste; resultados reportados separados dos casos de desenvolvimento.
 - **RF-93** Jornadas de negócio: as quatro falhas de redação e a pergunta de condições em inglês passam na rubrica, por ajuste de prompt ou de rótulo justificado caso a caso.
 
 ### Retrieval (v0.9.0)
@@ -193,7 +193,7 @@ Comparação com o fluxo do `ampeli-sdd` (mesmo template, evoluído entre setemb
 
 Não se aplica: GitHub Apps por papel (`as-app.py`), rulesets da `main` (repositório de uma pessoa, merge local), pontos Fibonacci e planning poker (custo de cerimônia sem ganho neste prazo).
 
-**Estimativa recalibrada.** Com a régua do Ampeli (40 pontos por noite de fluxo contínuo em Opus xhigh; a v0.6.0 deste case saiu em um dia com três passagens) e com os itens acima aprovados: v0.7.0 em uma noite mais uma hora de revisão do responsável; v0.8.0 em uma noite mais uma hora de calibração; v0.9.0 e v0.10.0 em meia noite cada; v1.0.0 em meio dia mais o vídeo. **Cerca de quatro noites de fluxo e um dia do responsável**, contra os 6 a 9 dias da versão 0.1. Sem a autorização por versão, cada noite vira dois dias.
+**Estimativa recalibrada.** Com a régua do Ampeli (40 pontos por noite de fluxo contínuo em Opus xhigh; a v0.6.0 deste case saiu em um dia com três passagens) e com os itens acima aprovados: v0.7.0 em uma noite mais uma hora de revisão do responsável; v0.8.0 em uma noite mais uma hora de calibração; v0.9.0 e v0.10.0 em meia noite cada; v1.0.0 em meio dia mais o vídeo. **Cerca de quatro noites de fluxo e um dia do responsável**, contra os 6 a 9 dias da versão 0.1. Com dois times (decisão do responsável em 2026-11-03, detalhada no plano), **cerca de três noites**. Sem a autorização por versão, cada noite vira dois dias.
 
 ## Riscos
 
