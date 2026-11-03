@@ -92,3 +92,45 @@ Developer corrige P1-1 e P2-1 a P2-3 com teste e avalia os P3; o mesmo Reviewer 
 ### Próxima ação
 
 Developer corrige P2-1 e P2-2 com teste e, por decisão do Supervisor, P3-1 a P3-4 (D19 e D22 na spec); P3-5 fica com a 65 e como limitação. Nova rodada do mesmo Reviewer sobre o novo HEAD, com mutante para a CLI com retomada.
+
+## Tarefa 65, rodada 1 — correções necessárias
+
+- **Papel:** mesmo Reviewer do Time A, contexto frio; não leu `v070-developer.md` nem Validação e Status da 65. Independente.
+- **Critérios:** tarefa 65; spec no candidato (D4, D6, D8, D14, D15, "Mensagens e conversa", risco de serialização); plano (decisões 4 a 6); ADR 0018; pedidos do Supervisor (falha da retomada recuperável, casos pré-0009 recusados, texto sem simulação).
+- **Candidato:** `review-a` destacado em `868a07f` (diff `0dc1ea5..868a07f`), base `f2a6b60`; árvore limpa; sha256 de `graph.py`, `handoffs.py`, `agents/*.py`, `conversations.py`, `cli.py`, `migrations.py` e `prompts/*.md` iguais antes e depois. langgraph 1.2.18, langgraph-checkpoint 4.3.1, langgraph-checkpoint-sqlite 3.1.3.
+- **Parecer:** correções necessárias — 0 P1, 3 P2 (lacunas de teste em isolamento e dinheiro; auditoria apagada na subida, anterior à 65), 4 P3. Comportamento central correto em tudo o que foi executado.
+
+### Comandos e números
+
+- Suíte estrita (`PYTHONPATH=src`): **437 passed**, Ruff e skills ok, código 0.
+- Sondas próprias: fluxo em processo 20/20; reinício e queda reais em processos novos com msgpack estrito 8/8; falhas injetadas 7/7; entrega sem consumir o limite 1/1.
+- Mutação manual (cópia de `868a07f`): **16/20 mortos** (reject pulando o support, instrução ignorada, sem suspensão, suspensão em todo turno, D8 desligado, entrega sem marcar, turno sem `via=operator`, retomada como lojista (D4), `via_operator` ignorado nos estados, sem nova tentativa no replay, pendente vencida nunca retentada, falha não registrada, valor do resume ignorado, texto de simulação, `thread_id` = conversa, `not_resumable` removido). Sobreviveram: R07 (turno regravado a cada tentativa), R16 (texto do operador fora da evidência da guarda), R19 (thread interrompida no meio não continua), R20 (turno pendente entregue a qualquer conversa).
+
+### Re-derivado
+
+1. Checkpoint só no encaminhamento: três mensagens comuns não criam `checkpoints.sqlite3` nem constroem o grafo de revisão; o encaminhamento cria o checkpoint (thread = `request_id`, parada em `human_review` com payload `case_id`, `protocol`, `summary`, `pending_question`, `draft_reply`); texto sem simulação; checkpoint (inclusive `-wal`) sem cartão nem CPF crus nem `RunContext`/`TraceRecorder`.
+2. `reply` com "R$ 1.234,56": 200, `answered`, caso `awaiting_customer`, `resume_status=done`, 1 chamada a modelo; turno `via=operator`, `operator_action=reply`, protocolo; valor e data exatos.
+3. D8: próxima mensagem `route=human_reply`, `via=operator`, **0 chamadas a modelo**, entrega única; pelo `/v1/messages` também sem modelo e sem consumir o limite; `/ready` com `pending_handoffs` e `checkpoints`.
+4. Mensagem nova com o caso aberto não gera `human_reply`, mantém `handoff`, não cria segunda thread; segunda ação `409 already_resumed`, um turno só.
+5. Lojista B: 404 em `/v1/conversations` e na rota de demo; não recebe o turno de A nem na própria conversa já aberta; 404 ao postar na conversa de A.
+6. Reinício real (subprocessos, `LANGGRAPH_STRICT_MSGPACK=true`): processo 1 encaminha; processo 2 faz `reject` e morre (`os._exit(3)`) dentro da Personality depois do commit da ação (caso `rejected`, `pending`, visível); processo 3 com a mesma chave em < 5 min → `replayed`, sem retomada dupla; processo 4 com a retomada vencida continua a thread sem repetir o Support e termina `done`; 1 turno de operador, nenhum caso novo; trace `human_review`, `support`, `get_device_status` (1×), `personality`, `output_guard`.
+7. Falha injetada → `503 resume_failed`, fila `resume_status=failed` com erro; outra chave 409; mesma chave retoma até `done` com um turno; replay depois de `done` não retoma; checkpoint apagado → 503 `checkpoint_missing` visível; caso sem `thread_id` → `409 not_resumable` sem consumir nada.
+8. D4 na auditoria: coberto pelo teste do candidato e confirmado pela mutação R09.
+9. `prompts/escalation.v2.md` e `prompts/personality.v4.md` como arquivos novos; versões anteriores intactas.
+
+### P2
+
+- **P2-1 — cada subida do container apaga a auditoria:** `docker/entrypoint.sh:4` roda `bootstrap` → `seed` (`cli.py:154`), que apaga `SYNTHETIC_TABLES` (`data/seed.py:66-67`), lista que inclui `audit_events` (`data/db.py:16`). Anterior à 65 (v0.3.0), mas na v0.7.0 a auditoria é prova de segurança (CA-46, D23) e o QA reinicia o container entre encaminhar e agir (CA-48). Reprodução: processos sucessivos com `seed` → `SELECT COUNT(*) FROM audit_events` = 0.
+- **P2-2 — sem teste de que o turno do operador não vaza para outra conversa:** o filtro de `pending_operator_turn` (`conversations.py:148`) não é exercitado (R20 sobrevive). Reprodução: B abre conversa, A encaminha, operador responde A, B escreve na própria conversa → candidato `clarify` (correto); mutante → `human_reply` com o texto de A.
+- **P2-3 — sem teste de que valor e data do operador passam pela guarda:** remover a evidência do texto do operador (`personality.py:111`) passa na suíte (R16). Reprodução: `reply` "Seu repasse de R$ 1.234,56 cai em 28/10/2026." intacto no candidato, trocado por "Não consegui concluir a consulta agora…" no mutante.
+
+### P3
+
+- **P3-1:** sem teste de continuar thread interrompida no meio (`graph.py:466`, R19) e da guarda de turno único com falha depois de gravar o turno (`graph.py:473`, R07).
+- **P3-2:** falha ao gravar o checkpoint em `_suspend` (`graph.py:283`) é engolida; o caso entra `open` e só falha quando o operador age, repetidamente.
+- **P3-3:** retomada pendente espera 5 min (`STALE_RESUME`) sem forma de forçar; `pending_handoffs` não conta `answered` com retomada falha; checkpoints nunca podados.
+- **P3-4:** desenho em dois grafos difere da letra da ADR 0018 (alinhar o texto).
+
+### Decisão do Supervisor
+
+P2-1 entra na v0.7.0 (D27: `audit_events` sai das tabelas recriadas pelo `seed`, com teste de que um segundo `seed` preserva a auditoria). P2-2, P2-3 e P3-1 com testes. P3-2: o caso nasce marcado (`resume_status=checkpoint_failed`, visível na fila) quando o checkpoint não grava (D28); caminho sem grafo fica como limitação. P3-3: limitação registrada. P3-4: ADR alinhada no fechamento (D25). Correções pelo Developer do Time A ativo no checkout, depois da 66 (o Developer original encerrou por contexto longo).
