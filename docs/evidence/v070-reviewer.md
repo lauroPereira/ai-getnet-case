@@ -134,3 +134,41 @@ Developer corrige P2-1 e P2-2 com teste e, por decisão do Supervisor, P3-1 a P3
 ### Decisão do Supervisor
 
 P2-1 entra na v0.7.0 (D27: `audit_events` sai das tabelas recriadas pelo `seed`, com teste de que um segundo `seed` preserva a auditoria). P2-2, P2-3 e P3-1 com testes. P3-2: o caso nasce marcado (`resume_status=checkpoint_failed`, visível na fila) quando o checkpoint não grava (D28); caminho sem grafo fica como limitação. P3-3: limitação registrada. P3-4: ADR alinhada no fechamento (D25). Correções pelo Developer do Time A ativo no checkout, depois da 66 (o Developer original encerrou por contexto longo).
+
+## Tarefas 63 e 64, rodada 2 — apto para QA
+
+- **Papel:** mesmo Reviewer do Time A; independente (não leu `v070-developer.md`; critérios: os pareceres das rodadas 1 e a spec do candidato).
+- **Candidato:** `review-a` destacado em `29f08d8` (contém `d612d30`, 63 r2, e `29f08d8`, 64 r2); diff `868a07f..29f08d8`; árvore limpa; sha256 dos 86 arquivos rastreados em `src`, `prompts`, `.env.example` e `docker-compose.yml` iguais antes e depois.
+- **Números:** suíte estrita (`PYTHONPATH=src`) **462 passed**, Ruff e skills ok, código 0; sondas próprias s1–s6 passam; mutação manual **20/23 mortos**.
+
+### Tarefa 63, rodada 2 — apto
+
+| Achado | Situação | Confirmação |
+| --- | --- | --- |
+| P1-1 `.env` vazio derrubava o emissor | Corrigido | `.env.example` copiado como `.env`, `Settings(_env_file=".env")`: chave `None`; `POST /v1/auth/token` 200, JWKS 200, `/messages` com o token 200; validador `_empty_is_unset` (N01 morto) |
+| P2-1 `JWT_ISSUER` do exemplo | Corrigido | Exemplo não define `JWT_ISSUER`; vale o padrão do compose (Docker não executado) |
+| P2-2 MCP só na subida | Corrigido | MCP real por stdio: chamada ok, revogação do `jti` no meio, chamada seguinte `INVALID_TOKEN`; auditoria da recusa (N03 morto) |
+| P2-3 rotas pagas sem limite (D18 ampliada) | Corrigido | Lojista com limite 1: comparação 429 `demo_message_limit_reached`; `router/compare` `[201, 429, 429]`; rate limit em `router/compare`, `comparisons`, `evaluations` (N09, N10 mortos) |
+| P3-1 admin (D20 da época) | Corrigido | Admin em `/messages` 403 "POST /messages accepts only merchant and demo tokens." (N12 morto) |
+| P3-2 leituras (D21) | Corrigido | Operador e serviço 403 em profiles, kb, catalog, scenarios, runs, comparisons e nos POST pagos; lojista e admin 200 (M18b morto) |
+| P3-3, P3-5, P3-7 | Corrigidos | N11 morto; script com senhas e teste; docstring D13 |
+| P3-4 | Corrigido pela D19 | Ver 64 r2 |
+| P3-6 README/CHANGELOG | Pendente por desenho | Supervisor no fechamento |
+
+Mutantes pendentes da rodada 1: M12, M14, M15, M16, M17, M19, M21 mortos; M13 não rodou (equivalente desde a D20); M18 sobreviveu e é equivalente (`operator_forbidden` redundante depois do `READER`, `v1.py:860,1162`); M20 sobreviveu (lacuna de teste; comportamento correto: `limit_reached` auditado com principal).
+
+P3 novos: **P3-A** ligação do `authorize` por chamada na CLI (`cli.py:353`) sem teste (N02 sobreviveu; caminho real verificado); **P3-B** auditoria de `LIMIT_REACHED` (`run.py`) sem teste (M20); **P3-C** `operator_forbidden` redundante nas rotas `READER` (documentar ou remover).
+
+### Tarefa 64, rodada 2 — apto
+
+| Achado | Situação | Confirmação |
+| --- | --- | --- |
+| P2-1 texto de simulação | Corrigido (na 65) | Resposta ao lojista sem "simula" |
+| P2-2 CLI sem retomada | Corrigido | `operator act` em processo separado: 1 chamada à retomada, `resume_status=done`, turno "Pela CLI" com `via=operator`; mutante C01 morto por `test_cli_act_uses_the_single_resume_point` |
+| P3-1 / D23 leituras e recusas auditadas | Corrigido | 7 chamadas → 7 linhas com principal e `handoff:operate` (list, read, `case_not_found`, `invalid_state`, recusas de lojista, admin e claim); N07, N08 mortos |
+| P3-2 / D22 mesma chave, outro texto | Corrigido | `409 idempotency_conflict` sem efeito; diferença só de espaços nas pontas = repetição idêntica (`replayed`); N06 morto |
+| P3-3 / D19 ampliada | Corrigido | Limite 5 por endereço: contas diferentes `[400×5, 429, 429]`, janela seguinte aceita; N05 morto |
+| P3-4 regex | Corrigido | H17 morto por `test_service_validates_the_idempotency_key` |
+| P3-5 | Parcial | Pré-0009 `409 not_resumable` (65); `list_cases` sem paginação (limitação) |
+
+P3 novo: **P3-D** o limite por endereço da D19 conta também logins bem-sucedidos; atrás de um único endereço (proxy ou interface no servidor), mais de 30 logins por minuto somados bloqueiam todos por até 60 s. Aceitável na demo; nota para o QA e a 67.
