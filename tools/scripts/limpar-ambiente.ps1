@@ -3,11 +3,14 @@
 # Uso:
 #   ./tools/scripts/limpar-ambiente.ps1            # só mostra o que faria (padrão)
 #   ./tools/scripts/limpar-ambiente.ps1 -Aplicar   # apaga e encerra
+#   ./tools/scripts/limpar-ambiente.ps1 -Aplicar -SemScratchpad
+#       # pula os scratchpads das sessões: use quando o outro time ainda tem agente rodando
+#       # (regra 8 de "Sequência, dois times e estimativa" em docs/specs/evolucao-pos-feedback-plano.md)
 # Só apaga coisa que se reconstrói sozinha. Não toca em data/runtime/ (ledger primário, banco e índice do
 # desenvolvimento), .pytest_cache/*-qa-control (ledgers das campanhas, que são evidência), _tmp/, .env,
 # volumes do docker-compose, arquivos rastreados pelo Git nem processo que não seja de agente.
 
-param([switch]$Aplicar)
+param([switch]$Aplicar, [switch]$SemScratchpad)
 
 $raiz = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $scratchSessoes = Join-Path $env:LOCALAPPDATA 'Temp\claude'
@@ -64,9 +67,12 @@ foreach ($w in ($lista | Select-Object -Skip 1)) {
 }
 if ($Aplicar) { git -C $raiz worktree prune 2>$null }
 
-# 4. Scratchpads das sessões do Claude deste projeto
-foreach ($s in @(Get-ChildItem -LiteralPath $scratchSessoes -Directory -Filter 'C--workspace-ai-getnet-case*' -ErrorAction SilentlyContinue |
-        ForEach-Object { Get-ChildItem -LiteralPath $_.FullName -Directory -ErrorAction SilentlyContinue | ForEach-Object { Join-Path $_.FullName 'scratchpad' } })) {
+# 4. Scratchpads das sessões do Claude deste projeto (os subagentes dos dois times escrevem neles)
+if ($SemScratchpad) {
+    "  [scratchpad] pulado (-SemScratchpad): outro time ainda pode estar usando"
+}
+foreach ($s in @(if (-not $SemScratchpad) { Get-ChildItem -LiteralPath $scratchSessoes -Directory -Filter 'C--workspace-ai-getnet-case*' -ErrorAction SilentlyContinue |
+        ForEach-Object { Get-ChildItem -LiteralPath $_.FullName -Directory -ErrorAction SilentlyContinue | ForEach-Object { Join-Path $_.FullName 'scratchpad' } } })) {
     if (Test-Path -LiteralPath $s) {
         $mb = Tamanho $s; $total += $mb
         "  [scratchpad] $s  $mb MB"
