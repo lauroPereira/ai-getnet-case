@@ -142,3 +142,31 @@ Erradas que passam hoje: caso 14 "A taxa cobrada de R$ 15,75 não bate com o pla
 ### Próxima ação
 
 Developer aplica P2-6 nos casos 14 a 16 (e, se quiser, P3-7), roda a bateria certas/erradas, re-lacra, atualiza a derivação e registra `prompts/` sem commits. Rodada 4 do Reviewer só sobre esses casos e o lacre.
+
+## Tarefa 72a, rodada 4 — apto para QA
+
+- **Papel:** mesmo Reviewer, regime frio; não leu `v080-developer.md` nem a Validação. Independente.
+- **Candidato:** HEAD `4c12015c797c5d514c010feb4887af117abf844a`, base `a113720`, árvore limpa; diff só nos arquivos da tarefa (teste inalterado `a38b7c70…`); contra `a113720`, só os rótulos dos casos 14, 15, 16 e 18 mudaram. Hashes iguais antes e depois: jsonl `11572812…feff1bac` (confere com o declarado, com o `.sha256` `8b91f82b…406b` e com o blob), derivação `e709d1ea…c918`. Regra do Supervisor para `prompts/`: `git log 07ca28e..codex/v0.8.0-avaliacao -- prompts/` vazio (em todas as refs só `868a07f`, da tarefa 65, na branch da v0.7.0, não ancestral do candidato).
+- **Parecer:** apto para QA — P2-6 corrigido (14, 15, 16), P3-7 aplicado (18); 1 P3 novo (P3-8). Comportamento real do modelo não exercitado.
+
+### Evidência
+
+1. Suíte estrita (`--basetemp .pytest_cache/v080-b-review-r4-strict`): **357 passed**, código 0.
+2. Lacre (14 mutações): inalterado 8 passed; CRLF passa; byte alterado, linha extra, valores fora da seed ou errados, valor sem derivação, trecho de página alterado, mensagem copiada, pt < 50% falham; M13 segue (P3-6 aceito).
+3. Bateria pelo `_checks` real (48 respostas): todos os alvos do P2-6 reprovam (caso 14 por `forbidden_ok`; 15 e 16 por `content_ok`); caso 18 "…Get Tap online em dados móveis" reprova; todas as certas com lead-in de negação passam. Placar: erradas reprovadas 15/18 (resíduos aceitos: casos 4, 17 e o misto do 18); certas aprovadas 25/30 (as 5 no P3-8).
+
+### P3-8 — segundos grupos obrigatórios reprovam certas sem ressalva explícita
+
+| Caso | Certa reprovada | Correção testada em memória | Resultado |
+| --- | --- | --- | --- |
+| 15 | "…the conditions are different; I've flagged it for the team to check." | não acrescentar "check"/"flagged" (reabririam erradas) | fica para o juiz |
+| 15 | "…so the two fees aren't directly comparable." | acrescentar "directly comparable", "not comparable" | certas 5/6, erradas 5/5 |
+| 16 | "…o estorno ao cliente só acontece depois que ele for processado." | acrescentar ao 2º grupo "pendente de processamento", "não volta", "não voltou", "só acontece depois", "só ocorre depois", "após o processamento" | certas 5/5, erradas 4/4 |
+| 16 | "…pendente de processamento; até lá, o valor não volta ao cartão do cliente." | mesma | mesmo |
+| 18 | "A maquininha dev_002_tap01 (uma Get Tap, pelo nome) não pertence ao seu cadastro…" | nenhuma | registro para o juiz |
+
+Resíduos aceitos para o juiz independente: P3-5 (casos 4 e 17), P3-7 (misto do 18), P3-6 (M13), P3-2 (sobreposição com os dev).
+
+### Decisão do Supervisor
+
+Aplicar o P3-8 nos casos 15 (termos de comparabilidade) e 16 (termos de processamento) antes do lacre definitivo, com re-lacre e revisão curta só desses casos (rodada 5).
