@@ -88,6 +88,16 @@ Só então aplique alterações, commits e, quando solicitado, push e pull reque
 - workflow.json é declarativo e não concede permissões. main permanece a base deste template; develop é opção que exige adaptação aprovada no projeto, com o texto pronto em docs/wiki/agents/perfil-develop.md.
 - Não importe autorizações, identidades, tecnologia ou conteúdo real de um projeto de referência.
 
+### Retomada em outra ferramenta ou sessão
+
+- Parta do relatório mais recente em `docs/relatorios/` ("Estado para retomar" e "Falta"). Antes de agir, reconcilie branch, HEAD e `git status` dos dois repositórios e de cada worktree com a tabela do relatório e mostre ao responsável o que confere e o que diverge.
+- Continuidade: a regra "parta da `main`" vale para abrir versão ou trabalho novo. Numa retomada, continue nas branches da versão; sem pull, rebase, reset, `git clean` ou poda de worktree. Preserve não rastreados (`Claude outputs/`, `_tmp/`), worktrees e branches WIP sem autorização para mover ou apagar.
+- Capacidades da ferramenta, verificadas antes do primeiro despacho: subagentes com contexto novo, agendamento, navegador e medição de agentes. Sem subagentes, Reviewer e QA rodam em sessões separadas abertas pelo responsável, com briefing por arquivo. Revisão na mesma sessão é registrada como não-independente e não vale como parecer. Sem agendamento ou medição, registre acompanhamento manual e custo "não medido".
+- Ambiente: confira antes de validar o que o sandbox costuma bloquear: hardlink (`os.link` da guarda de orçamento), leitura de CIM e do log de eventos (`checar-memoria.ps1`), Git nos worktrees fora da pasta e `fsmonitor`. Falha de permissão é **bloqueado**, nunca defeito. Peça acesso ao responsável e nunca enfraqueça uma guarda para contornar.
+- Revisão e testes: o Reviewer lê a tarefa só até "## Validação". Cópias, sondas e mutações ficam fora da raiz do repositório. Cada suíte usa basetemp novo, com `.pytest_cache` já criado. O candidato vai por SHA, com hashes quando houver alteração local. Execução feita com a árvore mudando é descartada, não contada.
+- Migrações: migração nova ou ampliada no meio da versão atualiza a lista "Migrações reservadas" do plano na hora. Ampliar uma migração já aplicada exige runtime e volume novos no QA.
+- Ao interromper: pare o Developer num ponto seguro e ponha o trabalho parcial numa branch WIP própria, não na branch da versão. Registre os pareceres em curso como "parcial". Grave o relatório com a tabela repositório → branch → HEAD → situação e a lista "Falta", com modelo e esforço usados por papel na ferramenta. Faça tudo isso antes de encerrar a sessão.
+
 ### Estrutura SDD (opcional)
 
 O fluxo de spec-driven development é opcional e proporcional ao impacto da mudança:
