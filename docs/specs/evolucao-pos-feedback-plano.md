@@ -4,7 +4,7 @@
 
 ## Especificação relacionada
 
-[evolucao-pos-feedback.md](evolucao-pos-feedback.md) (versão 0.2) e [ADR 0016](../architecture/decisions/0016-reabertura-pos-feedback.md). **Estado: aprovado em parte em 2026-11-03** (Q14 a Q17); pendentes Q19 (eficiência de execução) e Q20 (modelo por papel). Base: `main` com a v0.6.0 (`2867ea7`; `87e1683` se o link do vídeo for integrado antes).
+[evolucao-pos-feedback.md](evolucao-pos-feedback.md) (versão 0.2) e [ADR 0016](../architecture/decisions/0016-reabertura-pos-feedback.md). **Estado: aprovado em parte em 2026-11-03** (Q14 a Q17); Q19 aprovada e etapa 0 concluída (`f314205`); Q20 decidida por padrão (`opus`/`high`). Dois times decididos pelo responsável em 2026-11-03 (seção "Sequência, dois times e estimativa"). Base: `main` com a v0.6.0 (`2867ea7`; `87e1683` se o link do vídeo for integrado antes).
 
 Cada versão segue o ciclo já usado: spec complementar curta → tarefas → Developer → Reviewer independente → candidato fixado → QA real com campanha de teto fixo → `docs/evidence/vXYZ-resultado.md` → merge local com a identidade do projeto → tag. Com a autorização por versão (seção "Preparação do fluxo"), tudo isso corre sem espera; o responsável entra na tag, no push e na calibração.
 
@@ -168,24 +168,25 @@ Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão d
 64. Fila de operador: migração 0009, `handoff_events`, rotas `GET/claim/actions` com idempotência e `409`, CLI `operator`.
 65. Interrupção e retomada: `langgraph-checkpoint-sqlite`, nó `human_review`, `Command(resume)`, arestas `approve/reply/reject`, turno `via=operator`, entrega na próxima mensagem e no GET, estado do caso, retomada após reinício.
 66. Webhooks: `webhooks.py`, assinatura, tentativas, `webhook_deliveries`, receptor de ticketing no `mocks`, compose.
-67. Interface web: login por papel e aba Operador (paralelo a 64–66; projeto irmão).
+67. Interface web: login por papel e aba Operador (Time B, depois da 64; projeto irmão).
 68. Regressão, candidato, revisão, QA real (UC-20 a UC-22), evidência, ADRs 0017 e 0018, README/CHANGELOG, tag.
 
 **v0.8.0 — Orquestração adaptativa e avaliação semântica**
 
 69. `replan`: nó, regras, `replan.v1`, orçamento de saltos, trace; quatro cenários.
-70. Rubrica `judge` v3 com evidências; juiz independente; `eval --repeat`; agregação; migração 0010 (paralelo a 69).
+70. Rubrica `judge` v3 com evidências; juiz independente; `eval --repeat`; agregação; migração 0010 (Time B, paralelo a 69).
 71. Calibração humana: `eval-calibrate`, CSV, concordância; formulário na interface.
-72. Holdout de respostas congelado por hash; correções das jornadas; `router.v6`.
+72a. Holdout de respostas (≥ 20 casos, metade pt), escrito e lacrado por hash antes de qualquer ajuste de prompt da v0.8.0 (Time B, durante a v0.7.0).
+72b. Correções das jornadas de negócio; `router.v6` (Time A).
 73. Regressão, candidato, revisão, QA real com 3 execuções e holdout, calibração pelo responsável, evidência, ADR 0019, README/CHANGELOG, tag.
 
-**v0.9.0 — Retrieval híbrido**
+**v0.9.0 — Retrieval híbrido** (Time A, em paralelo com a v0.10.0)
 
 74. BM25 + RRF, `RETRIEVAL_MODE`, persistência por hash, `search(mode)`.
 75. Reranker configurável; holdout de retrieval; `eval-retrieval --mode --split`; nDCG; decisão registrada.
 76. Regressão, candidato, revisão, QA real, evidência, ADR 0020, tag.
 
-**v0.10.0 — Operação e resiliência**
+**v0.10.0 — Operação e resiliência** (Time B, em paralelo com a v0.9.0)
 
 77. `/metrics`, OTLP opcional, regras de alerta e painel, `/ready` ampliado.
 78. Comparação retomável (migração 0011) e resumo rolante de conversas.
@@ -197,13 +198,65 @@ Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão d
 81. Túnel externo testado; Docker smoke final em ambiente limpo.
 82. Vídeo curto dos deltas; tag `v1.0.0`; mensagem de ressubmissão proposta ao responsável.
 
-## Sequência, paralelismo e estimativa
+## Sequência, dois times e estimativa
 
-- Etapa 0: uma sessão curta, depois da aprovação de Q19/Q20.
-- v0.7.0: 63 → 64 → 65 → 66 em série no backend; 67 em paralelo no projeto web; 68 fecha. **Uma noite de fluxo** + revisão do responsável.
-- v0.8.0: 69 e 70 em paralelo (arquivos distintos); 71 e 72 depois; 73 fecha. **Uma noite** + 1 h de calibração do responsável.
-- v0.9.0: 74 → 75 → 76. **Meia noite.**
-- v0.10.0: 77 e 78 em paralelo; 79 fecha. **Meia noite.**
-- v1.0.0: 80 → 81 → 82. **Meio dia** + vídeo do responsável.
+Decidido pelo responsável em 2026-11-03: dois times, cada um com um Developer e um Reviewer, coordenados pelo mesmo Supervisor. O **Time A** fica no caminho crítico; o **Time B** adianta trabalho que não compartilha arquivos com o A. QA, merge e tag continuam um por vez e em ordem de versão.
 
-Régua: `ampeli-sdd`, ciclo Opus xhigh, 40 pontos entregues por noite com 20 min ativos por ponto; a v0.6.0 deste case saiu em um dia. Total: cerca de quatro noites de fluxo e um dia do responsável, com Q19 aprovada. Sem a autorização por versão, cada noite vira cerca de dois dias.
+### Distribuição
+
+| Período | Time A (caminho crítico) | Time B (trabalho independente) |
+| --- | --- | --- |
+| Etapa 0 | concluída | — |
+| v0.7.0 | 63 → 64 → 65 → 66 no backend; 68 fecha | 67 (aba Operador, repositório web, depois da 64 fixar o contrato de `/v1/handoffs`); em seguida 72a: escrever e lacrar o holdout de respostas (só dados) |
+| v0.8.0 | 69 (`replan` no grafo); depois 72b (correções das jornadas e `router.v6`); 73 fecha | 70 (rubrica `judge` v3, juiz independente, repetições, migração 0010) e 71 (calibração) |
+| v0.9.0 e v0.10.0, em paralelo | v0.9.0 inteira: 74 → 75 → 76 | v0.10.0 inteira: 77 e 78 → 79 |
+| v1.0.0 | 80 → 81 → 82, um time só | — |
+
+A tarefa 72 do plano se divide em **72a** (holdout, Time B, durante a v0.7.0) e **72b** (jornadas e Router, Time A, na v0.8.0). Escrever o holdout antes de qualquer ajuste de prompt da v0.8.0, por quem não ajusta prompts, e lacrá-lo por hash atende o RF-92 com mais rigor que escrevê-lo depois.
+
+### Donos de arquivo por período
+
+Um arquivo compartilhado tem um dono por período; o outro time não o edita. Arquivos novos pertencem a quem os cria.
+
+| Arquivo ou área | v0.7.0 | v0.8.0 | v0.9.0 e v0.10.0 |
+| --- | --- | --- | --- |
+| `orchestration/graph.py`, `state.py`, `run.py` | A | A | ninguém (B pede ao Supervisor se precisar) |
+| `api/v1.py`, `api/app.py`, `api/schemas.py` | A | A | B (v0.10.0: `/metrics`, `/ready`) |
+| `data/migrations.py` | A (0009) | B (0010) | B (0011) |
+| `agents/` | A | A (`replanner.py`, `support.py`) | A (`knowledge.py`, se o híbrido exigir) |
+| `rag/` | — | — | A |
+| `evaluation/` | — | B (`runner.py`, `calibration.py`) | A (`retrieval.py`) |
+| `conversations.py`, `comparisons.py` | A | — | B |
+| `prompts/` | A | A (`replan`, `router`, `support`); B (`judge.v3`) | A (`rerank`); B (`summary`) |
+| `cli.py`, `config.py`, `pyproject.toml`, `docker-compose.yml`, `.env.example` | A | compartilhados só por acréscimo | compartilhados só por acréscimo |
+| `tests/scenarios/` | B (holdout, 72a) | A (rótulos das jornadas) | A (holdout de retrieval) |
+| Projeto web | B | B (formulário de calibração) | — |
+| README, CHANGELOG, `docs/evidence/vXYZ-resultado.md` | Supervisor, no fechamento | Supervisor | Supervisor |
+
+"Só por acréscimo": cada time acrescenta linhas no fim do bloco correspondente e não altera linhas existentes; o conflito, se houver, é resolvido na atualização com a `main`.
+
+### Migrações reservadas
+
+0009 → v0.7.0 (A); 0010 → v0.8.0 (B); 0011 → v0.10.0 (B). A v0.9.0 não cria migração. Um número reservado não é reutilizado nem antecipado; se uma versão precisar de outra migração, o Supervisor reserva o número seguinte livre e atualiza esta lista.
+
+### Regras de execução
+
+1. **Worktree por time.** O Time A trabalha no checkout principal (`C:\workspace\ai-getnet-case`). O Time B trabalha num `git worktree` **fora** da pasta do repositório (`C:\workspace\ai-getnet-case-wt\time-b`), para o validador e o pytest de um não varrerem o outro.
+2. **Ambiente Python próprio no worktree.** O `.venv` do checkout principal tem o pacote instalado em modo editável apontando para o `src/` principal; usado no worktree, os testes do Time B importariam o código do Time A. O worktree do B cria seu próprio ambiente (`uv venv .venv -p 3.13 && uv pip install -e ".[ingest,dev]"`) e o Supervisor confere, antes do primeiro despacho, que `python -c "import merchant_assistant; print(merchant_assistant.__file__)"` aponta para o `src/` do worktree.
+3. **Branches.** Cada time tem a branch da sua versão (`codex/v0.8.0-avaliacao` para o B durante a v0.7.0, por exemplo). Quando a versão anterior entra na `main`, o time que adiantou trabalho atualiza a branch com a `main` antes de pedir revisão; o Reviewer revisa sobre a base atualizada.
+4. **Contexto frio entre e dentro dos times.** Cada Reviewer é um despacho novo, sem a passagem do Developer e sem diagnóstico do Supervisor. O mesmo Reviewer revalida as rodadas de correção do seu time. O Supervisor não repassa a um time conclusões do outro, só contratos já integrados.
+5. **Capacidade.** Até dois Developers e dois Reviewers ao mesmo tempo, desde que `checar-memoria.ps1` responda "cabe" antes de cada despacho. Docker, Qdrant em serviço e QA real: um por vez, sempre.
+6. **Ordem de entrega.** QA, merge e tag na ordem v0.7.0 → v0.8.0 → v0.9.0 → v0.10.0 → v1.0.0. No período paralelo, a v0.10.0 só entra em QA depois do merge da v0.9.0 e da atualização da sua branch com a `main`.
+7. **Despacho e medição.** A descrição de todo despacho cita o time e uma tarefa (`Time B, tarefa 70`), para `medir-agentes.py` ratear custo e o relatório separar os dois times.
+
+### Estimativa
+
+| Versão | Um time | Dois times |
+| --- | --- | --- |
+| v0.7.0 | uma noite | uma noite (67 e 72a saem do caminho crítico) |
+| v0.8.0 | uma noite + 1 h de calibração | meia noite + 1 h de calibração (70 e 71 adiantados) |
+| v0.9.0 + v0.10.0 | uma noite (meia + meia, em série) | meia noite (em paralelo, QA em série) |
+| v1.0.0 | meio dia + vídeo | meio dia + vídeo |
+| **Total** | **cerca de quatro noites** | **cerca de três noites** |
+
+Régua: `ampeli-sdd`, ciclo Opus xhigh, 40 pontos por noite com 20 min ativos por ponto; a v0.6.0 deste case saiu em um dia. O ganho dos dois times é cerca de um terço, não o dobro: QA, merge e os arquivos do grafo continuam seriais. Sem a autorização por versão, cada noite vira cerca de dois dias.
