@@ -134,6 +134,7 @@ Todas reversíveis; registradas também no relatório do Supervisor.
 | D26 | **Retomada que falha** responde `503 resume_failed`, fica `resume_status=failed` visível na fila e é repetível pela mesma chave (turno gravado uma vez); a caixa de saída do ticketing trata `503` como falha temporária e repete | Caso nunca fica mudo depois do commit da ação | — |
 | D27 | **Auditoria persiste entre subidas:** `audit_events` sai das tabelas recriadas pelo `seed`/`bootstrap`; os dados sintéticos de domínio continuam sendo recriados | O reinício do container (CA-48) não pode apagar a prova de segurança (CA-46, D23) | Voltar à lista anterior |
 | D28 | **Checkpoint que não grava** na abertura do caso deixa o caso marcado (`resume_status=checkpoint_failed`) e visível na fila desde o início; ação nele responde `503 checkpoint_missing`; caminho sem grafo fica como limitação | Operador não descobre a falha só ao agir | — |
+| D29 | **`conversation.replied` ao lojista sem `operator_id`**: a cópia para `CONVERSATION_WEBHOOK_URL` omite o identificador do operador (a do ticketing o mantém), como a conversa já faz | Minimização: o lojista não precisa do identificador interno do atendente | Enviar o mesmo envelope aos dois |
 | D17 | **Ordem do Time B:** 72a já entregue; depois 66b (serviço, worktree próprio na v0.7.0) e 67 (tela). Nenhum dos dois depende do código do Time A, só deste contrato | Paralelismo real | — |
 
 ## Critérios de aceitação e prova
