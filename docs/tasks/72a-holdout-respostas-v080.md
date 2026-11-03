@@ -83,8 +83,17 @@ Developer, rodada 5 (2026-11-03), P3-8 do [parecer da rodada 4](../evidence/v080
 - `git log 07ca28e..codex/v0.8.0-avaliacao -- prompts/`: nenhum commit.
 - Suíte estrita: código 0, 357 aprovados.
 
+Developer, rodada 6 (2026-11-03, última), sobre o [parecer da rodada 5](../evidence/v080-reviewer.md) (base `f1b2f9f`):
+
+- Caso 15: "directly comparable" trocado por "not directly comparable", "aren't directly comparable" e "isn't directly comparable".
+- Caso 16: sem "após o processamento".
+- Bateria pelo `_checks` real: 57 respostas. Certas 30/30 (inclui as do P3-8); erradas 27/27 reprovadas (inclui as duas novas do parecer).
+- Re-lacre: SHA-256 `91aa51588afdf4afccb1ea8f230a47d3d61686004ec599f4c547e7881b4f1bac`.
+- `git log 07ca28e..codex/v0.8.0-avaliacao -- prompts/`: nenhum commit.
+- Suíte estrita: código 0, 357 aprovados.
+
 ## Status
 
 ```text
-Rodada 5 implementada pelo Developer; aguarda a revisão curta da rodada 5 antes do lacre definitivo.
+Rodada 6 implementada pelo Developer; aguarda a revisão final e o lacre definitivo pelo Supervisor.
 ```

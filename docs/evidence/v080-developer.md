@@ -219,3 +219,34 @@ O mesmo Reviewer revê na rodada 4 os casos 14, 15, 16 e 18 e o lacre.
 ### Próxima ação
 
 O Reviewer faz a revisão curta dos casos 15 e 16 e do lacre. Em seguida, o Supervisor declara o lacre definitivo.
+
+## Tarefa 72a, rodada 6
+
+- Papel e responsável: Developer do Time B, sobre o [parecer da rodada 5](v080-reviewer.md). É a última rodada; nenhum outro termo mudou.
+- Escopo:
+  - Segundos grupos dos casos 15 e 16 em `tests/scenarios/holdout_v080.jsonl`.
+  - `holdout_v080.sha256`, a derivação, a tarefa e esta passagem.
+  - Mensagens, ids, valores, teste, `evaluation/` e `prompts/` intocados.
+- Base e versão final: base `f1b2f9f`; commit único citando o hash novo `91aa51588afdf4afccb1ea8f230a47d3d61686004ec599f4c547e7881b4f1bac` (rodada 5: `acb512ca…0c66c8`).
+- Independência: não-independente (relato do autor).
+
+### Mudanças
+
+- **Caso 15:** "directly comparable" foi trocado por "not directly comparable", "aren't directly comparable" e "isn't directly comparable". "not comparable" ficou.
+- **Caso 16:** "após o processamento" saiu do segundo grupo.
+
+### Bateria pelo `_checks` real (sem modelo)
+
+- **Rodada 6:** 57 respostas, a bateria da rodada 5 mais as duas erradas novas do parecer ("O dinheiro já voltou ao cartão do cliente após o processamento; o status ainda aparece como solicitado." e "The legacy and standard fees are directly comparable: R$ 37,80 versus R$ 36,00, so you were overcharged.").
+  - Certas: 30/30 passam, inclusive as quatro do P3-8 ("aren't directly comparable", "not comparable", "só acontece depois", "pendente de processamento").
+  - Erradas: 27/27 reprovam.
+- **Bateria da rodada 2:** 25/26. O resíduo é o misto do caso 18, aceito para o juiz.
+
+### Evidência
+
+- `git log --oneline 07ca28e..codex/v0.8.0-avaliacao -- prompts/` → nenhum commit.
+- Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`) → código 0, **357 aprovados**. O lacre confere com o hash novo.
+
+### Próxima ação
+
+O Reviewer faz a revisão final dos casos 15 e 16 e do lacre. Em seguida, o Supervisor declara o lacre definitivo.
