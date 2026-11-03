@@ -158,7 +158,11 @@ def test_paid_routes_pass_the_rate_limit(offline, settings, monkeypatch):
 # --- D20: admin has no merchant of its own -------------------------------------------------------------------------
 
 
-def test_admin_uses_the_demo_merchant_only_in_v1_messages(offline, settings):
+def test_admin_acts_on_the_demo_merchant_in_v1_but_not_in_post_messages(offline, settings):
+    """D20 revised: no merchant in the admin token; on /v1 (messages, conversations, Router comparison, comparisons,
+    evaluations) the admin acts on the demo's synthetic merchant, as in v0.6.0; POST /messages refuses it."""
+    from merchant_assistant import comparisons
+
     client, _, _ = offline()
     admin = token_headers(client, ADMIN)
     claims = client.app.state.identity.decode(admin["Authorization"][7:])
@@ -170,12 +174,50 @@ def test_admin_uses_the_demo_merchant_only_in_v1_messages(offline, settings):
     body = {"message": "Olá", "profile_id": "reference", "profile_version": 1, "router_mechanism": "llm"}
     sent = client.post("/v1/messages", headers=admin, json=body)
     assert sent.status_code == 200, sent.text
-    owner = sqlite3.connect(settings.db_path).execute(
-        "SELECT customer_id FROM conversations WHERE conversation_id=?", (sent.json()["message"]["conversation_id"],)
-    )
+    conversation_id, request_id = sent.json()["message"]["conversation_id"], sent.json()["message"]["request_id"]
+    db = sqlite3.connect(settings.db_path)
+    owner = db.execute("SELECT customer_id FROM conversations WHERE conversation_id=?", (conversation_id,))
     assert owner.fetchone()[0] == settings.api_demo_customer_id
-    conversation_id = sent.json()["message"]["conversation_id"]
-    assert client.get(f"/v1/conversations/{conversation_id}", headers=admin).status_code == 403
+    read = client.get(f"/v1/conversations/{conversation_id}", headers=admin)
+    assert read.status_code == 200 and read.json()["conversation_id"] == conversation_id
+    compare = client.post(
+        "/v1/router/compare",
+        headers=admin,
+        json={"message": "Olá", "profile_id": "reference", "profile_version": 1, "selected_mechanism": "llm"},
+    )
+    assert compare.status_code == 201, compare.text
+    stored = db.execute(
+        "SELECT customer_id FROM router_comparisons WHERE comparison_id=?", (compare.json()["comparison_id"],)
+    )
+    assert stored.fetchone()[0] == settings.api_demo_customer_id
+    estimate = client.post(f"/v1/runs/{request_id}/evaluations/estimate", headers=admin)
+    assert estimate.status_code == 200, estimate.text
+    selection = {
+        "profiles": [{"profile_id": "reference", "profile_version": 1}, {"profile_id": "hybrid", "profile_version": 1}],
+        "scenario_ids": ["SC-RECEIVABLES"],
+        "repetitions": 1,
+        "router_mechanism": "llm",
+    }
+    planned = client.post("/v1/comparisons/estimate", headers=admin, json=selection)
+    assert planned.status_code == 200, planned.text
+    created = client.post(
+        "/v1/comparisons",
+        headers=admin,
+        json=selection
+        | {
+            "confirmed": True,
+            "max_cost_usd": planned.json()["estimated_cost_usd"],
+            "expected_estimate_digest": planned.json()["estimate_digest"],
+        },
+    )
+    assert created.status_code == 202, created.text
+    comparison_id = created.json()["comparison_id"]
+    if thread := comparisons._ACTIVE.get(comparison_id):
+        thread.join(timeout=60)
+    assert client.get(f"/v1/comparisons/{comparison_id}", headers=admin).status_code == 200
+    principal = db.execute("SELECT customer_id FROM api_principals WHERE principal_id='admin:default'").fetchone()
+    assert principal[0] is None  # the principal itself keeps no merchant
+    db.close()
 
 
 # --- D21: least privilege on the workbench routes ------------------------------------------------------------------

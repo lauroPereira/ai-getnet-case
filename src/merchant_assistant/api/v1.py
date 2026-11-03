@@ -305,6 +305,15 @@ def _admin_dep(
 READER_ROLES = ("merchant", "demo", "admin")
 
 
+def acting_merchant(request: Request, principal: dict) -> dict:
+    """D20 (revised): the admin has no merchant in its token; on the /v1 routes that need one (messages, comparisons,
+    Router comparison, evaluations, conversations) it acts on the demo's synthetic merchant, as in v0.6.0. The
+    principal row itself keeps no merchant."""
+    if principal["role"] == "admin":
+        return principal | {"customer_id": request.app.state.settings.api_demo_customer_id or None}
+    return principal
+
+
 def _reader_dep(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = bearer_credentials,
@@ -312,8 +321,10 @@ def _reader_dep(
     """D21: workbench routes (profiles, KB, catalog, scenarios, runs, comparisons, messages) are for merchant, demo
     and admin tokens; operators work in the queue and services only integrate."""
     principal = _auth_dep(request, credentials)
-    if isinstance(principal, JSONResponse) or principal["role"] in READER_ROLES:
+    if isinstance(principal, JSONResponse):
         return principal
+    if principal["role"] in READER_ROLES:
+        return acting_merchant(request, principal)
     challenge = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
     return _error(
         403,
@@ -1171,8 +1182,6 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
         profile = get_profile(conn, payload.profile_id, payload.profile_version, role=profile_role(principal))
         if profile is None:
             return _error(404, "not_found", "Profile not found.", request)
-        if principal["role"] == "admin":  # D20: the demo's synthetic merchant, only on this route
-            principal = principal | {"customer_id": settings.api_demo_customer_id}
         customer_id = principal["customer_id"]
         if not customer_id:
             return _error(
@@ -1439,6 +1448,7 @@ def comparison_read(comparison_id: str, request: Request, principal=READER):
 def conversation(conversation_id: str, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
+    principal = acting_merchant(request, principal)
     if not principal["customer_id"]:
         return insufficient_scope(request, "Conversation is outside this token's scope.")
     conn = _db(request)

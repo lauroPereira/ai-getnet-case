@@ -214,3 +214,12 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - **P3-4:** testes do regex da `idempotency_key` direto no serviço: vazia, 7 e 81 caracteres, espaço, acento e `;` recusados sem evento; 8 e 80 caracteres e `[A-Za-z0-9_-]` aceitos.
 - **P3-5:** casos pré-0009 recusados com `409 not_resumable` (65). A fila sem paginação (`LIMIT 100`) fica como limitação.
 - **Ajuste de teste:** `test_queue_calls_are_audited_with_the_operator` (rodada 1) passou a filtrar as ações, porque a lista também é auditada agora.
+
+## Tarefa 63, ajuste D20
+
+- **Papel e responsável:** Developer (Time A), subagente novo (o anterior encerrou por contexto longo); pedido do Supervisor depois da D20 revista (`bb1659c`).
+- **Base:** `bb1659c`. Commit próprio, "task 63 D20".
+- **Mudança:** `acting_merchant()` em `api/v1.py`. No admin, o dicionário do principal da rota recebe `customer_id = API_DEMO_CUSTOMER_ID`; o token e a linha de `api_principals` continuam sem lojista. É aplicada na dependência `READER` (mensagens, comparação de Routers, comparações, avaliações, runs) e em `GET /v1/conversations/{id}`. Saiu o caso especial que existia só em `/v1/messages`. `POST /messages` não mudou: aceita só `merchant` e `demo`.
+- **Teste:** `test_admin_acts_on_the_demo_merchant_in_v1_but_not_in_post_messages` substitui `test_admin_uses_the_demo_merchant_only_in_v1_messages`. O teste antigo esperava `403` na conversa do admin, comportamento que a D20 revista retirou. O novo cobre: claim sem `customer_id`; `POST /messages` → `403` sem citar papéis; `/v1/messages` grava a conversa no lojista da demo; `GET /v1/conversations/{id}` → `200`; `POST /v1/router/compare` → `201`, com o lojista da demo em `router_comparisons`; estimativa de avaliação → `200`; comparação de perfis → `202` e leitura `200`; `admin:default` sem lojista em `api_principals`.
+- **Validação:** `pytest` em `test_v070_identity_r2.py`, `test_v070_identity.py`, `test_v1_api.py`, `test_v060_api.py`, `test_v060_r2.py` e `test_v060_r4.py` → todos passam. Ruff ok. A suíte estrita roda no fim da tarefa 66 (números lá).
+- **Limitação:** com `API_DEMO_CUSTOMER_ID` vazio, o admin volta a `422 admin_scope_required` nessas rotas, como na v0.6.0.
