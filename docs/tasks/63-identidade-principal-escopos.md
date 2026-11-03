@@ -43,10 +43,23 @@ O assistente emite e valida JWT; toda mensagem exige token; o lojista vem do pri
 
 ## Validação
 
-A preencher pelo Developer.
+Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md). Os critérios ficam desmarcados até a revisão e o QA.
+
+| Critério | Evidência determinística |
+| --- | --- |
+| CA-46: `401`, `identity_mismatch`, B não lê A | `tests/integration/test_v070_identity.py` (sem token, token inválido e expirado → `401`; `identity_mismatch`; B recebe `404` em `/conversations`, `/traces`, `/v1/conversations` e `/v1/runs` de A). Token adulterado, de outra chave, `kid` desconhecido, `typ` errado, HS256, outro `iss`, outra `aud`, `exp`/`nbf` fora da tolerância e `jti` revogado: `tests/unit/test_identity.py` |
+| CA-46: N tool calls → N registros | `test_n_tool_calls_leave_n_audit_rows_with_principal_scope_and_result`, `test_refused_tool_calls_are_audited_and_never_run` (recusa por escopo e por lojista), unidade em `test_identity.py` |
+| Operador/serviço em `POST /messages` → `403`; lojista sem `handoff:operate` | `test_operator_session_cannot_send_messages…`, `test_client_credentials_for_the_ticketing_service` |
+| JWKS valida com biblioteca independente; JWKS externo | `test_published_jwks_validates_the_issued_token_independently` (`jwt.PyJWKSet` sobre a resposta da rota), `test_external_jwks_replaces_the_local_key` (chave gerada no teste) |
+| `client_credentials` do `ticketing-demo`; segredo errado → `401 invalid_client` | `test_client_credentials_for_the_ticketing_service` |
+| Rate limit sem chamada a modelo | `test_rate_limit_returns_429_before_any_model_call` (relógio fixo; `/messages` e `/v1/messages`) |
+| MCP por token | `test_mcp_derives_the_merchant_from_the_token_and_refuses_others`, `test_mcp_cli_has_no_customer_option` |
+| Sem segredo em texto | Senhas só como hash PBKDF2 (`test_accounts_are_stored_as_hashes…`), ausentes do log (`test_password_grant_issues_tokens_per_principal`, `test_example_values_log_a_warning_at_startup`); chave de assinatura em `data/runtime/jwt/` (ignorado pelo Git) |
+| Compose, smoke e suíte | `docker compose config --quiet` → 0 numa cópia isolada sem `.env`; `test_smoke_gets_its_token_and_passes`; `lint_and_tests.py --strict` → código 0, **406 passed**, Ruff ok, skills ok |
+| Migração 0009 nos dois sentidos | `test_identity_migration_0009_round_trip` e as listas de `test_migrations.py`, `test_v060_api.py` e `test_v1_api.py` |
 
 ## Status
 
 ```text
-em andamento
+pronta para revisão (Developer, rodada 1)
 ```
