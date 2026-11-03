@@ -172,3 +172,34 @@ P3 novos: **P3-A** ligação do `authorize` por chamada na CLI (`cli.py:353`) se
 | P3-5 | Parcial | Pré-0009 `409 not_resumable` (65); `list_cases` sem paginação (limitação) |
 
 P3 novo: **P3-D** o limite por endereço da D19 conta também logins bem-sucedidos; atrás de um único endereço (proxy ou interface no servidor), mais de 30 logins por minuto somados bloqueiam todos por até 60 s. Aceitável na demo; nota para o QA e a 67.
+
+## Tarefa 66 e ajuste D20 da 63, rodada 1 — PARCIAL (interrompida)
+
+Revisão interrompida pelo Supervisor a pedido do responsável (fim de créditos). **Não é parecer final**; não há apto.
+
+- **Papel:** segundo Reviewer do Time A (contexto frio; o primeiro estava ocupado com a 63/64 r2). Independente: não leu Validação/Status, `v070-developer.md` nem pareceres anteriores.
+- **Candidato:** `review-a2` destacado em `7079920`; escopo `c7affe5` (D20) e `7e4416c` (66), diff `bb1659c..7079920` sem `docs/evidence` e sem `test_ticketing_service.py`; `c25e6bc` não coberto. HEAD e árvore iguais antes e depois.
+- **Números:** suíte estrita (`PYTHONPATH=src`) **532 passed**, 0 skipped, Ruff, estrutura e skills sem falhas, código 0. Sondas próprias: 14 testes, todos passaram.
+
+### Re-derivado até a interrupção
+
+- **Saída:** `handoff.created`, `conversation.replied` (ticketing e lojista) e `handoff.closed` passam num verificador HMAC próprio com o segredo do seu sentido e falham com os outros; envelope exatamente `{id, type, created_at, data}`; cabeçalhos batem com o corpo; chaves de `data` iguais às do contrato; corpo sem segredos, client secret, senhas, JWT, "Bearer", dados do outro lojista, PAN ou CPF; uma linha por tentativa; receptor lento ou fora do ar não atrasa `/messages` (0,35 s), 3 tentativas com esperas crescentes; 500/429 → `error` ×3, 401 → `rejected` ×1, 201 → `delivered`.
+- **Entrada:** segredo errado, do outro sentido, `t` ±301 s e sem token → 401; token admin, demo, operador ou lojista → 403; id do cabeçalho ≠ corpo → 400; corpo adulterado, re-serializado e `t` trocado recusados, sem efeito no caso nem em `webhook_inbox`; recusa não envenena o id; id repetido sem auditoria, evento ou `handoff.closed` novos; 409 `idempotency_conflict`, `already_resumed`, `claimed_by_other`, 404 `case_not_found`, 422 `unknown_operator`; auditoria `service:ticketing` em nome de `operator:<id>`, inclusive nas recusas; D26: 503 `resume_failed` não guardado, repetição do mesmo id retoma, terceira `replayed`, 1 turno de operador. Concorrência: dois operadores ao mesmo tempo (3 rodadas) → `[200, 409]`, 1 retomada; mesmo id simultâneo → `[accepted, replayed]`, 1 retomada. Ordem: action antes de assigned aceita, assigned tardio `replayed`; solved antes de action → action `409 case_closed`.
+- **Mecanismo único:** `integrations.py` chama `handoffs.claim/act/close`; retomada por `webhooks.resume_point(orchestrator.resume_handoff)`, igual em `v1.py` e `cli.py`.
+- **D20:** admin age sobre o lojista da demo em `/v1/messages` e `/v1/conversations`; conversa de outro lojista 404; `API_DEMO_CUSTOMER_ID` vazio → 403; `POST /messages` com admin 403 sem citar papéis; operador e serviço 403.
+- **0009 por inspeção:** `webhook_inbox`, `event_id`/`error` e CHECK com `checkpoint_failed` no UP, removidos no DOWN; teste unitário cobre os dois sentidos.
+
+### Achados até aqui (nenhum P1 nem P2)
+
+- **P3-1:** `webhook_inbox` (`integrations.py:124-130`) sem teste que a mate (a sonda `test_replayed_id_adds_no_audit_and_no_event` mataria a mutação).
+- **P3-2:** primeira retomada bem-sucedida depois de um 503 responde `status: replayed` (`handoffs.py` ~291-299, `integrations.py:188`); cosmético.
+- **P3-3:** id repetido de evento recusado devolve o 4xx guardado, não 200 (`integrations.py:130`); divergência do texto do contrato a registrar ou alinhar.
+- **P3-4:** `ticket.solved` de outro operador → 409 `claimed_by_other` (`handoffs.py` ~395-396), não previsto na tabela do contrato.
+- **P3-5:** `handoff.created` que esgota as tentativas não é reenviado; o caso nunca vira ticket e o `conversation.replied` posterior fica `rejected` (sonda escrita, não executada).
+- **P3-6:** banco já na versão 9 de candidatos anteriores não recebe a ampliação da 0009 (limpar runtime/volume antes do QA).
+- **P3-7:** assinatura inválida na entrada não é auditada (só recusas por escopo).
+- **P3-8:** receptor do lojista no `mocks` sem limite nem autenticação (só `expose` no compose).
+
+### Não verificado
+
+Sonda contra o ticketing real (escrita, não rodou); mutação manual (assinatura, janela, inbox, 5xx, ordem, tentativas); 0009 com dados por comando próprio; `docker compose config` sem `.env`; emissão de `handoff.created` nos caminhos CLI e MCP. Próxima ação: retomar no mesmo candidato (`7079920`) e só então emitir parecer final.
