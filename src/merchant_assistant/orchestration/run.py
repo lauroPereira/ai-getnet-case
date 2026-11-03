@@ -45,6 +45,7 @@ class RunContext:
     knowledge_version_id: str | None = None
     agent_llms: dict[str, LLM] = field(default_factory=dict)
     router_override: RouterDecision | None = None
+    channel: str = "in_process"  # where the merchant talks: api (POST /messages), web (/v1/messages), in_process
     model_calls: int = 0
     tool_calls: int = 0
     cost_usd: float = 0.0

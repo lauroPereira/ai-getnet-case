@@ -1,4 +1,5 @@
-"""Escalation Agent (fourth agent): prepares and persists the simulated human handoff, idempotently."""
+"""Escalation Agent (fourth agent): prepares and persists the human handoff, idempotently, and puts the case in the
+operator queue (`open`, protocol `HO-AAAAMMDD-XXXXXX`, checkpoint thread = the request that escalated)."""
 
 from __future__ import annotations
 
@@ -29,6 +30,25 @@ def _reason(state: GraphState) -> str:
     if state.support and state.support.escalation_reason:
         return state.support.escalation_reason
     return "needs_human"
+
+
+DRAFT_OPENING = {
+    "pt": "Olá! Sou da equipe de atendimento da Getnet e analisei o seu caso.",
+    "en": "Hello! I'm from the Getnet support team and I've reviewed your case.",
+}
+DRAFT_CLOSING = {
+    "pt": "Se precisar de algo mais, é só responder por aqui.",
+    "en": "If you need anything else, just reply here.",
+}
+
+
+def draft_reply(state: GraphState, language: str) -> str:
+    """Deterministic draft for the operator from the agents' contributions (D15 fallback; `escalation.v2` writes a
+    model draft from task 65). Never promises anything the contributions do not say."""
+    language = language if language in DRAFT_OPENING else "pt"
+    points = [*(state.support.points if state.support else []), *(state.knowledge.points if state.knowledge else [])]
+    body = " ".join(str(point).strip() for point in points[:3] if str(point).strip())
+    return " ".join(part for part in (DRAFT_OPENING[language], body, DRAFT_CLOSING[language]) if part)
 
 
 def run(state: GraphState, ctx: RunContext) -> dict:
@@ -93,18 +113,20 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             summary=f'Lojista solicitou ajuda: "{state.message[:200]}". Motivo: {reason}.',
             pending_question="Analisar a solicitação e retornar ao lojista.",
         )
-    protocol = f"SIM-{today(ctx.clock):%Y%m%d}-{uuid.uuid4().hex[:6].upper()}"
+    protocol = f"HO-{today(ctx.clock):%Y%m%d}-{uuid.uuid4().hex[:6].upper()}"
+    language = state.decision.language if state.decision else guess_language(state.message)
     case_id = f"hc_{uuid.uuid4().hex[:16]}"
     payload = {
         **case,
         "summary": draft.summary,
         "pending_question": draft.pending_question,
+        "draft_reply": draft_reply(state, language),
+        "language": language,
         "reason": reason,
-        "simulated": True,
     }
     conn.execute(
         "INSERT INTO handoff_cases (case_id, protocol, customer_id, idempotency_key, reason, payload, created_at, "
-        "conversation_id) VALUES (?,?,?,?,?,?,?,?)",
+        "conversation_id, queue_state, channel, thread_id) VALUES (?,?,?,?,?,?,?,?,'open',?,?)",
         (
             case_id,
             protocol,
@@ -114,6 +136,8 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             json.dumps(payload, ensure_ascii=False, default=str),
             ctx.clock.now().isoformat(timespec="seconds"),
             state.conversation_id,
+            ctx.channel,
+            ctx.request_id,  # D6: the checkpoint thread is the request that escalated
         ),
     )
     write_audit(ctx.tools, CASE_WRITE, HANDOFF_CREATE, "ok", case_id)

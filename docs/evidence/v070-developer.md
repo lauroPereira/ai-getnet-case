@@ -67,3 +67,58 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - **Ação externa:** nenhuma (sem push, sem PR, sem Docker em execução). Os dois commits são locais, com a identidade conferida (`lauroPereira <lauro.s.pereira@gmail.com>`).
 - **Próxima ação:** Reviewer revisa `59f0311` e o commit desta passagem. Em seguida vem a tarefa 64 (Time A), que acrescenta a fila à migração 0009. O Time B pode seguir com 66b e 67 contra o contrato; os pontos 1 e 11 acima mudam o que o web trata.
 - **Decisão humana pendente:** só a limitação de produto do lojista em `/v1/messages`, se o Supervisor quiser fechá-la nesta versão.
+
+## Tarefa 63, ajustes de contrato (spec `9c24800`)
+
+- **Commit:** `dab83ab` ("task 63 contract"), sobre `3ccde8d`. Suíte estrita antes do commit: **código 0, 408 passed**, Ruff ok, skills ok.
+- **Erros do `/v1/auth/token` no formato RFC 6749 §5.2** (`{"error", "error_description"}`). `invalid_grant`, `invalid_request` e `unsupported_grant_type` → `400`; `invalid_client` → `401` com `WWW-Authenticate: Basic`. Pedido sem `grant_type`, sem usuário ou sem segredo → `invalid_request`. Com isso, `client_credentials` com segredo vazio passou de `401 invalid_client` para `400 invalid_request`.
+- **D19:** tentativas por conta e endereço (`auth:<user|client>:<id>@<ip>` em `rate_limit_hits`), contadas antes do PBKDF2, inclusive as bem-sucedidas. Padrão `AUTH_ATTEMPTS_PER_MINUTE=10` (decisão minha: a spec não fixa o número). Acima do limite → `429` com `Retry-After` e corpo `{"error": "rate_limited", "error_description"}`. `rate_limited` não é código da RFC; a spec não deu um nome.
+- **`403 insufficient_scope`** com `WWW-Authenticate: Bearer error="insufficient_scope"` em toda recusa de rota: operador e serviço em `/messages`, `/v1/messages` e `/v1/router/compare`; rotas de admin; `/v1/conversations` sem lojista. Substitui o antigo `forbidden`.
+- **D18:** `profile_role()` mapeia `merchant` → visibilidade de perfil da `demo`, e `LIMITED_ROLES = ("demo", "merchant")` aplica o limite de ações por token (`/v1/messages`, comparações, avaliações). Teste: `test_merchant_sees_the_demo_profiles_and_shares_the_action_limit`.
+- **Contrato `3ccde8d`:** o `operator_id` sem prefixo (`op_ana`) já era o formato da fila; o principal `operator:op_ana` fica na auditoria. Os segredos de webhook ficam para a 66.
+
+## Tarefa 64, rodada 1
+
+- **Papel e responsável:** Developer (Time A), subagente.
+- **Objetivo e critérios:** [tarefa 64](../tasks/64-fila-operador.md) (spec v0.7.0 versão 2: D6, D7, D9, D10, D14 e a tabela "Ticketing → assistente"; RF-80, RF-81, RF-83, RF-85).
+- **Escopo:** `src/merchant_assistant/handoffs.py` (novo: serviço único da fila), `data/migrations.py` (parte da fila na 0009, sem 0010), `agents/escalation.py` (`HO-…`, `queue_state=open`, `channel`, `thread_id`, rascunho, sem `simulated`), `api/v1.py` (rotas `/v1/handoffs`), `api/schemas.py` (`Handoff` sem `simulated`), `api/app.py` e `orchestration/{graph,run}.py` (canal), `cli.py` (`operator list|show|act`), testes (`tests/integration/test_v070_handoffs.py` novo, `test_migrations.py`, `test_use_cases.py`). Nada em `merchant_assistant/ticketing/` nem no projeto web.
+- **Estado:** pronta para revisão.
+- **Branch e PR:** `codex/v0.7.0-identidade-hitl`; sem PR e sem push.
+- **Base e versão final:** base `dab83ab`; o commit da tarefa vem depois desta passagem (o SHA vai no relatório ao Supervisor). Árvore limpa, exceto `Claude outputs/` e `_tmp/`.
+- **Independência:** não se aplica.
+
+### Evidência
+
+- `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-a-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` → **código 0, 422 passed** (293 s), Ruff ok, skills ok.
+- Duas falhas na rodada local, antes da suíte final. Uma estava no meu teste novo: esperava `claimed_by_other` ao reivindicar um caso fechado e nunca reivindicado; o serviço responde `case_closed`, que é o correto. A outra é a mudança esperada do protocolo `SIM-` → `HO-` (D7) em `test_use_cases.py`.
+- O mapa critério → teste está na seção Validação da tarefa.
+- Nenhuma chamada paga, sem Docker, sem `.env`.
+
+### Decisões tomadas além do texto (todas reversíveis)
+
+1. **Retomada fora da trava.** A ação grava o evento, o estado da fila e `resume_count = 1` na mesma transação `BEGIN IMMEDIATE`; é isso que impede a retomada dupla. O ponto único de retomada (`orchestrator.resume_handoff(case, record)`, ausente até a 65) só é chamado depois do commit. Rodar o grafo dentro da trava bloquearia o banco que o próprio grafo escreve. **Consequência para a 65:** se a retomada falhar, o caso já está `answered`/`rejected`; a 65 precisa registrar a falha e definir como tentar de novo.
+2. **Ordem das verificações em `act`:** chave já usada → registro existente. Se essa chave foi usada para outro caso, ação ou operador → `409 idempotency_conflict`. Depois vêm `already_resumed`, `case_closed` e `claimed_by_other`. Assim, a mesma chave reenviada depois da retomada devolve o registro, como pede o D10.
+3. **`text` obrigatório em `reply` e `reject`** (`422 text_required`). Em `approve`, o rascunho é a resposta e o texto, se vier, só é guardado.
+4. **`200` para ação nova e para a repetida**, distinguidas por `replayed`. É o formato que a entrada do ticketing (66) devolve.
+5. **`close` existe no serviço** (para o `ticket.solved` da 66) e não tem rota nesta tarefa. Caso fechado recusa reivindicação e ação com `409 case_closed`.
+6. **Auditoria da fila:** cada `claim`, ação ou `close`, aceito, repetido ou recusado, grava `audit_events` com `tool = handoff.<ação>`, escopo `handoff:operate`, `principal_id` de quem age, `on_behalf_of` (para a 66) e o lojista do caso.
+7. **Rotas da fila exigem papel `operator` e escopo `handoff:operate`.** Admin recebe `403`. O `operator_id` sai do `sub` do token (`operator:op_ana` → `op_ana`). Só os `POST` têm rate limit (D5); as leituras não.
+8. **`channel`** = origem da conversa: `api` (`POST /messages`), `web` (`/v1/messages`), `in_process` (CLI e avaliação). O plano não definia o valor.
+9. **Rascunho determinístico** a partir dos pontos de Support e Knowledge, no idioma da decisão do Router (fallback do D15), até o `escalation.v2` da 65.
+10. **Casos anteriores à 0009 entram na fila como `open`**, sem `thread_id` (não há checkpoint). A 65 precisa tratá-los na retomada.
+11. **`webhook_deliveries` com as colunas do plano.** A 66 pode acrescentar colunas à mesma 0009 (por exemplo, id do evento e sentido).
+12. **CLI `operator act`** gera `cli-<uuid>` quando `--idempotency-key` falta e o devolve no registro, para repetir a ação com segurança. O token (`MERCHANT_ASSISTANT_TOKEN`, D12) precisa ser de operador.
+13. **Conversa no detalhe:** os 10 últimos turnos mascarados pela guarda de entrada.
+
+### Achados e limitações
+
+- O texto ao lojista ainda diz "simulação" (`agents/personality.py`, arquivo da 65). Nesta tarefa saiu só o campo `simulated` do payload e do caso. A parte de texto do D7 fica para a 65.
+- Ainda não há retomada do grafo, nem mudança do estado do caso na conversa (D14, lado do caso): a 65 implementa `resume_handoff`. A resposta da ação traz `case_state` como está na conversa.
+- `422 unknown_operator`, para o `operator_id` vindo do ticketing, é da 66. Na API e na CLI o operador vem do token.
+- README e CHANGELOG não foram tocados (fechamento).
+
+### Ação externa, próxima ação e decisão pendente
+
+- **Ação externa:** nenhuma; commits locais com a identidade conferida.
+- **Próxima ação:** Reviewer revisa `dab83ab` e o commit da 64. A 65 implementa `resume_handoff` no orquestrador e trata a falha de retomada e os casos sem `thread_id`.
+- **Decisão humana pendente:** nenhuma.

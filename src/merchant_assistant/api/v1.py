@@ -18,12 +18,13 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
-from merchant_assistant import comparisons
+from merchant_assistant import comparisons, handoffs
 from merchant_assistant import scenarios as scenario_catalog
 from merchant_assistant.agents.common import format_history
 from merchant_assistant.agents.router import enforce
 from merchant_assistant.api.identity import (
     DEFAULT_PUBLIC_CLIENT,
+    HANDOFF_OPERATE,
     PUBLIC_CLIENTS,
     SERVICE_CLIENTS,
     InvalidToken,
@@ -1075,6 +1076,7 @@ def execute_run(
         knowledge=knowledge,
         trace_tags=tags,
         principal=Principal.from_session(principal),
+        channel="web",
     )
     trace_data = orchestrator.trace(request_id)
     if trace_data and any(str(error).startswith("router:") for error in trace_data.get("errors", [])):
@@ -1413,5 +1415,128 @@ def conversation(conversation_id: str, request: Request, principal=AUTH):
         if row is None:
             return _error(404, "not_found", "Conversation not found.", request)
         return ConversationStore(conn, SystemClock(request.app.state.settings.timezone)).get(conversation_id)
+    finally:
+        conn.close()
+
+
+# --- operator queue (task 64) -------------------------------------------------------------------------------------
+
+
+class HandoffActionRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [{"action": "reply", "text": "Your payout was sent today.", "idempotency_key": "ui-7f3a9c21"}]
+        },
+    )
+    action: Literal["approve", "reply", "reject"]
+    text: str | None = Field(
+        default=None, max_length=4000, description="Reply text (reply) or instruction to the agent (reject)."
+    )
+    idempotency_key: str = Field(pattern=r"^[A-Za-z0-9_-]{8,80}$")
+
+
+def _operator_id(request: Request, principal: dict | JSONResponse) -> str | JSONResponse:
+    """Queue routes need an operator token with `handoff:operate`; the operator id comes from the token."""
+    if isinstance(principal, JSONResponse):
+        return principal
+    if principal["role"] != "operator" or HANDOFF_OPERATE not in principal["scopes"]:
+        return insufficient_scope(request, "The operator queue requires the handoff:operate scope.")
+    return principal["principal_id"].split(":", 1)[1]
+
+
+def _handoff_error(request: Request, exc: handoffs.HandoffError) -> JSONResponse:
+    return _error(exc.status, exc.code, exc.message, request)
+
+
+@router.get("/handoffs", tags=["handoffs"], responses={403: {"model": ErrorBody}})
+def handoffs_list(request: Request, state: str | None = None, principal=AUTH):
+    """Operator queue, newest first; `state` = open, claimed, answered, rejected or closed."""
+    operator = _operator_id(request, principal)
+    if isinstance(operator, JSONResponse):
+        return operator
+    conn = _db(request)
+    try:
+        return {"cases": handoffs.list_cases(conn, state)}
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
+    finally:
+        conn.close()
+
+
+@router.get("/handoffs/{case_id}", tags=["handoffs"], responses={403: {"model": ErrorBody}, 404: {"model": ErrorBody}})
+def handoffs_show(case_id: str, request: Request, principal=AUTH):
+    """Summary, pending question, draft, masked conversation, events and deliveries of one case."""
+    operator = _operator_id(request, principal)
+    if isinstance(operator, JSONResponse):
+        return operator
+    conn = _db(request)
+    try:
+        return handoffs.get_case(conn, case_id)
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/handoffs/{case_id}/claim",
+    tags=["handoffs"],
+    responses={
+        403: {"model": ErrorBody},
+        404: {"model": ErrorBody},
+        409: {"model": ErrorBody},
+        429: {"model": ErrorBody},
+    },
+)
+def handoffs_claim(case_id: str, request: Request, principal=AUTH):
+    """Claims the case for the operator of the token (D9). Claiming one's own case again is idempotent."""
+    operator = _operator_id(request, principal)
+    if isinstance(operator, JSONResponse):
+        return operator
+    if limited := rate_limited(request, principal):
+        return limited
+    conn = _db(request)
+    try:
+        return handoffs.claim(conn, case_id, operator, actor=principal["principal_id"])
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/handoffs/{case_id}/actions",
+    tags=["handoffs"],
+    responses={
+        403: {"model": ErrorBody},
+        404: {"model": ErrorBody},
+        409: {"model": ErrorBody},
+        422: {"model": ErrorBody},
+        429: {"model": ErrorBody},
+    },
+)
+def handoffs_act(case_id: str, payload: HandoffActionRequest, request: Request, principal=AUTH):
+    """`approve`, `reply` or `reject` (D9, D10, D14). The same `idempotency_key` returns the stored record with
+    `replayed: true`; a case already resumed by another action is `409 already_resumed`."""
+    operator = _operator_id(request, principal)
+    if isinstance(operator, JSONResponse):
+        return operator
+    if limited := rate_limited(request, principal):
+        return limited
+    conn = _db(request)
+    try:
+        return handoffs.act(
+            conn,
+            case_id,
+            operator,
+            payload.action,
+            payload.text,
+            payload.idempotency_key,
+            actor=principal["principal_id"],
+            resume=getattr(request.app.state.orchestrator, "resume_handoff", None),
+        )
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
     finally:
         conn.close()

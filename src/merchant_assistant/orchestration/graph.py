@@ -190,6 +190,7 @@ class Orchestrator:
         knowledge: tuple[KnowledgeIndex | None, str | None] | None = None,
         trace_tags: dict | None = None,
         principal: Principal | None = None,
+        channel: str = "in_process",
     ) -> MessageResponse:
         """`db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
         `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace.
@@ -234,6 +235,7 @@ class Orchestrator:
                     for name, config in (agent_models or {}).items()
                 },
                 router_override=router_decision,
+                channel=channel,
             )
             initial = GraphState(
                 request_id=request_id,

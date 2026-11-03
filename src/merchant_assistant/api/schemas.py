@@ -62,8 +62,7 @@ class Resolution(BaseModel):
 
 
 class Handoff(BaseModel):
-    protocol: str
-    simulated: bool = True
+    protocol: str = Field(description="Handoff protocol, HO-AAAAMMDD-XXXXXX.")
     reason: str
 
 

@@ -124,7 +124,7 @@ def test_handoff_is_idempotent_per_conversation(offline, settings):
     conversation = "conv_test0000handoff"
     first = post(client, "Quero falar com um atendente humano", conversation_id=conversation)
     second = post(client, "Quero falar com um atendente humano", conversation_id=conversation)
-    assert first["status"] == "handoff" and first["handoff"]["protocol"].startswith("SIM-")
+    assert first["status"] == "handoff" and first["handoff"]["protocol"].startswith("HO-")  # D7 (v0.7.0)
     assert first["handoff"]["protocol"] == second["handoff"]["protocol"]
     assert first["handoff"]["protocol"] in first["answer"]
     assert sqlite3.connect(settings.db_path).execute("SELECT COUNT(*) FROM handoff_cases").fetchone()[0] == 1

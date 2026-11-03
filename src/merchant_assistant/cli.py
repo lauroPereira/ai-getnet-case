@@ -398,6 +398,49 @@ def cmd_mcp_demo(settings: Settings, args) -> int:
     return 0
 
 
+def _operator_principal(settings: Settings, conn):
+    """The operator of MERCHANT_ASSISTANT_TOKEN (spec D12), verified like on the API."""
+    from merchant_assistant.api.identity import HANDOFF_OPERATE, Identity, InvalidToken
+
+    token = settings.merchant_assistant_token.get_secret_value() if settings.merchant_assistant_token else ""
+    try:
+        principal, _ = Identity(settings).verify(token, conn)
+    except InvalidToken:
+        raise SystemExit("operator: MERCHANT_ASSISTANT_TOKEN is missing, invalid or expired.") from None
+    if principal.role != "operator" or not principal.has(HANDOFF_OPERATE):
+        raise SystemExit("operator: the token is not an operator token (handoff:operate).")
+    return principal
+
+
+def cmd_operator(settings: Settings, args) -> int:
+    """Operator queue in-process over the same service as the API (`handoffs`)."""
+    import uuid
+
+    from merchant_assistant import handoffs
+    from merchant_assistant.data.db import connect
+
+    conn = connect(settings.db_path)
+    try:
+        principal = _operator_principal(settings, conn)
+        operator_id = principal.principal_id.split(":", 1)[1]
+        if args.operator_command == "list":
+            result = {"cases": handoffs.list_cases(conn, args.state)}
+        elif args.operator_command == "show":
+            result = handoffs.get_case(conn, args.case_id)
+        else:
+            key = args.idempotency_key or f"cli-{uuid.uuid4().hex[:20]}"
+            result = handoffs.act(
+                conn, args.case_id, operator_id, args.action, args.text, key, actor=principal.principal_id
+            )
+    except handoffs.HandoffError as exc:
+        print(json.dumps({"error": {"code": exc.code, "message": exc.message}}), file=sys.stderr)
+        return 1
+    finally:
+        conn.close()
+    print(json.dumps(result, indent=1, ensure_ascii=False, default=str))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="merchant-assistant")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -429,6 +472,17 @@ def main(argv: list[str] | None = None) -> int:
     p_smoke.add_argument("--url", default="http://localhost:8000")
     p_smoke.add_argument("--username", default="cliente1988")
     p_smoke.add_argument("--password", default=None, help="Default: DEMO_USER_PASSWORDS.")
+    p_operator = sub.add_parser("operator", help="Operator queue (uses an operator MERCHANT_ASSISTANT_TOKEN).")
+    operator_sub = p_operator.add_subparsers(dest="operator_command", required=True)
+    p_list = operator_sub.add_parser("list", help="List handoff cases.")
+    p_list.add_argument("--state", choices=["open", "claimed", "answered", "rejected", "closed"], default=None)
+    p_show = operator_sub.add_parser("show", help="Show one case.")
+    p_show.add_argument("case_id")
+    p_act = operator_sub.add_parser("act", help="approve, reply or reject a case.")
+    p_act.add_argument("case_id")
+    p_act.add_argument("--action", choices=["approve", "reply", "reject"], required=True)
+    p_act.add_argument("--text", default=None, help="Reply text (reply) or instruction (reject).")
+    p_act.add_argument("--idempotency-key", default=None, help="Reuse it to retry the same action safely.")
     p_auth = sub.add_parser("auth", help="Identity commands.")
     auth_sub = p_auth.add_subparsers(dest="auth_command", required=True)
     p_token = auth_sub.add_parser("token", help="Print an access token for a demo user (password grant).")
@@ -449,6 +503,7 @@ def main(argv: list[str] | None = None) -> int:
         "mcp": cmd_mcp,
         "mcp-demo": cmd_mcp_demo,
         "auth": cmd_auth_token,
+        "operator": cmd_operator,
     }
     return handlers[args.command](settings, args)
 

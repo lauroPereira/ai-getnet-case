@@ -44,7 +44,7 @@ passwords of `.env.example` are fictitious examples; replace them before exposin
 
 class Orchestrator(Protocol):
     def handle(
-        self, request: MessageRequest, request_id: str, *, principal: Principal | None = None
+        self, request: MessageRequest, request_id: str, *, principal: Principal | None = None, channel: str = "api"
     ) -> MessageResponse: ...
 
     def readiness(self) -> dict[str, bool | str]: ...
@@ -56,7 +56,7 @@ class PlaceholderOrchestrator:
     """Used until the agent graph is wired: always asks for clarification."""
 
     def handle(
-        self, request: MessageRequest, request_id: str, *, principal: Principal | None = None
+        self, request: MessageRequest, request_id: str, *, principal: Principal | None = None, channel: str = "api"
     ) -> MessageResponse:
         from merchant_assistant.api.schemas import Resolution
 
@@ -205,7 +205,7 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
             return limited
         bound = payload.model_copy(update={"user_id": caller.customer_id})
         try:
-            return app.state.orchestrator.handle(bound, request_id, principal=caller)
+            return app.state.orchestrator.handle(bound, request_id, principal=caller, channel="api")
         except ConversationNotFound:
             return _error(
                 404, "conversation_not_found", "Conversation not found for this user.", request.state.request_id

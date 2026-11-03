@@ -143,3 +143,50 @@ def test_identity_migration_0009_round_trip(tmp_path):
     else:
         raise AssertionError("0008 schema must refuse the merchant role")
     assert migrate(conn) == ["up 0009_identity_hitl"] and current_version(conn) == LATEST
+
+
+def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
+    conn = connect(tmp_path / "queue.sqlite3")
+    seed(conn, FixedClock("2026-10-26T10:00:00"))
+    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    conn.execute(
+        "INSERT INTO conversations (conversation_id, customer_id, state, created_at, updated_at) "
+        "VALUES ('conv_legacy0001','cliente1988','handoff','t','t')"
+    )
+    conn.execute(
+        "INSERT INTO messages (conversation_id, request_id, role, text, tokens, created_at) "
+        "VALUES ('conv_legacy0001','req_1','merchant','Quero um atendente',4,'t')"
+    )
+    conn.execute(
+        "INSERT INTO handoff_cases (case_id, protocol, customer_id, idempotency_key, reason, payload, created_at, "
+        "conversation_id) VALUES ('hc_legacy','SIM-20261026-ABCDEF','cliente1988','k1','customer_request','{}','t',"
+        "'conv_legacy0001')"
+    )
+    assert migrate(conn) == ["up 0009_identity_hitl"]
+    row = conn.execute("SELECT * FROM handoff_cases WHERE case_id='hc_legacy'").fetchone()
+    assert (row["protocol"], row["queue_state"], row["resume_count"], row["thread_id"]) == (
+        "SIM-20261026-ABCDEF",
+        "open",
+        0,
+        None,
+    )
+    assert {"handoff_events", "webhook_deliveries"} <= tables(conn)
+    assert conn.execute("SELECT via FROM messages").fetchone()[0] is None
+    conn.execute("INSERT INTO handoff_events VALUES ('hev_1','hc_legacy','approve','op_ana','key-00000001','{}','t')")
+    try:
+        conn.execute("INSERT INTO handoff_events VALUES ('hev_2','hc_legacy','reply','op_ana','key-00000001','{}','t')")
+    except sqlite3.IntegrityError:
+        pass
+    else:
+        raise AssertionError("the idempotency key must be unique")
+    try:
+        conn.execute("UPDATE handoff_cases SET queue_state='lost' WHERE case_id='hc_legacy'")
+    except sqlite3.IntegrityError:
+        pass
+    else:
+        raise AssertionError("queue_state must be checked")
+    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    assert not {"handoff_events", "webhook_deliveries"} & tables(conn)
+    assert "queue_state" not in {r[1] for r in conn.execute("PRAGMA table_info(handoff_cases)")}
+    assert conn.execute("SELECT protocol FROM handoff_cases").fetchone()[0] == "SIM-20261026-ABCDEF"
+    assert conn.execute("SELECT text FROM messages").fetchone()[0] == "Quero um atendente"

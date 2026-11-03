@@ -379,8 +379,10 @@ ALTER TABLE api_sessions DROP COLUMN message_count;
 # v0.7.0 (ADR 0017). `api_principals` is rebuilt because SQLite cannot change a CHECK constraint in place: the
 # documented procedure (foreign keys off, new table, copy, drop, rename) keeps the rows that sessions, comparisons and
 # run snapshots reference. Principals now come from verified JWTs, so the access key digest becomes optional, and
-# existing demo/admin principals receive the scopes of their role. Accounts keep only PBKDF2 hashes. Task 64 appends
-# the handoff queue to this same migration.
+# existing demo/admin principals receive the scopes of their role. Accounts keep only PBKDF2 hashes. The handoff
+# queue (task 64) lives in the same migration: queue state, operator, resume counter, checkpoint thread (D6), ticket
+# id, events with a unique idempotency key (D10), webhook deliveries and `messages.via`. Cases created before 0009
+# enter the queue as `open`.
 IDENTITY_UP = """
 PRAGMA foreign_keys = OFF;
 BEGIN;
@@ -429,15 +431,67 @@ CREATE TABLE rate_limit_hits (
     count INTEGER NOT NULL,
     PRIMARY KEY (principal_id, window_start)
 );
+ALTER TABLE handoff_cases ADD COLUMN queue_state TEXT NOT NULL DEFAULT 'open'
+    CHECK (queue_state IN ('open', 'claimed', 'answered', 'rejected', 'closed'));
+ALTER TABLE handoff_cases ADD COLUMN claimed_by TEXT;
+ALTER TABLE handoff_cases ADD COLUMN claimed_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN answered_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN closed_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN closed_by TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE handoff_cases ADD COLUMN channel TEXT;
+ALTER TABLE handoff_cases ADD COLUMN thread_id TEXT;
+ALTER TABLE handoff_cases ADD COLUMN ticket_id TEXT;
+CREATE INDEX handoff_queue ON handoff_cases(queue_state, created_at);
+CREATE TABLE handoff_events (
+    event_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL REFERENCES handoff_cases(case_id),
+    action TEXT NOT NULL CHECK (action IN ('claim', 'approve', 'reply', 'reject', 'close')),
+    operator_id TEXT NOT NULL,
+    idempotency_key TEXT UNIQUE,
+    payload TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX handoff_events_case ON handoff_events(case_id, created_at);
+CREATE TABLE webhook_deliveries (
+    delivery_id TEXT PRIMARY KEY,
+    event TEXT NOT NULL,
+    target TEXT NOT NULL,
+    case_id TEXT,
+    conversation_id TEXT,
+    attempt INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    response_code INTEGER,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX webhook_deliveries_case ON webhook_deliveries(case_id, created_at);
+ALTER TABLE messages ADD COLUMN via TEXT;
 COMMIT;
 PRAGMA foreign_keys = ON;
 """
 
 # Rolling back removes what only exists from 0009 on: merchant, operator and service principals with their sessions,
-# Router comparisons and run snapshots (the 0008 schema cannot hold them), accounts and revoked tokens.
+# Router comparisons and run snapshots (the 0008 schema cannot hold them), accounts, revoked tokens, the queue columns,
+# handoff events and webhook deliveries. Cases and messages themselves are kept.
 IDENTITY_DOWN = """
 PRAGMA foreign_keys = OFF;
 BEGIN;
+ALTER TABLE messages DROP COLUMN via;
+DROP INDEX IF EXISTS webhook_deliveries_case;
+DROP TABLE IF EXISTS webhook_deliveries;
+DROP INDEX IF EXISTS handoff_events_case;
+DROP TABLE IF EXISTS handoff_events;
+DROP INDEX IF EXISTS handoff_queue;
+ALTER TABLE handoff_cases DROP COLUMN ticket_id;
+ALTER TABLE handoff_cases DROP COLUMN thread_id;
+ALTER TABLE handoff_cases DROP COLUMN channel;
+ALTER TABLE handoff_cases DROP COLUMN resume_count;
+ALTER TABLE handoff_cases DROP COLUMN closed_by;
+ALTER TABLE handoff_cases DROP COLUMN closed_at;
+ALTER TABLE handoff_cases DROP COLUMN answered_at;
+ALTER TABLE handoff_cases DROP COLUMN claimed_at;
+ALTER TABLE handoff_cases DROP COLUMN claimed_by;
+ALTER TABLE handoff_cases DROP COLUMN queue_state;
 DROP TABLE IF EXISTS rate_limit_hits;
 DROP INDEX IF EXISTS audit_events_principal;
 ALTER TABLE audit_events DROP COLUMN on_behalf_of;
