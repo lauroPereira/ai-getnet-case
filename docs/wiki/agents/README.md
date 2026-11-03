@@ -85,3 +85,20 @@ As skills são a entrada portátil, sincronizada para Codex e Claude Code. Este 
 Agendamento é opcional e exige pedido explícito. Ao monitorar, preserve silêncio se nada relevante mudar. Espera por decisão humana, execução em andamento e dependência externa não são travamento.
 
 A [comparação da atualização](atualizacao-do-fluxo.md) registra o que mudou e o que foi generalizado.
+
+## Neste projeto: agentes nativos e modelo por papel
+
+Desde a etapa 0 da [evolução pós-feedback](../../specs/evolucao-pos-feedback-plano.md) (2026-11-03), Developer, Reviewer e QA também existem como subagentes nativos do Claude Code em `.claude/agents/`, adaptados do `ampeli-sdd`. O frontmatter fixa modelo, esforço e ferramentas: o Reviewer não tem Edit nem Write; o QA tem o navegador embutido. A sessão principal é o Supervisor e despacha sem sobrepor a matriz.
+
+| Papel | Claude | Esforço | Ferramentas | Escreve |
+| --- | --- | --- | --- | --- |
+| Supervisor | sessão principal | da sessão | todas | estado, tarefas, evidência, manifesto |
+| Developer | `opus` | `high` | Read, Edit, Write, Glob, Grep, Bash | código e testes na branch da versão |
+| Reviewer | `opus` | `high` | Read, Glob, Grep, Bash | só o parecer em `docs/evidence/` (via Supervisor) |
+| QA | `opus` | `high` | leitura, Bash, Write, navegador embutido | parecer, evidências da campanha, tarefas de defeito |
+
+**Por que `opus`/`high` nos três.** É a configuração que fechou a v0.6.0 deste case em um dia (três subagentes, contexto novo, um ciclo de correção por papel). O `ampeli-sdd` mede duas alternativas: Developer em `sonnet`/`medium` (mais barato por passagem, mais rodadas de rejeição) e os três em `opus`/`xhigh` (≈ US$4,60 e 20 min ativos por ponto, 4 correções em 9 PRs). Decisão por padrão do Supervisor, reversível: mudar exige editar `.claude/agents/` com aprovação do responsável e registrar aqui.
+
+**Medição.** `python tools/scripts/medir-agentes.py --desde AAAA-MM-DD` lê os registros locais dos subagentes e dá minutos ativos, chamadas, tokens e custo equivalente de API por passagem e por tarefa. Todo despacho cita na descrição **uma** tarefa (`tarefa 63`, `T63` ou `63-identidade`) para o rateio funcionar. O relatório do Supervisor ([modelo](../../templates/relatorio-do-supervisor.md)) traz a tabela "Custo e tempo por tarefa".
+
+**Ritmo e capacidade.** Despertador de 20 minutos na sessão do Supervisor enquanto houver agente rodando; um agente pesado por vez depois de `tools/scripts/checar-memoria.ps1`; `tools/scripts/limpar-ambiente.ps1` (simulação, depois `-Aplicar`) depois de cada QA apto. O que o ciclo faz sem esperar o responsável está na "Autorização por versão" do AGENTS.md.
