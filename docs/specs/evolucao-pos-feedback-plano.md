@@ -248,6 +248,7 @@ Um arquivo compartilhado tem um dono por período; o outro time não o edita. Ar
 5. **Capacidade.** Até dois Developers e dois Reviewers ao mesmo tempo, desde que `checar-memoria.ps1` responda "cabe" antes de cada despacho. Docker, Qdrant em serviço e QA real: um por vez, sempre.
 6. **Ordem de entrega.** QA, merge e tag na ordem v0.7.0 → v0.8.0 → v0.9.0 → v0.10.0 → v1.0.0. No período paralelo, a v0.10.0 só entra em QA depois do merge da v0.9.0 e da atualização da sua branch com a `main`.
 7. **Despacho e medição.** A descrição de todo despacho cita o time e uma tarefa (`Time B, tarefa 70`), para `medir-agentes.py` ratear custo e o relatório separar os dois times.
+8. **Limpeza sem atingir o outro time.** A limpeza é do Supervisor, depois de cada QA apto, sempre rodada no checkout principal: o script não toca o worktree do B (fica fora do scratchpad), os ledgers de campanha, `data/runtime/` nem os volumes com nome do Docker. O único ponto compartilhado são os scratchpads das sessões, onde os subagentes dos dois times escrevem. Com nenhum agente rodando nos dois times, a limpeza é completa (`limpar-ambiente.ps1`, simulação e depois `-Aplicar`). Com agente do outro time rodando, ela roda com `-Aplicar -SemScratchpad`, e a limpeza completa fica para quando os dois times pararem. O Supervisor nunca encerra processo nem remove worktree do outro time.
 
 ### Estimativa
 
