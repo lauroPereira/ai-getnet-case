@@ -203,3 +203,21 @@ Revisão interrompida pelo Supervisor a pedido do responsável (fim de créditos
 ### Não verificado
 
 Sonda contra o ticketing real (escrita, não rodou); mutação manual (assinatura, janela, inbox, 5xx, ordem, tentativas); 0009 com dados por comando próprio; `docker compose config` sem `.env`; emissão de `handoff.created` nos caminhos CLI e MCP. Próxima ação: retomar no mesmo candidato (`7079920`) e só então emitir parecer final.
+
+## Tarefa 65, rodada 2 — apto para QA (com runtime novo)
+
+- **Papel:** mesmo Reviewer do Time A; independente (critério: parecer da rodada 1 em `d55ce35`, D27 e D28). Revalidação concluída antes do pedido de parada.
+- **Candidato:** `review-a` destacado em `c25e6bc`; diff `7e4416c..c25e6bc` (a 66 não coberta); árvore limpa; sha256 de `src` e `prompts` iguais antes e depois.
+- **Números:** suíte estrita **530 passed**, Ruff e skills ok, código 0. Mutação: **7/7 mortos** (R07, R16, R19, R20, D27, D28a, D28b).
+
+| Achado | Situação | Confirmação |
+| --- | --- | --- |
+| P2-1 / D27 auditoria apagada | Corrigido | Três processos com `seed`: auditoria 4 → 4 após reinício → 8; dados sintéticos recriados; mutante D27 morto por `test_second_seed_keeps_the_audit` |
+| P2-2 turno de A na conversa de B | Corrigido | Sonda: B na própria conversa aberta não recebe o turno de A; R20 morto |
+| P2-3 valor e data do operador | Corrigido | "R$ 1.234,56" e "28/10/2026" intactos; R16 morto |
+| P3-1 recuperação sem teste | Corrigido | R19 e R07 mortos |
+| D28 falha de checkpoint | Corrigido | Falha real (`checkpoints_path` apontando para diretório): lojista recebe a resposta de encaminhamento; caso na fila desde a abertura com `resume_status=checkpoint_failed`, `resume_error=checkpoint_failed:OperationalError`; ação → **503 checkpoint_missing** sem consumir nada, recusa auditada; D28a e D28b mortos |
+
+**P3-1 novo:** a 0009 foi editada no lugar (`migrations.py:485`, CHECK com `checkpoint_failed`); banco que já estava na versão 9 com o código anterior mantém a CHECK antiga e o UPDATE da D28 falha (capturado e só logado, caso volta a ficar mudo). Reprodução: banco subido com as migrações de `868a07f` e aberto com o candidato → `CHECK constraint failed`. Atinge só volumes de desenvolvimento e QA anteriores a `c25e6bc`. **Condição para o QA: runtime/volume novo** (ou recriar a partir da 0008).
+
+Não verificado: Docker e modelo real; corrida entre mensagem do lojista e retomada simultânea; D20 revista e a 66 (fora do escopo). P3 da rodada 1 que seguem: prazo fixo de 5 min, checkpoints sem poda, texto da ADR 0018.
