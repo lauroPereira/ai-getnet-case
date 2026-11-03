@@ -376,6 +376,98 @@ DROP TABLE IF EXISTS run_evaluations;
 ALTER TABLE api_sessions DROP COLUMN message_count;
 """
 
+# v0.7.0 (ADR 0017). `api_principals` is rebuilt because SQLite cannot change a CHECK constraint in place: the
+# documented procedure (foreign keys off, new table, copy, drop, rename) keeps the rows that sessions, comparisons and
+# run snapshots reference. Principals now come from verified JWTs, so the access key digest becomes optional, and
+# existing demo/admin principals receive the scopes of their role. Accounts keep only PBKDF2 hashes. Task 64 appends
+# the handoff queue to this same migration.
+IDENTITY_UP = """
+PRAGMA foreign_keys = OFF;
+BEGIN;
+CREATE TABLE api_principals_v9 (
+    principal_id TEXT PRIMARY KEY,
+    role TEXT NOT NULL CHECK (role IN ('demo', 'admin', 'merchant', 'operator', 'service')),
+    customer_id TEXT,
+    access_key_digest TEXT UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1,
+    scopes TEXT NOT NULL DEFAULT '[]'
+);
+INSERT INTO api_principals_v9 (principal_id, role, customer_id, access_key_digest, active, scopes)
+SELECT principal_id, role, customer_id, access_key_digest, active,
+       CASE role
+           WHEN 'admin' THEN
+               '["kb:admin","profiles:admin","support:read","handoff:create","conversation:read"]'
+           ELSE '["support:read","handoff:create","conversation:read"]'
+       END
+FROM api_principals;
+DROP TABLE api_principals;
+ALTER TABLE api_principals_v9 RENAME TO api_principals;
+CREATE TABLE auth_accounts (
+    account_id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('user', 'client')),
+    principal_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    customer_id TEXT,
+    secret_hash TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE revoked_tokens (
+    jti TEXT PRIMARY KEY,
+    principal_id TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT NOT NULL
+);
+CREATE INDEX revoked_tokens_expiration ON revoked_tokens(expires_at);
+ALTER TABLE audit_events ADD COLUMN principal_id TEXT;
+ALTER TABLE audit_events ADD COLUMN scope TEXT;
+ALTER TABLE audit_events ADD COLUMN on_behalf_of TEXT;
+CREATE INDEX audit_events_principal ON audit_events(principal_id, id);
+CREATE TABLE rate_limit_hits (
+    principal_id TEXT NOT NULL,
+    window_start INTEGER NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (principal_id, window_start)
+);
+COMMIT;
+PRAGMA foreign_keys = ON;
+"""
+
+# Rolling back removes what only exists from 0009 on: merchant, operator and service principals with their sessions,
+# Router comparisons and run snapshots (the 0008 schema cannot hold them), accounts and revoked tokens.
+IDENTITY_DOWN = """
+PRAGMA foreign_keys = OFF;
+BEGIN;
+DROP TABLE IF EXISTS rate_limit_hits;
+DROP INDEX IF EXISTS audit_events_principal;
+ALTER TABLE audit_events DROP COLUMN on_behalf_of;
+ALTER TABLE audit_events DROP COLUMN scope;
+ALTER TABLE audit_events DROP COLUMN principal_id;
+DROP INDEX IF EXISTS revoked_tokens_expiration;
+DROP TABLE IF EXISTS revoked_tokens;
+DROP TABLE IF EXISTS auth_accounts;
+DELETE FROM run_snapshots WHERE principal_id IN
+    (SELECT principal_id FROM api_principals WHERE role IN ('merchant', 'operator', 'service'));
+DELETE FROM router_comparisons WHERE principal_id IN
+    (SELECT principal_id FROM api_principals WHERE role IN ('merchant', 'operator', 'service'));
+DELETE FROM api_sessions WHERE principal_id IN
+    (SELECT principal_id FROM api_principals WHERE role IN ('merchant', 'operator', 'service'));
+CREATE TABLE api_principals_v8 (
+    principal_id TEXT PRIMARY KEY,
+    role TEXT NOT NULL CHECK (role IN ('demo', 'admin')),
+    customer_id TEXT,
+    access_key_digest TEXT NOT NULL UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1
+);
+INSERT INTO api_principals_v8 (principal_id, role, customer_id, access_key_digest, active)
+SELECT principal_id, role, customer_id, COALESCE(access_key_digest, 'migrated:' || principal_id), active
+FROM api_principals WHERE role IN ('demo', 'admin');
+DROP TABLE api_principals;
+ALTER TABLE api_principals_v8 RENAME TO api_principals;
+COMMIT;
+PRAGMA foreign_keys = ON;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -385,6 +477,7 @@ MIGRATIONS: list[Migration] = [
     Migration(6, "profiles_api", PROFILES_API_UP, PROFILES_API_DOWN),
     Migration(7, "kb_versions", KB_VERSIONS_UP, KB_VERSIONS_DOWN),
     Migration(8, "demo_results", DEMO_RESULTS_UP, DEMO_RESULTS_DOWN),
+    Migration(9, "identity_hitl", IDENTITY_UP, IDENTITY_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

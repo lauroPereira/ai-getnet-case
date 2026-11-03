@@ -37,6 +37,10 @@ services:
       MOCKS_URL: http://mocks:8001
       DEMO_MODE: ${DEMO_MODE:-true}
       BUDGET_LIMIT_USD: ${BUDGET_LIMIT_USD:-1.00}
+      # v0.7.0 identity: issuer seen by the other containers; fictitious example credentials (same as .env.example).
+      JWT_ISSUER: ${JWT_ISSUER:-http://api:8000}
+      DEMO_USER_PASSWORDS: ${DEMO_USER_PASSWORDS:-cliente1988:cliente1988-fictitious,cliente_demo_002:cliente-demo-002-fictitious,op_ana:op-ana-fictitious,op_bruno:op-bruno-fictitious}
+      TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
     volumes:
       - runtime:/app/runtime
     restart: unless-stopped

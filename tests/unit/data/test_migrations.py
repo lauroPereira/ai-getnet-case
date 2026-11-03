@@ -38,6 +38,7 @@ def test_down_and_up_keep_core_data(tmp_path):
     conn = connect(tmp_path / "db.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     assert migrate(conn, 1) == [
+        "down 0009_identity_hitl",
         "down 0008_demo_results",
         "down 0007_kb_versions",
         "down 0006_profiles_api",
@@ -56,6 +57,7 @@ def test_down_and_up_keep_core_data(tmp_path):
         "up 0006_profiles_api",
         "up 0007_kb_versions",
         "up 0008_demo_results",
+        "up 0009_identity_hitl",
     ]
     assert current_version(conn) == LATEST
 
@@ -90,6 +92,7 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT sale_id, gross_minor FROM sales ORDER BY sale_id").fetchall()
     assert migrate(conn, 4) == [
+        "down 0009_identity_hitl",
         "down 0008_demo_results",
         "down 0007_kb_versions",
         "down 0006_profiles_api",
@@ -101,3 +104,42 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
     ]
     assert migrate(conn, 5) == ["up 0005_business_journeys"]
     assert current_version(conn) == 5
+
+
+def test_identity_migration_0009_round_trip(tmp_path):
+    conn = connect(tmp_path / "identity.sqlite3")
+    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    conn.execute("INSERT INTO api_principals VALUES ('demo:default','demo','cliente1988','d1',1)")
+    conn.execute(
+        "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at) "
+        "VALUES ('s1','t1','demo:default','a','b')"
+    )
+    assert migrate(conn) == ["up 0009_identity_hitl"]
+    # Existing principals keep their sessions and receive the scopes of their role.
+    assert conn.execute("SELECT scopes FROM api_principals").fetchone()[0] == (
+        '["support:read","handoff:create","conversation:read"]'
+    )
+    assert {"principal_id", "scope"} <= {r[1] for r in conn.execute("PRAGMA table_info(audit_events)")}
+    assert {"rate_limit_hits", "auth_accounts", "revoked_tokens"} <= tables(conn)
+    assert "on_behalf_of" in {r[1] for r in conn.execute("PRAGMA table_info(audit_events)")}
+    conn.execute("INSERT INTO api_principals(principal_id,role,scopes) VALUES ('service:t','service','[]')")
+    conn.execute("INSERT INTO api_principals VALUES ('merchant:c1','merchant','c1','d2',1,'[]')")
+    conn.execute("INSERT INTO api_principals VALUES ('operator:op','operator',NULL,'d3',1,'[]')")
+    conn.execute(
+        "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at) "
+        "VALUES ('s2','t2','merchant:c1','a','b')"
+    )
+    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    # Rolling back drops what the 0008 schema cannot hold: merchant/operator principals and their sessions.
+    assert [tuple(r) for r in conn.execute("SELECT principal_id FROM api_principals")] == [("demo:default",)]
+    assert [tuple(r) for r in conn.execute("SELECT session_id FROM api_sessions")] == [("s1",)]
+    assert not {"rate_limit_hits", "auth_accounts", "revoked_tokens"} & tables(conn)
+    assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+    assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+    try:
+        conn.execute("INSERT INTO api_principals VALUES ('merchant:c2','merchant','c2','d4',1)")
+    except sqlite3.IntegrityError:
+        pass
+    else:
+        raise AssertionError("0008 schema must refuse the merchant role")
+    assert migrate(conn) == ["up 0009_identity_hitl"] and current_version(conn) == LATEST

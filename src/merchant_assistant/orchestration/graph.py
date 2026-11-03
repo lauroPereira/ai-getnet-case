@@ -15,6 +15,7 @@ from langgraph.graph import END, START, StateGraph
 
 from merchant_assistant.agents import escalation, knowledge, personality, router, support
 from merchant_assistant.agents.common import guess_language, policy
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.schemas import Handoff, MessageRequest, MessageResponse, Resolution, Source
 from merchant_assistant.config import Settings
 from merchant_assistant.conversations import Conversation, ConversationStore
@@ -188,9 +189,15 @@ class Orchestrator:
         db_path=None,
         knowledge: tuple[KnowledgeIndex | None, str | None] | None = None,
         trace_tags: dict | None = None,
+        principal: Principal | None = None,
     ) -> MessageResponse:
         """`db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
-        `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace."""
+        `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace.
+        `principal` is the authenticated caller (HTTP routes always pass it); in-process callers (CLI `ask`, offline
+        evaluation) run as the merchant of `request.user_id`."""
+        if request.user_id is None:
+            raise ValueError("the merchant of the request must be set by the server")
+        principal = principal or Principal.merchant(request.user_id)
         if knowledge is not None:
             captured_index, knowledge_version_id = knowledge
         else:
@@ -206,7 +213,7 @@ class Orchestrator:
             env = ToolEnv(
                 conn,
                 self.clock,
-                CustomerContext(request.user_id, known is not None),
+                CustomerContext.for_principal(principal, request.user_id, known is not None),
                 dict(self.faults),
                 self.mock_services,
             )
@@ -338,6 +345,7 @@ class Orchestrator:
                 "output_violations": state.output_violations,
                 "tools": [o.name for o in ctx.outcomes],
                 "conversation_id": state.conversation_id,
+                "principal_id": ctx.tools.customer.principal_id,
                 "models_by_agent": ctx.summary()["usage_by_agent"],
                 "effective_parameters_by_agent": ctx.summary()["effective_parameters_by_agent"],
                 "cost_estimate_usd": ctx.summary()["cost_estimate_usd"],

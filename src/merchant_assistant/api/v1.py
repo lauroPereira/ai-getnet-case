@@ -2,26 +2,35 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
-import hmac
 import json
-import secrets
 import sqlite3
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import parse_qs, unquote_plus
 
 from fastapi import APIRouter, Depends, Header, Request, Security
 from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field
 
 from merchant_assistant import comparisons
 from merchant_assistant import scenarios as scenario_catalog
 from merchant_assistant.agents.common import format_history
 from merchant_assistant.agents.router import enforce
+from merchant_assistant.api.identity import (
+    DEFAULT_PUBLIC_CLIENT,
+    PUBLIC_CLIENTS,
+    SERVICE_CLIENTS,
+    InvalidToken,
+    Principal,
+    hit_rate_limit,
+    remember_principal,
+)
 from merchant_assistant.api.schemas import ErrorBody, MessageRequest
 from merchant_assistant.config import Settings
 from merchant_assistant.conversations import ConversationNotFound, ConversationStore
@@ -47,13 +56,7 @@ from merchant_assistant.rag.kb import KBBuildFailure
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
 
 router = APIRouter(prefix="/v1", tags=["v1"])
-SESSION_TTL = timedelta(minutes=60)
 COMPARISON_TTL = timedelta(minutes=5)
-
-
-class SessionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    access_key: SecretStr
 
 
 class ProfileCreateRequest(BaseModel):
@@ -193,31 +196,69 @@ def _token_digest(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def _error(status: int, code: str, message: str, request: Request) -> JSONResponse:
+def _error(
+    status: int, code: str, message: str, request: Request, headers: dict[str, str] | None = None
+) -> JSONResponse:
     request_id = getattr(request.state, "request_id", "req_unknown")
     return JSONResponse(
-        status_code=status, content={"error": {"code": code, "message": message, "request_id": request_id}}
+        status_code=status,
+        content={"error": {"code": code, "message": message, "request_id": request_id}},
+        headers=headers,
+    )
+
+
+def rate_limited(request: Request, principal: dict) -> JSONResponse | None:
+    """Per-principal limit (spec v0.7.0, D5), checked before any model call. Returns the 429 response or None."""
+    settings: Settings = request.app.state.settings
+    conn = _db(request)
+    try:
+        retry_after = hit_rate_limit(conn, principal["principal_id"], settings.rate_limit_per_minute)
+    finally:
+        conn.close()
+    if retry_after is None:
+        return None
+    return _error(
+        429,
+        "rate_limited",
+        "Too many requests for this session; retry after the indicated seconds.",
+        request,
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
+def _unauthorized(request: Request, code: str, message: str) -> JSONResponse:
+    error = "" if code == "token_required" else ', error="invalid_token"'
+    return _error(
+        401, code, message, request, headers={"WWW-Authenticate": f'Bearer realm="merchant-assistant"{error}'}
     )
 
 
 def _principal(request: Request, authorization: str | None = Header(default=None)) -> dict | JSONResponse:
+    """Verifies the bearer token (the single verifier of `api.identity`) and returns the principal as the dict the
+    routes use. `session_id` is the token's `jti` (per-token counters such as the demo action limit)."""
     if not authorization or not authorization.startswith("Bearer "):
-        return _error(401, "session_required", "A valid session is required.", request)
+        return _unauthorized(request, "token_required", "A bearer access token is required.")
     token = authorization[7:].strip()
-    if not token or len(token) > 256:
-        return _error(401, "session_invalid", "Session is invalid or expired.", request)
+    if not token or len(token) > 8192:
+        return _unauthorized(request, "invalid_token", "The access token is invalid, expired or revoked.")
     conn = _db(request)
     try:
-        row = conn.execute(
-            "SELECT p.principal_id,p.role,p.customer_id,s.session_id,s.expires_at,s.revoked_at "
-            "FROM api_sessions s JOIN api_principals p USING(principal_id) WHERE s.token_digest=? AND p.active=1",
-            (_token_digest(token),),
-        ).fetchone()
+        principal, claims = request.app.state.identity.verify(token, conn)
+        remember_principal(conn, principal)
+    except InvalidToken:
+        return _unauthorized(request, "invalid_token", "The access token is invalid, expired or revoked.")
     finally:
         conn.close()
-    if row is None or row["revoked_at"] or datetime.fromisoformat(row["expires_at"]) <= _utc():
-        return _error(401, "session_invalid", "Session is invalid or expired.", request)
-    return dict(row)
+    return {
+        "principal_id": principal.principal_id,
+        "role": principal.role,
+        "customer_id": principal.customer_id,
+        "scopes": principal.scopes,
+        "session_id": claims["jti"],
+        "expires_at": datetime.fromtimestamp(claims["exp"], UTC).isoformat(),
+        "client_id": claims.get("client_id"),
+        "_claims": claims,
+    }
 
 
 def _require(request: Request, roles: tuple[str, ...] = ("demo", "admin")):
@@ -229,7 +270,12 @@ def _require(request: Request, roles: tuple[str, ...] = ("demo", "admin")):
     return principal
 
 
-bearer_scheme = HTTPBearer(auto_error=False, scheme_name="SessionBearer")
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="SessionBearer",
+    bearerFormat="JWT",
+    description="Access token from POST /v1/auth/token (RS256, typ at+jwt).",
+)
 bearer_credentials = Security(bearer_scheme)
 
 
@@ -266,62 +312,112 @@ def _ensure_not_error(principal: dict | JSONResponse):
     return isinstance(principal, JSONResponse)
 
 
-@router.post("/sessions", status_code=201)
-def create_session(payload: SessionRequest, request: Request):
-    settings: Settings = request.app.state.settings
-    supplied = payload.access_key.get_secret_value()
-    configured = [
-        ("admin", settings.api_admin_access_key),
-        ("demo", settings.api_demo_access_key),
-    ]
-    matches = [
-        (role, secret.get_secret_value())
-        for role, secret in configured
-        if secret and hmac.compare_digest(supplied, secret.get_secret_value())
-    ]
-    if len(matches) != 1:
-        return _error(401, "invalid_access_key", "Access key is invalid or unavailable.", request)
-    role, clear_key = matches[0]
-    principal_id = f"{role}:default"
-    customer_id = settings.api_demo_customer_id
-    stamp = _utc()
-    token, session_id = secrets.token_urlsafe(32), f"ses_{uuid.uuid4().hex}"
-    expires = stamp + SESSION_TTL
+OPERATOR_FORBIDDEN = "Operators and services act only on the merchant of a handoff case, never on their own."
+
+
+def operator_forbidden(request: Request, principal: dict) -> JSONResponse | None:
+    """Operators and services have no merchant of their own: attendance routes refuse them (spec v0.7.0)."""
+    if principal["role"] in ("operator", "service"):
+        return _error(403, "forbidden", OPERATOR_FORBIDDEN, request)
+    return None
+
+
+TOKEN_FORM = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "type": "object",
+                    "required": ["grant_type"],
+                    "properties": {
+                        "grant_type": {"type": "string", "enum": ["password", "client_credentials"]},
+                        "username": {"type": "string"},
+                        "password": {"type": "string", "format": "password"},
+                        "client_id": {"type": "string"},
+                        "client_secret": {"type": "string", "format": "password"},
+                        "scope": {"type": "string"},
+                    },
+                }
+            }
+        },
+    }
+}
+
+
+def _token_error(request: Request, status: int, code: str, message: str) -> JSONResponse:
+    response = _error(status, code, message, request, headers={"Cache-Control": "no-store", "Pragma": "no-cache"})
+    if code == "invalid_client":
+        response.headers["WWW-Authenticate"] = 'Basic realm="merchant-assistant"'
+    return response
+
+
+def _basic_client(request: Request) -> tuple[str, str] | None:
+    header = request.headers.get("authorization", "")
+    if not header.startswith("Basic "):
+        return None
+    try:
+        decoded = base64.b64decode(header[6:].strip()).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return None
+    client_id, sep, secret = decoded.partition(":")
+    return (unquote_plus(client_id), unquote_plus(secret)) if sep else None
+
+
+@router.post(
+    "/auth/token",
+    openapi_extra=TOKEN_FORM,
+    responses={400: {"model": ErrorBody}, 401: {"model": ErrorBody}},
+    tags=["auth"],
+)
+async def auth_token(request: Request):
+    """OAuth 2.0 token endpoint (RFC 6749, form encoded). `password` for the synthetic demo users and
+    `client_credentials` for services. The response is `{access_token, token_type, expires_in, scope}`; a failure
+    never says which field was wrong."""
+    body = (await request.body()).decode("utf-8", errors="replace")
+    form = {key: values[0] for key, values in parse_qs(body, keep_blank_values=True).items()}
+    grant = form.get("grant_type", "")
+    identity = request.app.state.identity
     conn = _db(request)
     try:
-        conn.execute("BEGIN IMMEDIATE")
-        conn.execute(
-            "INSERT INTO api_principals(principal_id,role,customer_id,access_key_digest,active) VALUES(?,?,?,?,1) "
-            "ON CONFLICT(principal_id) DO UPDATE SET role=excluded.role,customer_id=excluded.customer_id,"
-            "access_key_digest=excluded.access_key_digest,active=1",
-            (principal_id, role, customer_id, _token_digest(clear_key)),
-        )
-        conn.execute(
-            "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at,revoked_at) "
-            "VALUES (?,?,?,?,?,NULL)",
-            (session_id, _token_digest(token), principal_id, stamp.isoformat(), expires.isoformat()),
-        )
-        conn.execute("COMMIT")
-    except Exception:
-        conn.execute("ROLLBACK")
-        raise
+        if grant == "password":
+            client_id = form.get("client_id") or DEFAULT_PUBLIC_CLIENT
+            if client_id not in PUBLIC_CLIENTS:
+                return _token_error(request, 401, "invalid_client", "Client authentication failed.")
+            username, password = form.get("username", ""), form.get("password", "")
+            principal = identity.authenticate(conn, f"user:{username}", password) if username and password else None
+            if principal is None:
+                return _token_error(request, 401, "invalid_grant", "Invalid username or password.")
+        elif grant == "client_credentials":
+            client_id, secret = _basic_client(request) or (form.get("client_id", ""), form.get("client_secret", ""))
+            principal = (
+                identity.authenticate(conn, f"client:{client_id}", secret)
+                if client_id in SERVICE_CLIENTS and secret
+                else None
+            )
+            if principal is None:
+                return _token_error(request, 401, "invalid_client", "Client authentication failed.")
+        else:
+            return _token_error(request, 400, "unsupported_grant_type", "Use password or client_credentials.")
+        remember_principal(conn, principal)
     finally:
         conn.close()
-    return {"access_token": token, "token_type": "bearer", "expires_at": expires.isoformat(), "role": role}
+    return JSONResponse(
+        identity.issue(principal, client_id), headers={"Cache-Control": "no-store", "Pragma": "no-cache"}
+    )
 
 
-@router.delete("/sessions/current", status_code=204)
-def revoke_session(request: Request, principal=AUTH):
+@router.post("/auth/revoke", tags=["auth"], responses={401: {"model": ErrorBody}})
+def auth_revoke(request: Request, principal=AUTH):
+    """Revokes the presented token (its `jti`) until it expires (RFC 7009 style: `200` with an empty body)."""
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
     try:
-        conn.execute(
-            "UPDATE api_sessions SET revoked_at=? WHERE session_id=?", (_utc().isoformat(), principal["session_id"])
-        )
+        request.app.state.identity.revoke(conn, principal["_claims"])
     finally:
         conn.close()
-    return Response(status_code=204)
+    return Response(status_code=200)
 
 
 @router.get("/catalog/models", response_model=ModelCatalogResponse)
@@ -644,7 +740,9 @@ def _read_conversation(
     return history, state, digest(state)
 
 
-def _new_context(request: Request, conn: sqlite3.Connection, request_id: str, customer_id: str, models: dict):
+def _new_context(
+    request: Request, conn: sqlite3.Connection, request_id: str, customer_id: str, models: dict, principal: dict
+):
     orchestrator = request.app.state.orchestrator
     clock = SystemClock(request.app.state.settings.timezone)
     known = conn.execute("SELECT 1 FROM customers WHERE customer_id=?", (customer_id,)).fetchone() is not None
@@ -656,7 +754,11 @@ def _new_context(request: Request, conn: sqlite3.Connection, request_id: str, cu
         budget=orchestrator.budget,
         trace=TraceRecorder(request_id),
         tools=ToolEnv(
-            conn, clock, CustomerContext(customer_id, known), dict(orchestrator.faults), orchestrator.mock_services
+            conn,
+            clock,
+            CustomerContext.for_principal(Principal.from_session(principal), customer_id, known),
+            dict(orchestrator.faults),
+            orchestrator.mock_services,
         ),
         clock=clock,
         agent_llms={"router": orchestrator._profile_llm("router", models["router"])},
@@ -690,6 +792,8 @@ def _decision(request: Request, context: RunContext, spec: CallSpec, mechanism: 
 def compare(payload: CompareRequest, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
+    if forbidden := operator_forbidden(request, principal):
+        return forbidden
     conn = _db(request)
     request_id = request.state.request_id
     context, consumed = None, False
@@ -716,7 +820,9 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
         if not consume_demo_messages(conn, principal, 1, request.app.state.settings):
             return _error(429, "demo_message_limit_reached", DEMO_LIMIT_MESSAGE, request)
         consumed = True
-        context, _ = _new_context(request, conn, request_id, principal["customer_id"] or "admin", profile["agents"])
+        context, _ = _new_context(
+            request, conn, request_id, principal["customer_id"] or "admin", profile["agents"], principal
+        )
         started = time.perf_counter()
         llm_result = _decision(request, context, spec, "llm", profile["agents"])
         jev_result = _decision(request, context, spec, "jev", profile["agents"])
@@ -787,10 +893,22 @@ def _execution_mode(orchestrator) -> str:
 
 def consume_demo_messages(conn: sqlite3.Connection, principal: dict, count: int, settings: Settings) -> bool:
     """Atomically count `count` paid actions (messages, new comparison executions, Router comparisons and AI
-    evaluations) against the demo session limit; False when it would be exceeded. Refusals that make no model call
-    are not counted: callers consume only after their validations, and refund when the budget refuses first."""
+    evaluations) against the demo limit of one access token; False when it would be exceeded. Refusals that make no
+    model call are not counted: callers consume only after their validations, and refund when the budget refuses
+    first. From v0.7.0 the counter row (`api_sessions`) is keyed by the token's `jti`."""
     if principal["role"] != "demo":
         return True
+    conn.execute(
+        "INSERT OR IGNORE INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at,revoked_at) "
+        "VALUES (?,?,?,?,?,NULL)",
+        (
+            principal["session_id"],
+            _token_digest(f"jti:{principal['session_id']}"),
+            principal["principal_id"],
+            _utc().isoformat(),
+            principal["expires_at"],
+        ),
+    )
     cursor = conn.execute(
         "UPDATE api_sessions SET message_count=message_count+? WHERE session_id=? AND message_count+?<=?",
         (count, principal["session_id"], count, settings.demo_session_message_limit),
@@ -919,6 +1037,7 @@ def execute_run(
         db_path=domain_db_path,
         knowledge=knowledge,
         trace_tags=tags,
+        principal=Principal.from_session(principal),
     )
     trace_data = orchestrator.trace(request_id)
     if trace_data and any(str(error).startswith("router:") for error in trace_data.get("errors", [])):
@@ -972,6 +1091,10 @@ def scenarios_list(request: Request, principal=AUTH):
 def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
+    if forbidden := operator_forbidden(request, principal):
+        return forbidden
+    if limited := rate_limited(request, principal):
+        return limited
     conn = _db(request)
     request_id = request.state.request_id
     settings: Settings = request.app.state.settings

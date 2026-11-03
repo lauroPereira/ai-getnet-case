@@ -5,6 +5,7 @@ import json
 import anyio
 from mcp import Client
 
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import seed
@@ -13,6 +14,7 @@ from merchant_assistant.tools.base import CustomerContext, ToolEnv
 from merchant_assistant.tools.registry import AGENT_TOOLS, execute
 
 CLOCK = FixedClock("2026-10-26T10:00:00")
+MERCHANT = CustomerContext.for_principal(Principal.merchant("cliente1988"), "cliente1988", True)
 
 
 def setup(settings, customer="cliente1988"):
@@ -21,7 +23,7 @@ def setup(settings, customer="cliente1988"):
     conn.close()
     from merchant_assistant.mocks.clients import in_process_client
 
-    return build_server(env_factory_for(settings.db_path, customer, CLOCK, in_process_client()))
+    return build_server(env_factory_for(settings.db_path, Principal.merchant(customer), CLOCK, in_process_client()))
 
 
 def run(server, calls):
@@ -48,7 +50,7 @@ def test_same_result_as_the_domain_layer(settings):
     _, (result,) = run(setup(settings), [("get_receivables_schedule", {"period": "yesterday"})])
     conn = connect(settings.db_path)
     direct = execute(
-        "get_receivables_schedule", {"period": "yesterday"}, ToolEnv(conn, CLOCK, CustomerContext("cliente1988", True))
+        "get_receivables_schedule", {"period": "yesterday"}, ToolEnv(conn, CLOCK, MERCHANT)
     )
     assert result.is_error is False
     assert text(result) == json.loads(json.dumps(direct.data, default=str))
@@ -64,7 +66,7 @@ def test_pricing_tools_match_the_domain_over_mcp(settings):
     direct = execute(
         "simulate_pricing",
         args,
-        ToolEnv(conn, CLOCK, CustomerContext("cliente1988", True), mock_services=in_process_client()),
+        ToolEnv(conn, CLOCK, MERCHANT, mock_services=in_process_client()),
     )
     assert text(result) == json.loads(json.dumps(direct.data, default=str))
 

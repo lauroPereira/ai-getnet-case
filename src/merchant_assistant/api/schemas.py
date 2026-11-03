@@ -36,13 +36,15 @@ CHALLENGE_EXAMPLES = [
 class MessageRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"examples": [{"message": m, "user_id": "cliente1988"} for m in CHALLENGE_EXAMPLES]},
+        json_schema_extra={"examples": [{"message": m} for m in CHALLENGE_EXAMPLES]},
     )
 
     message: str = Field(min_length=1, max_length=2000, description="Merchant message, in Portuguese or English.")
-    user_id: str = Field(
+    user_id: str | None = Field(
+        default=None,
         pattern=r"^[A-Za-z0-9_\-.]{1,64}$",
-        description="Synthetic merchant identifier for the demo scenario. It does not prove identity.",
+        description="Optional. The merchant comes from the session; when present it must be the session's merchant "
+        "(otherwise 403 identity_mismatch). It never selects the merchant.",
     )
     conversation_id: str | None = Field(default=None, pattern=r"^conv_[A-Za-z0-9]{8,40}$")
 

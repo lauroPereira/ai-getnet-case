@@ -1,4 +1,4 @@
-"""Tool catalog: schemas exposed to the model, per-agent allowlists and a safe executor."""
+"""Tool catalog: schemas exposed to the model, required scopes, per-agent allowlists and a safe, audited executor."""
 
 from __future__ import annotations
 
@@ -9,8 +9,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ValidationError
 
+from merchant_assistant.api.identity import SUPPORT_READ
 from merchant_assistant.tools import domain
-from merchant_assistant.tools.base import ToolEnv, ToolError
+from merchant_assistant.tools.base import ToolEnv, ToolError, access_error, write_audit
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,7 @@ class ToolSpec:
     args_model: type[BaseModel]
     fn: Callable[[ToolEnv, Any], dict]
     phase: Literal["bootstrap", "specialist"]
+    scope: str
 
 
 TOOLS: dict[str, ToolSpec] = {
@@ -32,6 +34,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.ReceivablesArgs,
             domain.get_receivables_schedule,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_payout_status",
@@ -39,6 +42,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.PayoutArgs,
             domain.get_payout_status,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_device_status",
@@ -46,6 +50,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.DeviceArgs,
             domain.get_device_status,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "find_authorization_events",
@@ -54,6 +59,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.AuthorizationArgs,
             domain.find_authorization_events,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_contract_snapshot",
@@ -61,6 +67,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.ContractArgs,
             domain.get_contract_snapshot,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "simulate_pricing",
@@ -69,6 +76,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.PricingArgs,
             domain.simulate_pricing,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_fee_breakdown",
@@ -77,6 +85,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.PricingArgs,
             domain.get_fee_breakdown,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_enablement_requests",
@@ -85,6 +94,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.EnablementArgs,
             domain.get_enablement_requests,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_sale_cancellation_context",
@@ -93,6 +103,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.CancellationArgs,
             domain.get_sale_cancellation_context,
             "specialist",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "get_complaint_history",
@@ -100,6 +111,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.HistoryArgs,
             domain.get_complaint_history,
             "bootstrap",
+            SUPPORT_READ,
         ),
         ToolSpec(
             "run_customer_healthcheck",
@@ -107,6 +119,7 @@ TOOLS: dict[str, ToolSpec] = {
             domain.HealthcheckArgs,
             domain.run_customer_healthcheck,
             "bootstrap",
+            SUPPORT_READ,
         ),
     ]
 }
@@ -158,26 +171,48 @@ class ToolOutcome:
         return json.dumps(self.data if self.ok else {"error": self.error}, ensure_ascii=False, default=str)
 
 
+def audit_outcome(outcome: ToolOutcome) -> str:
+    if outcome.ok:
+        return "ok"
+    code = (outcome.error or {}).get("code", "error")
+    return "forbidden" if code == "FORBIDDEN_RESOURCE" else code.lower()
+
+
+def record(env: ToolEnv, outcome: ToolOutcome) -> None:
+    """Writes the audit row of one tool call (principal, tool, scope, result, touched resource)."""
+    spec = TOOLS.get(outcome.name)
+    write_audit(env, outcome.name, spec.scope if spec else None, audit_outcome(outcome), env.resource_id)
+
+
 def execute(name: str, arguments: dict | str | None, env: ToolEnv, *, agent: str | None = None) -> ToolOutcome:
-    """Validates and runs a tool. Never raises: failures become structured error outcomes."""
+    """Validates, authorizes and runs a tool. Scope and merchant are checked before the per-agent allowlist and
+    before the tool runs. Tool failures become structured error outcomes; every call, accepted or refused, leaves
+    one audit row (a failure to write it propagates: no unaudited call is reported)."""
     raw: dict = {}
+    env.resource_id = None
     try:
         raw = json.loads(arguments) if isinstance(arguments, str) else dict(arguments or {})
         if name not in TOOLS:
             raise ToolError("INVALID_ARGUMENT", f"Unknown tool: {name}")
+        spec = TOOLS[name]
+        if denied := access_error(env.customer, spec.scope):
+            raise denied
         if agent is not None and name not in AGENT_TOOLS.get(agent, ()):
             raise ToolError("INVALID_ARGUMENT", f"Tool {name} is not allowed for {agent}")
         if not env.customer.known:
             raise ToolError("CUSTOMER_NOT_FOUND", "Merchant account not found in the demo environment.")
         if name in env.faults:
             raise ToolError(env.faults[name], f"{name} is unavailable right now.")  # type: ignore[arg-type]
-        spec = TOOLS[name]
         args = spec.args_model.model_validate(raw)
-        return ToolOutcome(name, raw, True, data=spec.fn(env, args))
+        outcome = ToolOutcome(name, raw, True, data=spec.fn(env, args))
     except ToolError as exc:
-        return ToolOutcome(name, raw, False, error={"code": exc.code, "message": exc.message})
+        outcome = ToolOutcome(name, raw, False, error={"code": exc.code, "message": exc.message})
     except ValidationError as exc:
         fields = sorted({".".join(str(p) for p in e["loc"]) for e in exc.errors()})
-        return ToolOutcome(name, raw, False, error={"code": "INVALID_ARGUMENT", "message": f"Invalid: {fields}"})
+        outcome = ToolOutcome(name, raw, False, error={"code": "INVALID_ARGUMENT", "message": f"Invalid: {fields}"})
     except json.JSONDecodeError:
-        return ToolOutcome(name, raw, False, error={"code": "INVALID_ARGUMENT", "message": "Arguments are not JSON."})
+        outcome = ToolOutcome(
+            name, raw, False, error={"code": "INVALID_ARGUMENT", "message": "Arguments are not JSON."}
+        )
+    record(env, outcome)
+    return outcome

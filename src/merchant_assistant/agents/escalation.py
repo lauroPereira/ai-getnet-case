@@ -8,13 +8,17 @@ import uuid
 
 from pydantic import ValidationError
 
-from merchant_assistant.agents.common import prompt
+from merchant_assistant.agents.common import guess_language, policy, prompt
 from merchant_assistant.agents.support import outcomes_for_case
 from merchant_assistant.data.clock import today
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.orchestration.budget import BudgetExceeded
 from merchant_assistant.orchestration.run import LimitExceeded, RunContext
 from merchant_assistant.orchestration.state import EscalationDraft, EscalationResult, GraphState
+from merchant_assistant.tools.base import access_error, write_audit
+
+HANDOFF_CREATE = "handoff:create"
+CASE_WRITE = "handoff_case.create"  # audit name of the case write
 
 RECOVERABLE = (LLMError, ValidationError, LimitExceeded, BudgetExceeded)
 
@@ -50,6 +54,16 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         )
         ctx.step_notes.update(protocol=result.protocol, created=False)
         return {"escalation": result, "agents": agents, "status": "handoff"}
+
+    if denied := access_error(ctx.tools.customer, HANDOFF_CREATE):  # checked before the case is written
+        write_audit(ctx.tools, CASE_WRITE, HANDOFF_CREATE, denied.code.lower())
+        ctx.step_notes["error"] = denied.code
+        language = state.decision.language if state.decision else guess_language(state.message)
+        return {
+            "agents": agents,
+            "errors": [*state.errors, f"escalation: {denied.code}"],
+            "policy": state.policy or policy("unavailable", language),
+        }
 
     case = {
         "merchant_message": state.message,
@@ -102,6 +116,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             state.conversation_id,
         ),
     )
+    write_audit(ctx.tools, CASE_WRITE, HANDOFF_CREATE, "ok", case_id)
     result = EscalationResult(
         case_id=case_id,
         protocol=protocol,

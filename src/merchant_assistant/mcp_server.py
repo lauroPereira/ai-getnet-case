@@ -1,8 +1,9 @@
 """MCP server for the support tools (decision 0010).
 
-Same registry, schemas, validation, customer isolation, audit and structured errors as the agent path: every call
-goes through `tools.registry.execute`. The merchant is fixed by the server process (`--customer`), never by a tool
-argument. Transport: stdio.
+Same registry, schemas, validation, scopes, customer isolation, audit and structured errors as the agent path: every
+call goes through `tools.registry.execute`. The merchant comes from a merchant access token verified when the server
+starts (`MERCHANT_ASSISTANT_TOKEN`, kept out of the process list; spec v0.7.0 D12), never from a tool argument.
+Transport: stdio.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from mcp import types
 from mcp.server.lowlevel import Server
 
 from merchant_assistant import __version__
+from merchant_assistant.api.identity import Identity, InvalidToken, Principal
 from merchant_assistant.tools.base import ToolEnv
 from merchant_assistant.tools.registry import execute, model_tool_schemas
 
@@ -56,14 +58,37 @@ def build_server(env_factory: Callable[[], ToolEnv]) -> Server:
     )
 
 
-def env_factory_for(db_path, customer_id: str, clock, mock_services=None) -> Callable[[], ToolEnv]:
+class AccessRefused(ValueError):
+    """The MCP server only starts with a valid merchant access token."""
+
+
+def principal_for_token(identity: Identity, conn, token: str | None) -> Principal:
+    """Verifies the token with the same verifier as the API (signature, issuer, audience, expiry, revocation) and
+    accepts only merchant principals: operators and services have no merchant of their own."""
+    try:
+        principal, _ = identity.verify(token or "", conn)
+    except InvalidToken as exc:
+        raise AccessRefused("access token is invalid, expired or revoked") from exc
+    if principal.role != "merchant" or not principal.customer_id:
+        raise AccessRefused("the MCP server accepts only merchant tokens")
+    return principal
+
+
+def env_factory_for(db_path, principal: Principal, clock, mock_services=None) -> Callable[[], ToolEnv]:
+    """Tool environments bound to an authenticated merchant principal: scopes and merchant are checked and every call
+    is audited with the principal, as on the agent path."""
     from merchant_assistant.data.db import connect
     from merchant_assistant.tools.base import CustomerContext
+
+    if principal.role != "merchant" or not principal.customer_id:
+        raise ValueError("the MCP server serves only a merchant principal")
+    customer_id = principal.customer_id
 
     def factory() -> ToolEnv:
         conn = connect(db_path)
         known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (customer_id,)).fetchone() is not None
-        return ToolEnv(conn, clock, CustomerContext(customer_id, known), mock_services=mock_services)
+        context = CustomerContext.for_principal(principal, customer_id, known)
+        return ToolEnv(conn, clock, context, mock_services=mock_services)
 
     return factory
 

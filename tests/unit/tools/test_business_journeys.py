@@ -3,6 +3,7 @@ from datetime import date
 
 from fastapi.testclient import TestClient
 
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import seed
@@ -40,7 +41,8 @@ def environment(tmp_path, customer="cliente1988"):
     import httpx
 
     services = MockServiceClient("http://mocks", transport=httpx.MockTransport(dispatch))
-    return conn, ToolEnv(conn, clock, CustomerContext(customer, True), mock_services=services)
+    context = CustomerContext.for_principal(Principal.merchant(customer), customer, True)
+    return conn, ToolEnv(conn, clock, context, mock_services=services)
 
 
 def test_price_comparison_reports_four_distinct_results(tmp_path):

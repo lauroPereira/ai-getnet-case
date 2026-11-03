@@ -24,9 +24,18 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
     typesafe_api_key: SecretStr | None = None
     deepseek_api_key: SecretStr | None = None
-    api_demo_access_key: SecretStr | None = None
-    api_admin_access_key: SecretStr | None = None
     api_demo_customer_id: str = "cliente1988"
+    # v0.7.0 identity (ADR 0017, spec v0.7.0 D1, D2, D5, D12): JWT issued by the assistant.
+    jwt_issuer: str = "http://127.0.0.1:8000"
+    jwt_private_key_path: Path | None = None  # default: <runtime>/jwt/signing_key.pem, created on first use
+    jwt_jwks_url: str | None = None  # external issuer: verify tokens with its JWKS instead of the local key
+    demo_user_passwords: SecretStr | None = None  # `<username>:<password>,...` for the synthetic demo users
+    ticketing_client_secret: SecretStr | None = None  # client `ticketing-demo` (client credentials)
+    api_demo_password: SecretStr | None = None  # user `demo`; empty disables it
+    api_admin_password: SecretStr | None = None  # user `admin`; empty disables it
+    password_hash_iterations: int = Field(default=600_000, ge=1_000)
+    merchant_assistant_token: SecretStr | None = None  # merchant token for the MCP server and local commands
+    rate_limit_per_minute: int = Field(default=30, ge=1, le=10000)
 
     agent_model: str = "gpt-6-luna"
     embedding_model: str = "text-embedding-3-small"

@@ -3,6 +3,7 @@
 import sqlite3
 
 from merchant_assistant.api.schemas import CHALLENGE_EXAMPLES
+from merchant_assistant.testing import merchant_headers
 
 DEVICE = CHALLENGE_EXAMPLES[4]
 
@@ -11,7 +12,7 @@ def post(client, message, conversation_id=None, user_id="cliente1988", expect=20
     body = {"message": message, "user_id": user_id}
     if conversation_id:
         body["conversation_id"] = conversation_id
-    response = client.post("/messages", json=body)
+    response = client.post("/messages", json=body, headers=merchant_headers(client, user_id))
     assert response.status_code == expect, response.text
     return response.json()
 
@@ -52,11 +53,13 @@ def test_conversation_of_another_merchant_is_refused(offline):
     client, orchestrator, _ = offline()
     mine = post(client, DEVICE)
     response = client.post(
-        "/messages", json={"message": "oi", "user_id": "cliente_demo_002", "conversation_id": mine["conversation_id"]}
+        "/messages",
+        json={"message": "oi", "conversation_id": mine["conversation_id"]},
+        headers=merchant_headers(client, "cliente_demo_002"),
     )
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "conversation_not_found"
-    stored = client.get(f"/conversations/{mine['conversation_id']}").json()
+    stored = client.get(f"/conversations/{mine['conversation_id']}", headers=merchant_headers(client)).json()
     assert stored["customer_id"] == "cliente1988" and len(stored["messages"]) == 2
 
 
