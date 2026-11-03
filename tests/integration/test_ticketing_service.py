@@ -5,6 +5,7 @@ The fake assistant issues RS256 tokens with a key generated in the test, publish
 
 from __future__ import annotations
 
+import base64
 import json
 import time
 import urllib.parse
@@ -28,6 +29,14 @@ TO_TICKETING = "to-ticketing-secret-fictitious"
 TO_ASSISTANT = "to-assistant-secret-fictitious"
 CLIENT_ID, CLIENT_SECRET = "ticketing-demo", "client-secret-fictitious"
 OPERATORS = {"op_ana", "op_bruno"}
+
+
+def err(status: int, code: str, **headers) -> httpx.Response:
+    """Assistant error envelope of the contract: {"error": {"code", "message", "request_id"}}."""
+    if status in (401, 403):
+        headers.setdefault("WWW-Authenticate", "Bearer")
+    body = {"error": {"code": code, "message": code.replace("_", " "), "request_id": "req_fake"}}
+    return httpx.Response(status, json=body, headers=headers)
 
 
 def _key():
@@ -55,6 +64,8 @@ class FakeAssistant:
         self.claims: dict[str, str] = {}
         self.resumed: dict[str, str] = {}
         self.on_action = None
+        self.token_status: int | None = None  # forced status of /v1/auth/token (429 or 401)
+        self.events_status: int | None = None  # forced status of the events endpoint (429)
 
     # --- tokens --------------------------------------------------------------------------------------------------
 
@@ -92,9 +103,26 @@ class FakeAssistant:
         if request.url.path == "/.well-known/jwks.json":
             return httpx.Response(200, json=self.jwks())
         if request.url.path == "/v1/auth/token":
+            if self.token_status == 429:
+                return httpx.Response(
+                    429,
+                    json={"error": "invalid_request", "error_description": "slow down"},
+                    headers={"Retry-After": "7"},
+                )
             form = dict(urllib.parse.parse_qsl(request.content.decode()))
-            if form != {"grant_type": "client_credentials", "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET}:
-                return httpx.Response(401, json={"error": "invalid_client"})
+            basic = request.headers.get("authorization", "")
+            if basic.startswith("Basic "):  # RFC 6749 2.3.1: secret in the header instead of the form
+                client_id, _, secret = base64.b64decode(basic[6:]).decode().partition(":")
+                form |= {"client_id": client_id, "client_secret": secret}
+            if form.get("grant_type") != "client_credentials":
+                return httpx.Response(400, json={"error": "unsupported_grant_type", "error_description": "grant"})
+            creds = (form.get("client_id"), form.get("client_secret"))
+            if self.token_status == 401 or creds != (CLIENT_ID, CLIENT_SECRET):
+                return httpx.Response(
+                    401,
+                    json={"error": "invalid_client", "error_description": "client"},
+                    headers={"WWW-Authenticate": "Basic"},
+                )
             self.tokens_issued += 1
             token = self.token(
                 sub="service:ticketing",
@@ -110,12 +138,16 @@ class FakeAssistant:
             )
         if request.url.path == EVENTS:
             return self._event(request)
-        return httpx.Response(404, json={"error": {"code": "not_found"}})
+        return err(404, "not_found")
 
     def _event(self, request: httpx.Request) -> httpx.Response:
         if not verify(TO_ASSISTANT, request.headers.get("x-signature"), request.content, time.time(), 300):
-            return httpx.Response(401, json={"error": {"code": "invalid_signature"}})
+            return err(401, "invalid_signature")
+        if self.events_status == 429:
+            return err(429, "rate_limited", **{"Retry-After": "7"})
         bearer = request.headers.get("authorization", "").removeprefix("Bearer ")
+        if not bearer:
+            return err(401, "token_required")
         try:
             claims = jwt.decode(
                 bearer,
@@ -125,11 +157,11 @@ class FakeAssistant:
                 issuer=ASSISTANT,
             )
         except jwt.PyJWTError:
-            return httpx.Response(401, json={"error": {"code": "invalid_token"}})
+            return err(401, "invalid_token")
         if claims["jti"] in self.revoked_tokens:
-            return httpx.Response(401, json={"error": {"code": "invalid_token"}})
+            return err(401, "invalid_token")
         if "handoff:integrate" not in claims["scope"].split():
-            return httpx.Response(403, json={"error": {"code": "insufficient_scope"}})
+            return err(403, "insufficient_scope")
         event = json.loads(request.content)
         assert request.headers["x-webhook-id"] == event["id"]
         assert request.headers["x-webhook-event"] == event["type"]
@@ -138,10 +170,10 @@ class FakeAssistant:
         if any(e["id"] == event["id"] for e in self.events):
             return httpx.Response(200, json={"status": "replayed", "case_state": "x", "queue_state": "x"})
         if operator not in OPERATORS:
-            return httpx.Response(422, json={"error": {"code": "unknown_operator"}})
+            return err(422, "unknown_operator")
         if event["type"] == "ticket.assigned":
             if self.claims.get(case, operator) != operator:
-                return httpx.Response(409, json={"error": {"code": "claimed_by_other"}})
+                return err(409, "claimed_by_other")
             self.claims[case] = operator
             body = {"status": "accepted", "case_state": "handoff", "queue_state": "claimed"}
         elif event["type"] == "ticket.action":
@@ -150,7 +182,7 @@ class FakeAssistant:
                     return httpx.Response(
                         200, json={"status": "replayed", "case_state": "awaiting_customer", "queue_state": "answered"}
                     )
-                return httpx.Response(409, json={"error": {"code": "already_resumed"}})
+                return err(409, "already_resumed")
             self.resumed[case] = data["idempotency_key"]
             if self.on_action:
                 self.on_action(event)
@@ -318,7 +350,10 @@ def test_assistant_409_returns_with_the_same_code_and_leaves_the_ticket_unchange
     assert client.post(f"/tickets/{tid}/assign", headers=fake.operator("op_ana")).status_code == 200
     before = client.get(f"/tickets/{tid}", headers=fake.operator()).json()
     response = client.post(f"/tickets/{tid}/assign", headers=fake.operator("op_bruno"))
-    assert response.status_code == 409 and response.json() == {"error": {"code": "claimed_by_other"}}
+    assert response.status_code == 409
+    assert response.json() == {
+        "error": {"code": "claimed_by_other", "message": "claimed by other", "request_id": "req_fake"}
+    }
     after = client.get(f"/tickets/{tid}", headers=fake.operator()).json()
     assert (after["status"], after["assignee"]) == (before["status"], before["assignee"]) == ("open", "op_ana")
 
@@ -405,11 +440,16 @@ def test_operator_token_rules(env, claims, status):
     response = client.get("/tickets", headers={"Authorization": f"Bearer {fake.token(**claims)}"})
     assert response.status_code == status
     assert response.headers["www-authenticate"].startswith("Bearer")
+    expected = "invalid_token" if status == 401 else "insufficient_scope"
+    assert response.json()["error"]["code"] == expected
 
 
 def test_missing_tampered_or_foreign_tokens_are_401(env):
     client, fake, _clock, _app = env
-    assert client.get("/tickets").status_code == 401
+    missing = client.get("/tickets")
+    assert missing.status_code == 401 and missing.json()["error"]["code"] == "token_required"
+    assert missing.headers["www-authenticate"].startswith("Bearer")
+    assert missing.json()["error"]["request_id"].startswith("req_")
     token = fake.token()
     head, payload, sig = token.split(".")
     assert client.get("/tickets", headers={"Authorization": f"Bearer {head}.{payload}.{sig[::-1]}"}).status_code == 401
@@ -527,3 +567,51 @@ def test_every_operator_endpoint_requires_the_token(env, method, path):
     response = getattr(client, method)(path.format(tid=tid), **kwargs)
     assert response.status_code == 401
     assert fake.events == []
+
+
+def test_token_endpoint_errors(env):
+    """RFC 6749 errors: invalid_client is a configuration error (502); 429 keeps the act pending and honors
+    Retry-After."""
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    client.get("/tickets", headers=fake.operator())
+    fake.token_status = 401
+    rejected = client.post(f"/tickets/{tid}/assign", headers=fake.operator())
+    assert rejected.status_code == 502 and rejected.json()["error"]["code"] == "assistant_rejected"
+    assert client.get(f"/tickets/{tid}", headers=fake.operator()).json()["status"] == "new"
+
+    fake.token_status = 429
+    pending = client.post(f"/tickets/{tid}/assign", headers=fake.operator())
+    assert pending.status_code == 202
+    fake.token_status = None
+    clock.advance(2)  # more than the 1 s wait, less than Retry-After
+    assert app.state.dispatcher.dispatch_due() == []
+    clock.advance(5.5)
+    assert [d.status for d in app.state.dispatcher.dispatch_due()] == ["delivered"]
+
+
+def test_assistant_rate_limit_waits_retry_after(env):
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    fake.events_status = 429
+    assert client.post(f"/tickets/{tid}/assign", headers=fake.operator()).status_code == 202
+    fake.events_status = None
+    clock.advance(2)
+    assert app.state.dispatcher.dispatch_due() == []
+    clock.advance(5.5)
+    assert [d.status for d in app.state.dispatcher.dispatch_due()] == ["delivered"]
+    assert fake.tokens_issued == 1  # a 429 does not renew the service token
+
+
+def test_service_can_obtain_the_token_with_basic_auth_too():
+    fake = FakeAssistant()
+    credentials = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    response = fake.handler(
+        httpx.Request(
+            "POST",
+            f"{ASSISTANT}/v1/auth/token",
+            content=b"grant_type=client_credentials",
+            headers={"Authorization": f"Basic {credentials}"},
+        )
+    )
+    assert response.status_code == 200  # the fake follows the contract; the service itself sends the form

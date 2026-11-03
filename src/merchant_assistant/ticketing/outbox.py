@@ -11,12 +11,22 @@ from datetime import UTC, datetime
 
 import httpx
 
-from merchant_assistant.ticketing.auth import AuthError, ServiceToken, TransientError
+from merchant_assistant.ticketing.auth import AuthError, ServiceToken, TransientError, retry_after
 from merchant_assistant.ticketing.config import TicketingSettings
 from merchant_assistant.ticketing.signing import signature
 from merchant_assistant.ticketing.store import TicketStore, iso
 
 EVENTS_PATH = "/v1/integrations/ticketing/events"
+TOKEN_ERRORS = {"token_required", "invalid_token"}
+
+
+def _error_code(response: httpx.Response) -> str | None:
+    """Code of the assistant's error envelope {"error": {"code", "message", "request_id"}}."""
+    try:
+        error = response.json().get("error")
+    except (ValueError, AttributeError):
+        return None
+    return error.get("code") if isinstance(error, dict) else None
 
 
 def envelope(event_type: str, data: dict, now: datetime) -> dict:
@@ -64,11 +74,11 @@ class Dispatcher:
 
     def _send(self, row: dict) -> httpx.Response:
         response = self._post(row)
-        if response.status_code == 401:  # expired or revoked service token: renew once
+        if response.status_code == 401 and _error_code(response) in TOKEN_ERRORS:  # expired or revoked: renew once
             self.token.invalidate()
             response = self._post(row)
         if response.status_code >= 500 or response.status_code == 429:
-            raise TransientError(f"assistant returned {response.status_code}")
+            raise TransientError(f"assistant returned {response.status_code}", retry_after(response))
         return response
 
     def deliver(self, event_id: str) -> Delivery:
@@ -82,7 +92,7 @@ class Dispatcher:
         try:
             response = self._send(row)
         except TransientError as exc:
-            return self._retry_later(row, str(exc))
+            return self._retry_later(row, str(exc), exc.retry_after)
         except AuthError as exc:
             self.store.record_attempt(
                 event_id,
@@ -117,14 +127,14 @@ class Dispatcher:
         )
         return Delivery("rejected", event_id, response.status_code, body)
 
-    def _retry_later(self, row: dict, error: str) -> Delivery:
+    def _retry_later(self, row: dict, error: str, at_least: float | None = None) -> Delivery:
         attempt = row["attempts"] + 1
         now = self.now()
         if attempt >= self.settings.max_attempts:
             self.store.record_attempt(row["event_id"], now, outcome="network_error", error=error, final_status="failed")
             return Delivery("failed", row["event_id"], error=error)
         waits = self.settings.retry_waits_s or (0.0,)
-        wait = waits[min(attempt - 1, len(waits) - 1)]
+        wait = max(waits[min(attempt - 1, len(waits) - 1)], at_least or 0.0)
         self.store.record_attempt(
             row["event_id"],
             now,

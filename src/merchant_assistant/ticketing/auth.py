@@ -22,7 +22,17 @@ class AuthError(Exception):
 
 
 class TransientError(Exception):
-    """Network failure, timeout or 5xx from the assistant: worth another attempt."""
+    """Network failure, timeout, 5xx or 429 from the assistant: worth another attempt."""
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+def retry_after(response: httpx.Response) -> float | None:
+    """Seconds from a numeric `Retry-After` header (HTTP dates are ignored)."""
+    value = response.headers.get("retry-after", "").strip()
+    return float(value) if value.isdigit() else None
 
 
 @dataclass(frozen=True)
@@ -130,9 +140,15 @@ class ServiceToken:
             except httpx.HTTPError as exc:
                 raise TransientError(f"token endpoint unreachable: {type(exc).__name__}") from exc
             if response.status_code >= 500 or response.status_code == 429:
-                raise TransientError(f"token endpoint returned {response.status_code}")
-            if response.status_code != 200:
-                raise AuthError(502, "service_token_rejected", f"Token endpoint returned {response.status_code}.")
+                raise TransientError(f"token endpoint returned {response.status_code}", retry_after(response))
+            if response.status_code != 200:  # RFC 6749 section 5.2: {"error": ..., "error_description": ...}
+                try:
+                    code = str(response.json().get("error", "unknown"))
+                except ValueError:
+                    code = "unknown"
+                raise AuthError(
+                    502, "service_token_rejected", f"Token endpoint returned {response.status_code} ({code})."
+                )
             body = response.json()
             self._token = body["access_token"]
             self._expires_at = self.clock() + float(body.get("expires_in", 0))

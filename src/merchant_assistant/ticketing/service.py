@@ -10,8 +10,10 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 
@@ -37,14 +39,20 @@ class ActionRequest(BaseModel):
     idempotency_key: str = Field(pattern=r"^[A-Za-z0-9_-]{8,80}$")
 
 
+REQUEST_ID: ContextVar[str] = ContextVar("ticketing_request_id", default="req_unknown")
+
+
 def _error(status: int, code: str, message: str, **extra) -> JSONResponse:
-    headers = {}
+    """Same envelope and Bearer challenge as the assistant: {"error": {"code", "message", "request_id"}}."""
+    headers = {"X-Request-Id": REQUEST_ID.get()}
     if status == 401:
         headers["WWW-Authenticate"] = f'Bearer error="{code}"'
     elif status == 403:
         headers["WWW-Authenticate"] = f'Bearer error="{code}", scope="handoff:operate"'
     return JSONResponse(
-        status_code=status, content={"error": {"code": code, "message": message, **extra}}, headers=headers
+        status_code=status,
+        content={"error": {"code": code, "message": message, "request_id": REQUEST_ID.get(), **extra}},
+        headers=headers,
     )
 
 
@@ -52,7 +60,7 @@ def current_operator(request: Request) -> Operator:
     header = request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")
     if scheme.lower() != "bearer" or not token.strip():
-        raise AuthError(401, "invalid_token", "A Bearer token issued by the assistant is required.")
+        raise AuthError(401, "token_required", "A Bearer token issued by the assistant is required.")
     return request.app.state.verifier.verify(token.strip())
 
 
@@ -81,6 +89,11 @@ def create_app(
     app = FastAPI(title="Demo Ticketing Service", version="1.0.0", lifespan=lifespan)
     app.state.settings, app.state.store, app.state.dispatcher = settings, store, dispatcher
     app.state.verifier = verifier
+
+    @app.middleware("http")
+    async def request_id(request: Request, call_next):
+        REQUEST_ID.set(f"req_{uuid.uuid4().hex[:16]}")
+        return await call_next(request)
 
     @app.exception_handler(AuthError)
     async def auth_error(_request: Request, exc: AuthError) -> JSONResponse:
