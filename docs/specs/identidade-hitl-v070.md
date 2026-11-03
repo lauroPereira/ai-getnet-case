@@ -59,6 +59,8 @@ Fixado aqui antes do código. Mudança neste contrato só pelo Supervisor, nesta
 - Envelope: `{"id": "evt_…", "type": "<evento>", "created_at": "<ISO 8601 UTC>", "data": {…}}`.
 - Cabeçalhos: `X-Webhook-Id` (= `id`), `X-Webhook-Event` (= `type`), `X-Signature: t=<unix>,v1=<hex>`, com `v1 = HMAC-SHA256(segredo, "<t>.<corpo bruto>")`. O receptor recusa assinatura inválida ou `t` fora de 300 s (`401 invalid_signature`) e trata `id` repetido como entrega já recebida (`200`, sem efeito novo).
 - Um segredo por sentido: `TICKETING_WEBHOOK_SECRET` (assistente → ticketing), `ASSISTANT_WEBHOOK_SECRET` (ticketing → assistente), `CONVERSATION_WEBHOOK_SECRET` (assistente → lojista).
+- Valores fictícios padrão, **iguais em todos os blocos do compose e no `.env.example`** (sem eles o `docker compose up` sem `.env` não integra): `TICKETING_WEBHOOK_SECRET=ticketing-webhook-secret-fictitious`, `ASSISTANT_WEBHOOK_SECRET=assistant-webhook-secret-fictitious`, `CONVERSATION_WEBHOOK_SECRET=conversation-webhook-secret-fictitious`, `TICKETING_CLIENT_ID=ticketing-demo`, `TICKETING_CLIENT_SECRET=ticketing-demo-secret-fictitious`. *(Fixado em 2026-11-03, na entrega da 66b.)*
+- `operator_id` nos eventos e nas respostas é o identificador sem prefixo (`op_ana`); o principal correspondente é `operator:op_ana`. A conversão fica na fronteira de cada serviço.
 - Tentativas: até três, esperas de 1 s e 2 s (configuráveis), timeout de 3 s; cada tentativa registrada pelo emissor.
 
 **Assistente → ticketing** (`TICKETING_WEBHOOK_URL`, padrão no compose `http://ticketing:8002/webhooks/assistant`):
