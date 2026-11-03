@@ -99,6 +99,7 @@ def test_case_becomes_a_ticket_worked_on_the_ticketing_and_closed(system, action
     [to_merchant] = merchant.get("/merchant/events", params={"conversation_id": conversation_id}).json()["events"]
     assert to_merchant["type"] == "conversation.replied" and to_merchant["data"]["reply_text"] == detail["reply_text"]
     assert to_merchant["data"]["via"] == "operator" and to_merchant["data"]["action"] == action
+    assert "operator_id" not in to_merchant["data"]  # D29; the ticket keeps who acted
 
     # the same act again: the ticketing replays its record; the assistant is not resumed twice (CA-48)
     again = ticketing.post(f"/tickets/{ticket_id}/actions", headers=ana, json=body)

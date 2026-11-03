@@ -195,7 +195,15 @@ def test_ticketing_events_resume_reply_and_close(wired, action):
     client.app.state.webhooks.wait()
     replied = {r.url.host: json.loads(r.content) for r in receivers.requests}
     assert set(replied) == {"ticketing.test", "merchant.test"}
-    assert replied["ticketing.test"] == replied["merchant.test"]  # one event, two receivers
+    to_ticketing, to_merchant = replied["ticketing.test"], replied["merchant.test"]
+    assert to_ticketing["id"] == to_merchant["id"] and to_ticketing["type"] == to_merchant["type"]  # one event
+    assert to_ticketing["data"]["operator_id"] == "op_ana" and "operator_id" not in to_merchant["data"]  # D29
+    assert {k: v for k, v in to_ticketing["data"].items() if k != "operator_id"} == to_merchant["data"]
+    ticketing_request = next(r for r in receivers.requests if r.url.host == "ticketing.test")
+    assert verify_signature(  # two bodies, each signed with the secret of its direction
+        TICKETING_SECRET, ticketing_request.headers["x-signature"], ticketing_request.content, time.time()
+    )
+    assert b"op_ana" not in next(r for r in receivers.requests if r.url.host == "merchant.test").content
     merchant_request = next(r for r in receivers.requests if r.url.host == "merchant.test")
     assert verify_signature(
         CONVERSATION_SECRET, merchant_request.headers["x-signature"], merchant_request.content, time.time()
@@ -204,7 +212,7 @@ def test_ticketing_events_resume_reply_and_close(wired, action):
         raw = request.content.decode()
         assert all(s not in raw for s in (TICKETING_SECRET, ASSISTANT_SECRET, CONVERSATION_SECRET, "Bearer", "eyJ"))
         assert "cliente_demo_002" not in raw and CARD not in raw
-    data = replied["merchant.test"]["data"]
+    data = replied["ticketing.test"]["data"]
     assert replied["merchant.test"]["type"] == "conversation.replied"
     assert (data["case_id"], data["action"], data["operator_id"], data["via"]) == (
         case_id,

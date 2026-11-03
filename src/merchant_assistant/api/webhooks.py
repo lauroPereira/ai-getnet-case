@@ -4,7 +4,8 @@ Envelope `{"id": "evt_…", "type", "created_at", "data"}`; headers `X-Webhook-I
 `X-Signature: t=<unix>,v1=<hex>` with `v1 = HMAC-SHA256(secret, "<t>.<raw body>")`; one secret per direction.
 Outgoing events (`handoff.created`, `conversation.replied`, `handoff.closed`) are built in the request with masked
 text and sent by a short thread outside it: up to `WEBHOOK_MAX_ATTEMPTS` attempts (network error, timeout, 5xx or
-429 are retried; another 4xx is final), each attempt recorded in `webhook_deliveries`. An empty URL sends nothing; a
+429 are retried; another 4xx is final), each attempt recorded in `webhook_deliveries`. The merchant's copy of
+`conversation.replied` omits `operator_id` (D29): one event id, a body per receiver, each signed with its secret. An empty URL sends nothing; a
 receiver that is down never raises in the merchant's or the operator's request."""
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ TARGETS: dict[str, tuple[str, ...]] = {
     "conversation.replied": (TICKETING, MERCHANT),
     "handoff.closed": (TICKETING,),
 }
+HIDDEN_FROM: dict[str, tuple[str, ...]] = {MERCHANT: ("operator_id",)}  # D29: the merchant's copy omits the operator
 log = logging.getLogger("merchant_assistant.webhooks")
 
 
@@ -184,10 +186,11 @@ class Webhooks:
         if not targets:
             return None
         event = envelope(event_type, data)
-        body = json.dumps(event, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         for name, url, secret in targets:
+            copy = event | {"data": {k: v for k, v in data.items() if k not in HIDDEN_FROM.get(name, ())}}
+            body = json.dumps(copy, ensure_ascii=False, separators=(",", ":")).encode("utf-8")  # signed per target
             thread = threading.Thread(
-                target=self._deliver, args=(event, body, name, url, secret), name=f"webhook-{name}", daemon=True
+                target=self._deliver, args=(copy, body, name, url, secret), name=f"webhook-{name}", daemon=True
             )
             with self._lock:
                 self._threads.add(thread)

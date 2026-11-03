@@ -308,3 +308,14 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
   - A ADR 0018 é alinhada no fechamento (D25).
 - **Mutação manual dos dois sobreviventes que a revisão apontou como só de teste:** R07 (gravar o turno a cada tentativa) e R20 (turno pendente de qualquer conversa) agora morrem com os testes novos. Arquivos restaurados depois.
 - **Validação:** `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-a-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` → **código 0, 530 passed** (356 s), Ruff ok, skills ok. Cobre a árvore da 66 (`7e4416c`) mais esta rodada: 524 da rodada da 66, mais os 5 novos de `test_v070_resume_r2.py` e o de `test_seed.py`.
+
+## Tarefa 66, D29
+
+- **Pedido:** decisão D29 do Supervisor (`0e73335`). A cópia de `conversation.replied` ao lojista (`CONVERSATION_WEBHOOK_URL`) omite `operator_id`; a do ticketing o mantém.
+- **Base:** `0e73335`. Commit próprio, "task 66 D29".
+- **Mudança:** em `api/webhooks.py`, `emit` monta um corpo por receptor (`HIDDEN_FROM = {"merchant": ("operator_id",)}`), e cada corpo é assinado com o segredo do seu sentido. Os dois corpos mantêm o mesmo `id` de evento, porque é o mesmo evento, e diferem só pelo campo omitido. O registro em `webhook_deliveries` não muda. Isto substitui a decisão 7 da rodada 1 e fecha a decisão pendente que levei ao Supervisor.
+- **Testes:**
+  - `test_ticketing_events_resume_reply_and_close[*]`: mesmo `id` e tipo; `operator_id = op_ana` só no corpo do ticketing; nenhum `op_ana` no corpo do lojista; o resto do `data` igual; as duas assinaturas conferem, cada uma com o seu segredo.
+  - `test_case_becomes_a_ticket_worked_on_the_ticketing_and_closed[*]` (ticketing real): o evento recebido pelo `mocks` não tem `operator_id`.
+- **Validação:** `test_v070_webhooks.py` e `test_v070_ticketing_integration.py` → 17 passed; Ruff ok. A suíte estrita roda com o commit (número registrado na passagem da 68).
+
