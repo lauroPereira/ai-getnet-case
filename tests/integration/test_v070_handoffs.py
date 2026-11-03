@@ -142,7 +142,7 @@ def test_queue_calls_are_audited_with_the_operator(offline, settings):
         sqlite3.connect(settings.db_path)
         .execute(
             "SELECT tool, outcome, principal_id, scope, customer_id FROM audit_events "
-            "WHERE tool LIKE 'handoff.%' ORDER BY id"
+            "WHERE tool IN ('handoff.approve', 'handoff.reply', 'handoff.reject') ORDER BY id"
         )
         .fetchall()
     )

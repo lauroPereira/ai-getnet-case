@@ -433,9 +433,9 @@ def cmd_operator(settings: Settings, args) -> int:
         principal = _operator_principal(settings, conn)
         operator_id = principal.principal_id.split(":", 1)[1]
         if args.operator_command == "list":
-            result = {"cases": handoffs.list_cases(conn, args.state)}
+            result = {"cases": handoffs.list_cases(conn, args.state, actor=principal.principal_id)}
         elif args.operator_command == "show":
-            result = handoffs.get_case(conn, args.case_id)
+            result = handoffs.get_case(conn, args.case_id, actor=principal.principal_id)
         else:
             key = args.idempotency_key or f"cli-{uuid.uuid4().hex[:20]}"
             orchestrator = operator_orchestrator(settings)  # resumes the flow in-process (paid model calls)

@@ -449,7 +449,11 @@ async def auth_token(request: Request):
     try:
         # D19: attempts per account and client address, counted before any password hashing.
         address = request.client.host if request.client else "unknown"
-        retry_after = hit_rate_limit(conn, f"auth:{account}@{address}", settings.auth_attempts_per_minute)
+        waits = [
+            hit_rate_limit(conn, f"auth:{account}@{address}", settings.auth_attempts_per_minute),
+            hit_rate_limit(conn, f"auth-ip:{address}", settings.auth_attempts_per_ip_per_minute),  # spraying
+        ]
+        retry_after = max((w for w in waits if w is not None), default=None)
         if retry_after is not None:
             return _token_error(
                 429, "rate_limited", "Too many attempts; retry later.", headers={"Retry-After": str(retry_after)}
@@ -1467,11 +1471,19 @@ class HandoffActionRequest(BaseModel):
     idempotency_key: str = Field(pattern=r"^[A-Za-z0-9_-]{8,80}$")
 
 
-def _operator_id(request: Request, principal: dict | JSONResponse) -> str | JSONResponse:
-    """Queue routes need an operator token with `handoff:operate`; the operator id comes from the token."""
+def _operator_id(
+    request: Request, principal: dict | JSONResponse, tool: str, case_id: str | None = None
+) -> str | JSONResponse:
+    """Queue routes need an operator token with `handoff:operate`; the operator id comes from the token. A refusal at
+    this gate is audited (D23)."""
     if isinstance(principal, JSONResponse):
         return principal
     if principal["role"] != "operator" or HANDOFF_OPERATE not in principal["scopes"]:
+        conn = _db(request)
+        try:
+            handoffs.audit_access(conn, tool, "insufficient_scope", principal["principal_id"], case_id)
+        finally:
+            conn.close()
         return insufficient_scope(request, "The operator queue requires the handoff:operate scope.")
     return principal["principal_id"].split(":", 1)[1]
 
@@ -1483,12 +1495,12 @@ def _handoff_error(request: Request, exc: handoffs.HandoffError) -> JSONResponse
 @router.get("/handoffs", tags=["handoffs"], responses={403: {"model": ErrorBody}})
 def handoffs_list(request: Request, state: str | None = None, principal=AUTH):
     """Operator queue, newest first; `state` = open, claimed, answered, rejected or closed."""
-    operator = _operator_id(request, principal)
+    operator = _operator_id(request, principal, "handoff.list")
     if isinstance(operator, JSONResponse):
         return operator
     conn = _db(request)
     try:
-        return {"cases": handoffs.list_cases(conn, state)}
+        return {"cases": handoffs.list_cases(conn, state, actor=principal["principal_id"])}
     except handoffs.HandoffError as exc:
         return _handoff_error(request, exc)
     finally:
@@ -1498,12 +1510,12 @@ def handoffs_list(request: Request, state: str | None = None, principal=AUTH):
 @router.get("/handoffs/{case_id}", tags=["handoffs"], responses={403: {"model": ErrorBody}, 404: {"model": ErrorBody}})
 def handoffs_show(case_id: str, request: Request, principal=AUTH):
     """Summary, pending question, draft, masked conversation, events and deliveries of one case."""
-    operator = _operator_id(request, principal)
+    operator = _operator_id(request, principal, "handoff.read", case_id)
     if isinstance(operator, JSONResponse):
         return operator
     conn = _db(request)
     try:
-        return handoffs.get_case(conn, case_id)
+        return handoffs.get_case(conn, case_id, actor=principal["principal_id"])
     except handoffs.HandoffError as exc:
         return _handoff_error(request, exc)
     finally:
@@ -1522,7 +1534,7 @@ def handoffs_show(case_id: str, request: Request, principal=AUTH):
 )
 def handoffs_claim(case_id: str, request: Request, principal=AUTH):
     """Claims the case for the operator of the token (D9). Claiming one's own case again is idempotent."""
-    operator = _operator_id(request, principal)
+    operator = _operator_id(request, principal, "handoff.claim", case_id)
     if isinstance(operator, JSONResponse):
         return operator
     if limited := rate_limited(request, principal):
@@ -1550,7 +1562,7 @@ def handoffs_claim(case_id: str, request: Request, principal=AUTH):
 def handoffs_act(case_id: str, payload: HandoffActionRequest, request: Request, principal=AUTH):
     """`approve`, `reply` or `reject` (D9, D10, D14). The same `idempotency_key` returns the stored record with
     `replayed: true`; a case already resumed by another action is `409 already_resumed`."""
-    operator = _operator_id(request, principal)
+    operator = _operator_id(request, principal, f"handoff.{payload.action}", case_id)
     if isinstance(operator, JSONResponse):
         return operator
     if limited := rate_limited(request, principal):

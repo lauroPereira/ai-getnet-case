@@ -196,3 +196,21 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
   - Docstring de `can_read` corrigida de D14 para D13.
   - README e CHANGELOG ficam com o Supervisor.
 - **Limitação:** a criação de comparações pelo admin deixou de funcionar por causa da D20. Se a demonstração precisar disso, é decisão de produto.
+
+## Tarefa 64, rodada 2
+
+- **Papel e responsável:** Developer (Time A), subagente; correções da revisão da 64 e de `dab83ab` (rodada 1, [parecer](v070-reviewer.md), `f2a6b60`) e decisões D19 ampliada, D22 e D23.
+- **Base:** `d612d30` (63, rodada 2). Commit próprio, "task 64 round 2". Suíte estrita antes do commit: **código 0, 462 passed** (361 s), Ruff ok, skills ok.
+- **P2-1 (simulação):** corrigido na 65 (`868a07f`: `personality.v4`, `HANDOFF_LINE` novo, sem `"simulated"`). Teste novo confere que nem a resposta ao lojista, nem o `transcript` do operador, nem o detalhe do caso contêm "simula"/`"simulated"`.
+- **P2-2 (CLI sem retomada):** corrigido na 65 (`operator act` passa `orchestrator.resume_handoff`). Teste novo conta a chamada: um `act` pela CLI → uma retomada, `resume_status = done` e turno do operador na conversa.
+- **D23:**
+  - `GET /v1/handoffs` → `handoff.list`.
+  - `GET /v1/handoffs/{id}` → `handoff.read`, com o caso como recurso e `case_not_found` quando não existe.
+  - Recusas no portão das quatro rotas (`insufficient_scope`) também geram linha com o principal e o escopo `handoff:operate`.
+  - A CLI (`list`, `show`) também audita.
+  - O 401 sem token não gera linha (não há principal).
+- **D22:** a mesma chave com outro caso, ação, operador **ou texto** → `409 idempotency_conflict`, sem efeito. Só a repetição idêntica devolve o registro.
+- **D19 ampliada:** além do par conta@endereço, conta-se o endereço somado entre contas (`AUTH_ATTEMPTS_PER_IP_PER_MINUTE`, padrão 30). As duas contagens acontecem a cada tentativa; vale a espera maior. Teste: quatro contas diferentes do mesmo endereço com limite 3 → a quarta recebe `429`.
+- **P3-4:** testes do regex da `idempotency_key` direto no serviço: vazia, 7 e 81 caracteres, espaço, acento e `;` recusados sem evento; 8 e 80 caracteres e `[A-Za-z0-9_-]` aceitos.
+- **P3-5:** casos pré-0009 recusados com `409 not_resumable` (65). A fila sem paginação (`LIMIT 100`) fica como limitação.
+- **Ajuste de teste:** `test_queue_calls_are_audited_with_the_operator` (rodada 1) passou a filtrar as ações, porque a lista também é auditada agora.

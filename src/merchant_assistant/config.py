@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     merchant_assistant_token: SecretStr | None = None  # merchant token for the MCP server and local commands
     rate_limit_per_minute: int = Field(default=30, ge=1, le=10000)
     auth_attempts_per_minute: int = Field(default=10, ge=1, le=1000)  # D19: per account and address on /v1/auth/token
+    auth_attempts_per_ip_per_minute: int = Field(default=30, ge=1, le=10000)  # D19: per address, across accounts
 
     agent_model: str = "gpt-6-luna"
     embedding_model: str = "text-embedding-3-small"

@@ -54,13 +54,20 @@ def _audit(
     outcome: str,
     actor: str,
     on_behalf_of: str | None,
-    case_id: str,
+    case_id: str | None,
 ) -> None:
     conn.execute(
         "INSERT INTO audit_events (at, customer_id, tool, resource_id, outcome, principal_id, scope, on_behalf_of) "
         "VALUES (?,?,?,?,?,?,?,?)",
         (_now(), case["customer_id"] if case else "", tool, case_id, outcome, actor, SCOPE, on_behalf_of),
     )
+
+
+def audit_access(
+    conn: sqlite3.Connection, tool: str, outcome: str, actor: str, case_id: str | None = None, on_behalf_of=None
+) -> None:
+    """D23: reads of the queue and refusals at its gate are audited like its writes."""
+    _audit(conn, _case(conn, case_id) if case_id else None, tool, outcome, actor, on_behalf_of, case_id)
 
 
 def _case(conn: sqlite3.Connection, case_id: str) -> sqlite3.Row | None:
@@ -135,10 +142,21 @@ def _summary(row: sqlite3.Row) -> dict:
     }
 
 
-def list_cases(conn: sqlite3.Connection, state: str | None = None, limit: int = 100) -> list[dict]:
-    """Newest first; `state` filters by queue state."""
+def list_cases(
+    conn: sqlite3.Connection,
+    state: str | None = None,
+    limit: int = 100,
+    *,
+    actor: str | None = None,
+    on_behalf_of: str | None = None,
+) -> list[dict]:
+    """Newest first; `state` filters by queue state. With `actor`, the read is audited (D23)."""
     if state is not None and state not in QUEUE_STATES:
+        if actor:
+            _audit(conn, None, "handoff.list", "invalid_state", actor, on_behalf_of, None)
         raise HandoffError(422, "invalid_state", f"state must be one of {', '.join(QUEUE_STATES)}.")
+    if actor:
+        _audit(conn, None, "handoff.list", "ok", actor, on_behalf_of, None)
     query, params = "SELECT * FROM handoff_cases", []
     if state:
         query, params = query + " WHERE queue_state=?", [state]
@@ -157,8 +175,13 @@ def transcript(conn: sqlite3.Connection, conversation_id: str | None, turns: int
     return [{"role": r["role"], "text": check_input(r["text"]).masked, "at": r["created_at"]} for r in reversed(rows)]
 
 
-def get_case(conn: sqlite3.Connection, case_id: str) -> dict:
+def get_case(
+    conn: sqlite3.Connection, case_id: str, *, actor: str | None = None, on_behalf_of: str | None = None
+) -> dict:
+    """One case with its masked conversation. With `actor`, the read is audited (D23)."""
     row = _case(conn, case_id)
+    if actor:
+        _audit(conn, row, "handoff.read", "ok" if row else "case_not_found", actor, on_behalf_of, case_id)
     if row is None:
         raise HandoffError(404, "case_not_found", "Handoff case not found.")
     payload = json.loads(row["payload"] or "{}")
@@ -265,7 +288,13 @@ def act(
         case = _case(conn, case_id)
         existing = conn.execute("SELECT * FROM handoff_events WHERE idempotency_key=?", (idempotency_key,)).fetchone()
         if existing is not None:
-            if (existing["case_id"], existing["action"], existing["operator_id"]) != (case_id, action, operator_id):
+            stored_text = json.loads(existing["payload"] or "{}").get("text")
+            if (existing["case_id"], existing["action"], existing["operator_id"], stored_text) != (
+                case_id,
+                action,
+                operator_id,
+                text,
+            ):  # D22: only an identical repetition is a replay
                 raise HandoffError(409, "idempotency_conflict", "This idempotency_key was used for another action.")
             retry = resume is not None and _claim_retry(conn, case)
             _audit(conn, case, tool, "retried" if retry else "replayed", actor, on_behalf_of, case_id)
