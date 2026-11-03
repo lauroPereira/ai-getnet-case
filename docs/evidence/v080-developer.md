@@ -188,3 +188,34 @@ Leitura: é mudança de prompt da v0.7.0 (HITL), feita por quem não escreveu ne
 ### Próxima ação
 
 O mesmo Reviewer revê na rodada 4 os casos 14, 15, 16 e 18 e o lacre.
+
+## Tarefa 72a, rodada 5
+
+- Papel e responsável: Developer do Time B, sobre o P3-8 do [parecer da rodada 4](v080-reviewer.md) (apto para QA) e a decisão do Supervisor de aplicá-lo antes do lacre definitivo.
+- Escopo:
+  - Segundos grupos dos casos 15 e 16 em `tests/scenarios/holdout_v080.jsonl`.
+  - `holdout_v080.sha256`, a derivação, a tarefa e esta passagem.
+  - Mensagens, ids, valores, teste, `evaluation/` e `prompts/` intocados.
+- Base e versão final: base `aed374a`; commit único citando o hash novo `acb512cadcce37ed5d7f69c46053e8d389276a8559c77412b874b7306a0c66c8` (rodada 4: `11572812…eff1bac`).
+- Independência: não-independente (relato do autor).
+
+### Mudanças
+
+- **Caso 15:** + "directly comparable", "not comparable". "check" e "flagged" ficaram de fora, porque reabririam respostas erradas. A certa "I've flagged it for the team to check" fica para o juiz, como no parecer.
+- **Caso 16:** + "pendente de processamento", "não volta", "não voltou", "só acontece depois", "só ocorre depois", "após o processamento".
+
+### Bateria pelo `_checks` real (sem modelo)
+
+- **Rodada 5:** 55 respostas, a bateria da rodada 4 mais as quatro certas do P3-8.
+  - Certas: 30/30 passam.
+  - Erradas: 25/25 continuam reprovando.
+- **Bateria da rodada 2:** 25/26. O resíduo continua sendo "Não pertence a você, mas ela está ligada.", aceito para o juiz.
+
+### Evidência
+
+- `git log --oneline 07ca28e..codex/v0.8.0-avaliacao -- prompts/` → nenhum commit.
+- Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`) → código 0, **357 aprovados**. O lacre confere com o hash novo.
+
+### Próxima ação
+
+O Reviewer faz a revisão curta dos casos 15 e 16 e do lacre. Em seguida, o Supervisor declara o lacre definitivo.
