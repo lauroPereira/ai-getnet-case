@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+
+
+class RollbackRefused(RuntimeError):
+    """A rollback step would destroy data the older schema cannot rebuild. Nothing was changed."""
 
 
 @dataclass(frozen=True)
@@ -13,6 +18,8 @@ class Migration:
     name: str
     up: str
     down: str
+    # Runs before any rollback step is applied; raises `RollbackRefused` to stop the whole rollback.
+    guard_down: Callable[[sqlite3.Connection], None] | None = None
 
 
 CORE_UP = """
@@ -569,6 +576,22 @@ OUTBOX_DOWN = """
 DROP TABLE webhook_outbox;
 """
 
+
+def _outbox_down_guard(conn: sqlite3.Connection) -> None:
+    """The outbox is the only copy of the body, state and attempts of events not delivered yet: `webhook_deliveries`
+    does not keep them. Dropping it is safe only when every row is delivered. Run it with the API stopped."""
+    rows = conn.execute(
+        "SELECT status, COUNT(*) FROM webhook_outbox WHERE status != 'delivered' GROUP BY status ORDER BY status"
+    ).fetchall()
+    if rows:
+        blocking = ", ".join(f"{status}: {count}" for status, count in rows)
+        raise RollbackRefused(
+            f"cannot roll back 0010_webhook_outbox: webhook_outbox still holds {sum(count for _, count in rows)} "
+            f"event(s) not delivered ({blocking}). Deliver them or resolve them first, then roll back again. "
+            "Nothing was changed."
+        )
+
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -579,7 +602,7 @@ MIGRATIONS: list[Migration] = [
     Migration(7, "kb_versions", KB_VERSIONS_UP, KB_VERSIONS_DOWN),
     Migration(8, "demo_results", DEMO_RESULTS_UP, DEMO_RESULTS_DOWN),
     Migration(9, "identity_hitl", IDENTITY_UP, IDENTITY_DOWN),
-    Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN),
+    Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN, _outbox_down_guard),
 ]
 LATEST = MIGRATIONS[-1].version
 
@@ -604,6 +627,9 @@ def migrate(conn: sqlite3.Connection, target: int | None = None) -> list[str]:
         raise ValueError(f"unknown schema version {target}")
     applied: list[str] = []
     current = current_version(conn)
+    for m in MIGRATIONS:  # every guard runs before the first step, so a refusal leaves the database as it was
+        if target < m.version <= current and m.guard_down is not None:
+            m.guard_down(conn)
     for m in MIGRATIONS:
         if current < m.version <= target:
             conn.executescript(m.up)

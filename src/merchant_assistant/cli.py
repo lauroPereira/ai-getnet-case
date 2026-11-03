@@ -309,7 +309,7 @@ def cmd_migrate(settings: Settings, args) -> int:
     """Moves the database schema to a version (default: latest). Use --to to roll back."""
     import sqlite3
 
-    from merchant_assistant.data.migrations import current_version, migrate
+    from merchant_assistant.data.migrations import RollbackRefused, current_version, migrate
 
     settings.db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(settings.db_path, isolation_level=None)
@@ -318,6 +318,8 @@ def cmd_migrate(settings: Settings, args) -> int:
         for step in steps or ["nothing to apply"]:
             print(step)
         print(f"schema version: {current_version(conn)}")
+    except RollbackRefused as exc:
+        raise SystemExit(f"migrate: {exc}") from None
     finally:
         conn.close()
     return 0

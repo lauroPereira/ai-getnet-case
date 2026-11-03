@@ -50,11 +50,12 @@ Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evi
 | URL vazia | `test_turn_without_handoff_sends_nothing_and_empty_urls_send_nothing` |
 | Receptor do lojista no `mocks` | `test_mocks_merchant_receiver_checks_the_signature_and_ignores_repeated_ids`; `test_assistant_delivers_to_the_mocks_merchant_receiver` (assinatura de um lado validada pelo outro) |
 | Migração 0009 | `tests/unit/data/test_migrations.py`: `webhook_inbox` e as colunas `event_id`/`error` sobem e descem com a 0009 |
+| Migração 0010 (rodada 4) | `tests/unit/data/test_migrations.py`: a descida recusa com erro claro e sem alterar nada enquanto a outbox tiver linha não entregue (`pending`, `rejected`, `failed`); com tabela vazia ou só `delivered` a descida segue e a 0010 sobe de novo. Passagem: [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 66, rodada 4 (descida da 0010)" |
 | `docker compose config` | Válido (código 0) numa cópia do compose sem `.env` |
 | Suíte estrita | Antes do commit: 1 falha de teste meu (sombreamento de variável), corrigida; 523 passed. Suíte completa com código 0 na passagem (rodada 2 da 65, mesma base) |
 
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+pronta para revisão (Developer, rodada 4: descida da 0010)
 ```

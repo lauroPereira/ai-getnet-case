@@ -1,8 +1,13 @@
 import sqlite3
+from types import SimpleNamespace
 
+import pytest
+
+from merchant_assistant import cli
+from merchant_assistant.config import Settings
 from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.migrations import LATEST, current_version, migrate
+from merchant_assistant.data.migrations import LATEST, RollbackRefused, current_version, migrate
 from merchant_assistant.data.seed import seed
 from merchant_assistant.data.webhook_outbox import enqueue
 
@@ -224,3 +229,108 @@ def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
     assert "queue_state" not in {r[1] for r in conn.execute("PRAGMA table_info(handoff_cases)")}
     assert conn.execute("SELECT protocol FROM handoff_cases").fetchone()[0] == "SIM-20261026-ABCDEF"
     assert conn.execute("SELECT text FROM messages").fetchone()[0] == "Quero um atendente"
+
+
+# --- 0010 rollback: the outbox is the only copy of events not delivered yet ---------------------------------------
+
+
+def add_outbox_row(conn, event_id, status, attempts=0, target="ticketing"):
+    conn.execute(
+        "INSERT INTO webhook_outbox (event_id,target,event,case_id,body,attempts,status) "
+        "VALUES (?,?,'handoff.created','hc_1',?,?,?)",
+        (event_id, target, f'{{"id":"{event_id}"}}', attempts, status),
+    )
+
+
+def outbox_rows(conn):
+    return [tuple(row) for row in conn.execute("SELECT * FROM webhook_outbox ORDER BY event_id, target")]
+
+
+def test_rollback_of_0010_is_refused_while_an_event_is_pending(tmp_path):
+    conn = connect(tmp_path / "pending.sqlite3")
+    add_outbox_row(conn, "evt_new", "pending")
+    add_outbox_row(conn, "evt_retrying", "pending", attempts=2)
+    add_outbox_row(conn, "evt_done", "delivered", attempts=1)
+    with pytest.raises(RollbackRefused) as refused:
+        migrate(conn, 9)
+    message = str(refused.value)
+    assert "2 event(s) not delivered (pending: 2)" in message and "Deliver them or resolve them" in message
+    assert "delivered:" not in message
+
+
+def test_rollback_of_0010_is_refused_while_an_event_has_failed(tmp_path):
+    conn = connect(tmp_path / "failed.sqlite3")
+    add_outbox_row(conn, "evt_exhausted", "failed", attempts=3)
+    with pytest.raises(RollbackRefused) as refused:
+        migrate(conn, 9)
+    assert "1 event(s) not delivered (failed: 1)" in str(refused.value)
+
+
+def test_refused_rollback_reports_each_state_and_leaves_the_database_as_it_was(tmp_path):
+    conn = connect(tmp_path / "intact.sqlite3")
+    seed(conn, FixedClock("2026-10-26T10:00:00"))
+    add_outbox_row(conn, "evt_a", "pending", attempts=1)
+    add_outbox_row(conn, "evt_b", "failed", attempts=3, target="merchant")
+    add_outbox_row(conn, "evt_c", "rejected", attempts=1)
+    add_outbox_row(conn, "evt_d", "delivered", attempts=1)
+    before = outbox_rows(conn)
+    for target in (9, 8, 0):  # a deeper rollback is refused at the same point, before any step is applied
+        with pytest.raises(RollbackRefused) as refused:
+            migrate(conn, target)
+        assert "3 event(s) not delivered (failed: 1, pending: 1, rejected: 1)" in str(refused.value)
+        assert current_version(conn) == LATEST
+        assert outbox_rows(conn) == before
+    assert {"webhook_outbox", "webhook_inbox", "conversations", "customers"} <= tables(conn)
+    assert conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0] == 2
+    assert [row[0] for row in conn.execute("SELECT version FROM schema_version ORDER BY version")] == list(
+        range(1, LATEST + 1)
+    )
+    assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+def test_rollback_of_0010_with_an_empty_outbox_drops_the_table(tmp_path):
+    conn = connect(tmp_path / "empty.sqlite3")
+    assert migrate(conn, 9) == ["down 0010_webhook_outbox"]
+    assert "webhook_outbox" not in tables(conn) and current_version(conn) == 9
+
+
+def test_rollback_of_0010_with_only_delivered_events_drops_the_table(tmp_path):
+    conn = connect(tmp_path / "delivered.sqlite3")
+    add_outbox_row(conn, "evt_a", "delivered", attempts=1)
+    add_outbox_row(conn, "evt_a", "delivered", attempts=1, target="merchant")
+    assert migrate(conn, 9) == ["down 0010_webhook_outbox"]
+    assert "webhook_outbox" not in tables(conn) and current_version(conn) == 9
+
+
+def test_0010_comes_up_again_after_a_rollback(tmp_path):
+    conn = connect(tmp_path / "again.sqlite3")
+    add_outbox_row(conn, "evt_a", "delivered", attempts=1)
+    assert migrate(conn, 9) == ["down 0010_webhook_outbox"]
+    assert migrate(conn) == ["up 0010_webhook_outbox"]
+    assert current_version(conn) == LATEST and outbox_rows(conn) == []
+    add_outbox_row(conn, "evt_b", "pending")
+    assert [row[0] for row in conn.execute("SELECT event_id FROM webhook_outbox")] == ["evt_b"]
+
+
+def test_rollback_goes_through_once_the_blocking_events_are_resolved(tmp_path):
+    conn = connect(tmp_path / "resolved.sqlite3")
+    add_outbox_row(conn, "evt_a", "pending")
+    with pytest.raises(RollbackRefused):
+        migrate(conn, 9)
+    conn.execute("UPDATE webhook_outbox SET status='delivered', attempts=1")
+    assert migrate(conn, 9) == ["down 0010_webhook_outbox"]
+    assert current_version(conn) == 9
+
+
+def test_cli_migrate_refuses_the_rollback_with_a_clear_message(tmp_path, capsys):
+    settings = Settings(_env_file=None, runtime_dir=tmp_path)
+    conn = connect(settings.db_path)
+    add_outbox_row(conn, "evt_a", "failed", attempts=3)
+    conn.close()
+    with pytest.raises(SystemExit) as refused:
+        cli.cmd_migrate(settings, SimpleNamespace(to=9))
+    assert "cannot roll back 0010_webhook_outbox" in str(refused.value) and "failed: 1" in str(refused.value)
+    assert capsys.readouterr().out == ""
+    conn = connect(settings.db_path)
+    assert current_version(conn) == LATEST and len(outbox_rows(conn)) == 1
+    conn.close()
