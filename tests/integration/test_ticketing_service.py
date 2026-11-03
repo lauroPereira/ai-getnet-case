@@ -70,6 +70,7 @@ class FakeAssistant:
         self.events_raw: bytes | None = None  # forced 200 body of the events endpoint (malformed answers)
         self.events_delay = 0.0  # a slow assistant, to exercise the outbox lease
         self.events_exception: Exception | None = None  # an unexpected failure while sending (not httpx)
+        self.resume_failures: list[tuple[str, str | None]] = []  # (event id, idempotency key) answered 503
 
     # --- tokens --------------------------------------------------------------------------------------------------
 
@@ -158,6 +159,10 @@ class FakeAssistant:
             return err(401, "invalid_signature")
         if self.events_status == 429:
             return err(429, "rate_limited", **{"Retry-After": "7"})
+        if self.events_status == 503:  # D26: the action was accepted but the resume failed; repeat the same key
+            sent = json.loads(request.content)
+            self.resume_failures.append((sent["id"], sent["data"].get("idempotency_key")))
+            return err(503, "resume_failed")
         bearer = request.headers.get("authorization", "").removeprefix("Bearer ")
         if not bearer:
             return err(401, "token_required")
@@ -762,3 +767,51 @@ def test_unexpected_error_while_sending_is_a_recorded_failure(env):
     assert app.state.dispatcher.dispatch_due() == []
     fake.events_exception = None
     assert client.post(f"/tickets/{tid}/assign", headers=fake.operator()).status_code == 200
+
+
+def test_resume_failed_503_is_retried_with_the_same_event_and_key(env):
+    """D26 (spec bb1659c): 503 resume_failed is temporary: same event id and idempotency_key, "envio pendente",
+    never a final rejection; the assistant's answer to the retry decides the ticket."""
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    fake.events_status = 503
+    body = {"action": "reply", "text": "Resposta.", "idempotency_key": "resume-key-01"}
+    first = client.post(f"/tickets/{tid}/actions", headers=fake.operator(), json=body)
+    assert first.status_code == 202 and first.json()["delivery"]["status"] == "pending"
+    assert first.json()["ticket"]["status"] == "new" and first.json()["ticket"]["delivery"]["status"] == "pending"
+    event_id = first.json()["delivery"]["event_id"]
+
+    clock.advance(1.1)
+    assert [d.status for d in app.state.dispatcher.dispatch_due()] == ["pending"]
+    fake.events_status = None
+    clock.advance(2.1)
+    assert [d.status for d in app.state.dispatcher.dispatch_due()] == ["delivered"]
+    assert fake.resume_failures == [(event_id, "resume-key-01")] * 2
+    assert [(e["id"], e["data"]["idempotency_key"]) for e in fake.events] == [(event_id, "resume-key-01")]
+    detail = client.get(f"/tickets/{tid}", headers=fake.operator()).json()
+    sent = detail["deliveries"]["sent"][0]
+    assert detail["status"] == "pending" and sent["status"] == "delivered"
+    assert [a["outcome"] for a in sent["attempts"]] == ["network_error", "network_error", "delivered"]
+    assert all("503" in a["error"] for a in sent["attempts"][:2])  # the 503 is recorded on each retried attempt
+
+
+def test_resume_failed_after_all_attempts_waits_for_the_same_key_again(env):
+    """After three 503s the event is failed (not rejected); repeating the same key resends the same event."""
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    fake.events_status = 503
+    body = {"action": "approve", "text": "", "idempotency_key": "resume-key-02"}
+    event_id = client.post(f"/tickets/{tid}/actions", headers=fake.operator(), json=body).json()["delivery"]["event_id"]
+    clock.advance(1.1)
+    app.state.dispatcher.dispatch_due()
+    clock.advance(2.1)
+    assert [d.status for d in app.state.dispatcher.dispatch_due()] == ["failed"]
+    sent = client.get(f"/tickets/{tid}", headers=fake.operator()).json()["deliveries"]["sent"][0]
+    assert sent["status"] == "failed" and len(sent["attempts"]) == 3
+
+    fake.events_status = None
+    again = client.post(f"/tickets/{tid}/actions", headers=fake.operator(), json=body)
+    assert again.status_code == 200 and again.json()["delivery"]["event_id"] == event_id
+    assert again.json()["ticket"]["status"] == "pending"
+    assert {key for _id, key in fake.resume_failures} == {"resume-key-02"}
+    assert [(e["id"], e["data"]["idempotency_key"]) for e in fake.events] == [(event_id, "resume-key-02")]
