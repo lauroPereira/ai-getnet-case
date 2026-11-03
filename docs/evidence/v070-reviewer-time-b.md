@@ -73,3 +73,11 @@ P1-1 resolvido (valor do contrato no compose, `.env.example` sem repetir a chave
 2. Comentário em `service.py:32-37` preso a `LOCAL_DELIVERY_ERRORS` quando descreve `PASS_THROUGH`.
 3. `2xx` sem o corpo do contrato vira `rejected` final mesmo que o assistente tenha aplicado o evento (borda fora do contrato; a mensagem orienta atualizar).
 4. Conflito trivial de `.env.example` no merge com a branch da versão (manter os dois blocos).
+
+## Tarefa 66b, rodada 3 — apto para QA (mantido)
+
+- **Papel:** revalidação de escopo pelo mesmo Reviewer, sem a passagem do Developer.
+- **Candidato:** diff `b2779e8..48f8c90` (`ticketing/service.py`: comentário e formatação de `LOCAL_DELIVERY_ERRORS`, sem mudança de comportamento; teste novo em `tests/integration/test_ticketing_service.py`); HEAD e árvore iguais antes e depois.
+- **Números:** suíte estrita (`--basetemp .pytest_cache/v070-b-review-r3-strict`) **394 passed** (eram 393), nenhum pulado, Ruff limpo, código 0.
+- **Mutação:** `broad-except-off` (sobrevivia na rodada 2) agora morta por `test_unexpected_error_while_sending_is_a_recorded_failure`; `local-errors-off` morta. O `RuntimeError` do transporte cai no `except Exception`: `502 delivery_error`, entrega `rejected` com 1 tentativa, sem reenvio, próximo ato funciona.
+- **P3 da rodada 2:** P3-1 e P3-2 atendidos; P3-3 e P3-4 seguem registrados.
