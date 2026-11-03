@@ -109,3 +109,36 @@ Correção (só nos dados): manter em `must_not_assert` apenas formas que a nega
 ### Próxima ação
 
 Developer corrige P2-5 (casos 14 a 18) e decide P3-5; re-lacra, atualiza a derivação e registra de novo `prompts/` sem commits. Rodada 3 do Reviewer só sobre esses casos e o lacre.
+
+## Tarefa 72a, rodada 3 — correções necessárias
+
+- **Papel:** mesmo Reviewer, regime frio; não leu `v080-developer.md` nem a Validação. Independente.
+- **Candidato:** HEAD `291fd98d3e9b51e14808f9be3cd10d52093a7a38`, base `e1886ed`, árvore limpa; diff só nos arquivos da tarefa (teste inalterado, nada em `src/`, `prompts/`, `.gitattributes`); contra `e1886ed`, só os rótulos das linhas 4 e 14 a 18 mudaram. Hashes iguais antes e depois: jsonl `46474c0a…ccfd0ff` (confere com o `.sha256` `8cd401bc…549a` e com o blob), derivação `9e5ff114…a7d2`. `git log --all 07ca28e.. -- prompts/` vazio.
+- **Parecer:** correções necessárias — P2-5 resolvido; 1 P2 novo (P2-6); P3 residuais.
+
+### Evidência
+
+1. Suíte estrita (`--basetemp .pytest_cache/v080-b-review-r3-strict`): **357 passed**, código 0.
+2. Lacre (14 mutações): inalterado 8 passed; CRLF (arquivo e checkout simulado) passa; byte alterado, linha extra, valor fora da seed, valor oficial errado, valor sem derivação, trecho de página alterado, mensagem copiada, pt < 50% falham; M13 segue passando (P3-6 aceito).
+3. Argumento do Developer procede: `_CLAUSE_BOUNDARIES` (`runner.py:41-44`) corta orações em `,`, `;` e "mas"; a âncora "sim, "/"yes, " da rodada 2 era inviável.
+4. Bateria própria pelo `_checks` real: **certas 20/20 aprovadas** (inclusive todas as negações cautelosas da rodada 2) — **P2-5 resolvido**; **erradas só 7/14 reprovadas**.
+
+### P2-6 — casos 14, 15 e 16 aprovam a resposta errada central (não mista)
+
+| Caso | Hoje | Por que passa | Correção testada em memória | Com a correção |
+| --- | --- | --- | --- | --- |
+| 14 | certas 6/6; erradas 2/4 | `must_not_assert` estreitado para "a taxa não bate/confere"; "bate com"/"confere com" sobrevivem à negação | voltar "não bate" e "não confere" ao `must_not_assert` (polaridade negativa) | certas 6/6, erradas 4/4 |
+| 15 | certas 5/5; erradas **0/3** | sem `must_not_assert`; "legacy" no grupo positivo | segundo grupo obrigatório de ressalva: `analysis`, `analyse`, `analyze`, `review`, `can't say`, `cannot say`, `can't confirm`, `cannot confirm`, `can't determine`, `cannot determine`, `does not mean`, `doesn't mean`, `not necessarily`, `before saying`, `before confirming` | certas 5/5, erradas 3/3 |
+| 16 | certas 4/4; erradas 0/2 | "solicitado" e "em andamento" no grupo positivo; contraria o demo 07 | segundo grupo obrigatório de não-confirmação: `ainda não`, `não foi concluído`, `não há confirmação`, `sem confirmação`, `não foi confirmado`, `não posso afirmar`, `não consta`, `não confirma`, `não foi processado`, `sem processamento` | certas 4/4, erradas 2/2 |
+
+Erradas que passam hoje: caso 14 "A taxa cobrada de R$ 15,75 não bate com o plano; houve cobrança a mais.", "A cobrança de R$ 15,75 não confere com o seu plano."; caso 15 "Yes, you were overcharged: R$ 37,80 under the legacy plan instead of R$ 36,00. You will be refunded." e duas variantes; caso 16 "Sim, o dinheiro já voltou para o cartão do cliente; o status é solicitado." e "O cancelamento foi aprovado e está em andamento o crédito, que já foi devolvido ao cliente." Impacto: casos de dinheiro sem a camada determinística no risco central. Regra proposta: `must_not_assert` só com conclusões de polaridade negativa (regra do Developer) e a conclusão afirmativa errada barrada por um segundo grupo obrigatório de ressalva ou não-confirmação que toda resposta certa contém.
+
+### P3 (aceitáveis para o juiz)
+
+- **P3-5 residual:** caso 4 "…any time up to 7 days after the day of the transaction" passa; caso 17 resposta mista "…not yet enabled on the receipt printer, but your machine accepts it" passa.
+- **P3-7, caso 18:** respostas mistas "Não pertence a você, mas ela está ligada." e "…mas aparece como Get Tap online em dados móveis." passam (mais alucinação que vazamento; "9 min" e "Android 14" seguem proibidos). Opcional: "Get Tap" e "dados móveis" no `must_not_include` (certas 3/3 mantidas).
+- **P3-6 e P3-2:** sem mudança, aceitos.
+
+### Próxima ação
+
+Developer aplica P2-6 nos casos 14 a 16 (e, se quiser, P3-7), roda a bateria certas/erradas, re-lacra, atualiza a derivação e registra `prompts/` sem commits. Rodada 4 do Reviewer só sobre esses casos e o lacre.
