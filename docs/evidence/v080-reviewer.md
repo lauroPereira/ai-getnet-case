@@ -1,0 +1,68 @@
+# Reviewer v0.8.0 (Time B)
+
+Pareceres do Reviewer independente do Time B sobre as tarefas da v0.8.0 adiantadas durante a v0.7.0. Gravado pelo Supervisor a partir do relatório do Reviewer (que não tem escrita).
+
+## Tarefa 72a, rodada 1 — correções necessárias
+
+- **Papel:** Reviewer em contexto frio (sem a passagem do Developer nem diagnóstico do Supervisor; Validação e Status lidos só depois de formar o parecer). Independente.
+- **Critérios:** tarefa 72a (passos 1 a 5 e critérios de conclusão), RF-92 e CA-50, decisão técnica 15 e risco "Holdout escrito pelo autor dos prompts" do plano.
+- **Candidato:** `codex/v0.8.0-avaliacao`, HEAD `8ccc439d10d4e5bcbe2c40ddaa562b9c64b7a482` sobre `d7acaec`/`07ca28e`; árvore limpa; hashes conferidos antes e depois: jsonl `4002fdc9…e1e626`, sha256 `962bdf07…51d2`, teste `dcfd600d…a0d`, derivação `9f6b1c5f…6fb9`. O diff toca só 6 arquivos, nenhum em `prompts/`, `cli.py`, `evaluation/`, `orchestration/` ou `api/`.
+- **Parecer:** correções necessárias — 1 P1, 4 P2, 4 P3.
+
+### Evidência
+
+1. Python do candidato importa o `src/` do worktree (3.13.3).
+2. Suíte estrita (`--basetemp .pytest_cache/v080-b-review-strict`): rc=0, **355 passed**, Ruff limpo, estrutura e skills válidas.
+3. Valores das ferramentas re-derivados com script próprio (banco temporário, relógio fixo da seed `2026-10-26T10:00`, `cliente1988`, 20 chamadas com variantes): 14806, 48425, 4590, 23000, 1575, 3780, 8000, cancelamento `requested`, Mastercard `active` com `available:false`, `dev_002_tap01` `FORBIDDEN_RESOURCE`, contrato `get_conta`/`debit_d1_credit_d2` — todos conferem.
+4. Fontes oficiais (`data/snapshots/public/pages/*.json`): Get Tap ("Android 12", NFC), antecipação (mínimo R$50,00 = 5000), crediário, estorno no mesmo dia, WhatsApp Business (R$1,00 por link pago = 100), páginas ADQ (número 38, inicialização), Wi-Fi — conferem; a página em inglês não menciona Tap, Android, NFC nem antecipação, então os difíceis em inglês estão corretos.
+5. Rótulos testados contra as verificações reais do runner com respostas sintéticas certas e erradas (sustentam P1, P2-1, P2-2, P2-3).
+6. Lacre: 15 mutações em cópias isoladas; um byte alterado, linha extra, valor fora da seed, mensagem copiada, id colidindo ou duplicado, pt < 50%, < 3 difíceis, sem `out_of_scope`, `split` errado, campo desconhecido e 19 casos falham; arquivo em CRLF faz 1 teste falhar (P2-4); valor errado em caso de conhecimento e valor de outro caso passam (P3-1).
+7. Composição: 25 casos (13 pt, 12 en), 4 `-HARD`; primeira rota aceita: support 10, knowledge 6, knowledge_and_support 3, general_web 2, human_handoff 2, out_of_scope 2.
+8. Nenhuma mensagem igual às dos outros conjuntos; maior similaridade textual 0,58 (SequenceMatcher) com outra pergunta.
+
+### P1-1 — casos de encaminhamento exigem `SIM-`, mas a versão avaliada usa `HO-…`
+
+Linhas 22 e 23 (`HV080-PT-HANDOFF-CALLBACK`, `HV080-EN-HANDOFF-END-AGREEMENT`) têm `must_include_any [["SIM-"]]`. O plano (`evolucao-pos-feedback-plano.md`, decisão 7) e a spec v0.7.0 (D7) trocam o protocolo para `HO-AAAAMMDD-XXXXXX` e tiram "simulação" do texto; o holdout roda na v0.8.0, depois da v0.7.0. Toda passagem correta reprova em `content_ok` (2 de 25 falsos de propósito). Reprodução: resposta "Encaminhei seu caso para um atendente. Protocolo: HO-20261026-A1B2C3." → `pass=False content_ok=False`. Correção: grupo `["HO-"]`, sem manter `SIM-`.
+
+### P2-1 — rótulos aprovam a conclusão oposta à das ferramentas
+
+| Linha | Caso | Resposta errada que passa | Por quê |
+| --- | --- | --- | --- |
+| 14 | PRICE-LINK-CONSISTENT | "…a taxa cobrada de R$ 15,75 não está correta…" | aceita "correta", "bate", "confere" |
+| 15 | PRICE-CREDIT-CONDITIONS | "Yes, you were overcharged… R$ 36,00… R$ 37,80" | "differ" casa com "difference"; nada proíbe afirmar cobrança a maior |
+| 16 | CANCELLATION-REFUND | "Sim, o cancelamento foi concluído e o valor foi devolvido…" | `must_not_assert` exige "já" |
+| 17 | ENABLEMENT-MASTERCARD-DEVICE | "Yes… your machine can accept Mastercard cards now…" | grupo 2 aceita "update"/"initializ" |
+| 21 | PIX-PAID-AND-ADVANCE-HARD | "O Pix de R$ 80,00 de ontem ainda não caiu…" | "caiu" no grupo; "pago" casa com "pagamento" |
+
+Correção: termos positivos que não sobrevivam à negação e `must_not_assert` com a conclusão oposta (14: "não está correta", "não confere", "cobrança a mais"; 15: "overcharged", "charged more than", "you will be refunded"; 16: "foi concluído", "foi devolvido", "foi estornado"; 17: "can accept mastercard", "can already accept"; 21: "ainda não caiu", "não foi creditado").
+
+### P2-2 — caso de isolamento não pega a forma mais provável de vazamento
+
+Linha 18 (`HV080-PT-SUP-FOREIGN-DEVICE`) proíbe só "Android 14" e "9 minutos" e não tem grupo positivo; o runner não usa `foreign_markers`. "Sim, a maquininha dev_002_tap01 está ligada e online agora, último sinal há 9 min." → `pass=True`. Correção: `must_not_assert` com "está online", "está ligada", "está conectada", "9 min" e grupo positivo de negativa de acesso ("não pertence", "não está vinculada", "não tenho acesso", "não consigo consultar"…).
+
+### P2-3 — rótulos reprovam respostas corretas plausíveis
+
+| Linha | Caso | Resposta correta que reprova | Termos a incluir |
+| --- | --- | --- | --- |
+| 11 | DEVICE-SIGNAL | "Não, sua Get Smart não está conectada: o último sinal chegou hoje às 07:00…" | "não está conectada", "não está online" |
+| 4 | SAME-DAY-REVERSAL | "…only on the day of the transaction, so do it today." | "day of the", "that day", "today" |
+| 13 | CONTRACT-SETTLEMENT | "…débito no dia útil seguinte à venda e crédito em dois dias úteis." | "dia útil seguinte", "dia seguinte" |
+
+### P2-4 — autoverificação do lacre falha em checkout com CRLF
+
+`tests/unit/test_holdout_v080.py:50` faz `raw.replace(b"\n", b"\r\n")` sobre bytes que podem já estar em CRLF ("\r\r\n" normaliza para "\n\n"). Hoje passa porque o `.git/config` local tem `core.autocrlf=false`; a configuração global e a do sistema têm `true` e o `.gitattributes` tem `* text=auto`, então um clone Windows padrão recebe CRLF e a suíte quebra. `test_seal_matches_content` passa (o hash é robusto). Correção: normalizar para LF antes de gerar a variante CRLF; opcionalmente `tests/scenarios/*.jsonl text eol=lf` no `.gitattributes`.
+
+### P3 (registrar)
+
+- **P3-1:** o teste de valores confere contra a união das saídas de todas as ferramentas, não as do próprio caso; valores de conhecimento (5000, 100) não são testados (só a derivação os sustenta, e conferem).
+- **P3-2:** sobreposição de cenário (não textual) com os dev: CREDIT-DECLINE-NOT-DEVICE ≈ PT08/EX08; WIFI-NEW-PASSWORD ≈ PT05/EX05; os dois casos web ≈ PT02/PT07/EX02/EX07. Ler o resultado do holdout com isso em mente.
+- **P3-3:** WHATSAPP-PAY-MIGRATION (linha 5) aceita só `knowledge`; "quanto vou pagar" pode legitimamente chamar `get_contract_snapshot` (PT04 aceita `knowledge_and_support`).
+- **P3-4:** RECEIVABLE-DEBIT-NET (linha 9) reprova uma resposta correta via `get_fee_breakdown`/`simulate_pricing` (o `Case` não expressa OU); PHONE-AS-TERMINAL (linha 1) reprova "Android version 12".
+
+### Critérios comprovados e não verificados
+
+Comprovados: ≥ 20 casos, ≥ 50% pt, rotas cobertas, 4 difíceis; valores e fontes reproduzíveis; lacre falha com um byte alterado; suíte estrita com código 0; ids e mensagens novos; rótulos de recusa e isolamento coerentes com os dev; rotas k&s alinhadas a PT05/PT08. Não verificados: comportamento real do modelo (sem chamada paga); se a busca encontra as páginas ADQ para "erro do adquirente"; "prompts/ não foi aberto" só verificável pelo diff, que não toca `prompts/`.
+
+### Próxima ação
+
+Developer (Time B): corrigir P1-1 e P2-1 a P2-4 e decidir os P3; re-lacrar (novo SHA-256, commit citando o hash), atualizar a derivação e registrar no re-lacre que `git log 07ca28e..main -- prompts/` não tem ajuste de prompt da v0.8.0 (re-lacrar continua legítimo pelo RF-92). O mesmo Reviewer revê na rodada 2 os casos alterados, o teste e o novo lacre.
