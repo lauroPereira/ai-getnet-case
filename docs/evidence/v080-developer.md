@@ -57,3 +57,50 @@
 - Ação externa: nenhuma (sem push, sem PR). Commit local único com identidade `lauroPereira <lauro.s.pereira@gmail.com>`, conferida no worktree.
 - Próxima ação: o Supervisor despacha o Reviewer independente para a 72a. Depois da aprovação, o holdout fica congelado. Recomendo que quem ajustar prompts na 72b não leia o conteúdo do JSONL, para cumprir "nunca usado em ajuste".
 - Decisão humana pendente: nenhuma para esta rodada. As notas de rótulo ambíguo acima ficam para o Reviewer e o Supervisor decidirem se mantêm o rótulo, sabendo que qualquer mudança exige novo hash antes da campanha.
+
+## Tarefa 72a, rodada 2
+
+- Papel e responsável: Developer do Time B, sobre o [parecer do Reviewer, rodada 1](v080-reviewer.md) (correções necessárias: 1 P1, 4 P2, 4 P3).
+- Escopo: `tests/scenarios/holdout_v080.jsonl` (só rótulos; mensagens, ids, idiomas e valores iguais), `tests/scenarios/holdout_v080.sha256`, `tests/unit/test_holdout_v080.py`, `docs/evidence/v080-holdout-derivacao.md`, a tarefa 72a e esta passagem. `prompts/` continua sem ser aberto.
+- Estado: correções implementadas; em andamento até a revisão da rodada 2.
+- Base e versão final: base `2c0fc0f`; versão final é o commit único desta rodada, que cita o novo hash. Hash novo `a3e7342ea15854356c5378b7ba00bb6c6cd58319d7d610bceb3cd2a5e099653d` (antes `4002fdc9…e1e626`).
+- Independência: não-independente (relato do autor).
+
+### Correções
+
+- **P1-1:** `HV080-PT-HANDOFF-CALLBACK` e `HV080-EN-HANDOFF-END-AGREEMENT` exigem `["HO-"]`, sem `SIM-`.
+- **P2-1** (os termos positivos deixaram de aprovar a conclusão oposta):
+  - `PRICE-LINK-CONSISTENT`: termos como "mesmo valor", "sem divergência", "está correta", "bate com"; `must_not_assert` com "não está correta", "não confere", "não bate", "cobrança a mais" e semelhantes.
+  - `PRICE-CREDIT-CONDITIONS`: removido o "differ" solto; proibidos "overcharged", "charged more than", "you will be refunded", "the fee is correct" e "conditions match".
+  - `CANCELLATION-REFUND`: proibições com o sujeito colado ("cancelamento foi concluído", "valor foi devolvido", "venda foi estornada"). A forma sugerida pelo parecer ("foi concluído") reprovaria a resposta certa "ainda não foi concluído", porque o runner não neutraliza "ainda não".
+  - `ENABLEMENT-MASTERCARD-DEVICE`: removidos "update" e "initializ"; proibidos "can accept mastercard" e "can already accept". "cannot accept" não contém "can accept".
+  - `PIX-PAID-AND-ADVANCE-HARD`: removidos "caiu" e "pago" soltos; proibidos "ainda não caiu", "não foi creditado", "não foi pago" e semelhantes.
+- **P2-2:** `FOREIGN-DEVICE` exige negativa de acesso ("não pertence", "não tenho acesso", "não consigo consultar"…). Proíbe "Android 14" e "9 min", e afirmar que `dev_002_tap01` ou "ela" está ligada, online ou conectada. Não proibi "está online" solto porque a resposta certa pode dizer que a Get Smart do próprio lojista "não está online".
+- **P2-3:** `DEVICE-SIGNAL` aceita "não está conectada"/"não está online"; `SAME-DAY-REVERSAL` aceita "day of the", "that day", "today"; `CONTRACT-SETTLEMENT` aceita "dia útil seguinte", "dia seguinte", "próximo dia útil".
+- **P2-4:** o teste normaliza para LF antes de gerar a variante CRLF. Converti o JSONL de fato para CRLF e os 8 testes passaram; com um byte alterado, 2 falharam; o arquivo foi restaurado (`sha256sum` = hash novo). O `.gitattributes` não foi alterado: está fora dos arquivos permitidos, e o teste já não depende dele.
+- Verificação dos rótulos: as 26 respostas sintéticas (certas e erradas, incluindo os exemplos do parecer) foram passadas por `_checks` do runner, sem modelo: 0 divergências.
+
+### Decisões sobre os P3
+
+- **P3-1, corrigido:** o teste agora deriva os valores das chamadas de cada caso (`TOOL_DERIVATION`) e confere os valores de conhecimento na página oficial versionada com o trecho (`SOURCE_DERIVATION`: "o valor mínimo para antecipação é de R$50,00" → 5000; "R$1,00 por link pago" → 100). Outro teste exige que todo caso com valor tenha derivação.
+- **P3-2, mantido:** a sobreposição com os casos dev é de cenário, não de texto, e cobre os usos mais frequentes. Recomendo reportar o holdout por caso e marcar esses quatro (`CREDIT-DECLINE-NOT-DEVICE`, `WIFI-NEW-PASSWORD` e os dois web) ao ler o resultado.
+- **P3-3, corrigido:** `WHATSAPP-PAY-MIGRATION` aceita `knowledge` e `knowledge_and_support`.
+- **P3-4, corrigido:** `RECEIVABLE-DEBIT-NET` não exige ferramenta específica, porque o valor 14806 só vem de dado do lojista; `PHONE-AS-TERMINAL` aceita "Android version 12", "version 12 of Android" e "Android OS 12".
+
+### Ausência de ajuste de prompt
+
+`git log --oneline 07ca28e..main -- prompts/` → nenhum commit (a `main` está em `07ca28e`). `git log --all --oneline 07ca28e.. -- prompts/` → nenhum commit em nenhuma branch. O re-lacre ocorre antes de qualquer ajuste de prompt da v0.8.0.
+
+### Evidência
+
+- Suíte estrita: `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v080-b-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` → código 0, 357 aprovados (355 + 2 testes novos de derivação), ruff limpo.
+- Composição inalterada: 25 casos, 13 pt, 12 en, 4 `-HARD`.
+
+### Limitações
+
+- O `must_not_assert` do runner só neutraliza as formas de incerteza da sua lista. "Não há confirmação de que o valor foi devolvido" e "não consigo dizer se ela está ligada" ainda seriam marcadas. Os termos foram escolhidos para que as respostas certas mais prováveis não os contenham, mas o risco não é zero.
+- Comportamento real do modelo não verificado (sem chamada paga).
+
+### Próxima ação
+
+O mesmo Reviewer revê na rodada 2 os casos alterados, o teste e o novo lacre.

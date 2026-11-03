@@ -45,8 +45,17 @@ Developer, rodada 1 (2026-11-03), worktree do Time B, branch `codex/v0.8.0-avali
 - Suíte estrita: `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v080-b-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` terminou com código 0 e 355 testes aprovados; ruff sem achados. A primeira execução falhou só por um SIM300 (comparação invertida) no teste novo, corrigido antes da segunda.
 - Nenhuma chamada paga; `prompts/` não foi aberto.
 
+Developer, rodada 2 (2026-11-03), sobre o [parecer do Reviewer](../evidence/v080-reviewer.md) (base `2c0fc0f`):
+
+- P1-1: os dois encaminhamentos exigem `HO-` (plano, decisão 7; spec v0.7.0, D7).
+- P2-1 a P2-3: rótulos de 12 casos ajustados, com a conclusão oposta em `must_not_assert`, negativa de acesso obrigatória no isolamento e tolerância às respostas corretas apontadas. Conferidos contra `_checks` do runner com 26 respostas sintéticas certas e erradas: 0 divergências.
+- P2-4: o teste do lacre normaliza para LF antes de gerar a variante CRLF. Com o JSONL convertido de fato para CRLF, os 8 testes passam; com um byte alterado, 2 falham.
+- P3-1, P3-3 e P3-4 corrigidos: valores derivados das chamadas de cada caso e das páginas oficiais com trecho; WhatsApp aceita `knowledge_and_support`; o recebível de débito não exige ferramenta específica; Get Tap aceita "Android version 12". P3-2 mantido e registrado na passagem.
+- Re-lacre: SHA-256 `a3e7342ea15854356c5378b7ba00bb6c6cd58319d7d610bceb3cd2a5e099653d`. `git log 07ca28e..main -- prompts/` e o mesmo em todas as branches: nenhum commit.
+- Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`): código 0, 357 aprovados, ruff limpo.
+
 ## Status
 
 ```text
-Implementada pelo Developer (rodada 1); aguarda revisão independente.
+Rodada 2 implementada pelo Developer; aguarda a revisão da rodada 2.
 ```

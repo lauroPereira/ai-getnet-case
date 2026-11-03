@@ -13,6 +13,7 @@ from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import MAIN_CUSTOMER, seed
 from merchant_assistant.evaluation.runner import load_cases
+from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.mocks.clients import in_process_client
 from merchant_assistant.testing import DEFAULT_CLOCK
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
@@ -46,7 +47,8 @@ def test_seal_matches_content():
 
 
 def test_seal_ignores_line_endings_but_not_content():
-    raw = HOLDOUT.read_bytes()
+    raw = HOLDOUT.read_bytes().replace(b"\r\n", b"\n")  # the checkout may already be CRLF (text=auto)
+    assert normalized_digest(raw) == sealed_digest()
     assert normalized_digest(raw.replace(b"\n", b"\r\n")) == sealed_digest()
     tampered = bytearray(raw)
     tampered[10] = ord("x") if tampered[10] != ord("x") else ord("y")
@@ -92,25 +94,62 @@ def _minor_values(node) -> set[int]:
     return set()
 
 
-def test_tool_backed_amounts_come_from_the_seed(tmp_path):
-    """Every amount labeled on a case that expects tools is returned by those tools over the synthetic seed."""
+# Where each labeled amount comes from: the calls of that case over the seed, or the official page and excerpt.
+TOOL_DERIVATION = {
+    "HV080-EN-SUP-RECEIVABLE-DEBIT-NET": [("get_receivables_schedule", {"period": "yesterday"})],
+    "HV080-EN-SUP-PAYOUT-LINK-SALE": [
+        ("get_receivables_schedule", {"period": "last_7_days"}),
+        ("get_payout_status", {"receivable_ids": ["rcv_1988_0004"]}),
+    ],
+    "HV080-EN-SUP-DEBIT-DECLINE-ISSUER": [("find_authorization_events", {})],
+    "HV080-PT-SUP-PRICE-LINK-CONSISTENT": [("simulate_pricing", {"payment_type": "credit", "sale_date": "2026-10-20"})],
+    "HV080-EN-SUP-PRICE-CREDIT-CONDITIONS": [("simulate_pricing", {"period": "yesterday", "payment_type": "credit"})],
+    "HV080-PT-KS-CREDIT-DECLINE-NOT-DEVICE": [("find_authorization_events", {})],
+    "HV080-PT-KS-PIX-PAID-AND-ADVANCE-HARD": [
+        ("get_receivables_schedule", {"period": "yesterday"}),
+        ("get_payout_status", {"receivable_ids": ["rcv_1988_0003"]}),
+    ],
+}
+SOURCE_DERIVATION = {
+    "HV080-EN-KNOW-EARLY-PAYOUT-MINIMUM-HARD": (
+        "site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+        "o valor mínimo para antecipação é de R$50,00",
+    ),
+    "HV080-PT-KNOW-WHATSAPP-PAY-MIGRATION": (
+        "site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+        "R$1,00 por link pago",
+    ),
+}
+PAGES = Path(__file__).resolve().parents[2] / "data" / "snapshots" / "public" / "pages"
+
+
+def test_every_labeled_amount_has_a_derivation():
+    labeled = {c.id for c in load_cases([HOLDOUT]) if c.must_include_amounts}
+    assert labeled == set(TOOL_DERIVATION) | set(SOURCE_DERIVATION)
+
+
+def test_tool_backed_amounts_come_from_the_calls_of_each_case(tmp_path):
+    """Each case's amounts are returned by that case's own calls over the synthetic seed (fixed seed clock)."""
     clock = FixedClock(DEFAULT_CLOCK)
     conn = connect(tmp_path / "holdout.sqlite3")
     seed(conn, clock)
     env = ToolEnv(conn, clock, CustomerContext(MAIN_CUSTOMER, True), mock_services=in_process_client())
-    calls = [
-        ("get_receivables_schedule", {"period": "last_7_days"}),
-        ("get_payout_status", {"receivable_ids": ["rcv_1988_0003", "rcv_1988_0004"]}),
-        ("find_authorization_events", {}),
-        ("simulate_pricing", {"payment_type": "credit", "sale_date": "2026-10-20"}),
-        ("simulate_pricing", {"period": "yesterday", "payment_type": "credit"}),
-    ]
-    available: set[int] = set()
-    for name, args in calls:
-        outcome = execute(name, args, env)
-        assert outcome.ok, (name, outcome.error)
-        available |= _minor_values(outcome.data)
-    conn.close()
-    for case in load_cases([HOLDOUT]):
-        if case.expected_tools:
-            assert set(case.must_include_amounts) <= available, case.id
+    cases = {c.id: c for c in load_cases([HOLDOUT])}
+    try:
+        for case_id, calls in TOOL_DERIVATION.items():
+            available: set[int] = set()
+            for name, args in calls:
+                outcome = execute(name, args, env)
+                assert outcome.ok, (case_id, name, outcome.error)
+                available |= _minor_values(outcome.data)
+            assert set(cases[case_id].must_include_amounts) <= available, case_id
+    finally:
+        conn.close()
+
+
+def test_official_amounts_come_from_the_versioned_pages():
+    cases = {c.id: c for c in load_cases([HOLDOUT])}
+    for case_id, (page, excerpt) in SOURCE_DERIVATION.items():
+        text = json.loads((PAGES / f"{page}.json").read_text(encoding="utf-8"))["text"]
+        assert excerpt in text, case_id
+        assert amounts(excerpt) == set(cases[case_id].must_include_amounts), case_id
