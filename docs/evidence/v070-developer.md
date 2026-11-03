@@ -175,3 +175,24 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - **Ação externa:** nenhuma; commit local com a identidade conferida.
 - **Próxima ação:** Reviewer revisa o commit da 65. Eu sigo com "task 63 round 2" e "task 64 round 2" (em commits separados) e depois com a 66.
 - **Decisão humana pendente:** nenhuma.
+
+## Tarefa 63, rodada 2
+
+- **Papel e responsável:** Developer (Time A), subagente; correções da revisão (rodada 1, [parecer](v070-reviewer.md), `f6da518`) e das decisões D18 ampliada, D20 e D21.
+- **Base:** `868a07f` (tarefa 65). Commit próprio, "task 63 round 2". Suíte estrita antes do commit: **código 0, 448 passed** (325 s), Ruff ok, skills ok.
+- **P1-1:** `KEY=` vazio no `.env` (como no `.env.example`) vale "não definido". Um validador em `Settings` converte o vazio em `None` em `runtime_dir`, `checkpoints_path`, `jwt_private_key_path` e `jwt_jwks_url`; antes virava `Path(".")` ou uma URL vazia. Teste novo monta `Settings` a partir do próprio `.env.example` (só o custo do hash é sobrescrito), publica o JWKS, emite o token de `cliente1988` com a senha fictícia e o usa numa rota (`test_env_example_as_copied_issues_and_verifies_tokens`).
+- **P2-1:** `JWT_ISSUER` saiu do `.env.example` como linha ativa; ficou um comentário explicando que o compose define `http://api:8000`. Teste de coerência: sem `JWT_ISSUER` ativo no exemplo, compose com `${JWT_ISSUER:-http://api:8000}`, padrão local `http://127.0.0.1:8000`.
+- **P2-2:** `build_server(..., authorize=...)` verifica o token de novo a cada tool call (assinatura, validade, revogação), com o mesmo verificador. Se a verificação falha, a ferramenta não roda; a recusa vai para a auditoria (`invalid_token`) e volta como erro `INVALID_TOKEN`. Teste: token revogado depois da subida → a chamada seguinte é recusada.
+- **P2-3 e D18 ampliada:** `/v1/router/compare`, `/v1/comparisons` e `/v1/runs/{id}/evaluations` agora passam pelo rate limit do D5. O limite de ações por token já valia para `merchant` (`LIMITED_ROLES` em `dab83ab`). Testes: `router/compare` do lojista com limite 1 → `429 demo_message_limit_reached`; as três rotas → `429 rate_limited` com relógio fixo.
+- **D20:**
+  - O admin não tem lojista no token nem no principal.
+  - `/v1/messages` atribui ao admin o lojista da demo, só nessa rota; as ferramentas são autorizadas para esse lojista.
+  - `POST /messages` responde "accepts only merchant and demo tokens", sem citar outros papéis.
+  - Consequência: `/v1/conversations` e a criação de comparações para o admin passam a recusar (`403` e `422 admin_scope_required`, como já estava no código para principal sem lojista). As rotas de demo continuam abertas ao admin.
+- **D21:** dependência `READER`. Perfis, KB, catálogo, cenários, runs, comparações, `/v1/messages` e `router/compare` só para `merchant`, `demo` e `admin`; `operator` e `service` recebem `403 insufficient_scope`. Teste parametrizado com 9 rotas.
+- **P3:**
+  - Exceção inesperada dentro de uma ferramenta grava a linha de auditoria com resultado `error` e continua sendo levantada, como antes.
+  - `tools/scripts/run_synthetic_v040_api.py` usa `api_demo_password`/`api_admin_password`, com teste de login. O teste é pulado se o `basetemp` não estiver em `.pytest_cache`.
+  - Docstring de `can_read` corrigida de D14 para D13.
+  - README e CHANGELOG ficam com o Supervisor.
+- **Limitação:** a criação de comparações pelo admin deixou de funcionar por causa da D20. Se a demonstração precisar disso, é decisão de produto.

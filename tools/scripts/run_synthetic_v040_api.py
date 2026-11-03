@@ -30,8 +30,9 @@ def build(runtime_dir: Path):
         openai_api_key=None,
         typesafe_api_key=None,
         deepseek_api_key=None,
-        api_demo_access_key=SecretStr("v040-synthetic-demo-access-key"),
-        api_admin_access_key=SecretStr("v040-synthetic-admin-access-key"),
+        api_demo_password=SecretStr("v040-synthetic-demo-password"),  # user `demo` (POST /v1/auth/token)
+        api_admin_password=SecretStr("v040-synthetic-admin-password"),  # user `admin`
+        password_hash_iterations=1_000,
         api_demo_customer_id="cliente1988",
         runtime_dir=resolved,
         qdrant_url=":memory:",

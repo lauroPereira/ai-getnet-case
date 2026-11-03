@@ -194,8 +194,8 @@ def configured_accounts(settings: Settings) -> list[Account]:
         accounts.append(Account(f"user:{username}", "user", Principal.of(role, username, customer_id), password))
     for role, value in (("demo", settings.api_demo_password), ("admin", settings.api_admin_password)):
         if password := _secret(value):
-            principal = Principal.of(role, "default", settings.api_demo_customer_id)
-            accounts.append(Account(f"user:{role}", "user", principal, password))
+            customer_id = settings.api_demo_customer_id if role == "demo" else None  # D20: admin has none
+            accounts.append(Account(f"user:{role}", "user", Principal.of(role, "default", customer_id), password))
     if client_secret := _secret(settings.ticketing_client_secret):
         accounts.append(
             Account(
@@ -424,7 +424,7 @@ class Identity:
             customer_id = claims.get("customer_id")
             if not customer_id or claims["sub"] != f"merchant:{customer_id}":
                 raise InvalidToken("merchant token without its merchant")
-        elif role in ("demo", "admin"):
+        elif role == "demo":
             customer_id = self.settings.api_demo_customer_id  # the demo merchant comes from the server configuration
         else:
             customer_id = None

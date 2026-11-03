@@ -302,8 +302,31 @@ def _admin_dep(
     return _require_header(request, authorization, ("admin",))
 
 
+READER_ROLES = ("merchant", "demo", "admin")
+
+
+def _reader_dep(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = bearer_credentials,
+):
+    """D21: workbench routes (profiles, KB, catalog, scenarios, runs, comparisons, messages) are for merchant, demo
+    and admin tokens; operators work in the queue and services only integrate."""
+    principal = _auth_dep(request, credentials)
+    if isinstance(principal, JSONResponse) or principal["role"] in READER_ROLES:
+        return principal
+    challenge = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
+    return _error(
+        403,
+        "insufficient_scope",
+        "This route is for merchant, demo and admin tokens.",
+        request,
+        headers={"WWW-Authenticate": challenge},
+    )
+
+
 AUTH = Depends(_auth_dep)
 ADMIN = Depends(_admin_dep)
+READER = Depends(_reader_dep)
 
 
 def _require_header(request: Request, authorization: str | None, roles: tuple[str, ...]):
@@ -459,7 +482,7 @@ def auth_revoke(request: Request, principal=AUTH):
 
 
 @router.get("/catalog/models", response_model=ModelCatalogResponse)
-def model_catalog(request: Request, principal=AUTH):
+def model_catalog(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     price_data = json.loads((Path(__file__).parents[1] / "llm" / "prices.json").read_text(encoding="utf-8"))
@@ -494,7 +517,7 @@ def model_catalog(request: Request, principal=AUTH):
 
 
 @router.get("/profiles")
-def profiles(request: Request, principal=AUTH):
+def profiles(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
@@ -512,7 +535,7 @@ def _kb(request: Request):
 
 
 @router.get("/kb/documents")
-def kb_documents(request: Request, principal=AUTH):
+def kb_documents(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     service = _kb(request)
@@ -524,7 +547,7 @@ def kb_documents(request: Request, principal=AUTH):
 
 
 @router.get("/kb/documents/{document_id}")
-def kb_document(document_id: str, request: Request, principal=AUTH):
+def kb_document(document_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     try:
@@ -598,14 +621,14 @@ def kb_build(payload: KBBuildRequest, request: Request, principal=ADMIN):
 
 
 @router.get("/kb/versions")
-def kb_versions(request: Request, principal=AUTH):
+def kb_versions(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     return _kb(request).versions(admin=principal["role"] == "admin")
 
 
 @router.get("/kb/versions/{version_id}")
-def kb_version(version_id: str, request: Request, principal=AUTH):
+def kb_version(version_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     try:
@@ -827,11 +850,13 @@ def _decision(request: Request, context: RunContext, spec: CallSpec, mechanism: 
 
 
 @router.post("/router/compare", status_code=201, responses={429: {"model": ErrorBody}})
-def compare(payload: CompareRequest, request: Request, principal=AUTH):
+def compare(payload: CompareRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     if forbidden := operator_forbidden(request, principal):
         return forbidden
+    if limited := rate_limited(request, principal):
+        return limited
     conn = _db(request)
     request_id = request.state.request_id
     context, consumed = None, False
@@ -1116,7 +1141,7 @@ def execute_run(
 
 
 @router.get("/scenarios")
-def scenarios_list(request: Request, principal=AUTH):
+def scenarios_list(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     data = scenario_catalog.catalog(request.app.state.settings.data_dir)
@@ -1127,7 +1152,7 @@ def scenarios_list(request: Request, principal=AUTH):
 
 
 @router.post("/messages", responses={429: {"model": ErrorBody}})
-def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
+def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     if forbidden := operator_forbidden(request, principal):
@@ -1142,6 +1167,8 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
         profile = get_profile(conn, payload.profile_id, payload.profile_version, role=profile_role(principal))
         if profile is None:
             return _error(404, "not_found", "Profile not found.", request)
+        if principal["role"] == "admin":  # D20: the demo's synthetic merchant, only on this route
+            principal = principal | {"customer_id": settings.api_demo_customer_id}
         customer_id = principal["customer_id"]
         if not customer_id:
             return _error(
@@ -1277,7 +1304,7 @@ def list_evaluations(conn: sqlite3.Connection, request_id: str, principal: dict)
 
 
 @router.get("/runs/{request_id}")
-def run(request_id: str, request: Request, principal=AUTH):
+def run(request_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
@@ -1298,7 +1325,7 @@ def run(request_id: str, request: Request, principal=AUTH):
 
 
 @router.post("/runs/{request_id}/evaluations/estimate")
-def evaluation_estimate(request_id: str, request: Request, principal=AUTH):
+def evaluation_estimate(request_id: str, request: Request, principal=READER):
     from merchant_assistant.evaluation import on_demand
     from merchant_assistant.llm.pricing import PriceUnknown
 
@@ -1319,12 +1346,14 @@ def evaluation_estimate(request_id: str, request: Request, principal=AUTH):
 
 
 @router.post("/runs/{request_id}/evaluations", status_code=201, responses={429: {"model": ErrorBody}})
-def evaluation_create(request_id: str, payload: EvaluationRequest, request: Request, principal=AUTH):
+def evaluation_create(request_id: str, payload: EvaluationRequest, request: Request, principal=READER):
     from merchant_assistant.evaluation import on_demand
     from merchant_assistant.llm.pricing import PriceUnknown
 
     if _ensure_not_error(principal):
         return principal
+    if limited := rate_limited(request, principal):
+        return limited
     conn = _db(request)
     try:
         snapshot = _owned_snapshot(conn, request_id, principal)
@@ -1353,7 +1382,7 @@ def evaluation_create(request_id: str, payload: EvaluationRequest, request: Requ
 
 
 @router.post("/comparisons/estimate")
-def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, principal=AUTH):
+def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
@@ -1367,9 +1396,11 @@ def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, pr
 
 
 @router.post("/comparisons", status_code=202, responses={429: {"model": ErrorBody}})
-def comparison_create(payload: ComparisonCreateRequest, request: Request, principal=AUTH):
+def comparison_create(payload: ComparisonCreateRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
+    if limited := rate_limited(request, principal):
+        return limited
     if not principal["customer_id"]:
         return _error(422, "admin_scope_required", "Admin sessions require a configured synthetic customer.", request)
     selection = payload.model_dump(exclude={"confirmed", "max_cost_usd", "expected_estimate_digest"})
@@ -1388,7 +1419,7 @@ def comparison_create(payload: ComparisonCreateRequest, request: Request, princi
 
 
 @router.get("/comparisons/{comparison_id}")
-def comparison_read(comparison_id: str, request: Request, principal=AUTH):
+def comparison_read(comparison_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)

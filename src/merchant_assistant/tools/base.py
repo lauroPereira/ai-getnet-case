@@ -18,6 +18,7 @@ ToolErrorCode = Literal[
     "LIMIT_REACHED",
     "FORBIDDEN_SCOPE",
     "FORBIDDEN_CUSTOMER",
+    "INVALID_TOKEN",
 ]
 
 

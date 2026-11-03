@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from merchant_assistant.orchestration.budget import ABSOLUTE_BUDGET_LIMIT_USD
@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     evaluator_model: str = "gpt-6-luna"
 
     user_id_pattern: str = Field(default=r"^[A-Za-z0-9_\-.]{1,64}$")
+
+    @field_validator("runtime_dir", "checkpoints_path", "jwt_private_key_path", "jwt_jwks_url", mode="before")
+    @classmethod
+    def _empty_is_unset(cls, value):
+        """`KEY=` in .env (as in .env.example) means "not set": never Path(".") or an empty URL."""
+        return None if isinstance(value, str) and not value.strip() else value
 
     @property
     def runtime_path(self) -> Path:

@@ -214,5 +214,8 @@ def execute(name: str, arguments: dict | str | None, env: ToolEnv, *, agent: str
         outcome = ToolOutcome(
             name, raw, False, error={"code": "INVALID_ARGUMENT", "message": "Arguments are not JSON."}
         )
+    except Exception:  # unexpected failure inside a tool: audited as "error", then raised as before
+        write_audit(env, name, TOOLS[name].scope if name in TOOLS else None, "error", env.resource_id)
+        raise
     record(env, outcome)
     return outcome

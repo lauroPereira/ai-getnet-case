@@ -348,7 +348,9 @@ def cmd_mcp(settings: Settings, args) -> int:
     finally:
         conn.close()
     services = MockServiceClient(settings.mocks_url, timeout=2.0)
-    serve_stdio(build_server(env_factory_for(settings.db_path, principal, SystemClock(settings.timezone), services)))
+    identity = Identity(settings)
+    factory = env_factory_for(settings.db_path, principal, SystemClock(settings.timezone), services)
+    serve_stdio(build_server(factory, authorize=lambda conn: principal_for_token(identity, conn, token)))
     return 0
 
 

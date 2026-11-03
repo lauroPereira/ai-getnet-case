@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from merchant_assistant import __version__
 from merchant_assistant.api.identity import Identity, Principal, check_configuration
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
-from merchant_assistant.api.v1 import AUTH, OPERATOR_FORBIDDEN, rate_limited
+from merchant_assistant.api.v1 import AUTH, rate_limited
 from merchant_assistant.api.v1 import router as v1_router
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
@@ -24,7 +24,7 @@ from merchant_assistant.data.db import connect
 log = logging.getLogger("merchant_assistant.api")
 
 
-MESSAGE_ROLES = ("merchant", "demo")  # operators, services and admin have no merchant of their own here
+MESSAGE_ROLES = ("merchant", "demo")  # the only principals with a merchant of their own (D20)
 MESSAGES_DESCRIPTION = """Sends one merchant message. A bearer access token is required: the merchant comes from the
 token's principal, never from the payload (`user_id` is optional and, when present, must match it, otherwise
 `403 identity_mismatch`). Operator, service and admin tokens receive `403`.
@@ -100,7 +100,7 @@ def _has_handoff_case(settings: Settings, conversation_id: str | None) -> bool:
 
 
 def can_read(settings: Settings, principal: Principal, customer_id: str | None, conversation_id: str | None) -> bool:
-    """Demo routes (spec v0.7.0, D14): merchant and demo read only their own merchant's data; an operator only
+    """Demo routes (spec v0.7.0, D13): merchant and demo read only their own merchant's data; an operator only
     conversations that have a handoff case; admin reads everything."""
     if principal.role == "admin":
         return True
@@ -113,7 +113,7 @@ def message_refusal(principal: Principal, user_id: str | None) -> tuple[str, str
     """`POST /messages` for an authenticated principal: only merchant-bound roles, and a `user_id`, when sent, must
     be the principal's merchant. Returns (code, message) of the 403 or None."""
     if principal.role not in MESSAGE_ROLES or not principal.customer_id:
-        return "insufficient_scope", OPERATOR_FORBIDDEN
+        return "insufficient_scope", "POST /messages accepts only merchant and demo tokens."
     if user_id is not None and user_id != principal.customer_id:
         return "identity_mismatch", "user_id does not match the session's merchant."
     return None

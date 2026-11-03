@@ -17,7 +17,7 @@ from mcp.server.lowlevel import Server
 from merchant_assistant import __version__
 from merchant_assistant.api.identity import Identity, InvalidToken, Principal
 from merchant_assistant.tools.base import ToolEnv
-from merchant_assistant.tools.registry import execute, model_tool_schemas
+from merchant_assistant.tools.registry import ToolOutcome, execute, model_tool_schemas, record
 
 AGENT = "customer_support"
 INSTRUCTIONS = (
@@ -26,8 +26,10 @@ INSTRUCTIONS = (
 )
 
 
-def build_server(env_factory: Callable[[], ToolEnv]) -> Server:
-    """`env_factory` returns a fresh ToolEnv (own SQLite connection) bound to the server's merchant."""
+def build_server(env_factory: Callable[[], ToolEnv], authorize: Callable[[object], object] | None = None) -> Server:
+    """`env_factory` returns a fresh ToolEnv (own SQLite connection) bound to the server's merchant. `authorize(conn)`
+    re-verifies the access token on every call (signature, expiry, revocation); a refusal is audited and returned
+    as `INVALID_TOKEN` without running the tool."""
     tools = [
         types.Tool(name=s["name"], description=s["description"], input_schema=s["parameters"])
         for s in model_tool_schemas(AGENT)
@@ -39,7 +41,20 @@ def build_server(env_factory: Callable[[], ToolEnv]) -> Server:
     async def on_call_tool(ctx, params: types.CallToolRequestParams) -> types.CallToolResult:
         env = env_factory()
         try:
-            outcome = execute(params.name, dict(params.arguments or {}), env, agent=AGENT)
+            try:
+                if authorize is not None:
+                    authorize(env.conn)
+            except AccessRefused as exc:
+                outcome = ToolOutcome(
+                    params.name,
+                    dict(params.arguments or {}),
+                    False,
+                    error={"code": "INVALID_TOKEN", "message": str(exc)},
+                )
+                env.resource_id = None
+                record(env, outcome)
+            else:
+                outcome = execute(params.name, dict(params.arguments or {}), env, agent=AGENT)
         finally:
             env.conn.close()
         payload = outcome.data if outcome.ok else {"error": outcome.error}
