@@ -170,3 +170,22 @@ Resíduos aceitos para o juiz independente: P3-5 (casos 4 e 17), P3-7 (misto do 
 ### Decisão do Supervisor
 
 Aplicar o P3-8 nos casos 15 (termos de comparabilidade) e 16 (termos de processamento) antes do lacre definitivo, com re-lacre e revisão curta só desses casos (rodada 5).
+
+## Tarefa 72a, rodada 5 — correções necessárias (ajuste de dois termos)
+
+- **Papel:** mesmo Reviewer, regime frio; independente.
+- **Candidato:** HEAD `ec7a48d9724bcca414da6d2e0a594bbf7eee6079`, base `aed374a`, árvore limpa; contra `aed374a`, só acréscimos ao 2º grupo dos casos 15 ("directly comparable", "not comparable") e 16 ("pendente de processamento", "não volta", "não voltou", "só acontece depois", "só ocorre depois", "após o processamento"). Hashes iguais antes e depois: jsonl `acb512ca…0c66c8` (confere com o `.sha256` `9d70f9e6…5ecb` e com o blob), derivação `106f6e77…35e2`. `prompts/` sem commits na branch.
+- **Números:** suíte estrita **357 passed**, código 0; lacre (14 mutações) como nas rodadas anteriores; bateria pelo `_checks` real com 61 respostas: as 4 certas do P3-8 passam; nenhuma errada das rodadas 1 a 4 volta a passar; resíduos já aceitos sem mudança.
+
+### P2-7 — dois termos novos aceitam a conclusão oposta
+
+| Caso | Termo | Errada que passa |
+| --- | --- | --- |
+| 16 | "após o processamento" (neutro) | "O dinheiro já voltou ao cartão do cliente após o processamento; o status ainda aparece como solicitado." |
+| 15 | "directly comparable" (casa com a afirmação positiva) | "The legacy and standard fees are directly comparable: R$ 37,80 versus R$ 36,00, so you were overcharged." |
+
+Correção testada em memória: caso 16, remover "após o processamento" (certas 7/7; erradas reprovadas de 4/7 para 5/7); caso 15, trocar "directly comparable" por "not directly comparable", "aren't directly comparable", "isn't directly comparable" (certas 8/8; erradas de 5/7 para 6/7). Restam 3 respostas mistas e artificiais (P3, para o juiz). O Reviewer registra que os dois termos foram sugestão dele na rodada 4 sem teste contra erradas construídas para eles, e propõe que toda nova sugestão venha com essas erradas.
+
+### Decisão do Supervisor
+
+Aplicar as duas trocas (rodada 6) e fechar: a rodada 6 do Reviewer confere só esses dois grupos e o lacre; resíduos mistos depois disso ficam para o juiz independente da v0.8.0, sem nova rodada de descoberta de termos.
