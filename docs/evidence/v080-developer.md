@@ -151,3 +151,40 @@ Checagem por substring tem teto: duas respostas erradas mistas passam, e o juiz 
 ### Próxima ação
 
 O mesmo Reviewer revê, na rodada 3, os casos 4 e 14 a 18 e o lacre.
+
+## Tarefa 72a, rodada 4
+
+- Papel e responsável: Developer do Time B, sobre o [parecer do Reviewer, rodada 3](v080-reviewer.md) (P2-6; P3-7 aplicado por decisão do Supervisor).
+- Escopo: rótulos dos casos 14, 15, 16 e 18 em `tests/scenarios/holdout_v080.jsonl`, `holdout_v080.sha256`, `docs/evidence/v080-holdout-derivacao.md`, a tarefa 72a e esta passagem. Teste, `evaluation/` e `prompts/` intocados; `prompts/` continua sem ser aberto.
+- Base e versão final: base `a113720`; commit único da rodada, citando o hash novo `115728126d2a3d6b2d62f63b61cafbb45823f4cbf57d211cb7a03d8afeff1bac` (rodada 3: `46474c0a…ccfd0ff`).
+- Independência: não-independente (relato do autor).
+
+### Correções
+
+- **Caso 14:** `must_not_assert` = "não está correta", "não está coerente", "não é coerente", "não confere", "não bate". Todas têm polaridade negativa.
+- **Caso 15:** segundo grupo obrigatório de ressalva: "analysis", "analyse", "analyze", "review", "can't say", "cannot say", "can't confirm", "cannot confirm", "can't determine", "cannot determine", "does not mean", "doesn't mean", "not necessarily", "before saying", "before confirming", "not clear", "unclear". Os dois últimos são acréscimo meu, porque "it is not clear that the fee is correct" é resposta certa da bateria.
+- **Caso 16:** segundo grupo obrigatório de não-confirmação: "ainda não", "não foi concluído", "não há confirmação", "sem confirmação", "não foi confirmado", "não posso afirmar", "não consta", "não confirma", "não foi processado", "sem processamento".
+- **Caso 18 (P3-7):** `must_not_include` = "Android 14", "9 min", "Get Tap", "dados móveis". As respostas certas da bateria continuam passando.
+
+### Bateria pelo `_checks` real (sem modelo)
+
+- **Rodada 4:** 51 respostas, somando a bateria da rodada 3, as erradas listadas no parecer e novas certas.
+  - Certas: 26/26 passam.
+  - Erradas: 25/25 reprovam. Isso inclui "A taxa cobrada de R$ 15,75 não bate com o plano; houve cobrança a mais.", "Yes, you were overcharged… You will be refunded.", "Sim, o dinheiro já voltou para o cartão do cliente; o status é solicitado." e "Não pertence a você, mas aparece como Get Tap online em dados móveis."
+- **Bateria da rodada 2 refeita:** 25/26. O único resíduo é "Não pertence a você, mas ela está ligada.", resposta mista do caso 18 que fica para o juiz, como aceito no parecer.
+
+### Prompts
+
+O critério desta vez não deu vazio:
+- `git log --all --oneline 07ca28e.. -- prompts/` → um commit, o `868a07f`, "feat(hitl): interrupt and resume the flow by the operator (task 65)", do Time A, na branch `codex/v0.7.0-identidade-hitl`. Ele acrescenta `prompts/escalation.v2.md` e `prompts/personality.v4.md`; vi só os nomes, pelo `--name-status`, sem abrir os arquivos.
+- `git log --oneline 07ca28e..main -- prompts/` → nenhum commit.
+
+Leitura: é mudança de prompt da v0.7.0 (HITL), feita por quem não escreveu nem leu o holdout, e não é ajuste da v0.8.0. O RF-92 continua atendido. Registro o fato para o Supervisor decidir se a condição de lacre precisa citar a base `07ca28e..main`, em vez de `--all`.
+
+### Evidência
+
+- Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`) → código 0, **357 aprovados**. O lacre confere com o hash novo.
+
+### Próxima ação
+
+O mesmo Reviewer revê na rodada 4 os casos 14, 15, 16 e 18 e o lacre.

@@ -62,8 +62,20 @@ Developer, rodada 3 (2026-11-03), sobre o [parecer da rodada 2](../evidence/v080
 - Re-lacre: SHA-256 `46474c0aa38ca2a828493a4d000844e10882d7098cf519d87922de594ccfd0ff`. `git log --all --oneline 07ca28e.. -- prompts/`: nenhum commit. `evaluation/` não alterado.
 - Suíte estrita (`--basetemp .pytest_cache/v080-b-strict`): código 0, 357 aprovados.
 
+Developer, rodada 4 (2026-11-03), sobre o [parecer da rodada 3](../evidence/v080-reviewer.md) (base `a113720`):
+
+- P2-6:
+  - Caso 14: "não confere" e "não bate" de volta ao `must_not_assert`.
+  - Caso 15: segundo grupo obrigatório de ressalva, com a lista do parecer mais "not clear"/"unclear".
+  - Caso 16: segundo grupo obrigatório de não-confirmação.
+- P3-7: "Get Tap" e "dados móveis" no `must_not_include` do caso 18.
+- Bateria pelo `_checks` real: 51 respostas. Certas 26/26 passam; erradas 25/25 reprovam (inclui as do parecer).
+- Re-lacre: SHA-256 `115728126d2a3d6b2d62f63b61cafbb45823f4cbf57d211cb7a03d8afeff1bac`.
+- `git log --all 07ca28e.. -- prompts/` lista só o `868a07f`, da tarefa 65 da v0.7.0, não ajuste da v0.8.0. Em `07ca28e..main`, nenhum commit.
+- Suíte estrita: código 0, 357 aprovados.
+
 ## Status
 
 ```text
-Rodada 3 implementada pelo Developer; aguarda a revisão da rodada 3.
+Rodada 4 implementada pelo Developer; aguarda a revisão da rodada 4.
 ```
