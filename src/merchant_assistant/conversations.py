@@ -230,4 +230,14 @@ class ConversationStore:
         out = {k: row[k] for k in row.keys() if k != "prefix"}  # noqa: SIM118 - sqlite3.Row
         out["messages"] = [_public_turn(m) for m in messages]
         out["attempts"] = self.attempts(conversation_id)
+        # Task 66 (D24): webhook deliveries of the operator's reply to the merchant, one row per attempt. They are a
+        # record of their own and never mark a turn as delivered in the conversation.
+        out["webhook_deliveries"] = [
+            dict(d)
+            for d in self.conn.execute(
+                "SELECT event, event_id, attempt, status, response_code, created_at FROM webhook_deliveries "
+                "WHERE conversation_id = ? AND target = 'merchant' ORDER BY created_at, rowid",
+                (conversation_id,),
+            )
+        ]
         return out

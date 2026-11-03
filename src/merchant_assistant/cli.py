@@ -438,7 +438,10 @@ def cmd_operator(settings: Settings, args) -> int:
             result = handoffs.get_case(conn, args.case_id, actor=principal.principal_id)
         else:
             key = args.idempotency_key or f"cli-{uuid.uuid4().hex[:20]}"
+            from merchant_assistant.api.webhooks import Webhooks
+
             orchestrator = operator_orchestrator(settings)  # resumes the flow in-process (paid model calls)
+            webhooks = Webhooks(settings)  # conversation.replied to the ticketing and the merchant, as in the API
             try:
                 result = handoffs.act(
                     conn,
@@ -448,9 +451,11 @@ def cmd_operator(settings: Settings, args) -> int:
                     args.text,
                     key,
                     actor=principal.principal_id,
-                    resume=orchestrator.resume_handoff,
+                    resume=webhooks.resume_point(orchestrator.resume_handoff),
                 )
             finally:
+                attempts = settings.webhook_max_attempts
+                webhooks.wait(timeout=settings.webhook_timeout_s * attempts + sum(settings.webhook_waits))
                 if hasattr(orchestrator, "close"):
                     orchestrator.close()
     except handoffs.HandoffError as exc:

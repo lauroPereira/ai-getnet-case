@@ -1118,6 +1118,9 @@ def execute_run(
         principal=Principal.from_session(principal),
         channel="web",
     )
+    webhooks = getattr(app_state, "webhooks", None)
+    if response.status == "handoff" and domain_db_path is None and webhooks is not None:
+        webhooks.handoff_created_for(request_id)  # isolated comparison runs never open a ticket
     trace_data = orchestrator.trace(request_id)
     if trace_data and any(str(error).startswith("router:") for error in trace_data.get("errors", [])):
         failure = {"code": "router_unavailable", "message": "Router provider failed; no fallback was used."}
@@ -1587,7 +1590,9 @@ def handoffs_act(case_id: str, payload: HandoffActionRequest, request: Request, 
             payload.text,
             payload.idempotency_key,
             actor=principal["principal_id"],
-            resume=getattr(request.app.state.orchestrator, "resume_handoff", None),
+            resume=request.app.state.webhooks.resume_point(
+                getattr(request.app.state.orchestrator, "resume_handoff", None)
+            ),
         )
     except handoffs.HandoffError as exc:
         return _handoff_error(request, exc)

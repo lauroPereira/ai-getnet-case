@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import httpx
+
 from merchant_assistant.config import Settings
 from merchant_assistant.data.clock import Clock, FixedClock
 from merchant_assistant.data.db import connect
@@ -114,3 +116,16 @@ def key_token(client, password: str) -> str:
     settings = client.app.state.settings
     admin = settings.api_admin_password.get_secret_value() if settings.api_admin_password else None
     return password_token(client, "admin" if password == admin else "demo", password)
+
+
+class AppTransport(httpx.BaseTransport):
+    """Test transport between in-process services: each host is one ASGI app behind a
+    `fastapi.testclient.TestClient`. The answer is read in full, so a plain `httpx.Client` can use it."""
+
+    def __init__(self, apps: dict) -> None:
+        self.apps = apps  # host -> TestClient
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        response = self.apps[request.url.host]._transport.handle_request(request)
+        content = response.read()
+        return httpx.Response(response.status_code, headers=response.headers, content=content, request=request)

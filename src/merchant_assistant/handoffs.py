@@ -1,11 +1,12 @@
 """Operator queue for handoff cases (RF-80, RF-81, RF-83; spec v0.7.0 D6, D7, D9, D10, D14).
 
-The single service that the API (`/v1/handoffs`), the CLI (`merchant-assistant operator`) and, from task 66, the
-ticketing integration call. Every state change runs under `BEGIN IMMEDIATE`: the first action on a case marks it as
-resumed in the same transaction that records the event, so a second action with another idempotency key gets
-`409 already_resumed`, and the same key returns the stored record (`replayed: true`). The graph is resumed only
-after the commit, through one resume point (`resume`, provided by the orchestrator from task 65), never inside the
-lock. Every call, accepted or refused, leaves an audit row with the acting principal and `handoff:operate`.
+The single service that the API (`/v1/handoffs`), the CLI (`merchant-assistant operator`) and the ticketing
+integration (`/v1/integrations/ticketing/events`, task 66) call. Every state change runs under `BEGIN IMMEDIATE`: the
+first action on a case marks it as resumed in the same transaction that records the event, so a second action with
+another idempotency key gets `409 already_resumed`, and the same key returns the stored record (`replayed: true`).
+The graph is resumed only after the commit, through one resume point (`resume`, provided by the orchestrator from
+task 65), never inside the lock. Every call, accepted or refused, leaves an audit row with the acting principal and
+`handoff:operate`.
 """
 
 from __future__ import annotations
@@ -191,7 +192,8 @@ def get_case(
         (case_id,),
     ).fetchall()
     deliveries = conn.execute(
-        "SELECT delivery_id, event, target, attempt, status, response_code, created_at FROM webhook_deliveries "
+        "SELECT delivery_id, event_id, event, target, attempt, status, response_code, error, created_at "
+        "FROM webhook_deliveries "
         "WHERE case_id=? ORDER BY created_at, rowid",
         (case_id,),
     ).fetchall()
@@ -213,7 +215,7 @@ def get_case(
             }
             for e in events
         ],
-        "deliveries": [dict(d) for d in deliveries],  # filled by the webhooks of task 66
+        "deliveries": [dict(d) for d in deliveries],  # one row per webhook attempt (task 66)
     }
 
 

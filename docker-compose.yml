@@ -10,6 +10,8 @@ services:
     entrypoint: ["uvicorn", "merchant_assistant.mocks.service:app", "--host", "0.0.0.0", "--port", "8001"]
     environment:
       MOCK_SERVICES_DIR: /app/data/mock-services
+      # v0.7.0: synthetic merchant receiver of conversation.replied (POST/GET /merchant/events), same value as the api.
+      CONVERSATION_WEBHOOK_SECRET: ${CONVERSATION_WEBHOOK_SECRET:-conversation-webhook-secret-fictitious}
     expose:
       - "8001"
     healthcheck:
@@ -41,6 +43,13 @@ services:
       JWT_ISSUER: ${JWT_ISSUER:-http://api:8000}
       DEMO_USER_PASSWORDS: ${DEMO_USER_PASSWORDS:-cliente1988:cliente1988-fictitious,cliente_demo_002:cliente-demo-002-fictitious,op_ana:op-ana-fictitious,op_bruno:op-bruno-fictitious}
       TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
+      # v0.7.0 webhooks (task 66): container addresses, fixed here like MOCKS_URL; one fictitious secret per direction,
+      # the same values as the ticketing and mocks blocks and .env.example.
+      TICKETING_WEBHOOK_URL: http://ticketing:8002/webhooks/assistant
+      CONVERSATION_WEBHOOK_URL: http://mocks:8001/merchant/events
+      TICKETING_WEBHOOK_SECRET: ${TICKETING_WEBHOOK_SECRET:-ticketing-webhook-secret-fictitious}
+      ASSISTANT_WEBHOOK_SECRET: ${ASSISTANT_WEBHOOK_SECRET:-assistant-webhook-secret-fictitious}
+      CONVERSATION_WEBHOOK_SECRET: ${CONVERSATION_WEBHOOK_SECRET:-conversation-webhook-secret-fictitious}
     volumes:
       - runtime:/app/runtime
     restart: unless-stopped

@@ -14,9 +14,11 @@ from fastapi.responses import JSONResponse
 
 from merchant_assistant import __version__
 from merchant_assistant.api.identity import Identity, Principal, check_configuration
+from merchant_assistant.api.integrations import router as integrations_router
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
 from merchant_assistant.api.v1 import AUTH, rate_limited
 from merchant_assistant.api.v1 import router as v1_router
+from merchant_assistant.api.webhooks import Webhooks
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
 from merchant_assistant.data.db import connect
@@ -140,7 +142,9 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     app.state.orchestrator = orchestrator or PlaceholderOrchestrator()
     app.state.settings = settings
     app.state.identity = Identity(settings)
+    app.state.webhooks = Webhooks(settings)  # signed events to the ticketing and the merchant (task 66)
     app.include_router(v1_router)
+    app.include_router(integrations_router)
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -205,11 +209,14 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
             return limited
         bound = payload.model_copy(update={"user_id": caller.customer_id})
         try:
-            return app.state.orchestrator.handle(bound, request_id, principal=caller, channel="api")
+            response = app.state.orchestrator.handle(bound, request_id, principal=caller, channel="api")
         except ConversationNotFound:
             return _error(
                 404, "conversation_not_found", "Conversation not found for this user.", request.state.request_id
             )
+        if response.status == "handoff":  # the case opened by this turn becomes a ticket (handoff.created)
+            app.state.webhooks.handoff_created_for(request_id)
+        return response
 
     if settings.demo_mode:
 

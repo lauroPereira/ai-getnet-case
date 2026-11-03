@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = Field(default=30, ge=1, le=10000)
     auth_attempts_per_minute: int = Field(default=10, ge=1, le=1000)  # D19: per account and address on /v1/auth/token
     auth_attempts_per_ip_per_minute: int = Field(default=30, ge=1, le=10000)  # D19: per address, across accounts
+    # v0.7.0 webhooks (task 66; spec "Contrato entre os times / Webhooks", D11): one secret per direction. An empty
+    # URL sends nothing; an empty ASSISTANT_WEBHOOK_SECRET refuses every ticketing event (503).
+    ticketing_webhook_url: str | None = None  # assistant -> ticketing: handoff.created, conversation.replied, closed
+    ticketing_webhook_secret: SecretStr | None = None
+    conversation_webhook_url: str | None = None  # assistant -> merchant: conversation.replied
+    conversation_webhook_secret: SecretStr | None = None
+    assistant_webhook_secret: SecretStr | None = None  # ticketing -> assistant: ticket.assigned, action, solved
+    webhook_max_attempts: int = Field(default=3, ge=1, le=10)
+    webhook_retry_waits_s: str = "1,2"  # waits between attempts, in seconds
+    webhook_timeout_s: float = Field(default=3.0, gt=0, le=60)
 
     agent_model: str = "gpt-6-luna"
     embedding_model: str = "text-embedding-3-small"
@@ -69,11 +79,23 @@ class Settings(BaseSettings):
 
     user_id_pattern: str = Field(default=r"^[A-Za-z0-9_\-.]{1,64}$")
 
-    @field_validator("runtime_dir", "checkpoints_path", "jwt_private_key_path", "jwt_jwks_url", mode="before")
+    @field_validator(
+        "runtime_dir",
+        "checkpoints_path",
+        "jwt_private_key_path",
+        "jwt_jwks_url",
+        "ticketing_webhook_url",
+        "conversation_webhook_url",
+        mode="before",
+    )
     @classmethod
     def _empty_is_unset(cls, value):
         """`KEY=` in .env (as in .env.example) means "not set": never Path(".") or an empty URL."""
         return None if isinstance(value, str) and not value.strip() else value
+
+    @property
+    def webhook_waits(self) -> tuple[float, ...]:
+        return tuple(float(w) for w in self.webhook_retry_waits_s.split(",") if w.strip()) or (0.0,)
 
     @property
     def runtime_path(self) -> Path:

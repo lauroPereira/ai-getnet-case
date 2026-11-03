@@ -170,7 +170,8 @@ def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
         0,
         None,
     )
-    assert {"handoff_events", "webhook_deliveries"} <= tables(conn)
+    assert {"handoff_events", "webhook_deliveries", "webhook_inbox"} <= tables(conn)
+    assert {"event_id", "error"} <= {r[1] for r in conn.execute("PRAGMA table_info(webhook_deliveries)")}
     assert conn.execute("SELECT via FROM messages").fetchone()[0] is None
     conn.execute("INSERT INTO handoff_events VALUES ('hev_1','hc_legacy','approve','op_ana','key-00000001','{}','t')")
     try:
@@ -186,7 +187,7 @@ def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
     else:
         raise AssertionError("queue_state must be checked")
     assert migrate(conn, 8) == ["down 0009_identity_hitl"]
-    assert not {"handoff_events", "webhook_deliveries"} & tables(conn)
+    assert not {"handoff_events", "webhook_deliveries", "webhook_inbox"} & tables(conn)
     assert "queue_state" not in {r[1] for r in conn.execute("PRAGMA table_info(handoff_cases)")}
     assert conn.execute("SELECT protocol FROM handoff_cases").fetchone()[0] == "SIM-20261026-ABCDEF"
     assert conn.execute("SELECT text FROM messages").fetchone()[0] == "Quero um atendente"

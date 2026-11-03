@@ -223,3 +223,68 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - **Teste:** `test_admin_acts_on_the_demo_merchant_in_v1_but_not_in_post_messages` substitui `test_admin_uses_the_demo_merchant_only_in_v1_messages`. O teste antigo esperava `403` na conversa do admin, comportamento que a D20 revista retirou. O novo cobre: claim sem `customer_id`; `POST /messages` → `403` sem citar papéis; `/v1/messages` grava a conversa no lojista da demo; `GET /v1/conversations/{id}` → `200`; `POST /v1/router/compare` → `201`, com o lojista da demo em `router_comparisons`; estimativa de avaliação → `200`; comparação de perfis → `202` e leitura `200`; `admin:default` sem lojista em `api_principals`.
 - **Validação:** `pytest` em `test_v070_identity_r2.py`, `test_v070_identity.py`, `test_v1_api.py`, `test_v060_api.py`, `test_v060_r2.py` e `test_v060_r4.py` → todos passam. Ruff ok. A suíte estrita roda no fim da tarefa 66 (números lá).
 - **Limitação:** com `API_DEMO_CUSTOMER_ID` vazio, o admin volta a `422 admin_scope_required` nessas rotas, como na v0.6.0.
+
+## Tarefa 66, rodada 1
+
+- **Papel e responsável:** Developer (Time A), subagente novo.
+- **Objetivo e critérios:** [tarefa 66](../tasks/66-webhooks-assinados-ticketing.md). Spec v0.7.0: "Contrato entre os times / Webhooks", D9, D10, D11, D14, D22, D24, D25, D26; ADR 0018; CA-47 e CA-48.
+- **Escopo:**
+  - `src/merchant_assistant/api/webhooks.py` (novo): assinatura, envelope, eventos de saída, entrega em thread com tentativas, uma linha por tentativa.
+  - `src/merchant_assistant/api/integrations.py` (novo): `POST /v1/integrations/ticketing/events`.
+  - `api/app.py`: `app.state.webhooks`, rota nova e `handoff.created` depois de `POST /messages`.
+  - `api/v1.py`: `handoff.created` em `execute_run`; `conversation.replied` em `POST /v1/handoffs/{id}/actions`.
+  - `api/identity.py`: `active_operator`.
+  - `cli.py`: `operator act` emite `conversation.replied`.
+  - `config.py`: URLs, segredos, tentativas, esperas e timeout.
+  - `conversations.py`: `webhook_deliveries` na conversa.
+  - `handoffs.py`: entregas com `event_id` e `error` no detalhe.
+  - `data/migrations.py`: 0009 com `webhook_deliveries.event_id`/`error`, índice por conversa e `webhook_inbox`.
+  - `mocks/service.py`: `POST/GET /merchant/events`.
+  - `testing.py`: `AppTransport`.
+  - `docker-compose.yml`: acréscimos só nos blocos `api` e `mocks`.
+  - `.env.example`: acréscimo no bloco da API.
+  - Testes: `tests/integration/test_v070_webhooks.py` e `tests/integration/test_v070_ticketing_integration.py`, ambos novos, e `tests/unit/data/test_migrations.py`.
+  - **Nada** em `merchant_assistant/ticketing/`, no bloco `ticketing` do compose nem no bloco do ticketing do `.env.example`.
+- **Estado:** pronta para revisão.
+- **Branch e PR:** `codex/v0.7.0-identidade-hitl`; sem PR e sem push.
+- **Base e versão final:** base `c7affe5` (ajuste D20), com `d55ce35` (parecer da 65, do Supervisor) por cima. O commit da tarefa vem logo depois desta passagem.
+- **Independência:** não se aplica.
+
+### Evidência
+
+- `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-a-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` → **1 failed, 523 passed** (363 s), Ruff ok, skills ok, código 1. A falha (`test_ticketing_events_resume_reply_and_close[reply]`) era do meu teste: a variável do laço que confere o corpo sombreava o texto da resposta. Corrigido; `test_v070_webhooks.py` de novo → 14 passed. A suíte estrita completa com código 0 está registrada na rodada 2 da 65, sobre esta mesma base mais a 65 r2.
+- Integração com o serviço de ticketing real da 66b, em processo e sem alterá-lo: as três ações passam de ponta a ponta (`test_v070_ticketing_integration.py`, 3 casos). **Não encontrei divergência** entre o contrato e o serviço do Time B.
+- `docker compose -f <cópia>/docker-compose.yml config --quiet` → 0, numa cópia sem `.env`. Valores resolvidos: `TICKETING_WEBHOOK_URL=http://ticketing:8002/webhooks/assistant`, `CONVERSATION_WEBHOOK_URL=http://mocks:8001/merchant/events` e os três segredos fictícios, iguais nos blocos `api`, `mocks` e `ticketing`.
+- Achados durante a rodada, corrigidos antes do commit:
+  - Uma recusa de validação (`422`) gravava o `ticket_id` no caso. Agora ele só é gravado no evento aceito.
+  - O transporte do `TestClient` não serve a um `httpx.Client` comum. A falha ficava escondida porque a thread de entrega engole exceções. Daí veio o `AppTransport`, e o teste do `mocks` passou a conferir a linha `delivered`.
+  - O teste de janela calculava o `t` futuro cedo demais. Agora o deslocamento é aplicado na hora da assinatura, e o limite exato de 300 s tem teste próprio com relógio fixo.
+- Nenhuma chamada paga, sem Docker em execução, sem `.env`.
+
+### Decisões tomadas além do texto (todas reversíveis)
+
+1. **Ordem das verificações na entrada:** token (`401`), papel `service` com `handoff:integrate` (`403`, auditado), rate limit (D5), segredo configurado (`503 webhook_not_configured` se `ASSISTANT_WEBHOOK_SECRET` estiver vazio), assinatura (`401 invalid_signature`), envelope (`400 invalid_payload`), `id` já respondido, tipo (`422 unknown_event`), campos (`400 invalid_payload`), operador ativo (`422 unknown_operator`, auditado) e, por fim, o serviço da fila.
+2. **`id` repetido:** a resposta de cada evento abaixo de `500` fica em `webhook_inbox`. O mesmo `id` recebe `200 {"status": "replayed", ...}` com os estados atuais, ou o mesmo erro `4xx`. Um `5xx` (por exemplo `503 resume_failed`) **não** fica guardado: a nova tentativa da caixa de saída do ticketing, com o mesmo `id`, processa de novo e retoma pela mesma chave (D26).
+3. **"Operador ativo"** = conta `operator:<id>` configurada em `DEMO_USER_PASSWORDS` (D1).
+4. **`ticket_id`** gravado no caso no primeiro evento aceito; recusa não grava.
+5. **Auditoria da entrada:** as linhas de `claim`/ação/`close` usam as do serviço da fila (`principal_id = service:ticketing`, `on_behalf_of = operator:<id>`, escopo `handoff:operate`, que é o escopo da ação do operador). A recusa no portão vai como `tool = handoff.integrate`.
+6. **Tentativas:** erro de rede, timeout, `5xx`, `408` e `429` levam a nova tentativa. Outro `4xx` é final (`rejected`), porque repetir não muda nada. Estados por tentativa: `delivered`, `rejected` e `error`. `target` grava o nome do receptor (`ticketing`, `merchant`), não a URL. A assinatura é refeita a cada tentativa (`t` novo).
+7. **`conversation.replied`:** um envelope só (mesmo `id`) para os dois receptores, cada um assinado com o seu segredo. `reply_text` = resposta produzida pela retomada, mascarada pela guarda de entrada; `request_id` = trace da retomada; `delivered_at` = hora da emissão. Sai só de uma retomada bem-sucedida: replay não emite de novo, e retomada que falha não emite. **Para o Supervisor:** pelo contrato, o evento ao lojista leva `operator_id`. A 65 tinha decidido não mostrar o `operator_id` ao lojista na conversa. Segui o contrato; se o lojista não deve receber o identificador, a mudança é no contrato.
+8. **`handoff.created`** sai depois de uma resposta `status = handoff` em `POST /messages` e `POST /v1/messages`, para o caso com `thread_id` = `request_id` (D6). Execuções isoladas (comparações) não emitem. Avaliação em processo e CLI `ask` também não, porque o disparo está na camada HTTP.
+9. **CLI `operator act`** também emite `conversation.replied` e espera as entregas antes de sair, até o tempo máximo das tentativas.
+10. **`.env.example`:** URLs de execução no host (`http://127.0.0.1:8002/webhooks/assistant`, `http://127.0.0.1:8001/merchant/events`), como faz o bloco do ticketing. O compose fixa as URLs de container sem interpolação, como `MOCKS_URL`, para que o `.env` copiado não as troque dentro do container. `TICKETING_WEBHOOK_SECRET` e `ASSISTANT_WEBHOOK_SECRET` não foram repetidos: estão no bloco do ticketing do `.env.example` e valem para os dois serviços.
+11. **Receptor do lojista no `mocks`:** em memória (some quando o container reinicia), `id` repetido → `{"status": "duplicate"}`, sem `CONVERSATION_WEBHOOK_SECRET` → `503`. O `GET` não exige autenticação: o `mocks` não é publicado fora da rede do compose (`expose`).
+12. **Entregas visíveis:** `deliveries` no detalhe do caso (todos os receptores) e `webhook_deliveries` na conversa (só as do lojista).
+
+### Achados e limitações
+
+- As entregas correm em threads do processo da API, sem fila persistente: se a API cair no meio das tentativas, o evento se perde, mas as tentativas feitas ficam registradas. O ticketing tem caixa de saída; o assistente, não.
+- `handoff.closed` sai só pelo `ticket.solved`. Não há rota de fechamento na API do assistente.
+- Banco local já na versão 9 (criado antes desta rodada) não ganha `webhook_inbox` nem as colunas novas, porque a 0009 foi ampliada no lugar. É preciso recriar o runtime (`data/runtime/`) ou descer e subir a 0009. Interessa ao QA.
+- README e CHANGELOG não foram tocados (fechamento).
+
+### Ação externa, próxima ação e decisão pendente
+
+- **Ação externa:** nenhuma; commits locais com a identidade conferida.
+- **Próxima ação:** Reviewer revisa a 66 (e o ajuste D20). Sigo com a rodada 2 da 65 (pedido do Supervisor).
+- **Decisão humana pendente:** `operator_id` no evento ao lojista (decisão 7).

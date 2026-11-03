@@ -208,6 +208,13 @@ def configured_accounts(settings: Settings) -> list[Account]:
     return accounts
 
 
+def active_operator(settings: Settings, operator_id: str) -> bool:
+    """An `operator_id` (without prefix, as in the webhooks) is active when its account is configured (spec D1)."""
+    principal_id = f"operator:{operator_id}"
+    accounts = configured_accounts(settings)
+    return any(a.principal.role == "operator" and a.principal.principal_id == principal_id for a in accounts)
+
+
 def check_configuration(settings: Settings) -> list[str]:
     """Validates the credential configuration at startup and returns warnings (fictitious example values)."""
     example = sorted(a.account_id for a in configured_accounts(settings) if a.secret.endswith(EXAMPLE_SUFFIX))

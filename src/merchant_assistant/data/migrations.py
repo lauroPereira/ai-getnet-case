@@ -382,7 +382,8 @@ ALTER TABLE api_sessions DROP COLUMN message_count;
 # existing demo/admin principals receive the scopes of their role. Accounts keep only PBKDF2 hashes. The handoff
 # queue (task 64) lives in the same migration: queue state, operator, resume counter, checkpoint thread (D6), ticket
 # id, events with a unique idempotency key (D10), webhook deliveries and `messages.via`. Cases created before 0009
-# enter the queue as `open`.
+# enter the queue as `open`. Task 66: one `webhook_deliveries` row per outgoing attempt (event id, error) and
+# `webhook_inbox`, the ids of the ticketing events already answered (a repeated id has no new effect).
 IDENTITY_UP = """
 PRAGMA foreign_keys = OFF;
 BEGIN;
@@ -462,9 +463,21 @@ CREATE TABLE webhook_deliveries (
     attempt INTEGER NOT NULL,
     status TEXT NOT NULL,
     response_code INTEGER,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    event_id TEXT,
+    error TEXT
 );
 CREATE INDEX webhook_deliveries_case ON webhook_deliveries(case_id, created_at);
+CREATE INDEX webhook_deliveries_conversation ON webhook_deliveries(conversation_id, created_at);
+CREATE TABLE webhook_inbox (
+    event_id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    event TEXT NOT NULL,
+    case_id TEXT,
+    status_code INTEGER NOT NULL,
+    response TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
 ALTER TABLE messages ADD COLUMN via TEXT;
 ALTER TABLE messages ADD COLUMN meta TEXT;
 ALTER TABLE messages ADD COLUMN delivered_at TEXT;
@@ -490,6 +503,8 @@ ALTER TABLE handoff_cases DROP COLUMN resume_status;
 ALTER TABLE messages DROP COLUMN delivered_at;
 ALTER TABLE messages DROP COLUMN meta;
 ALTER TABLE messages DROP COLUMN via;
+DROP TABLE IF EXISTS webhook_inbox;
+DROP INDEX IF EXISTS webhook_deliveries_conversation;
 DROP INDEX IF EXISTS webhook_deliveries_case;
 DROP TABLE IF EXISTS webhook_deliveries;
 DROP INDEX IF EXISTS handoff_events_case;
