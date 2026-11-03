@@ -7,6 +7,11 @@ model, no network, no cost."""
 
 from __future__ import annotations
 
+import sqlite3
+import subprocess
+import sys
+import time
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
@@ -42,7 +47,6 @@ def system(offline, settings, tmp_path):
         inbound_secret=TICKETING_SECRET,
         outbound_secret=ASSISTANT_SECRET,
         client_secret=TEST_TICKETING_SECRET,
-        retry_waits_s=(0.0,),
         outbox_poll_s=0,  # no background loop in the test
     )
     apps: dict[str, TestClient] = {ASSISTANT: assistant}
@@ -57,6 +61,72 @@ def system(offline, settings, tmp_path):
 def operator(assistant, name="op_ana"):
     """The operator's JWT issued by the assistant (audiences merchant-assistant and ticketing)."""
     return token_headers(assistant, Principal.operator(name))
+
+
+def test_ticketing_preserves_refusal_when_first_assistant_response_is_lost(system):
+    assistant, ticketing, _, webhooks = system
+    sent = assistant.post("/messages", json={"message": HUMAN}, headers=merchant_headers(assistant))
+    assert sent.status_code == 200
+    assert webhooks.wait()
+    ana, bruno = operator(assistant), operator(assistant, "op_bruno")
+    [ticket] = ticketing.get("/tickets", headers=ana).json()["tickets"]
+    ticket_id = ticket["ticket_id"]
+    assert ticketing.post(f"/tickets/{ticket_id}/assign", headers=ana).status_code == 200
+    transport = ticketing.app.state.dispatcher.client._transport
+    original = transport.handle_request
+    dropped = []
+
+    def lose_first_response(request):
+        response = original(request)
+        if request.headers.get("x-webhook-event") == "ticket.assigned" and response.status_code == 409 and not dropped:
+            dropped.append(1)
+            raise httpx.ReadTimeout("response lost", request=request)
+        return response
+
+    transport.handle_request = lose_first_response
+    first = ticketing.post(f"/tickets/{ticket_id}/assign", headers=bruno)
+    assert first.status_code == 202 and first.json()["delivery"]["status"] == "pending"
+    time.sleep(1.1)  # default first retry delay, without changing the outbox timestamps
+    retried = ticketing.app.state.dispatcher.deliver(first.json()["delivery"]["event_id"])
+    assert retried.status == "rejected" and retried.http_status == 409
+    assert retried.response["error"]["code"] == "claimed_by_other"
+    detail = ticketing.get(f"/tickets/{ticket_id}", headers=ana).json()
+    assert detail["status"] == "open" and detail["assignee"] == "op_ana"
+
+
+def test_ticketing_retries_action_after_actual_process_dies_without_aging_timestamp(system):
+    assistant, ticketing, merchant, webhooks = system
+    sent = assistant.post("/messages", json={"message": HUMAN}, headers=merchant_headers(assistant))
+    assert sent.status_code == 200 and webhooks.wait()
+    ana = operator(assistant)
+    [ticket] = ticketing.get("/tickets", headers=ana).json()["tickets"]
+    case_id, ticket_id = ticket["case_id"], ticket["ticket_id"]
+    key = "crash-ticketing-action"
+    script = (
+        "import os, sys; from merchant_assistant.data.db import connect; "
+        "from merchant_assistant.handoffs import act; conn=connect(sys.argv[1]); "
+        "act(conn,sys.argv[2],'op_ana','approve',None,sys.argv[3],actor='service:ticketing',"
+        "on_behalf_of='operator:op_ana',resume=lambda *_: os._exit(31))"
+    )
+    db_path = assistant.app.state.settings.db_path
+    process = subprocess.run([sys.executable, "-c", script, str(db_path), case_id, key], check=False, timeout=20)
+    assert process.returncode == 31
+    with sqlite3.connect(db_path) as conn:
+        assert conn.execute("SELECT resume_status FROM handoff_cases WHERE case_id=?", (case_id,)).fetchone() == (
+            "pending",
+        )
+    response = ticketing.post(
+        f"/tickets/{ticket_id}/actions", headers=ana,
+        json={"action": "approve", "text": "", "idempotency_key": key},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["delivery"]["assistant"]["queue_state"] == "answered"
+    assert webhooks.wait()
+    with sqlite3.connect(db_path) as conn:
+        assert conn.execute("SELECT resume_count, resume_status FROM handoff_cases WHERE case_id=?", (case_id,))\
+            .fetchone() == (1, "done")
+        assert conn.execute("SELECT COUNT(*) FROM messages WHERE via='operator'").fetchone()[0] == 1
+    assert len(merchant.get("/merchant/events").json()["events"]) == 1
 
 
 @pytest.mark.parametrize("action", ["approve", "reply", "reject"])

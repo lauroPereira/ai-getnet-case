@@ -4,6 +4,7 @@ from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.migrations import LATEST, current_version, migrate
 from merchant_assistant.data.seed import seed
+from merchant_assistant.data.webhook_outbox import enqueue
 
 
 def tables(conn):
@@ -31,13 +32,43 @@ def test_new_database_reaches_latest(tmp_path):
         "kb_versions",
         "kb_state",
         "kb_events",
+        "webhook_outbox",
     } <= tables(conn)
+
+
+def test_outbox_0010_upgrades_v9_without_losing_existing_rows(tmp_path):
+    conn = connect(tmp_path / "v9.sqlite3")
+    assert migrate(conn, 9) == ["down 0010_webhook_outbox"]
+    conn.execute(
+        "INSERT INTO webhook_inbox VALUES ('evt_old','ticketing','ticket.assigned','hc_old',200,'{}','2026-01-01')"
+    )
+    assert migrate(conn) == ["up 0010_webhook_outbox"]
+    assert conn.execute("SELECT event_id FROM webhook_inbox").fetchone()[0] == "evt_old"
+    assert conn.execute("SELECT COUNT(*) FROM webhook_outbox").fetchone()[0] == 0
+    assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+def test_outbox_is_part_of_the_callers_transaction_and_masks_each_destination(tmp_path):
+    conn = connect(tmp_path / "outbox.sqlite3")
+    data = {"case_id": "hc_1", "operator_id": "op_ana", "reply_text": "Cartão 4111111111111111"}
+    conn.execute("BEGIN IMMEDIATE")
+    enqueue(conn, "conversation.replied", data, "action-1")
+    conn.execute("ROLLBACK")
+    assert conn.execute("SELECT COUNT(*) FROM webhook_outbox").fetchone()[0] == 0
+    conn.execute("BEGIN IMMEDIATE")
+    event_id = enqueue(conn, "conversation.replied", data, "action-1")
+    conn.execute("COMMIT")
+    assert enqueue(conn, "conversation.replied", data | {"reply_text": "different"}, "action-1") == event_id
+    rows = conn.execute("SELECT target,body FROM webhook_outbox ORDER BY target").fetchall()
+    assert len(rows) == 2 and all("4111111111111111" not in row["body"] for row in rows)
+    assert "op_ana" not in rows[0]["body"] and "op_ana" in rows[1]["body"]
 
 
 def test_down_and_up_keep_core_data(tmp_path):
     conn = connect(tmp_path / "db.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     assert migrate(conn, 1) == [
+        "down 0010_webhook_outbox",
         "down 0009_identity_hitl",
         "down 0008_demo_results",
         "down 0007_kb_versions",
@@ -58,6 +89,7 @@ def test_down_and_up_keep_core_data(tmp_path):
         "up 0007_kb_versions",
         "up 0008_demo_results",
         "up 0009_identity_hitl",
+        "up 0010_webhook_outbox",
     ]
     assert current_version(conn) == LATEST
 
@@ -92,6 +124,7 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT sale_id, gross_minor FROM sales ORDER BY sale_id").fetchall()
     assert migrate(conn, 4) == [
+        "down 0010_webhook_outbox",
         "down 0009_identity_hitl",
         "down 0008_demo_results",
         "down 0007_kb_versions",
@@ -108,13 +141,13 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
 
 def test_identity_migration_0009_round_trip(tmp_path):
     conn = connect(tmp_path / "identity.sqlite3")
-    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    assert migrate(conn, 8) == ["down 0010_webhook_outbox", "down 0009_identity_hitl"]
     conn.execute("INSERT INTO api_principals VALUES ('demo:default','demo','cliente1988','d1',1)")
     conn.execute(
         "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at) "
         "VALUES ('s1','t1','demo:default','a','b')"
     )
-    assert migrate(conn) == ["up 0009_identity_hitl"]
+    assert migrate(conn) == ["up 0009_identity_hitl", "up 0010_webhook_outbox"]
     # Existing principals keep their sessions and receive the scopes of their role.
     assert conn.execute("SELECT scopes FROM api_principals").fetchone()[0] == (
         '["support:read","handoff:create","conversation:read"]'
@@ -129,7 +162,7 @@ def test_identity_migration_0009_round_trip(tmp_path):
         "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at) "
         "VALUES ('s2','t2','merchant:c1','a','b')"
     )
-    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    assert migrate(conn, 8) == ["down 0010_webhook_outbox", "down 0009_identity_hitl"]
     # Rolling back drops what the 0008 schema cannot hold: merchant/operator principals and their sessions.
     assert [tuple(r) for r in conn.execute("SELECT principal_id FROM api_principals")] == [("demo:default",)]
     assert [tuple(r) for r in conn.execute("SELECT session_id FROM api_sessions")] == [("s1",)]
@@ -142,13 +175,13 @@ def test_identity_migration_0009_round_trip(tmp_path):
         pass
     else:
         raise AssertionError("0008 schema must refuse the merchant role")
-    assert migrate(conn) == ["up 0009_identity_hitl"] and current_version(conn) == LATEST
+    assert migrate(conn) == ["up 0009_identity_hitl", "up 0010_webhook_outbox"] and current_version(conn) == LATEST
 
 
 def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
     conn = connect(tmp_path / "queue.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
-    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    assert migrate(conn, 8) == ["down 0010_webhook_outbox", "down 0009_identity_hitl"]
     conn.execute(
         "INSERT INTO conversations (conversation_id, customer_id, state, created_at, updated_at) "
         "VALUES ('conv_legacy0001','cliente1988','handoff','t','t')"
@@ -162,7 +195,7 @@ def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
         "conversation_id) VALUES ('hc_legacy','SIM-20261026-ABCDEF','cliente1988','k1','customer_request','{}','t',"
         "'conv_legacy0001')"
     )
-    assert migrate(conn) == ["up 0009_identity_hitl"]
+    assert migrate(conn) == ["up 0009_identity_hitl", "up 0010_webhook_outbox"]
     row = conn.execute("SELECT * FROM handoff_cases WHERE case_id='hc_legacy'").fetchone()
     assert (row["protocol"], row["queue_state"], row["resume_count"], row["thread_id"]) == (
         "SIM-20261026-ABCDEF",
@@ -186,7 +219,7 @@ def test_queue_part_of_0009_keeps_cases_and_messages(tmp_path):
         pass
     else:
         raise AssertionError("queue_state must be checked")
-    assert migrate(conn, 8) == ["down 0009_identity_hitl"]
+    assert migrate(conn, 8) == ["down 0010_webhook_outbox", "down 0009_identity_hitl"]
     assert not {"handoff_events", "webhook_deliveries", "webhook_inbox"} & tables(conn)
     assert "queue_state" not in {r[1] for r in conn.execute("PRAGMA table_info(handoff_cases)")}
     assert conn.execute("SELECT protocol FROM handoff_cases").fetchone()[0] == "SIM-20261026-ABCDEF"

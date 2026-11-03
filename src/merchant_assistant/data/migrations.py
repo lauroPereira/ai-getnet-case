@@ -550,6 +550,25 @@ COMMIT;
 PRAGMA foreign_keys = ON;
 """
 
+OUTBOX_UP = """
+CREATE TABLE IF NOT EXISTS webhook_outbox (
+    event_id TEXT NOT NULL,
+    target TEXT NOT NULL,
+    event TEXT NOT NULL,
+    case_id TEXT,
+    conversation_id TEXT,
+    body TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'delivered', 'rejected', 'failed')),
+    PRIMARY KEY (event_id, target)
+);
+CREATE INDEX IF NOT EXISTS webhook_outbox_pending ON webhook_outbox(status);
+"""
+
+OUTBOX_DOWN = """
+DROP TABLE webhook_outbox;
+"""
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -560,6 +579,7 @@ MIGRATIONS: list[Migration] = [
     Migration(7, "kb_versions", KB_VERSIONS_UP, KB_VERSIONS_DOWN),
     Migration(8, "demo_results", DEMO_RESULTS_UP, DEMO_RESULTS_DOWN),
     Migration(9, "identity_hitl", IDENTITY_UP, IDENTITY_DOWN),
+    Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

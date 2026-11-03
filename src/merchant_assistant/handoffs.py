@@ -11,15 +11,19 @@ task 65), never inside the lock. Every call, accepted or refused, leaves an audi
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
 import sqlite3
+import threading
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from contextlib import contextmanager
+from datetime import UTC, datetime
 from typing import Literal
 
+from merchant_assistant.data.webhook_outbox import enqueue
 from merchant_assistant.guardrails.input import check_input
 
 QueueState = Literal["open", "claimed", "answered", "rejected", "closed"]
@@ -30,7 +34,7 @@ SCOPE = "handoff:operate"
 IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9_-]{8,80}$")
 STATE_AFTER: dict[str, str] = {"approve": "answered", "reply": "answered", "reject": "rejected"}  # D14
 TRANSCRIPT_TURNS = 10
-STALE_RESUME = timedelta(minutes=5)  # a resume still `pending` after this is treated as interrupted (process died)
+_CASE_LOCKS = tuple(threading.Lock() for _ in range(64))
 
 Resume = Callable[[dict, dict], object]
 log = logging.getLogger("merchant_assistant.handoffs")
@@ -257,7 +261,51 @@ def claim(
     return _summary(_case(conn, case_id)) | {"replayed": replayed}
 
 
+@contextmanager
+def _case_lock(conn: sqlite3.Connection, case_id: str):
+    """Serialize actions on a case across workers; the OS releases the lock on process exit."""
+    stripe = int.from_bytes(hashlib.sha256(case_id.encode()).digest()[:8], "big") % len(_CASE_LOCKS)
+    local = _CASE_LOCKS[stripe]
+    if not local.acquire(timeout=5):
+        raise HandoffError(503, "resume_failed", "The case is still being processed; retry the action.")
+    lock = None
+    try:
+        db_path = next(row[2] for row in conn.execute("PRAGMA database_list") if row[1] == "main")
+        if db_path:
+            lock = sqlite3.connect(f"{db_path}.case-lock-{stripe:02d}", timeout=5, isolation_level=None)
+            try:
+                lock.execute("BEGIN IMMEDIATE")
+            except sqlite3.OperationalError as exc:
+                raise HandoffError(
+                    503, "resume_failed", "The case is still being processed; retry the action."
+                ) from exc
+        yield
+    finally:
+        if lock is not None:
+            lock.close()
+        local.release()
+
+
 def act(
+    conn: sqlite3.Connection,
+    case_id: str,
+    operator_id: str,
+    action: str,
+    text: str | None,
+    idempotency_key: str,
+    *,
+    actor: str,
+    on_behalf_of: str | None = None,
+    resume: Resume | None = None,
+) -> dict:
+    with _case_lock(conn, case_id):
+        return _act_locked(
+            conn, case_id, operator_id, action, text, idempotency_key,
+            actor=actor, on_behalf_of=on_behalf_of, resume=resume,
+        )
+
+
+def _act_locked(
     conn: sqlite3.Connection,
     case_id: str,
     operator_id: str,
@@ -352,12 +400,11 @@ def act(
 
 
 def _claim_retry(conn: sqlite3.Connection, case: sqlite3.Row) -> bool:
-    """Inside the action's transaction: a failed (or stale pending) resume is claimed for one new attempt."""
-    stale = (datetime.now(UTC) - STALE_RESUME).isoformat(timespec="seconds")
+    """The case lock proves no previous attempt is still running, including after a process crash."""
     cursor = conn.execute(
         "UPDATE handoff_cases SET resume_status='pending', resume_error=NULL, resume_started_at=? "
-        "WHERE case_id=? AND (resume_status='failed' OR (resume_status='pending' AND resume_started_at<?))",
-        (_now(), case["case_id"], stale),
+        "WHERE case_id=? AND resume_status IN ('failed', 'pending')",
+        (_now(), case["case_id"]),
     )
     return cursor.rowcount == 1
 
@@ -413,6 +460,9 @@ def close(
                 (stamp, operator_id, case_id),
             )
             _event(conn, case_id, "close", operator_id, None, {})
+            enqueue(conn, "handoff.closed", {
+                "case_id": case_id, "protocol": case["protocol"], "closed_at": stamp, "closed_by": operator_id,
+            }, case_id)
         _audit(conn, case, "handoff.close", "ok", actor, on_behalf_of, case_id)
         conn.execute("COMMIT")
     except HandoffError as exc:

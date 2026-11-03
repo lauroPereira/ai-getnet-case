@@ -291,7 +291,7 @@ def test_failure_after_the_graph_finished_writes_the_turn_once_on_retry(offline,
     assert [t["text"] for t in operator_turns] == ["Tudo certo."]
 
 
-def test_stale_pending_resume_is_retried(offline, settings):
+def test_unowned_pending_resume_is_retried_immediately(offline, settings):
     client, orchestrator, _ = offline()
     case = hand_off(client)["case"]
     conn = connect(settings.db_path)
@@ -306,19 +306,7 @@ def test_stale_pending_resume_is_retried(offline, settings):
         actor="operator:op_ana",
         resume=orchestrator.resume_handoff,
     )
-    assert fresh["resume_status"] == "pending"  # another attempt may still be running
-    conn.execute("UPDATE handoff_cases SET resume_started_at='2000-01-01T00:00:00+00:00'")
-    stale = handoffs.act(
-        conn,
-        case["case_id"],
-        "op_ana",
-        "approve",
-        None,
-        "key-stale-001",
-        actor="operator:op_ana",
-        resume=orchestrator.resume_handoff,
-    )
-    assert stale["resume_status"] == "done"
+    assert fresh["resume_status"] == "done"
 
 
 def test_case_from_before_0009_is_refused_clearly(offline, settings):

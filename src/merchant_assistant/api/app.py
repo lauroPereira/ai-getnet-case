@@ -128,6 +128,7 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        app.state.webhooks.recover_handoff_closed()
         yield
         close = getattr(app.state.orchestrator, "close", None)
         if close:

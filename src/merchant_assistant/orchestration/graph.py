@@ -18,6 +18,7 @@ import sqlite3
 import threading
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
@@ -33,7 +34,9 @@ from merchant_assistant.config import Settings
 from merchant_assistant.conversations import Conversation, ConversationStore
 from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
+from merchant_assistant.data.webhook_outbox import enqueue
 from merchant_assistant.guardrails.input import check_input
+from merchant_assistant.handoffs import transcript
 from merchant_assistant.llm.base import LLM, OutputTokenLimitLLM
 from merchant_assistant.observability.traces import TraceRecorder, TraceStore
 from merchant_assistant.orchestration.budget import BudgetGuard, CombinedBudgetGuard
@@ -376,9 +379,28 @@ class Orchestrator:
             final = GraphState.model_validate(
                 self.graph.invoke(initial, config={"configurable": {"ctx": ctx}, "recursion_limit": 30})
             )
-            self._persist(store, conv, final)
             if final.escalation and final.escalation.created and db_path is None:
                 self._suspend(final, ctx)  # isolated comparison runs never leave a case to resume
+            if final.escalation and final.escalation.created and db_path is None and channel in ("api", "web"):
+                conn.execute("BEGIN IMMEDIATE")
+                try:
+                    self._persist(store, conv, final)
+                    case = conn.execute("SELECT * FROM handoff_cases WHERE case_id=?", (final.escalation.case_id,))\
+                        .fetchone()
+                    payload = json.loads(case["payload"] or "{}")
+                    enqueue(conn, "handoff.created", {
+                        "case_id": case["case_id"], "protocol": case["protocol"],
+                        "conversation_id": case["conversation_id"], "customer_id": case["customer_id"],
+                        "language": payload.get("language"), "reason": case["reason"],
+                        "summary": payload.get("summary"), "pending_question": payload.get("pending_question"),
+                        "draft_reply": payload.get("draft_reply"), "transcript": transcript(conn, conv.conversation_id),
+                    }, case["case_id"])
+                    conn.execute("COMMIT")
+                except BaseException:
+                    conn.execute("ROLLBACK")
+                    raise
+            else:
+                self._persist(store, conv, final)
             response = self._response(final, ctx)
             self._record(final, ctx, response, trace_tags)
             return response
@@ -491,13 +513,6 @@ class Orchestrator:
             ).fetchone()
             case_state = final.case_next.get("state", "awaiting_customer")
             if already is None:
-                store.save(
-                    conv,
-                    state=case_state,
-                    topic=conv.topic,
-                    technical_cycles=conv.technical_cycles,
-                    evidence=final.case_next.get("evidence"),
-                )
                 meta = {
                     "action": action,
                     "protocol": case["protocol"],
@@ -505,16 +520,27 @@ class Orchestrator:
                     "event_id": record["event_id"],
                     "language": final.decision.language if final.decision else None,
                 }
-                store.append(
-                    conv.conversation_id,
-                    request_id,
-                    "assistant",
-                    final.answer,
-                    "human_reply",
-                    "answered",
-                    via="operator",
-                    meta=meta,
-                )
+                conn.execute("BEGIN IMMEDIATE")
+                try:
+                    store.save(
+                        conv, state=case_state, topic=conv.topic, technical_cycles=conv.technical_cycles,
+                        evidence=final.case_next.get("evidence"),
+                    )
+                    store.append(
+                        conv.conversation_id, request_id, "assistant", final.answer, "human_reply", "answered",
+                        via="operator", meta=meta,
+                    )
+                    enqueue(conn, "conversation.replied", {
+                        "case_id": case["case_id"], "protocol": case["protocol"],
+                        "conversation_id": case["conversation_id"], "action": action,
+                        "operator_id": record["operator_id"], "reply_text": final.answer, "via": "operator",
+                        "request_id": request_id,
+                        "delivered_at": datetime.now(UTC).isoformat(timespec="seconds"),
+                    }, record["event_id"])
+                    conn.execute("COMMIT")
+                except BaseException:
+                    conn.execute("ROLLBACK")
+                    raise
             response = MessageResponse(
                 answer=final.answer,
                 status="answered",

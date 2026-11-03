@@ -14,6 +14,7 @@ import hashlib
 import hmac
 import json
 import logging
+import sqlite3
 import threading
 import time
 import uuid
@@ -24,17 +25,10 @@ import httpx
 
 from merchant_assistant.config import Settings
 from merchant_assistant.data.db import connect
-from merchant_assistant.guardrails.input import check_input
-from merchant_assistant.handoffs import transcript
+from merchant_assistant.data.webhook_outbox import enqueue
 
 SIGNATURE_TOLERANCE_S = 300
 TICKETING, MERCHANT = "ticketing", "merchant"
-TARGETS: dict[str, tuple[str, ...]] = {
-    "handoff.created": (TICKETING,),
-    "conversation.replied": (TICKETING, MERCHANT),
-    "handoff.closed": (TICKETING,),
-}
-HIDDEN_FROM: dict[str, tuple[str, ...]] = {MERCHANT: ("operator_id",)}  # D29: the merchant's copy omits the operator
 log = logging.getLogger("merchant_assistant.webhooks")
 
 
@@ -66,14 +60,6 @@ def verify_signature(
     return any(hmac.compare_digest(expected, candidate) for candidate in candidates)
 
 
-def envelope(event_type: str, data: dict) -> dict:
-    return {"id": f"evt_{uuid.uuid4().hex}", "type": event_type, "created_at": _now_iso(), "data": data}
-
-
-def _mask(text) -> str | None:
-    return check_input(text).masked if isinstance(text, str) and text else text
-
-
 def _secret(value) -> str:
     return value.get_secret_value().strip() if value else ""
 
@@ -91,6 +77,7 @@ class Webhooks:
     ) -> None:
         self.settings, self.transport, self.sleep, self.clock = settings, transport, sleep, clock
         self._threads: set[threading.Thread] = set()
+        self._active: set[tuple[str, str]] = set()
         self._lock = threading.Lock()
 
     # --- targets ------------------------------------------------------------------------------------------------
@@ -105,58 +92,35 @@ class Webhooks:
 
     def handoff_created_for(self, request_id: str) -> None:
         """After a turn answered with `status=handoff`: the case opened by this request (thread = request id, D6)."""
-        self._safely(self._handoff_created, request_id)
-
-    def _handoff_created(self, request_id: str) -> None:
-        conn = connect(self.settings.db_path)
-        try:
-            case = conn.execute("SELECT * FROM handoff_cases WHERE thread_id=?", (request_id,)).fetchone()
-            if case is None:
-                return
-            payload = json.loads(case["payload"] or "{}")
-            data = {
-                "case_id": case["case_id"],
-                "protocol": case["protocol"],
-                "conversation_id": case["conversation_id"],
-                "customer_id": case["customer_id"],
-                "language": payload.get("language"),
-                "reason": _mask(case["reason"]),
-                "summary": _mask(payload.get("summary")),
-                "pending_question": _mask(payload.get("pending_question")),
-                "draft_reply": _mask(payload.get("draft_reply")),
-                "transcript": transcript(conn, case["conversation_id"]),  # last 10 turns, masked by the input guard
-            }
-        finally:
-            conn.close()
-        self.emit("handoff.created", data)
+        self._wake()
 
     def conversation_replied(self, case: dict, record: dict, result: dict | None) -> None:
         """After a successful resume: the reply produced for the operator's action, to the ticket and the merchant."""
-
-        def build() -> None:
-            data = {
-                "case_id": case["case_id"],
-                "protocol": case["protocol"],
-                "conversation_id": case["conversation_id"],
-                "action": record["action"],
-                "operator_id": record["operator_id"],
-                "reply_text": _mask((result or {}).get("answer")),
-                "via": "operator",
-                "request_id": (result or {}).get("request_id"),
-                "delivered_at": _now_iso(),
-            }
-            self.emit("conversation.replied", data)
-
-        self._safely(build)
+        self._wake()
 
     def handoff_closed(self, case: dict) -> None:
-        data = {
-            "case_id": case["case_id"],
-            "protocol": case["protocol"],
-            "closed_at": case.get("closed_at"),
-            "closed_by": case.get("closed_by"),
-        }
-        self._safely(self.emit, "handoff.closed", data)
+        self._wake()
+
+    def recover_handoff_closed(self) -> None:
+        """Recover new durable intentions and unfinished closing events written before migration 0010."""
+        conn = connect(self.settings.db_path)
+        try:
+            cases = conn.execute(
+                "SELECT DISTINCT c.* FROM handoff_cases c JOIN webhook_inbox i ON i.case_id=c.case_id "
+                "WHERE c.queue_state='closed' AND i.event='ticket.solved' AND i.status_code IN (0,200) "
+                "AND NOT EXISTS (SELECT 1 FROM webhook_deliveries d WHERE d.case_id=c.case_id "
+                "AND d.event='handoff.closed' AND d.target='ticketing' AND d.status='delivered') "
+                "AND NOT EXISTS (SELECT 1 FROM webhook_outbox o WHERE o.case_id=c.case_id "
+                "AND o.event='handoff.closed')"
+            ).fetchall()
+            for case in cases:
+                enqueue(conn, "handoff.closed", {
+                    "case_id": case["case_id"], "protocol": case["protocol"], "closed_at": case["closed_at"],
+                    "closed_by": case["closed_by"],
+                }, case["case_id"])
+        finally:
+            conn.close()
+        self.dispatch_pending()
 
     def resume_point(self, resume: Callable[[dict, dict], dict] | None) -> Callable[[dict, dict], dict] | None:
         """Wraps the single resume point: a successful resume emits `conversation.replied` (a failed one does not)."""
@@ -172,36 +136,89 @@ class Webhooks:
 
     # --- delivery -----------------------------------------------------------------------------------------------
 
-    def emit(self, event_type: str, data: dict) -> dict | None:
-        """Starts one delivery thread per configured target. Returns the envelope, or None when nothing is sent."""
-        targets = []
-        for name in TARGETS[event_type]:
+    def _wake(self) -> None:
+        try:
+            self.dispatch_pending()
+        except Exception:
+            log.exception("could not start webhook delivery")
+
+    def dispatch_pending(self) -> None:
+        conn = connect(self.settings.db_path)
+        try:
+            pending = conn.execute(
+                "SELECT o.event_id, o.target, o.body FROM webhook_outbox o WHERE o.status='pending' "
+                "AND NOT EXISTS (SELECT 1 FROM webhook_outbox prior WHERE prior.case_id=o.case_id "
+                "AND prior.target=o.target AND prior.rowid<o.rowid AND prior.status!='delivered') "
+                "ORDER BY o.rowid"
+            ).fetchall()
+        finally:
+            conn.close()
+        for row in pending:
+            name = row["target"]
             url, secret = self._target(name)
-            if not url:
+            if not url or not secret:
                 continue
-            if not secret:
-                log.warning("webhook target without secret", extra={"event": {"target": name, "type": event_type}})
-                continue
-            targets.append((name, url, secret))
-        if not targets:
-            return None
-        event = envelope(event_type, data)
-        for name, url, secret in targets:
-            copy = event | {"data": {k: v for k, v in data.items() if k not in HIDDEN_FROM.get(name, ())}}
-            body = json.dumps(copy, ensure_ascii=False, separators=(",", ":")).encode("utf-8")  # signed per target
-            thread = threading.Thread(
-                target=self._deliver, args=(copy, body, name, url, secret), name=f"webhook-{name}", daemon=True
-            )
+            key = (row["event_id"], name)
             with self._lock:
+                if key in self._active or len(self._active) >= 16:
+                    continue
+                self._active.add(key)
+                event = json.loads(row["body"])
+                thread = threading.Thread(
+                    target=self._deliver, args=(event, row["body"].encode("utf-8"), name, url, secret),
+                    name=f"webhook-{name}", daemon=True,
+                )
                 self._threads.add(thread)
             thread.start()
-        return event
 
     def _deliver(self, event: dict, body: bytes, name: str, url: str, secret: str) -> None:
+        key = (event["id"], name)
+        stripe = int.from_bytes(hashlib.sha256(f"{event['id']}:{name}".encode()).digest()[:8], "big") % 64
+        lock = None
+        schedule_more = False
         try:
+            lock = sqlite3.connect(
+                f"{self.settings.db_path}.delivery-lock-{stripe:02d}", timeout=5, isolation_level=None
+            )
+            while True:
+                try:
+                    lock.execute("BEGIN IMMEDIATE")
+                    break
+                except sqlite3.OperationalError as exc:
+                    if "locked" not in str(exc).lower():
+                        raise
+            schedule_more = True
             waits = self.settings.webhook_waits
             with httpx.Client(transport=self.transport, timeout=self.settings.webhook_timeout_s) as client:
-                for attempt in range(1, self.settings.webhook_max_attempts + 1):
+                while True:
+                    conn = connect(self.settings.db_path)
+                    try:
+                        conn.execute("BEGIN IMMEDIATE")
+                        row = conn.execute(
+                            "SELECT attempts,status FROM webhook_outbox WHERE event_id=? AND target=?", key
+                        ).fetchone()
+                        if row is None or row["status"] != "pending":
+                            conn.execute("COMMIT")
+                            return
+                        attempt = row["attempts"] + 1
+                        if attempt > self.settings.webhook_max_attempts:
+                            conn.execute("UPDATE webhook_outbox SET status='failed' WHERE event_id=? AND target=?", key)
+                            conn.execute("COMMIT")
+                            return
+                        conn.execute(
+                            "UPDATE webhook_outbox SET attempts=? WHERE event_id=? AND target=?", (attempt, *key)
+                        )
+                        data = event["data"]
+                        conn.execute(
+                            "INSERT INTO webhook_deliveries (delivery_id,event,target,case_id,conversation_id,attempt,"
+                            "status,response_code,created_at,event_id,error) "
+                            "VALUES (?,?,?,?,?,?,'error',NULL,?,?,'interrupted')",
+                            (f"dlv_{uuid.uuid4().hex[:20]}", event["type"], name, data.get("case_id"),
+                             data.get("conversation_id"), attempt, _now_iso(), event["id"]),
+                        )
+                        conn.execute("COMMIT")
+                    finally:
+                        conn.close()
                     headers = {
                         "Content-Type": "application/json",
                         "X-Webhook-Id": event["id"],
@@ -225,32 +242,35 @@ class Webhooks:
                     if attempt < self.settings.webhook_max_attempts:
                         self.sleep(waits[min(attempt - 1, len(waits) - 1)])
         except Exception:  # a delivery thread never takes anything down with it
+            schedule_more = False
             log.exception("webhook delivery failed", extra={"event": {"id": event.get("id"), "target": name}})
         finally:
+            if lock is not None:
+                lock.close()
+            with self._lock:
+                self._active.discard(key)
+            # Pick up intentions that arrived while the bounded set of delivery workers was full.
+            if schedule_more:
+                self._wake()
             with self._lock:
                 self._threads.discard(threading.current_thread())
 
     def _record(self, event: dict, target: str, attempt: int, status: str, code: int | None, error: str | None):
-        data = event["data"]
         conn = connect(self.settings.db_path)
         try:
+            conn.execute("BEGIN IMMEDIATE")
             conn.execute(
-                "INSERT INTO webhook_deliveries (delivery_id, event, target, case_id, conversation_id, attempt, "
-                "status, response_code, created_at, event_id, error) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    f"dlv_{uuid.uuid4().hex[:20]}",
-                    event["type"],
-                    target,
-                    data.get("case_id"),
-                    data.get("conversation_id"),
-                    attempt,
-                    status,
-                    code,
-                    _now_iso(),
-                    event["id"],
-                    error,
-                ),
+                "UPDATE webhook_deliveries SET status=?,response_code=?,error=? "
+                "WHERE event_id=? AND target=? AND attempt=?",
+                (status, code, error, event["id"], target, attempt),
             )
+            final = status if status != "error" else (
+                "failed" if attempt >= self.settings.webhook_max_attempts else "pending"
+            )
+            conn.execute(
+                "UPDATE webhook_outbox SET status=? WHERE event_id=? AND target=?", (final, event["id"], target)
+            )
+            conn.execute("COMMIT")
         finally:
             conn.close()
 
@@ -267,9 +287,3 @@ class Webhooks:
             if time.monotonic() >= deadline:
                 with self._lock:
                     return not self._threads
-
-    def _safely(self, fn, *args) -> None:
-        try:
-            fn(*args)
-        except Exception:  # building an event never breaks the request that triggered it
-            log.exception("webhook event not built")

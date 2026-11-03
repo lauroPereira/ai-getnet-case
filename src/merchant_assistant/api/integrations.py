@@ -26,6 +26,7 @@ from merchant_assistant.api.webhooks import verify_signature
 router = APIRouter(prefix="/v1/integrations", tags=["integrations"])
 EVENTS = ("ticket.assigned", "ticket.action", "ticket.solved")
 SOURCE = "ticketing"
+LOCK_STRIPES = 64
 
 
 async def raw_body(request: Request) -> bytes:
@@ -84,6 +85,12 @@ def _event_hash(event: dict) -> str:
     return hashlib.sha256(body.encode("ascii")).hexdigest()
 
 
+def _lock_path(db_path, event_id: str) -> str:
+    """Bound disk use while keeping the same event on the same cross-process lock."""
+    stripe = int.from_bytes(hashlib.sha256(event_id.encode()).digest()[:8], "big") % LOCK_STRIPES
+    return f"{db_path}.webhook-lock-{stripe:02d}"
+
+
 def _reserve(conn, event: dict) -> None:
     """Persist the event's digest before its effects; status 0 permits retry after interruption."""
     case_id = event["data"].get("case_id")
@@ -135,10 +142,9 @@ def ticketing_events(request: Request, principal=AUTH, raw: bytes = RAW_BODY):
         return _error(400, "invalid_payload", "Expected the webhook envelope {id, type, created_at, data}.", request)
     actor = principal["principal_id"]
     conn = _db(request)
-    # A separate SQLite lock per event permits queue commits and resume while excluding other workers for that id.
+    # A bounded set of separate SQLite locks permits queue commits while excluding other workers for the same id.
     # SQLite releases it on process exit; the reservation then identifies the only event that may be retried.
-    lock_id = hashlib.sha256(event["id"].encode()).hexdigest()
-    lock = sqlite3.connect(f"{settings.db_path}.webhook-lock-{lock_id}", timeout=5, isolation_level=None)
+    lock = sqlite3.connect(_lock_path(settings.db_path, event["id"]), timeout=5, isolation_level=None)
     try:
         try:
             lock.execute("BEGIN IMMEDIATE")
@@ -146,18 +152,22 @@ def ticketing_events(request: Request, principal=AUTH, raw: bytes = RAW_BODY):
             return _error(503, "resume_failed", "The event is still being processed; retry it later.", request)
         seen = conn.execute("SELECT status_code, response, case_id FROM webhook_inbox WHERE event_id=?", (event["id"],))
         if (stored := seen.fetchone()) is not None:  # delivery already answered: no new effect
-            if stored["status_code"] != 0:
+            if stored["status_code"] == 200:
                 case_state, queue_state = _states(conn, stored["case_id"] or "")
                 return {"status": "replayed", "case_state": case_state, "queue_state": queue_state}
+            if stored["status_code"] != 0:
+                return JSONResponse(status_code=stored["status_code"], content=json.loads(stored["response"]))
             if stored["response"] != _event_hash(event):
                 return _error(503, "resume_failed", "The original event has not completed; retry it later.", request)
         else:
             _reserve(conn, event)
         status, body = _apply(request, conn, event, actor)
-        _store(conn, event, status, body)
         if status == 200:
+            _store(conn, event, status, body)
             return {k: body[k] for k in ("status", "case_state", "queue_state")}
-        return _error(status, body["error"]["code"], body["error"]["message"], request)
+        response = _error(status, body["error"]["code"], body["error"]["message"], request)
+        _store(conn, event, status, json.loads(response.body))
+        return response
     finally:
         lock.close()
         conn.close()
@@ -205,8 +215,7 @@ def _apply(request: Request, conn, event: dict, actor: str) -> tuple[int, dict]:
                 return _failure(503, "resume_failed", "The reply is not ready; retry this event.")
         else:
             result = handoffs.close(conn, case_id, operator_id, actor=actor, on_behalf_of=on_behalf_of)
-            if not result["replayed"]:
-                webhooks.handoff_closed(dict(handoffs._case(conn, case_id)))
+            webhooks.handoff_closed(dict(handoffs._case(conn, case_id)))
     except handoffs.HandoffError as exc:
         return _failure(exc.status, exc.code, exc.message)
     conn.execute(  # the ticket that holds this case, from the first accepted event; a refusal changes nothing

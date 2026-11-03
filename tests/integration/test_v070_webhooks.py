@@ -23,6 +23,7 @@ from merchant_assistant.api import integrations
 from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.webhooks import Webhooks, signature, verify_signature
 from merchant_assistant.mocks.service import create_mocks_app
+from merchant_assistant.orchestration import graph
 from merchant_assistant.testing import TEST_TICKETING_SECRET, AppTransport, merchant_headers, token_headers
 
 TICKETING_URL = "http://ticketing.test/webhooks/assistant"
@@ -389,16 +390,65 @@ def test_interrupted_event_retries_only_its_original_case(wired, monkeypatch):
     assert [case_snapshot(client, case)[0]["queue_state"] for case in cases] == ["claimed", "open"]
 
 
-def test_repeated_final_refusal_is_acknowledged_without_new_effect_or_audit(wired):
+@pytest.mark.parametrize("operator_name,code,status", [("op_ghost", "unknown_operator", 422),
+                                                        ("op_bruno", "claimed_by_other", 409)])
+def test_repeated_final_refusal_returns_original_error_without_new_effect_or_audit(wired, operator_name, code, status):
     client, _, _, _ = wired()
     case_id = hand_off(client)["case_id"]
-    rejected = post_event(client, "ticket.assigned", ticket(case_id, "op_ghost"), event_id="evt_refused")
-    assert rejected.status_code == 422
+    if status == 409:
+        assert post_event(client, "ticket.assigned", ticket(case_id)).status_code == 200
+    before = case_snapshot(client, case_id)
+    rejected = post_event(client, "ticket.assigned", ticket(case_id, operator_name), event_id="evt_refused")
+    assert rejected.status_code == status and rejected.json()["error"]["code"] == code
     audits = rows(client, "SELECT * FROM audit_events WHERE resource_id=?", (case_id,))
     duplicate = post_event(client, "ticket.assigned", ticket(case_id), event_id="evt_refused")
-    assert duplicate.status_code == 200 and duplicate.json()["status"] == "replayed"
-    assert case_snapshot(client, case_id)[0]["queue_state"] == "open"
+    assert duplicate.status_code == status and duplicate.json() == rejected.json()
+    assert case_snapshot(client, case_id) == before
     assert rows(client, "SELECT * FROM audit_events WHERE resource_id=?", (case_id,)) == audits
+
+
+def test_event_lock_paths_are_bounded_and_cannot_escape_runtime(tmp_path):
+    paths = {integrations._lock_path(tmp_path / "db.sqlite3", f"../../event-{n}") for n in range(3000)}
+    assert len(paths) <= integrations.LOCK_STRIPES
+    assert all(path.startswith(str(tmp_path / "db.sqlite3.webhook-lock-")) for path in paths)
+
+
+def test_same_action_key_in_distinct_events_does_not_resume_concurrently(wired, monkeypatch):
+    client, orchestrator, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    headers = service(client)
+    entered, second_connected, release = Event(), Event(), Event()
+    calls = []
+    original = orchestrator.resume_handoff
+
+    def resume(case, record):
+        calls.append(record["event_id"])
+        entered.set()
+        assert release.wait(10)
+        return original(case, record)
+
+    orchestrator.resume_handoff = resume
+    original_db = integrations._db
+
+    def db(request):
+        conn = original_db(request)
+        if entered.is_set():
+            second_connected.set()
+        return conn
+
+    monkeypatch.setattr(integrations, "_db", db)
+    data = ticket(case_id, action="approve", text="", idempotency_key="same-action-key")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(post_event, client, "ticket.action", data, headers=headers, event_id="evt_action_1")
+        try:
+            assert entered.wait(10)
+            second = pool.submit(post_event, client, "ticket.action", data, headers=headers, event_id="evt_action_2")
+            assert second_connected.wait(10)
+        finally:
+            release.set()
+        responses = [first.result(timeout=10), second.result(timeout=10)]
+    assert [response.status_code for response in responses] == [200, 200]
+    assert len(calls) == 1
 
 
 def test_distinct_event_ids_do_not_wait_for_each_other(wired, monkeypatch):
@@ -439,8 +489,7 @@ def test_interrupted_process_releases_event_lock_and_reservation_can_resume(wire
         integrations._reserve(conn, event)
     finally:
         conn.close()
-    lock_id = integrations.hashlib.sha256(event["id"].encode()).hexdigest()
-    lock_path = f"{client.app.state.settings.db_path}.webhook-lock-{lock_id}"
+    lock_path = integrations._lock_path(client.app.state.settings.db_path, event["id"])
     script = (
         "import sqlite3, sys; "
         "conn = sqlite3.connect(sys.argv[1], isolation_level=None); "
@@ -464,12 +513,189 @@ def test_interrupted_process_releases_event_lock_and_reservation_can_resume(wire
     assert case_snapshot(client, case_id)[0]["queue_state"] == "claimed"
 
 
+def test_closed_intent_survives_process_death_before_emit(wired):
+    client, _, receivers, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    assert post_event(client, "ticket.assigned", ticket(case_id)).status_code == 200
+    body, headers = signed("ticket.solved", ticket(case_id), event_id="evt_crashed_close")
+    conn = sqlite3.connect(client.app.state.settings.db_path, isolation_level=None)
+    try:
+        integrations._reserve(conn, json.loads(body))
+    finally:
+        conn.close()
+    script = (
+        "import os, sys; from merchant_assistant.data.db import connect; "
+        "from merchant_assistant.handoffs import close; conn=connect(sys.argv[1]); "
+        "close(conn,sys.argv[2],'op_ana',actor='service:ticketing',on_behalf_of='operator:op_ana'); os._exit(23)"
+    )
+    process = subprocess.run([sys.executable, "-c", script, str(client.app.state.settings.db_path), case_id],
+                             check=False, timeout=20)
+    assert process.returncode == 23
+    assert case_snapshot(client, case_id)[0]["queue_state"] == "closed"
+    receivers.requests.clear()
+    client.app.state.webhooks.recover_handoff_closed()
+    client.app.state.webhooks.wait()
+    [closed] = receivers.events()
+    assert closed["type"] == "handoff.closed" and closed["data"]["case_id"] == case_id
+    retried = client.post(EVENTS_PATH, content=body, headers=headers | service(client))
+    assert retried.status_code == 200 and retried.json()["status"] == "replayed"
+    client.app.state.webhooks.wait()
+    assert [e["id"] for e in receivers.events()] == [closed["id"]]
+
+
+def test_closed_delivery_retries_with_same_id_after_ack_is_lost(wired, monkeypatch):
+    client, _, receivers, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    assert post_event(client, "ticket.assigned", ticket(case_id)).status_code == 200
+    webhooks = client.app.state.webhooks
+    original = webhooks._record
+    failed = []
+
+    def lose_ack(event, *args):
+        if event["type"] == "handoff.closed" and not failed:
+            failed.append(event["id"])
+            raise RuntimeError("delivery acknowledgement lost")
+        return original(event, *args)
+
+    monkeypatch.setattr(webhooks, "_record", lose_ack)
+    receivers.requests.clear()
+    assert post_event(client, "ticket.solved", ticket(case_id)).status_code == 200
+    assert webhooks.wait()
+    webhooks.recover_handoff_closed()
+    assert webhooks.wait()
+    events = receivers.events()
+    assert len(events) == 2 and events[0] == events[1]
+    assert len({event["id"] for event in events}) == 1
+
+
+def _child_settings_script() -> str:
+    return (
+        "import os, sys; from pathlib import Path; from pydantic import SecretStr; "
+        "from merchant_assistant.config import Settings; "
+        "from merchant_assistant.testing import offline_orchestrator, passwords_setting, TEST_USER_PASSWORDS, "
+        "TEST_TICKETING_SECRET; "
+        "settings=Settings(_env_file=None,runtime_dir=Path(sys.argv[1]),jwt_private_key_path=Path(sys.argv[2]),"
+        "demo_mode=True,budget_limit_usd=1.0,qdrant_url=':memory:',retrieval_min_score=0.05,"
+        "demo_user_passwords=SecretStr(passwords_setting(TEST_USER_PASSWORDS)),"
+        "ticketing_client_secret=SecretStr(TEST_TICKETING_SECRET),password_hash_iterations=1000); "
+        "orchestrator,_=offline_orchestrator(settings); "
+    )
+
+
+def test_created_outbox_survives_process_death_before_delivery(wired, settings):
+    client, _, receivers, _ = wired()
+    script = _child_settings_script() + (
+        "from fastapi.testclient import TestClient; from merchant_assistant.api.app import create_app; "
+        "from merchant_assistant.testing import merchant_headers; app=create_app(orchestrator,settings); "
+        "app.state.webhooks.handoff_created_for=lambda *_: os._exit(71); client=TestClient(app); "
+        "client.post('/messages',json={'message':'Quero falar com um atendente'},headers=merchant_headers(client))"
+    )
+    process = subprocess.run(
+        [sys.executable, "-c", script, str(settings.runtime_path), str(settings.jwt_private_key_path)],
+        check=False, timeout=30,
+    )
+    assert process.returncode == 71
+    assert rows(client, "SELECT status FROM webhook_outbox WHERE event='handoff.created'") == [{"status": "pending"}]
+    client.app.state.webhooks.recover_handoff_closed()
+    assert client.app.state.webhooks.wait()
+    [created] = receivers.events()
+    assert created["type"] == "handoff.created"
+    assert rows(client, "SELECT status FROM webhook_outbox WHERE event='handoff.created'") == [{"status": "delivered"}]
+
+
+def test_attempt_count_survives_process_death_during_delivery(wired, settings, monkeypatch):
+    client, _, receivers, _ = wired()
+    monkeypatch.setattr(client.app.state.webhooks, "handoff_created_for", lambda *_: None)
+    response = client.post("/messages", json={"message": HUMAN}, headers=merchant_headers(client))
+    assert response.status_code == 200
+    script = _child_settings_script() + (
+        "import httpx; from merchant_assistant.api.webhooks import Webhooks; "
+        "settings.ticketing_webhook_url='http://ticketing.test/webhooks/assistant'; "
+        "settings.ticketing_webhook_secret=SecretStr('test-ticketing-webhook-secret'); "
+        "transport=httpx.MockTransport(lambda request: os._exit(73)); "
+        "hooks=Webhooks(settings,transport=transport); hooks.dispatch_pending(); hooks.wait()"
+    )
+    process = subprocess.run(
+        [sys.executable, "-c", script, str(settings.runtime_path), str(settings.jwt_private_key_path)],
+        check=False, timeout=30,
+    )
+    assert process.returncode == 73
+    assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='handoff.created'") == [
+        {"status": "pending", "attempts": 1}
+    ]
+    client.app.state.webhooks.recover_handoff_closed()
+    assert client.app.state.webhooks.wait()
+    assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='handoff.created'") == [
+        {"status": "delivered", "attempts": 2}
+    ]
+    assert len(receivers.events()) == 1
+
+
+def test_reply_outbox_survives_process_death_before_delivery(wired, settings):
+    client, _, receivers, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    key = "crash-reply-outbox"
+    script = _child_settings_script() + (
+        "from merchant_assistant.data.db import connect; from merchant_assistant.handoffs import act; "
+        "conn=connect(settings.db_path); "
+        "def_resume=lambda case,record: (orchestrator.resume_handoff(case,record),os._exit(72)); "
+        "act(conn,sys.argv[3],'op_ana','approve',None,sys.argv[4],actor='service:ticketing',resume=def_resume)"
+    )
+    process = subprocess.run(
+        [sys.executable, "-c", script, str(settings.runtime_path), str(settings.jwt_private_key_path), case_id, key],
+        check=False, timeout=30,
+    )
+    assert process.returncode == 72
+    pending = rows(client, "SELECT target,status FROM webhook_outbox WHERE event='conversation.replied'")
+    assert sorted((item["target"], item["status"]) for item in pending) == [
+        ("merchant", "pending"), ("ticketing", "pending")
+    ]
+    receivers.requests.clear()
+    client.app.state.webhooks.recover_handoff_closed()
+    assert client.app.state.webhooks.wait()
+    assert len([event for event in receivers.events() if event["type"] == "conversation.replied"]) == 2
+    replay = post_event(client, "ticket.action", ticket(case_id, action="approve", text="", idempotency_key=key))
+    assert replay.status_code == 200
+    assert client.app.state.webhooks.wait()
+    assert len([event for event in receivers.events() if event["type"] == "conversation.replied"]) == 2
+
+
+@pytest.mark.parametrize("event_type", ["handoff.created", "conversation.replied", "handoff.closed"])
+def test_domain_change_rolls_back_if_outbox_cannot_be_written(wired, monkeypatch, event_type):
+    client, _, _, _ = wired()
+    target = handoffs if event_type == "handoff.closed" else graph
+    original = target.enqueue
+
+    def fail(conn, kind, data, key):
+        if kind == event_type:
+            raise RuntimeError("outbox unavailable")
+        return original(conn, kind, data, key)
+
+    if event_type == "handoff.created":
+        monkeypatch.setattr(target, "enqueue", fail)
+        with pytest.raises(RuntimeError, match="outbox unavailable"):
+            client.post("/messages", json={"message": HUMAN}, headers=merchant_headers(client))
+        assert rows(client, "SELECT * FROM messages WHERE status='handoff'") == []
+    else:
+        case_id = hand_off(client)["case_id"]
+        monkeypatch.setattr(target, "enqueue", fail)
+        if event_type == "conversation.replied":
+            data = ticket(case_id, action="approve", text="", idempotency_key="outbox-failure")
+            response = post_event(client, "ticket.action", data, event_id="evt_outbox_failure")
+            assert response.status_code == 503
+            assert rows(client, "SELECT * FROM messages WHERE via='operator'") == []
+        else:
+            with pytest.raises(RuntimeError, match="outbox unavailable"):
+                post_event(client, "ticket.solved", ticket(case_id), event_id="evt_outbox_failure")
+            assert case_snapshot(client, case_id)[0]["queue_state"] == "open"
+    assert rows(client, "SELECT * FROM webhook_outbox WHERE event=?", (event_type,)) == []
+
+
 def test_busy_event_is_retryable_and_untrusted_id_is_not_a_path(wired):
     client, _, _, _ = wired()
     case_id = hand_off(client)["case_id"]
     event_id = "../../arbitrary-id"
-    lock_id = integrations.hashlib.sha256(event_id.encode()).hexdigest()
-    lock_path = f"{client.app.state.settings.db_path}.webhook-lock-{lock_id}"
+    lock_path = integrations._lock_path(client.app.state.settings.db_path, event_id)
     lock = sqlite3.connect(lock_path, isolation_level=None)
     try:
         lock.execute("BEGIN IMMEDIATE")
@@ -483,7 +709,7 @@ def test_busy_event_is_retryable_and_untrusted_id_is_not_a_path(wired):
     assert retried.status_code == 200 and retried.json()["status"] == "accepted"
 
 
-def test_interrupted_action_stays_retryable_until_resume_completes(wired, monkeypatch):
+def test_interrupted_action_is_retried_without_waiting(wired, monkeypatch):
     client, _, _, _ = wired()
     case_id = hand_off(client)["case_id"]
     data = ticket(case_id, action="approve", text="", idempotency_key="crash-action-01")
@@ -496,16 +722,6 @@ def test_interrupted_action_stays_retryable_until_resume_completes(wired, monkey
     with pytest.raises(RuntimeError, match="stopped before resume"):
         post_event(client, "ticket.action", data, event_id="evt_crashed_action")
     monkeypatch.setattr(handoffs, "_resume", original)
-    pending = post_event(client, "ticket.action", data, event_id="evt_crashed_action")
-    assert pending.status_code == 503 and pending.json()["error"]["code"] == "resume_failed"
-    conn = sqlite3.connect(client.app.state.settings.db_path)
-    try:
-        conn.execute(
-            "UPDATE handoff_cases SET resume_started_at='2000-01-01T00:00:00+00:00' WHERE case_id=?", (case_id,)
-        )
-        conn.commit()
-    finally:
-        conn.close()
     retried = post_event(client, "ticket.action", data, event_id="evt_crashed_action")
     assert retried.status_code == 200 and retried.json()["queue_state"] == "answered"
     assert case_snapshot(client, case_id)[0]["resume_count"] == 1
@@ -601,12 +817,28 @@ def test_receiver_down_gets_three_recorded_attempts_without_breaking_the_request
         client,
         "SELECT target, attempt, status, response_code FROM webhook_deliveries WHERE event='conversation.replied'",
     )
-    assert sorted((r["target"], r["attempt"], r["status"]) for r in replied) == [
-        ("merchant", 1, "rejected"),  # a 4xx is final
-        ("ticketing", 1, "error"),
-        ("ticketing", 2, "error"),
-        ("ticketing", 3, "error"),
-    ]
+    assert [(r["target"], r["attempt"], r["status"]) for r in replied] == [("merchant", 1, "rejected")]
+    pending = rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='conversation.replied' "
+                           "AND target='ticketing'")
+    assert pending == [{"status": "pending", "attempts": 0}]  # the failed creation must be resolved first
+
+
+def test_reply_gets_three_attempts_after_ticket_creation(wired):
+    client, _, receivers, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    receivers.status = {"ticketing.test": 503}
+    assert post_event(client, "ticket.action", ticket(case_id, action="approve", idempotency_key="retry-reply-01"))\
+        .status_code == 200
+    assert client.app.state.webhooks.wait()
+    attempts = rows(client, "SELECT attempt,status FROM webhook_deliveries "
+                            "WHERE event='conversation.replied' AND target='ticketing' ORDER BY attempt")
+    assert attempts == [{"attempt": n, "status": "error"} for n in (1, 2, 3)]
+    assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='conversation.replied' "
+                        "AND target='ticketing'") == [{"status": "failed", "attempts": 3}]
+    client.app.state.webhooks.recover_handoff_closed()
+    assert client.app.state.webhooks.wait()
+    assert len(rows(client, "SELECT * FROM webhook_deliveries WHERE event='conversation.replied' "
+                            "AND target='ticketing'")) == 3
 
 
 def test_signature_window_is_300_seconds():
