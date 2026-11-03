@@ -53,8 +53,21 @@ Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v0
 | Pedidos do Supervisor | Falha da retomada: `test_failed_resume_is_visible_and_recovers_with_the_same_key`, `test_failure_after_the_graph_finished_writes_the_turn_once_on_retry`, `test_stale_pending_resume_is_retried`. Casos pré-0009: `test_case_from_before_0009_is_refused_clearly`. Texto sem "simulação": `test_handoff_interrupts_with_a_checkpoint_and_no_simulation_text` |
 | Suíte estrita | `lint_and_tests.py --strict` → código 0, **437 passed**, Ruff ok, skills ok; prompts `escalation.v2.md` e `personality.v4.md` como arquivos novos |
 
+### Rodada 2 (2026-11-03)
+
+Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D27 e D28. Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 65, rodada 2".
+
+| Achado ou decisão | Evidência |
+| --- | --- |
+| P2-1 / D27 (auditoria entre subidas) | `tests/unit/data/test_seed.py::test_second_seed_keeps_the_audit` |
+| P2-2 (turno de A numa conversa já aberta de B) | `tests/integration/test_v070_resume_r2.py::test_operator_turn_is_not_delivered_in_another_merchants_open_conversation` |
+| P2-3 (valor e data intactos pela guarda) | `test_reply_with_an_amount_and_a_date_passes_the_guard_intact` |
+| P3-1 (thread parada no meio; turno único) | `test_thread_stopped_half_way_continues_without_repeating_support`; `test_turn_written_before_a_failure_is_not_written_again_on_retry` |
+| D28 (checkpoint que não grava) | `test_checkpoint_failure_marks_the_case_and_refuses_actions` |
+| Suíte estrita | Código 0, **530 passed** (356 s), Ruff ok, skills ok |
+
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+pronta para revisão (Developer, rodada 2)
 ```

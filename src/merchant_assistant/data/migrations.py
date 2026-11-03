@@ -482,7 +482,7 @@ ALTER TABLE messages ADD COLUMN via TEXT;
 ALTER TABLE messages ADD COLUMN meta TEXT;
 ALTER TABLE messages ADD COLUMN delivered_at TEXT;
 ALTER TABLE handoff_cases ADD COLUMN resume_status TEXT
-    CHECK (resume_status IS NULL OR resume_status IN ('pending', 'done', 'failed'));
+    CHECK (resume_status IS NULL OR resume_status IN ('pending', 'done', 'failed', 'checkpoint_failed'));
 ALTER TABLE handoff_cases ADD COLUMN resume_error TEXT;
 ALTER TABLE handoff_cases ADD COLUMN resume_started_at TEXT;
 ALTER TABLE handoff_cases ADD COLUMN resume_request_id TEXT;

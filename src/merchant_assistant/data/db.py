@@ -9,11 +9,12 @@ from pathlib import Path
 
 from merchant_assistant.data.migrations import migrate
 
+# Tables `seed` recreates on every start (bootstrap). `audit_events` is not one of them (spec v0.7.0, D27): the audit
+# trail is security evidence and survives restarts.
 SYNTHETIC_TABLES = (
     "sale_cancellations",
     "enablement_requests",
     "contract_pricing_context",
-    "audit_events",
     "authorization_events",
     "payouts",
     "receivables",

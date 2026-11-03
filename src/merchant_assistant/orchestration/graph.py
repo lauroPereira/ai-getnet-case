@@ -283,6 +283,21 @@ class Orchestrator:
         except Exception as exc:  # the reply to the merchant never fails because of the checkpoint
             log.exception("suspend failed", extra={"event": {"request_id": final.request_id}})
             ctx.trace.finish(step, t0, "error", error=f"{type(exc).__name__}: {exc}")
+            self._mark_checkpoint_failed(final, exc)
+
+    def _mark_checkpoint_failed(self, final: GraphState, exc: Exception) -> None:
+        """D28: the case shows from the start that its flow was not saved (an action gets `503 checkpoint_missing`)."""
+        try:
+            conn = connect(self.settings.db_path)
+            try:
+                conn.execute(
+                    "UPDATE handoff_cases SET resume_status='checkpoint_failed', resume_error=? WHERE case_id=?",
+                    (f"checkpoint_failed:{type(exc).__name__}", final.escalation.case_id),
+                )
+            finally:
+                conn.close()
+        except Exception:
+            log.exception("checkpoint failure not recorded", extra={"event": {"request_id": final.request_id}})
 
     def handle(
         self,

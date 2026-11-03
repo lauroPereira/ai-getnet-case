@@ -273,7 +273,8 @@ def act(
 
     The same idempotency key returns the stored record with `replayed: true`; a key already used for another case
     or action is `409 idempotency_conflict`; a case already resumed is `409 already_resumed`; a case created before
-    v0.7.0 (no saved flow) is `409 not_resumable`. After the commit the case is handed to the single resume point
+    v0.7.0 (no saved flow) is `409 not_resumable`; a case whose checkpoint was not saved when it opened is
+    `503 checkpoint_missing` (D28). After the commit the case is handed to the single resume point
     (`resume(case, record)`), outside the lock. A failed resume is recorded (`resume_status = failed`, visible in the
     queue) and answered with `503 resume_failed`; repeating the action with the same key resumes again."""
     if action not in ACTIONS:
@@ -316,6 +317,10 @@ def act(
         if not case["thread_id"]:
             raise HandoffError(
                 409, "not_resumable", "This case was opened before v0.7.0 and has no saved flow to resume."
+            )
+        if case["resume_status"] == "checkpoint_failed":  # D28: nothing to resume; refused before any change
+            raise HandoffError(
+                503, "checkpoint_missing", "The saved flow of this case could not be stored when it opened."
             )
         stamp = _now()
         if not case["claimed_by"]:  # D9: acting on an open case claims it in the same transaction

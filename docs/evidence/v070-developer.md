@@ -288,3 +288,23 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - **Ação externa:** nenhuma; commits locais com a identidade conferida.
 - **Próxima ação:** Reviewer revisa a 66 (e o ajuste D20). Sigo com a rodada 2 da 65 (pedido do Supervisor).
 - **Decisão humana pendente:** `operator_id` no evento ao lojista (decisão 7).
+
+## Tarefa 65, rodada 2
+
+- **Papel e responsável:** Developer (Time A), subagente novo, no lugar do Developer original da 65 (encerrou por contexto longo). Corrige o [parecer da 65, rodada 1](v070-reviewer.md) (`d55ce35`) e implementa as decisões D27 e D28.
+- **Base:** `7e4416c` (tarefa 66). Commit próprio, "task 65 round 2".
+- **P2-1 / D27:** `audit_events` saiu de `SYNTHETIC_TABLES` (`data/db.py`). O `seed`, que o `bootstrap` roda a cada subida do container, recria os dados sintéticos de domínio e preserva a auditoria. Teste: `tests/unit/data/test_seed.py::test_second_seed_keeps_the_audit` (segundo `seed` mantém a linha de auditoria e recria `devices`).
+- **P2-2:** `test_operator_turn_is_not_delivered_in_another_merchants_open_conversation`. B abre a conversa primeiro; A encaminha e recebe `reply`; B escreve na própria conversa já aberta e não recebe `human_reply` nem o texto de A; A recebe o turno. Exercita o filtro de `pending_operator_turn` (mutante R20).
+- **P2-3:** `test_reply_with_an_amount_and_a_date_passes_the_guard_intact`. "Seu repasse de R$ 1.234,56 cai em 28/10/2026." fica intacto no turno do operador e na entrega da próxima mensagem (mutante R16).
+- **P3-1:**
+  - `test_thread_stopped_half_way_continues_without_repeating_support`: o processo "morre" na Personality depois do Support. Simulei com uma `BaseException`, que nada no caminho captura, no lugar de `os._exit`. A thread fica parada no meio (`next` sem interrupção), a retomada vencida com a mesma chave continua do checkpoint, `get_device_status` roda uma vez só e sai um turno (mutante R19).
+  - `test_turn_written_before_a_failure_is_not_written_again_on_retry`: a falha vem depois de gravar o turno (no registro do trace). A resposta é `503`, a nova tentativa termina `done` e o turno continua único (mutante R07). O teste existente falhava antes de gravar, por isso não pegava o R07.
+- **D28:** se `_suspend` não consegue gravar o checkpoint, o caso fica `resume_status = checkpoint_failed`, com `resume_error`, e aparece na fila desde a abertura. Ação nele → `503 checkpoint_missing` antes de qualquer mudança (fila, eventos e `resume_count` intactos), com a recusa auditada. A 0009 aceita o valor novo no `CHECK` de `resume_status`. Teste: `test_checkpoint_failure_marks_the_case_and_refuses_actions`.
+- **Limitações (P3-2 a P3-4, conforme a decisão do Supervisor):**
+  - O caso com `checkpoint_failed` não tem caminho de resolução sem grafo: o operador só pode fechá-lo (`ticket.solved`).
+  - A retomada `pending` espera 5 min antes de nova tentativa.
+  - `pending_handoffs` não conta caso `answered` com retomada falha.
+  - Checkpoints nunca são podados.
+  - A ADR 0018 é alinhada no fechamento (D25).
+- **Mutação manual dos dois sobreviventes que a revisão apontou como só de teste:** R07 (gravar o turno a cada tentativa) e R20 (turno pendente de qualquer conversa) agora morrem com os testes novos. Arquivos restaurados depois.
+- **Validação:** `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-a-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` → **código 0, 530 passed** (356 s), Ruff ok, skills ok. Cobre a árvore da 66 (`7e4416c`) mais esta rodada: 524 da rodada da 66, mais os 5 novos de `test_v070_resume_r2.py` e o de `test_seed.py`.
