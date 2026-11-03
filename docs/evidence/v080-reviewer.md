@@ -189,3 +189,11 @@ Correção testada em memória: caso 16, remover "após o processamento" (certas
 ### Decisão do Supervisor
 
 Aplicar as duas trocas (rodada 6) e fechar: a rodada 6 do Reviewer confere só esses dois grupos e o lacre; resíduos mistos depois disso ficam para o juiz independente da v0.8.0, sem nova rodada de descoberta de termos.
+
+## Tarefa 72a, rodada 6 (última) — apto para QA; lacre definitivo
+
+- **Papel:** mesmo Reviewer, regime frio; independente.
+- **Candidato:** HEAD `9425fead9320e7f127570bad23e0cc8c4386eecb`, base `f1b2f9f`, árvore limpa; contra `f1b2f9f`, só dois grupos mudaram (caso 15: sai "directly comparable", entram "not/aren't/isn't directly comparable"; caso 16: sai "após o processamento"). Teste inalterado (`a38b7c70…`). Hashes iguais antes e depois: jsonl `91aa5158…4f1bac` (confere com o `.sha256` `244eb173…ea52` e com o blob), derivação `91834bc8…21bb`. `git log 07ca28e..codex/v0.8.0-avaliacao -- prompts/` vazio.
+- **Números:** suíte estrita **357 passed**, código 0; lacre (14 mutações) como antes; baterias da rodada 5 sem mudança: as duas erradas do P2-7 reprovam; certas caso 15 8/8 e caso 16 7/7 (inclusive P3-8 e negações cautelosas); nenhuma errada das rodadas 1 a 5 volta a passar (erradas reprovadas 21/27, contra 19/27 na rodada 5).
+- **Resíduos aceitos para o juiz independente:** erradas mistas ou artificiais nos casos 4, 15, 16 (duas), 17 e 18; certas que reprovam por decisão tomada nos casos 15 ("flagged for the team to check") e 18 ("uma Get Tap, pelo nome"); P3-6 e P3-2.
+- **Parecer:** apto. **Lacre definitivo do holdout (RF-92): `91aa51588afdf4afccb1ea8f230a47d3d61686004ec599f4c547e7881b4f1bac`**, em `9425fea`. Na campanha da v0.8.0 (tarefa 73), resultados do holdout separados dos de desenvolvimento.
