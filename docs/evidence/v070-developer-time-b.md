@@ -170,3 +170,32 @@ O mesmo Reviewer revê o diff de correção e o `docker compose config`.
 
 - Suíte estrita (`--basetemp .pytest_cache/v070-b-strict`) → código 0, **394 aprovados** (393 + 1), ruff limpo.
 - Nenhuma chamada paga, sem Docker, sem push.
+
+## Tarefa 66b, rodada 4
+
+- Papel e responsável: Developer do Time B, sobre a decisão de contrato D26 (spec `bb1659c`): quando a retomada falha depois de aceitar a ação, o assistente responde `503 resume_failed` e o cliente deve repetir com a mesma chave.
+- Escopo: só `tests/integration/test_ticketing_service.py` e esta passagem. Nada mudou em `merchant_assistant/ticketing/`. Base `5199b61`; versão final é o commit "task 66b round 4". Não-independente (relato do autor).
+
+### Verificação
+
+O código já atendia o D26:
+- `Dispatcher._send` (`outbox.py:78`) trata qualquer `5xx`, e também `429`, como `TransientError`.
+- `_retry_later` mantém a mesma linha da caixa de saída (mesmo `id` de evento e mesmo corpo, com a mesma `idempotency_key`) e o ticket em "envio pendente".
+- Depois das tentativas, o estado é `failed`, nunca `rejected`. Repetir a mesma chave na tela recoloca o **mesmo** evento na fila (`store.retry_failed`).
+- Não precisei mudar código; só acrescentei os testes.
+
+### Testes novos
+
+- `test_resume_failed_503_is_retried_with_the_same_event_and_key`:
+  - O assistente falso responde `503 resume_failed` duas vezes e depois aceita.
+  - A API devolve `202` com envio pendente e o ticket continua `new`.
+  - As tentativas 2 e 3 levam o mesmo `id` e a mesma chave.
+  - Ao final o envio fica `delivered` e o ticket `pending`; o `503` aparece registrado nas tentativas.
+- `test_resume_failed_after_all_attempts_waits_for_the_same_key_again`:
+  - Três `503` deixam o envio `failed`, não `rejected`.
+  - A tela repetindo a mesma chave reenvia o mesmo evento, que é aceito, e o ticket vai a `pending`.
+
+### Evidência
+
+- Suíte estrita (`--basetemp .pytest_cache/v070-b-strict`) → código 0, **396 aprovados** (394 + 2), ruff limpo.
+- Nenhuma chamada paga, sem Docker, sem push.
