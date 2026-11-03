@@ -162,6 +162,8 @@ Cada item vira um arquivo em `docs/tasks/` quando a versão for aberta.
 
 **v0.7.0 — Identidade e HITL real**
 
+Revisto pelo responsável em 2026-11-03, na abertura da versão: credencial por **JWT com emissor próprio** (RS256, JWKS) em vez de chave com sessão opaca, e **serviço de ticketing próprio** com tela no projeto web, integrado por webhooks assinados nos dois sentidos, em vez do receptor passivo. Detalhe, contrato entre os times e nova tarefa **66b** (serviço de ticketing, Time B) em [identidade-hitl-v070.md](identidade-hitl-v070.md), versão 2; prevalece sobre as decisões técnicas 1, 2, 3 e 6 deste plano onde divergirem.
+
 Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão do Claude Code aberta em `C:\workspace\ai-getnet-case` (não numa pasta acima) e iniciada depois da etapa 0. Antes do primeiro despacho, confirma que `developer`, `reviewer` e `qa` aparecem na lista de tipos de agente; se não aparecerem, não despacha (o despacho cairia num agente genérico sem os limites do frontmatter) e avisa o responsável.
 
 63. Identidade: papéis e escopos, `identity.py`, chaves sintéticas no `.env.example`, sessão obrigatória em `POST /messages`, `identity_mismatch`, auditoria em todo tool call, rate limit, MCP com chave, smoke e `/docs`.
