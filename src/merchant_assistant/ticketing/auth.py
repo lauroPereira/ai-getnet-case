@@ -29,6 +29,15 @@ class TransientError(Exception):
         self.retry_after = retry_after
 
 
+def _json_object(response: httpx.Response) -> dict | None:
+    """The body as a JSON object, or None when it is not JSON or not an object."""
+    try:
+        body = response.json()
+    except ValueError:
+        return None
+    return body if isinstance(body, dict) else None
+
+
 def retry_after(response: httpx.Response) -> float | None:
     """Seconds from a numeric `Retry-After` header (HTTP dates are ignored)."""
     value = response.headers.get("retry-after", "").strip()
@@ -56,12 +65,15 @@ class OperatorVerifier:
         try:
             response = self.client.get(self.settings.assistant_jwks_url, timeout=self.settings.request_timeout_s)
             response.raise_for_status()
-            keys = response.json().get("keys", [])
+            body = response.json()
+            keys = body.get("keys") if isinstance(body, dict) else None
+            if not isinstance(keys, list):
+                raise ValueError("JWKS without a keys list")
         except (httpx.HTTPError, ValueError) as exc:
             raise AuthError(503, "jwks_unavailable", "The assistant's signing keys could not be loaded.") from exc
         loaded = {}
         for item in keys:
-            if item.get("kid") and item.get("kty") == "RSA":
+            if isinstance(item, dict) and item.get("kid") and item.get("kty") == "RSA":
                 try:
                     loaded[item["kid"]] = jwt.PyJWK(item, algorithm="RS256")
                 except jwt.PyJWTError:
@@ -142,14 +154,15 @@ class ServiceToken:
             if response.status_code >= 500 or response.status_code == 429:
                 raise TransientError(f"token endpoint returned {response.status_code}", retry_after(response))
             if response.status_code != 200:  # RFC 6749 section 5.2: {"error": ..., "error_description": ...}
-                try:
-                    code = str(response.json().get("error", "unknown"))
-                except ValueError:
-                    code = "unknown"
+                body = _json_object(response)
+                code = str(body.get("error", "unknown")) if body else "unknown"
                 raise AuthError(
                     502, "service_token_rejected", f"Token endpoint returned {response.status_code} ({code})."
                 )
-            body = response.json()
-            self._token = body["access_token"]
-            self._expires_at = self.clock() + float(body.get("expires_in", 0))
+            body = _json_object(response)
+            token, expires_in = (body or {}).get("access_token"), (body or {}).get("expires_in", 0)
+            if not isinstance(token, str) or not token or not isinstance(expires_in, int | float):
+                raise AuthError(502, "service_token_malformed", "Token endpoint returned an unexpected body.")
+            self._token = token
+            self._expires_at = self.clock() + float(expires_in)
             return self._token

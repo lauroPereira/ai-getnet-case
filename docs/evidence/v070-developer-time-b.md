@@ -105,3 +105,50 @@ Pontos aplicados por aviso do Supervisor, sem merge da spec. Commit `feat(ticket
   - Os negativos de JWT passaram a conferir `token_required`/`invalid_token`/`insufficient_scope` e o `request_id`.
 - **Pergunta 3:** está respondida pelo contrato. O repasse de `404`, `409` e `422` com o mesmo código e corpo continua; o corpo agora é o envelope `{"error": {...}}` do assistente.
 - **Suíte estrita** (`--basetemp .pytest_cache/v070-b-strict`): código 0, 383 aprovados (380 + 3), ruff limpo.
+
+## Tarefa 66b, rodada 2
+
+- Papel e responsável: Developer do Time B, sobre o [parecer do Reviewer, rodada 1](v070-reviewer-time-b.md) (1 P1, 7 P3) e a decisão do Supervisor (corrigir P1-1, P3-1, P3-3, P3-4 e P3-6; P3-2 com teste se barato; P3-5 como limitação documentada).
+- Escopo: `docker-compose.yml`, `.env.example`, `src/merchant_assistant/ticketing/{auth,outbox,service}.py`, `tests/integration/test_ticketing_service.py` e esta passagem. Nenhum arquivo do Time A tocado.
+- Base e versão final: base `d505760`; commit único "task 66b round 2", que traz esta seção.
+- Independência: não-independente (relato do autor).
+
+### Correções
+
+- **P1-1:**
+  - No compose, o padrão de `TICKETING_CLIENT_SECRET` agora é `ticketing-demo-secret-fictitious`, o valor do contrato `3ccde8d`. `docker compose config` sem `.env` mostra esse valor.
+  - No `.env.example`, a chave não aparece mais no bloco do ticketing. No lugar ficou um comentário apontando para o bloco de identidade da branch da versão, que já a define com o mesmo valor. As demais chaves do bloco do ticketing não existem na branch da versão (conferido em `6f24cbb`).
+- **P3-1:** o teste `test_outbox_lease_lets_one_worker_send_while_the_assistant_is_slow` roda dois workers com barreira sobre o mesmo evento pendente, com o assistente falso demorando 0,4 s. O resultado esperado é um único POST: um worker vê `delivered`, o outro vê `pending` (em voo), e o evento tem uma tentativa. Removi a condição de lease em `store.claim` numa cópia de trabalho, e o teste falhou; o `store.py` foi restaurado sem diferença.
+- **P3-2:** `test_alg_none_and_hs256_with_the_public_key_are_rejected` monta à mão tokens `alg=none` e HS256 assinado com o PEM público. Os dois recebem `401 invalid_token`.
+- **P3-3:** resposta malformada do assistente vira falha registrada, sem `500` nem laço de reenvio.
+  - Token `200` sem JSON, com JSON que não é objeto ou sem `access_token`/`expires_in` válidos → `502 service_token_malformed`.
+  - Evento `2xx` sem o corpo do contrato (`status` em `accepted`/`replayed`) → `502 assistant_malformed_response`.
+  - Nos dois casos a caixa de saída fica `rejected`, com a tentativa registrada, e o ticket não muda.
+  - Qualquer exceção inesperada depois de reivindicar o evento → `502 delivery_error`, também registrada. Assim nenhum evento fica preso pelo lease.
+  - O JWKS também passou a recusar corpo que não seja `{"keys": [...]}` (`503 jwks_unavailable`).
+  - Testes: 3 corpos de token e 3 de evento. Em todos, `dispatch_due()` não reenvia, e no caso do token o ato seguinte funciona.
+- **P3-4:** sem credencial, a resposta é `401` com `WWW-Authenticate: Bearer`, sem código de erro (RFC 6750 §3.1, como o assistente). Token inválido continua com `Bearer error="invalid_token"`. Há teste.
+- **P3-6:** a impressão digital da idempotência inclui o `operator_id`. `op_bruno` repetindo a chave de `op_ana` no mesmo ticket recebe `409 idempotency_key_reused`, e o assistente recebe um só evento. Há teste.
+
+### Limitação documentada (P3-5)
+
+O JWT é sem estado. O ticketing não consulta revogação de `jti` nem retira chaves do cache do JWKS antes de reiniciar:
+- um token de operador revogado no assistente continua válido para **leitura** no ticketing até expirar (≤ 60 min), inclusive `GET /tickets` com as transcrições mascaradas;
+- uma chave removida do JWKS continua aceita até o serviço reiniciar.
+
+Os **atos** passam pelo assistente, que confere o operador em cada evento. O caminho de produção é um provedor OIDC com tokens curtos ou introspecção.
+
+### Observação mantida (P3-7)
+
+`handoff.closed` registra o fechamento, mas não leva o ticket a `solved`. Isso é coerente com o contrato, em que `solved` vem do ato do operador; fica como observação para o QA.
+
+### Evidência
+
+- `docker compose config --quiet` sem `.env` → código 0; `TICKETING_CLIENT_SECRET: ticketing-demo-secret-fictitious`.
+- Testes do ticketing: 44 aprovados (34 + 10 novos).
+- Suíte estrita (`--basetemp .pytest_cache/v070-b-strict`) → código 0, **393 aprovados** (383 + 10), ruff limpo, estrutura e skills válidas.
+- Nenhuma chamada paga, sem Docker up, sem push.
+
+### Próxima ação
+
+O mesmo Reviewer revê o diff de correção e o `docker compose config`.

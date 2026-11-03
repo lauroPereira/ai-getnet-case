@@ -11,21 +11,19 @@ from datetime import UTC, datetime
 
 import httpx
 
-from merchant_assistant.ticketing.auth import AuthError, ServiceToken, TransientError, retry_after
+from merchant_assistant.ticketing.auth import AuthError, ServiceToken, TransientError, _json_object, retry_after
 from merchant_assistant.ticketing.config import TicketingSettings
 from merchant_assistant.ticketing.signing import signature
 from merchant_assistant.ticketing.store import TicketStore, iso
 
 EVENTS_PATH = "/v1/integrations/ticketing/events"
 TOKEN_ERRORS = {"token_required", "invalid_token"}
+ACCEPTED = {"accepted", "replayed"}  # contract: 200 {"status": "accepted"|"replayed", "case_state", "queue_state"}
 
 
 def _error_code(response: httpx.Response) -> str | None:
     """Code of the assistant's error envelope {"error": {"code", "message", "request_id"}}."""
-    try:
-        error = response.json().get("error")
-    except (ValueError, AttributeError):
-        return None
+    error = (_json_object(response) or {}).get("error")
     return error.get("code") if isinstance(error, dict) else None
 
 
@@ -94,19 +92,19 @@ class Dispatcher:
         except TransientError as exc:
             return self._retry_later(row, str(exc), exc.retry_after)
         except AuthError as exc:
-            self.store.record_attempt(
+            return self._reject(event_id, exc.status, exc.code, exc.message)
+        except Exception as exc:  # noqa: BLE001 - never leave the event leased or turn it into a 500
+            return self._reject(event_id, 502, "delivery_error", f"Unexpected {type(exc).__name__} while sending.")
+        body = _json_object(response)
+        if 200 <= response.status_code < 300 and (body is None or body.get("status") not in ACCEPTED):
+            return self._reject(
                 event_id,
-                self.now(),
-                outcome="rejected",
-                http_status=exc.status,
-                error=exc.code,
-                final_status="rejected",
+                502,
+                "assistant_malformed_response",
+                f"The assistant answered {response.status_code} without the contract body; refresh before retrying.",
+                upstream_status=response.status_code,
             )
-            return Delivery("rejected", event_id, exc.status, {"error": {"code": exc.code, "message": exc.message}})
-        try:
-            body = response.json()
-        except ValueError:
-            body = {"raw": response.text[:500]}
+        body = body if body is not None else {"raw": response.text[:500]}
         if 200 <= response.status_code < 300:
             self.store.record_attempt(
                 event_id,
@@ -126,6 +124,22 @@ class Dispatcher:
             final_status="rejected",
         )
         return Delivery("rejected", event_id, response.status_code, body)
+
+    def _reject(
+        self, event_id: str, status: int, code: str, message: str, *, upstream_status: int | None = None
+    ) -> Delivery:
+        """A recorded, final failure of this event: no retry loop; the screen gets the code."""
+        body = {"error": {"code": code, "message": message}}
+        self.store.record_attempt(
+            event_id,
+            self.now(),
+            outcome="rejected",
+            http_status=upstream_status or status,
+            error=code,
+            response_body=body,
+            final_status="rejected",
+        )
+        return Delivery("rejected", event_id, status, body)
 
     def _retry_later(self, row: dict, error: str, at_least: float | None = None) -> Delivery:
         attempt = row["attempts"] + 1

@@ -66,6 +66,9 @@ class FakeAssistant:
         self.on_action = None
         self.token_status: int | None = None  # forced status of /v1/auth/token (429 or 401)
         self.events_status: int | None = None  # forced status of the events endpoint (429)
+        self.token_raw: bytes | None = None  # forced 200 body of /v1/auth/token (malformed answers)
+        self.events_raw: bytes | None = None  # forced 200 body of the events endpoint (malformed answers)
+        self.events_delay = 0.0  # a slow assistant, to exercise the outbox lease
 
     # --- tokens --------------------------------------------------------------------------------------------------
 
@@ -103,6 +106,8 @@ class FakeAssistant:
         if request.url.path == "/.well-known/jwks.json":
             return httpx.Response(200, json=self.jwks())
         if request.url.path == "/v1/auth/token":
+            if self.token_raw is not None:
+                return httpx.Response(200, content=self.token_raw, headers={"Content-Type": "application/json"})
             if self.token_status == 429:
                 return httpx.Response(
                     429,
@@ -141,6 +146,11 @@ class FakeAssistant:
         return err(404, "not_found")
 
     def _event(self, request: httpx.Request) -> httpx.Response:
+        if self.events_delay:
+            time.sleep(self.events_delay)
+        if self.events_raw is not None:
+            self.events.append(json.loads(request.content))
+            return httpx.Response(200, content=self.events_raw, headers={"Content-Type": "application/json"})
         if not verify(TO_ASSISTANT, request.headers.get("x-signature"), request.content, time.time(), 300):
             return err(401, "invalid_signature")
         if self.events_status == 429:
@@ -615,3 +625,120 @@ def test_service_can_obtain_the_token_with_basic_auth_too():
         )
     )
     assert response.status_code == 200  # the fake follows the contract; the service itself sends the form
+
+
+# --- round 2 (review of task 66b) ---------------------------------------------------------------------------------
+
+
+def test_outbox_lease_lets_one_worker_send_while_the_assistant_is_slow(env):
+    """P3-1: two workers on the same pending event while the assistant takes 0.4 s: one POST only."""
+    import threading
+
+    from merchant_assistant.ticketing.outbox import envelope
+
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    store, dispatcher = app.state.store, app.state.dispatcher
+    data = {"ticket_id": tid, "case_id": "case_001", "operator_id": "op_ana"}
+    outcome, row = store.enqueue(tid, envelope("ticket.assigned", data, clock()), "op_ana", clock())
+    assert outcome == "created"
+    dispatcher.token.get()  # token fetched before the race, so both workers race only for the event
+    fake.events_delay = 0.4
+    barrier, results = threading.Barrier(2), []
+
+    def work():
+        barrier.wait()
+        results.append(dispatcher.deliver(row["event_id"]).status)
+
+    threads = [threading.Thread(target=work) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+    assert sorted(results) == ["delivered", "pending"]  # the loser sees the event still pending (in flight)
+    assert [e["type"] for e in fake.events] == ["ticket.assigned"]
+    assert store.get_outbox(row["event_id"])["attempts"] == 1
+
+
+def _hand_made_token(header: dict, payload: dict, signer=None) -> str:
+    def b64(raw: bytes) -> str:
+        return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+    signing_input = f"{b64(json.dumps(header).encode())}.{b64(json.dumps(payload).encode())}"
+    return f"{signing_input}.{b64(signer(signing_input.encode())) if signer else ''}"
+
+
+def test_alg_none_and_hs256_with_the_public_key_are_rejected(env):
+    """P3-2: algorithm confusion never reaches the claims."""
+    import hashlib
+    import hmac
+
+    from cryptography.hazmat.primitives import serialization
+
+    client, fake, _clock, _app = env
+    claims = jwt.decode(fake.token(), options={"verify_signature": False})
+    none_token = _hand_made_token({"alg": "none", "typ": "at+jwt", "kid": "kid-1"}, claims)
+    public_pem = (
+        fake.keys["kid-1"]
+        .public_key()
+        .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    )
+    hs_token = _hand_made_token(
+        {"alg": "HS256", "typ": "at+jwt", "kid": "kid-1"},
+        claims,
+        lambda data: hmac.new(public_pem, data, hashlib.sha256).digest(),
+    )
+    for token in (none_token, hs_token):
+        response = client.get("/tickets", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 401 and response.json()["error"]["code"] == "invalid_token"
+
+
+@pytest.mark.parametrize("raw", [b"not json", b"[1, 2]", b'{"token_type": "Bearer"}'], ids=["text", "list", "no-token"])
+def test_malformed_token_answer_is_a_recorded_failure(env, raw):
+    """P3-3: no 500, no lease left behind, the next act is not blocked."""
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    client.get("/tickets", headers=fake.operator())
+    fake.token_raw = raw
+    response = client.post(f"/tickets/{tid}/assign", headers=fake.operator())
+    assert response.status_code == 502 and response.json()["error"]["code"] == "service_token_malformed"
+    sent = client.get(f"/tickets/{tid}", headers=fake.operator()).json()["deliveries"]["sent"][0]
+    assert sent["status"] == "rejected" and [a["outcome"] for a in sent["attempts"]] == ["rejected"]
+    clock.advance(60)
+    assert app.state.dispatcher.dispatch_due() == []  # no resend loop
+    fake.token_raw = None
+    assert client.post(f"/tickets/{tid}/assign", headers=fake.operator()).status_code == 200
+
+
+@pytest.mark.parametrize("raw", [b"[]", b"not json", b'{"ok": true}'], ids=["list", "text", "no-status"])
+def test_malformed_event_answer_is_a_recorded_failure(env, raw):
+    """P3-3: a 200 without the contract body is recorded as rejected, the ticket does not move, no resend."""
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    fake.events_raw = raw
+    response = client.post(f"/tickets/{tid}/assign", headers=fake.operator())
+    assert response.status_code == 502 and response.json()["error"]["code"] == "assistant_malformed_response"
+    detail = client.get(f"/tickets/{tid}", headers=fake.operator()).json()
+    assert detail["status"] == "new" and detail["deliveries"]["sent"][0]["status"] == "rejected"
+    clock.advance(60)
+    assert app.state.dispatcher.dispatch_due() == [] and len(fake.events) == 1  # sent once, never again
+
+
+def test_missing_credential_challenge_has_no_error_code(env):
+    """P3-4: RFC 6750 section 3.1, as the assistant does."""
+    client, _fake, _clock, _app = env
+    missing = client.get("/tickets")
+    assert missing.status_code == 401 and missing.headers["www-authenticate"] == "Bearer"
+    invalid = client.get("/tickets", headers={"Authorization": "Bearer garbage"})
+    assert invalid.headers["www-authenticate"] == 'Bearer error="invalid_token"'
+
+
+def test_another_operator_cannot_replay_a_key(env):
+    """P3-6: the idempotency fingerprint includes the operator."""
+    client, fake, _clock, _app = env
+    tid = ticket_id(client, fake)
+    body = {"action": "approve", "text": "", "idempotency_key": "shared-key-01"}
+    assert client.post(f"/tickets/{tid}/actions", headers=fake.operator("op_ana"), json=body).status_code == 200
+    other = client.post(f"/tickets/{tid}/actions", headers=fake.operator("op_bruno"), json=body)
+    assert other.status_code == 409 and other.json()["error"]["code"] == "idempotency_key_reused"
+    assert [e["type"] for e in fake.events] == ["ticket.action"]

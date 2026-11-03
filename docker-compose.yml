@@ -54,7 +54,7 @@ services:
       TICKETING_WEBHOOK_SECRET: ${TICKETING_WEBHOOK_SECRET:-ticketing-webhook-secret-fictitious}
       ASSISTANT_WEBHOOK_SECRET: ${ASSISTANT_WEBHOOK_SECRET:-assistant-webhook-secret-fictitious}
       TICKETING_CLIENT_ID: ${TICKETING_CLIENT_ID:-ticketing-demo}
-      TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-client-secret-fictitious}
+      TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
     volumes:
       - ticketing_runtime:/app/runtime  # own database, separate from the assistant's runtime volume
     healthcheck:

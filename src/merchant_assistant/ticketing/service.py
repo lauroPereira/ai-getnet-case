@@ -29,7 +29,12 @@ from merchant_assistant.ticketing.signing import verify
 from merchant_assistant.ticketing.store import STATUSES, TicketStore
 
 INBOUND_EVENTS = {"handoff.created", "conversation.replied", "handoff.closed"}
-PASS_THROUGH = {404, 409, 422}  # assistant errors the screen receives with the same code and body
+PASS_THROUGH = {404, 409, 422}
+LOCAL_DELIVERY_ERRORS = {
+    "assistant_malformed_response",
+    "service_token_malformed",
+    "delivery_error",
+}  # assistant errors the screen receives with the same code and body
 
 
 class ActionRequest(BaseModel):
@@ -45,8 +50,8 @@ REQUEST_ID: ContextVar[str] = ContextVar("ticketing_request_id", default="req_un
 def _error(status: int, code: str, message: str, **extra) -> JSONResponse:
     """Same envelope and Bearer challenge as the assistant: {"error": {"code", "message", "request_id"}}."""
     headers = {"X-Request-Id": REQUEST_ID.get()}
-    if status == 401:
-        headers["WWW-Authenticate"] = f'Bearer error="{code}"'
+    if status == 401:  # RFC 6750 3.1: no error code when the request carries no credential
+        headers["WWW-Authenticate"] = "Bearer" if code == "token_required" else f'Bearer error="{code}"'
     elif status == 403:
         headers["WWW-Authenticate"] = f'Bearer error="{code}", scope="handoff:operate"'
     return JSONResponse(
@@ -161,6 +166,9 @@ def create_app(
         if delivery.status == "rejected":
             if delivery.http_status in PASS_THROUGH:
                 return JSONResponse(status_code=delivery.http_status, content=delivery.response)
+            own = ((delivery.response or {}).get("error") or {}).get("code")
+            if own in LOCAL_DELIVERY_ERRORS:
+                return _error(502, own, delivery.response["error"]["message"], event_id=delivery.event_id)
             return _error(
                 502,
                 "assistant_rejected",
@@ -181,7 +189,8 @@ def create_app(
         ticket = store.get(ticket_id)
         if ticket is None:
             return _error(404, "ticket_not_found", "Unknown ticket.")
-        fingerprint = hashlib.sha256(json.dumps(extra, sort_keys=True).encode()).hexdigest() if key else None
+        signed = extra | {"operator_id": op.operator_id}  # the same key from another operator is not a replay
+        fingerprint = hashlib.sha256(json.dumps(signed, sort_keys=True).encode()).hexdigest() if key else None
         data = {"ticket_id": ticket_id, "case_id": ticket["case_id"], "operator_id": op.operator_id, **extra}
         outcome, row = store.enqueue(
             ticket_id,
