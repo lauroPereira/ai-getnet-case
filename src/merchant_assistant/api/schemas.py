@@ -69,7 +69,10 @@ class Handoff(BaseModel):
 class MessageResponse(BaseModel):
     answer: str
     status: Status
-    route: Route
+    route: Route | Literal["human_reply"]
+    via: Literal["agent", "operator"] = Field(
+        default="agent", description="operator: the reply was written or approved by a human support agent."
+    )
     agents: list[str]
     language: Literal["pt", "en"]
     sources: list[Source] = Field(default_factory=list)

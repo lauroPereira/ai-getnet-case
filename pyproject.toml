@@ -16,6 +16,7 @@ dependencies = [
     "python-dotenv>=1.2",
     "mcp>=2.3",
     "pyjwt[crypto]>=2.10",
+    "langgraph-checkpoint-sqlite>=3.0",
 ]
 
 [project.optional-dependencies]

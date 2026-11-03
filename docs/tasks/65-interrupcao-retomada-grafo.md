@@ -38,10 +38,23 @@ O encaminhamento interrompe o grafo com estado durável; a ação do operador re
 
 ## Validação
 
-A preencher pelo Developer.
+Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 65, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+
+| Critério | Evidência determinística (`tests/integration/test_v070_resume.py`, salvo indicação) |
+| --- | --- |
+| Serialização (primeiro passo) | Sonda em dois processos com o `GraphState` completo no `SqliteSaver`, também em `LANGGRAPH_STRICT_MSGPACK=true` com os tipos registrados (`CHECKPOINT_TYPES`): serializa e retoma; plano B não necessário. `test_checkpoint_types_are_registered_for_strict_deserialization` |
+| CA-47 | `test_approve_and_reply_write_an_operator_turn` (turno `via=operator`, `operator_action`, `protocol`, caso `awaiting_customer`); `test_reject_reruns_support_once_under_the_operator_and_never_hands_off_again` (uma única `get_device_status`, sem novo caso nem `escalation`) |
+| CA-48 (reinício) | `test_resume_after_restart_in_a_new_process`: encaminha num processo, encerra, retoma noutro (`LANGGRAPH_STRICT_MSGPACK=true`) |
+| CA-48 (`409 already_resumed` sem tocar o grafo) | `test_second_action_is_refused_without_touching_the_graph` |
+| CA-46 | Auditoria do `reject` com `operator:op_ana` e o lojista do caso; `test_another_merchant_never_receives_or_sees_the_operator_turn` |
+| `human_reply` sem modelo | `test_next_message_delivers_the_human_reply_without_a_model_call` |
+| Nova mensagem com o caso aberto | `test_new_message_with_the_case_open_does_not_collide_with_the_interruption` |
+| Caminho sem encaminhamento sem checkpoint | `test_turn_without_handoff_never_touches_checkpoints` (zero chamadas ao `SqliteSaver`, arquivo inexistente) |
+| Pedidos do Supervisor | Falha da retomada: `test_failed_resume_is_visible_and_recovers_with_the_same_key`, `test_failure_after_the_graph_finished_writes_the_turn_once_on_retry`, `test_stale_pending_resume_is_retried`. Casos pré-0009: `test_case_from_before_0009_is_refused_clearly`. Texto sem "simulação": `test_handoff_interrupts_with_a_checkpoint_and_no_simulation_text` |
+| Suíte estrita | `lint_and_tests.py --strict` → código 0, **437 passed**, Ruff ok, skills ok; prompts `escalation.v2.md` e `personality.v4.md` como arquivos novos |
 
 ## Status
 
 ```text
-pendente
+pronta para revisão (Developer, rodada 1)
 ```

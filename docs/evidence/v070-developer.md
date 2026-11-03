@@ -122,3 +122,56 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - **Ação externa:** nenhuma; commits locais com a identidade conferida.
 - **Próxima ação:** Reviewer revisa `dab83ab` e o commit da 64. A 65 implementa `resume_handoff` no orquestrador e trata a falha de retomada e os casos sem `thread_id`.
 - **Decisão humana pendente:** nenhuma.
+
+## Tarefa 65, rodada 1
+
+- **Papel e responsável:** Developer (Time A), subagente.
+- **Objetivo e critérios:** [tarefa 65](../tasks/65-interrupcao-retomada-grafo.md) (spec v0.7.0 versão 2: D4, D6, D8, D14, D15, a tabela "Ticketing → assistente" e o risco de serialização; ADR 0018; plano, decisões 4 a 6; contrato de `via` em `6f24cbb`), além dos três pontos do Supervisor: falha da retomada recuperável, casos pré-0009 e texto sem "simulação".
+- **Escopo:** `pyproject.toml` (`langgraph-checkpoint-sqlite>=3.0`, instalado no `.venv`: 3.1.3), `orchestration/graph.py` (grafo de revisão, `human_review`, suspensão, `resume_handoff`, entrega D8, `/ready`), `orchestration/state.py`, `agents/escalation.py` (`escalation.v2`), `agents/personality.py` (`personality.v4`, contribuição do operador, texto sem simulação), `agents/support.py` (instrução do operador), `cases.py` (saída de `handoff` só por operador), `conversations.py` (`via`, `meta`, entrega), `handoffs.py` (`not_resumable`, estado da retomada, nova tentativa), `api/schemas.py` (`via`, `human_reply`), `cli.py` (`operator act` com o ponto de retomada), `config.py` (`CHECKPOINTS_PATH`), `data/migrations.py` (0009: `messages.meta`, `delivered_at`, `handoff_cases.resume_*`), `evaluation/scripted_policy.py` (o modelo programado devolve o rascunho e entrega o texto do operador), `prompts/escalation.v2.md` e `prompts/personality.v4.md` (novos; v1 e v3 intactos), testes (`tests/integration/test_v070_resume.py` novo; ajustes em `test_v070_handoffs.py` e `test_v070_identity.py`).
+- **Estado:** pronta para revisão.
+- **Branch e PR:** `codex/v0.7.0-identidade-hitl`; sem PR e sem push.
+- **Base e versão final:** base `0dc1ea5` (com `f6da518`, `6f24cbb` e `f2a6b60`, só docs, do Supervisor). O commit da tarefa vem depois desta passagem.
+- **Independência:** não se aplica.
+
+### Evidência
+
+- **Serialização, primeiro passo:** uma sonda com o `GraphState` completo (decisão, Knowledge com citações, Support, Escalation, histórico, caso), interrompida num processo e retomada noutro, preserva os tipos. Em `LANGGRAPH_STRICT_MSGPACK=true` funciona desde que os tipos estejam registrados no serializador; eles estão (`CHECKPOINT_TYPES`). Sem o registro, o langgraph avisa que vai bloqueá-los numa versão futura. O plano B da ADR 0018 não foi necessário.
+- `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-a-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` → **código 0, 437 passed** (343 s), Ruff ok, skills ok.
+- **Instabilidade encontrada e corrigida:** a primeira execução estrita teve 1 falha, em `test_queue_routes_are_rate_limited` (tarefa 64). A janela de 60 s era real, e as duas requisições caíram em janelas diferentes. O teste de D19 (`test_token_attempts_are_limited_per_account_and_address`) tinha o mesmo risco. Os dois usam agora relógio fixo (`identity.utc_seconds`). Os arquivos são da 64 e dos ajustes da 63; a correção entrou neste commit porque apareceu agora.
+- Nenhuma chamada paga, sem Docker, sem `.env`.
+
+### Decisões tomadas além do texto (todas reversíveis)
+
+1. **Dois grafos com as mesmas funções de nó.** O grafo de atendimento continua sem checkpointer. Quando o Escalation abre um caso, o estado do fim do turno encaminhado entra no grafo de revisão, compilado com `SqliteSaver` em `CHECKPOINTS_PATH` (padrão `<runtime>/checkpoints.sqlite3`). Esse grafo começa em `human_review` e para lá num `interrupt()` real, com `thread_id` = `request_id` do encaminhamento (D6). A retomada continua esse grafo: `approve`/`reply` → Personality → guarda; `reject` → Support → Personality → guarda. **Motivo:** com um grafo só, todo turno leria o checkpoint na entrada e gravaria um na saída, o que fere "o caminho sem encaminhamento não lê checkpoint". A ADR fala em `human_review` "depois de `escalation`"; aqui ele vem depois da resposta do encaminhamento, porque a requisição do lojista precisa terminar com essa resposta.
+2. **`human_review` fica fora do `_traced`.** O `interrupt()` funciona levantando exceção, e o `_traced` engole toda `Exception`. O nó grava o próprio passo de trace na retomada; a suspensão grava `human_review` com estado `interrupted`.
+3. **Falha da retomada (pedido a):**
+   - A ação grava `resume_status = pending` na mesma transação do evento.
+   - Retomada concluída → `done`, com `resume_request_id` apontando para o trace da retomada.
+   - Exceção → `failed`, `resume_error`, linha `handoff.resume` na auditoria e `503 resume_failed`. O estado da retomada aparece na lista e no detalhe da fila.
+   - Repetir com a **mesma chave** reivindica nova tentativa: atualização atômica de `failed`, ou de `pending` parado há mais de 5 min (processo morto).
+   - Outra chave continua `409 already_resumed`.
+   - A retomada repetida é segura: com a interrupção pendente usa `Command(resume)`; com o grafo parado no meio, continua do último checkpoint; com o grafo terminado, usa os valores finais. O turno do operador é gravado uma vez só (verificação pelo `event_id` em `messages.meta`).
+   - **Por que `503` e não `200`:** a resposta deixa claro ao cliente, e à caixa de saída do ticketing na 66, que é preciso repetir com a mesma chave.
+4. **Casos pré-0009 (pedido b):** `act` recusa com `409 not_resumable` antes de qualquer mudança (fila, eventos e `resume_count` ficam como estavam) e grava a recusa na auditoria. O mesmo vale para um caso cujo `thread_id` foi apagado.
+5. **Retomada só no processo da API ou da CLI.** `resume_handoff` roda na requisição da ação, depois do commit, fora da trava. A CLI `operator act` monta o orquestrador real (`operator_orchestrator`, que os testes substituem) e passa o mesmo ponto de retomada. Isso também fecha o P2-2 da revisão da 64.
+6. **D8:** a próxima `POST /messages` (e `/v1/messages`, que usa o mesmo `handle`) devolve o turno pendente com `route = human_reply`, `via = operator` e `status = answered`, sem modelo. A mensagem do lojista fica registrada, mascarada pela guarda, e o turno é marcado `delivered_at`. A mensagem seguinte volta ao fluxo normal. O webhook da 66 não marca o turno como entregue; isso fica para a 66 decidir.
+7. **`via` conforme `6f24cbb`:** a resposta tem `via` = `agent` ou `operator`. Nas conversas, cada turno do assistente traz `via` e, quando é do operador, `operator_action` e `protocol`, guardados em `messages.meta` (que também tem `case_id`, `event_id` e idioma). O `operator_id` não aparece para o lojista.
+8. **D14:** `Turn(via_operator=True)` tira o caso de `handoff` para `awaiting_customer`, ou para `resolved` se a ferramenta verificar a solução. Nunca volta para `handoff`. No `reject`, o Support roda com `escalate` forçado para falso, inclusive se falhar, e não há aresta para `escalation`.
+9. **Rascunho do `escalation.v2`:** resumo e pergunta pendente em português, para o operador; rascunho no idioma do lojista. Se o modelo falhar, o rascunho determinístico da 64 é usado. `EscalationDraft.draft_reply` passou a ser obrigatório; o modelo programado foi atualizado para devolvê-lo.
+10. **`personality.v4`:** confirma o encaminhamento sem "simulação" e entrega fielmente o texto do operador. No `reject`, escreve a partir do Support. O texto do operador é evidência válida para a guarda de saída. O `HANDOFF_LINE` agora diz "atendente da nossa equipe, que vai responder por aqui"; `"simulated": True` saiu das contribuições.
+11. **Comparações isoladas não suspendem:** uma execução com `db_path` temporário (comparação) não deixa caso para retomar.
+12. **`/ready`** ganhou `pending_handoffs` (`open` + `claimed`) e `checkpoints` (`threads` distintos, leitura somente nessa rota).
+
+### Achados e limitações
+
+- A retomada corre no processo e no tempo da requisição da ação, com chamada a modelo (Personality, e Support no `reject`). Uma ação demorada segura o cliente até a resposta. Uma fila de trabalho seria o passo seguinte, fora do escopo.
+- O limite de 5 min para considerar parada uma retomada `pending` é fixo no código.
+- Retomada pela CLI em processo exige `OPENAI_API_KEY` (chamada paga), como o `ask`.
+- O webhook `conversation.replied` e a marca de entrega por webhook são da 66.
+- README e CHANGELOG não foram tocados (fechamento).
+
+### Ação externa, próxima ação e decisão pendente
+
+- **Ação externa:** nenhuma; commit local com a identidade conferida.
+- **Próxima ação:** Reviewer revisa o commit da 65. Eu sigo com "task 63 round 2" e "task 64 round 2" (em commits separados) e depois com a 66.
+- **Decisão humana pendente:** nenhuma.

@@ -108,7 +108,8 @@ def test_token_endpoint_errors_follow_rfc6749_and_do_not_say_which_field_failed(
         assert response.status_code == 400 and response.json()["error"] == "invalid_request"
 
 
-def test_token_attempts_are_limited_per_account_and_address(offline, settings):
+def test_token_attempts_are_limited_per_account_and_address(offline, settings, monkeypatch):
+    monkeypatch.setattr(identity, "utc_seconds", lambda: 1_800_000_010.0)  # fixed clock: one 60 s window
     settings.auth_attempts_per_minute = 2
     client, _, _ = offline()
     for _ in range(2):

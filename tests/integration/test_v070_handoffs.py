@@ -152,7 +152,10 @@ def test_queue_calls_are_audited_with_the_operator(offline, settings):
     ]
 
 
-def test_queue_routes_are_rate_limited(offline, settings):
+def test_queue_routes_are_rate_limited(offline, settings, monkeypatch):
+    from merchant_assistant.api import identity
+
+    monkeypatch.setattr(identity, "utc_seconds", lambda: 1_800_000_010.0)  # fixed clock: one 60 s window
     settings.rate_limit_per_minute = 1
     client, _, _ = offline()
     case_id = open_case(client)["case"]["case_id"]
@@ -238,10 +241,13 @@ def test_close_is_idempotent_and_ends_the_queue(offline, settings):
 # --- CLI ----------------------------------------------------------------------------------------------------------
 
 
-def test_cli_operator_uses_the_same_service_and_the_token_operator(offline, settings, capsys):
+def test_cli_operator_uses_the_same_service_and_the_token_operator(offline, settings, capsys, monkeypatch):
+    from merchant_assistant import cli
     from merchant_assistant.cli import cmd_operator
 
-    client, _, _ = offline()
+    client, orchestrator, _ = offline()
+    monkeypatch.setattr(cli, "operator_orchestrator", lambda _settings: orchestrator)
+    monkeypatch.setattr(orchestrator, "close", lambda: None)  # the test client keeps using it
     case_id = open_case(client)["case"]["case_id"]
     token = client.app.state.identity.issue(Principal.operator("op_bruno"), "merchant-assistant-cli")["access_token"]
     settings.merchant_assistant_token = SecretStr(token)

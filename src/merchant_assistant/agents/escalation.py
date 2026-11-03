@@ -9,7 +9,7 @@ import uuid
 
 from pydantic import ValidationError
 
-from merchant_assistant.agents.common import guess_language, policy, prompt
+from merchant_assistant.agents.common import LANGUAGE_NAME, guess_language, policy, prompt
 from merchant_assistant.agents.support import outcomes_for_case
 from merchant_assistant.data.clock import today
 from merchant_assistant.llm.base import CallSpec, LLMError
@@ -71,6 +71,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             summary=payload["summary"],
             pending_question=payload["pending_question"],
             created=False,
+            draft_reply=payload.get("draft_reply"),
         )
         ctx.step_notes.update(protocol=result.protocol, created=False)
         return {"escalation": result, "agents": agents, "status": "handoff"}
@@ -95,32 +96,37 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         "troubleshooting_attempts": state.case.get("attempts", []),
         "conversation": state.history[-8:],
     }
+    language = state.decision.language if state.decision else guess_language(state.message)
     p = prompt(ctx, "escalation")
     ctx.step_notes["prompt"] = p.ref
     spec = CallSpec(
         agent="escalation",
-        instructions=p.render(reason=reason, case=json.dumps(case, ensure_ascii=False, default=str)[:6000]),
+        instructions=p.render(
+            reason=reason,
+            case=json.dumps(case, ensure_ascii=False, default=str)[:6000],
+            language_name=LANGUAGE_NAME.get(language, "Brazilian Portuguese"),
+        ),
         input="Write the handover.",
         effort="none",
-        max_output_tokens=400,
-        context={"reason": reason, "case": case},
+        max_output_tokens=500,
+        context={"reason": reason, "case": case, "language": language},
     )
     try:
         draft = ctx.llm_for("escalation").parse(spec, EscalationDraft, ctx).value
-    except RECOVERABLE as exc:
+    except RECOVERABLE as exc:  # D15: the handover never depends on the model
         ctx.step_notes["error"] = str(exc)
         draft = EscalationDraft(
             summary=f'Lojista solicitou ajuda: "{state.message[:200]}". Motivo: {reason}.',
             pending_question="Analisar a solicitação e retornar ao lojista.",
+            draft_reply=draft_reply(state, language),
         )
     protocol = f"HO-{today(ctx.clock):%Y%m%d}-{uuid.uuid4().hex[:6].upper()}"
-    language = state.decision.language if state.decision else guess_language(state.message)
     case_id = f"hc_{uuid.uuid4().hex[:16]}"
     payload = {
         **case,
         "summary": draft.summary,
         "pending_question": draft.pending_question,
-        "draft_reply": draft_reply(state, language),
+        "draft_reply": draft.draft_reply.strip() or draft_reply(state, language),
         "language": language,
         "reason": reason,
     }
@@ -148,6 +154,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         summary=draft.summary,
         pending_question=draft.pending_question,
         created=True,
+        draft_reply=payload["draft_reply"],
     )
     ctx.step_notes.update(protocol=protocol, created=True, reason=reason)
     return {"escalation": result, "agents": agents, "status": "handoff"}

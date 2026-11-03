@@ -11,11 +11,12 @@ lock. Every call, accepted or refused, leaves an audit row with the acting princ
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sqlite3
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from merchant_assistant.guardrails.input import check_input
@@ -28,8 +29,10 @@ SCOPE = "handoff:operate"
 IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9_-]{8,80}$")
 STATE_AFTER: dict[str, str] = {"approve": "answered", "reply": "answered", "reject": "rejected"}  # D14
 TRANSCRIPT_TURNS = 10
+STALE_RESUME = timedelta(minutes=5)  # a resume still `pending` after this is treated as interrupted (process died)
 
 Resume = Callable[[dict, dict], object]
+log = logging.getLogger("merchant_assistant.handoffs")
 
 
 class HandoffError(Exception):
@@ -87,6 +90,8 @@ def _record(case: sqlite3.Row | dict, event: sqlite3.Row | dict, *, replayed: bo
         "idempotency_key": event["idempotency_key"],
         "queue_state": case["queue_state"],
         "case_state": case_state,
+        "resume_status": case["resume_status"],
+        "resume_error": case["resume_error"],
         "created_at": event["created_at"],
         "replayed": replayed,
     }
@@ -122,6 +127,8 @@ def _summary(row: sqlite3.Row) -> dict:
         "answered_at": row["answered_at"],
         "closed_at": row["closed_at"],
         "resume_count": row["resume_count"],
+        "resume_status": row["resume_status"],
+        "resume_error": row["resume_error"],
         "channel": row["channel"],
         "ticket_id": row["ticket_id"],
         "created_at": row["created_at"],
@@ -240,8 +247,10 @@ def act(
     """`approve` (releases the draft), `reply` (operator text) or `reject` (instruction to the agent), D9, D10, D14.
 
     The same idempotency key returns the stored record with `replayed: true`; a key already used for another case
-    or action is `409 idempotency_conflict`; a case already resumed is `409 already_resumed`. After the commit the
-    case is handed to the single resume point (`resume(case, record)`), outside the lock."""
+    or action is `409 idempotency_conflict`; a case already resumed is `409 already_resumed`; a case created before
+    v0.7.0 (no saved flow) is `409 not_resumable`. After the commit the case is handed to the single resume point
+    (`resume(case, record)`), outside the lock. A failed resume is recorded (`resume_status = failed`, visible in the
+    queue) and answered with `503 resume_failed`; repeating the action with the same key resumes again."""
     if action not in ACTIONS:
         raise HandoffError(422, "invalid_action", f"action must be one of {', '.join(ACTIONS)}.")
     if not IDEMPOTENCY_KEY.match(idempotency_key or ""):
@@ -258,8 +267,12 @@ def act(
         if existing is not None:
             if (existing["case_id"], existing["action"], existing["operator_id"]) != (case_id, action, operator_id):
                 raise HandoffError(409, "idempotency_conflict", "This idempotency_key was used for another action.")
-            _audit(conn, case, tool, "replayed", actor, on_behalf_of, case_id)
+            retry = resume is not None and _claim_retry(conn, case)
+            _audit(conn, case, tool, "retried" if retry else "replayed", actor, on_behalf_of, case_id)
             conn.execute("COMMIT")
+            if retry:
+                _resume(conn, case_id, existing, resume, actor, on_behalf_of)
+            case = _case(conn, case_id)
             return _record(case, existing, replayed=True, case_state=_case_state(conn, case["conversation_id"]))
         if case is None:
             raise HandoffError(404, "case_not_found", "Handoff case not found.")
@@ -269,6 +282,10 @@ def act(
             raise HandoffError(409, "case_closed", "This case is closed.")
         if case["claimed_by"] and case["claimed_by"] != operator_id:
             raise HandoffError(409, "claimed_by_other", "Another operator already holds this case.")
+        if not case["thread_id"]:
+            raise HandoffError(
+                409, "not_resumable", "This case was opened before v0.7.0 and has no saved flow to resume."
+            )
         stamp = _now()
         if not case["claimed_by"]:  # D9: acting on an open case claims it in the same transaction
             conn.execute(
@@ -277,8 +294,9 @@ def act(
             _event(conn, case_id, "claim", operator_id, None, {"implicit": True})
         new_state = STATE_AFTER[action]
         conn.execute(
-            "UPDATE handoff_cases SET queue_state=?, resume_count=resume_count+1, answered_at=? WHERE case_id=?",
-            (new_state, stamp if new_state == "answered" else None, case_id),
+            "UPDATE handoff_cases SET queue_state=?, resume_count=resume_count+1, answered_at=?, "
+            "resume_status='pending', resume_error=NULL, resume_started_at=? WHERE case_id=?",
+            (new_state, stamp if new_state == "answered" else None, stamp, case_id),
         )
         _event(conn, case_id, action, operator_id, idempotency_key, {"text": text})
         _audit(conn, case, tool, "ok", actor, on_behalf_of, case_id)
@@ -290,13 +308,53 @@ def act(
     except BaseException:
         _rollback(conn)
         raise
-    case = _case(conn, case_id)
     event = conn.execute("SELECT * FROM handoff_events WHERE idempotency_key=?", (idempotency_key,)).fetchone()
-    record = _record(case, event, replayed=False, case_state=_case_state(conn, case["conversation_id"]))
-    if resume is not None:  # task 65: resumes the interrupted graph with the operator's action
-        resume(dict(case), record)
-        record["case_state"] = _case_state(conn, case["conversation_id"])
-    return record
+    if resume is not None:
+        _resume(conn, case_id, event, resume, actor, on_behalf_of)
+    case = _case(conn, case_id)
+    return _record(case, event, replayed=False, case_state=_case_state(conn, case["conversation_id"]))
+
+
+def _claim_retry(conn: sqlite3.Connection, case: sqlite3.Row) -> bool:
+    """Inside the action's transaction: a failed (or stale pending) resume is claimed for one new attempt."""
+    stale = (datetime.now(UTC) - STALE_RESUME).isoformat(timespec="seconds")
+    cursor = conn.execute(
+        "UPDATE handoff_cases SET resume_status='pending', resume_error=NULL, resume_started_at=? "
+        "WHERE case_id=? AND (resume_status='failed' OR (resume_status='pending' AND resume_started_at<?))",
+        (_now(), case["case_id"], stale),
+    )
+    return cursor.rowcount == 1
+
+
+def _resume(
+    conn: sqlite3.Connection,
+    case_id: str,
+    event: sqlite3.Row,
+    resume: Resume,
+    actor: str,
+    on_behalf_of: str | None,
+) -> None:
+    """Calls the single resume point and records its outcome on the case; a failure never leaves the case silent."""
+    case = _case(conn, case_id)
+    record = _record(case, event, replayed=False, case_state=None)
+    try:
+        result = resume(dict(case), record) or {}
+    except Exception as exc:
+        code = getattr(exc, "code", None) or type(exc).__name__
+        log.exception("resume failed", extra={"event": {"case_id": case_id, "code": code}})
+        conn.execute(
+            "UPDATE handoff_cases SET resume_status='failed', resume_error=? WHERE case_id=?", (str(code), case_id)
+        )
+        _audit(conn, case, "handoff.resume", f"failed:{code}", actor, on_behalf_of, case_id)
+        raise HandoffError(
+            503,
+            "resume_failed",
+            "The action was recorded but the reply could not be produced; retry it with the same idempotency_key.",
+        ) from exc
+    conn.execute(
+        "UPDATE handoff_cases SET resume_status='done', resume_error=NULL, resume_request_id=? WHERE case_id=?",
+        (result.get("request_id") if isinstance(result, dict) else None, case_id),
+    )
 
 
 def close(

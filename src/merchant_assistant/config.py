@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     data_dir: Path = PROJECT_ROOT / "data"
     prompts_dir: Path = PROJECT_ROOT / "prompts"
     runtime_dir: Path | None = None
+    checkpoints_path: Path | None = None  # v0.7.0: graph checkpoints of handed-off cases (default: runtime dir)
 
     qdrant_url: str | None = None
     qdrant_collection: str = "getnet_kb_v1"
@@ -70,6 +71,10 @@ class Settings(BaseSettings):
     @property
     def runtime_path(self) -> Path:
         return self.runtime_dir or (self.data_dir / "runtime")
+
+    @property
+    def checkpoint_db_path(self) -> Path:
+        return self.checkpoints_path or (self.runtime_path / "checkpoints.sqlite3")
 
     @property
     def db_path(self) -> Path:

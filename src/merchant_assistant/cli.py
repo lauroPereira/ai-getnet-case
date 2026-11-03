@@ -412,6 +412,13 @@ def _operator_principal(settings: Settings, conn):
     return principal
 
 
+def operator_orchestrator(settings: Settings):
+    """Orchestrator used by `operator act` to resume the flow (the real system; replaced in tests)."""
+    from merchant_assistant.main import build_orchestrator
+
+    return build_orchestrator(settings)
+
+
 def cmd_operator(settings: Settings, args) -> int:
     """Operator queue in-process over the same service as the API (`handoffs`)."""
     import uuid
@@ -429,9 +436,21 @@ def cmd_operator(settings: Settings, args) -> int:
             result = handoffs.get_case(conn, args.case_id)
         else:
             key = args.idempotency_key or f"cli-{uuid.uuid4().hex[:20]}"
-            result = handoffs.act(
-                conn, args.case_id, operator_id, args.action, args.text, key, actor=principal.principal_id
-            )
+            orchestrator = operator_orchestrator(settings)  # resumes the flow in-process (paid model calls)
+            try:
+                result = handoffs.act(
+                    conn,
+                    args.case_id,
+                    operator_id,
+                    args.action,
+                    args.text,
+                    key,
+                    actor=principal.principal_id,
+                    resume=orchestrator.resume_handoff,
+                )
+            finally:
+                if hasattr(orchestrator, "close"):
+                    orchestrator.close()
     except handoffs.HandoffError as exc:
         print(json.dumps({"error": {"code": exc.code, "message": exc.message}}), file=sys.stderr)
         return 1

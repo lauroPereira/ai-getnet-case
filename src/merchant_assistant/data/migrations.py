@@ -466,6 +466,13 @@ CREATE TABLE webhook_deliveries (
 );
 CREATE INDEX webhook_deliveries_case ON webhook_deliveries(case_id, created_at);
 ALTER TABLE messages ADD COLUMN via TEXT;
+ALTER TABLE messages ADD COLUMN meta TEXT;
+ALTER TABLE messages ADD COLUMN delivered_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_status TEXT
+    CHECK (resume_status IS NULL OR resume_status IN ('pending', 'done', 'failed'));
+ALTER TABLE handoff_cases ADD COLUMN resume_error TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_started_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_request_id TEXT;
 COMMIT;
 PRAGMA foreign_keys = ON;
 """
@@ -476,6 +483,12 @@ PRAGMA foreign_keys = ON;
 IDENTITY_DOWN = """
 PRAGMA foreign_keys = OFF;
 BEGIN;
+ALTER TABLE handoff_cases DROP COLUMN resume_request_id;
+ALTER TABLE handoff_cases DROP COLUMN resume_started_at;
+ALTER TABLE handoff_cases DROP COLUMN resume_error;
+ALTER TABLE handoff_cases DROP COLUMN resume_status;
+ALTER TABLE messages DROP COLUMN delivered_at;
+ALTER TABLE messages DROP COLUMN meta;
 ALTER TABLE messages DROP COLUMN via;
 DROP INDEX IF EXISTS webhook_deliveries_case;
 DROP TABLE IF EXISTS webhook_deliveries;

@@ -21,8 +21,8 @@ from merchant_assistant.orchestration.state import GraphState, PersonalityOutput
 RECOVERABLE = (LLMError, ValidationError, LimitExceeded, BudgetExceeded)
 
 HANDOFF_LINE = {
-    "pt": "Encaminhei seu caso para um atendente (simulação desta demonstração). Protocolo: {protocol}.",
-    "en": "I've handed your case to a human agent (simulated in this demo). Protocol: {protocol}.",
+    "pt": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: {protocol}.",
+    "en": "I've handed your case to a member of our support team, who will reply here. Protocol: {protocol}.",
 }
 
 
@@ -30,8 +30,26 @@ def final_status(state: GraphState) -> str:
     return state.status or "answered"
 
 
+def operator_text(state: GraphState) -> str | None:
+    """The human agent's reply (approved draft or own text); None for `reject` or outside a resumed flow."""
+    if state.operator and state.operator.get("action") in ("approve", "reply"):
+        return (state.operator.get("text") or "").strip() or None
+    return None
+
+
 def contributions(state: GraphState, language: str) -> dict:
     data: dict = {"status": final_status(state), "language": language}
+    if state.operator:  # resumed by a human agent: only the operator's reply or the re-run support speaks
+        data["operator"] = {"action": state.operator.get("action"), "from_operator": True}
+        if text := operator_text(state):
+            data["operator"]["text"] = text
+        if state.support and state.operator.get("action") == "reject":
+            data["support"] = {
+                "points": state.support.points,
+                "missing": state.support.missing,
+                "needs_selection": state.support.needs_selection,
+            }
+        return data
     if state.policy:
         data["policy_text"] = state.policy
     if state.knowledge:
@@ -56,7 +74,6 @@ def contributions(state: GraphState, language: str) -> dict:
     if state.escalation:
         data["handoff"] = {
             "protocol": state.escalation.protocol,
-            "simulated": True,
             "message": HANDOFF_LINE[language].format(protocol=state.escalation.protocol),
         }
     return data
@@ -64,6 +81,10 @@ def contributions(state: GraphState, language: str) -> dict:
 
 def deterministic_answer(state: GraphState, language: str, case_state: str | None = None) -> str:
     """Fallback used when the model is unavailable or its text fails the output guard."""
+    if state.operator:
+        text = operator_text(state)
+        points = state.support.points if state.support and not text else []
+        return text or "\n".join(points) or policy("unavailable", language)
     if state.decision and state.decision.route == "acknowledgement":
         return policy("ack_resolved" if case_state == "resolved" else "ack", language)
     parts: list[str] = []
@@ -87,6 +108,8 @@ def evidence(state: GraphState, ctx: RunContext) -> list[str]:
         texts += state.knowledge.evidence_texts
     if state.escalation:
         texts.append(state.escalation.protocol)
+    if text := operator_text(state):  # the human agent's text is valid evidence for the output guard
+        texts.append(text)
     return texts
 
 
@@ -97,7 +120,9 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     signal = state.decision.case_signal if state.decision else "none"
     tool_verified = bool(state.support and state.support.issue_verified_by_tool)
     case_state, evidence = next_state(
-        state.case.get("state", "in_progress"), state.case.get("evidence"), Turn(status, signal, tool_verified)
+        state.case.get("state", "in_progress"),
+        state.case.get("evidence"),
+        Turn(status, signal, tool_verified, via_operator=state.operator is not None),
     )
     case_next = {"state": case_state, "evidence": evidence}
     data = contributions(state, language)
@@ -129,7 +154,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     except RECOVERABLE as exc:
         ctx.step_notes["error"] = str(exc)
         draft, source = deterministic_answer(state, language, case_state), "fallback"
-    if state.escalation and state.escalation.protocol not in draft:
+    if state.escalation and not state.operator and state.escalation.protocol not in draft:
         draft = f"{draft}\n{HANDOFF_LINE[language].format(protocol=state.escalation.protocol)}"
     ctx.step_notes.update(source=source, case_state=case_state, evidence=evidence)
     return {"draft_answer": draft, "status": status, "agents": agents, "case_next": case_next}
