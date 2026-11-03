@@ -80,3 +80,28 @@
 
 - Ação externa: nenhuma (sem push, sem PR). Commits locais com `lauroPereira <lauro.s.pereira@gmail.com>`, identidade conferida.
 - Próxima ação: Reviewer independente da 66b. O Supervisor responde às três perguntas acima, e a tela da tarefa 67 consome a API acima.
+
+### Atualização do contrato de identidade (spec `9c24800`), ainda na rodada 1
+
+Pontos aplicados por aviso do Supervisor, sem merge da spec. Commit `feat(ticketing): follow the updated identity contract`.
+
+- **API do ticketing:** os erros usam o envelope do assistente, `{"error": {"code", "message", "request_id"}}`, com `request_id` por requisição (também no cabeçalho `X-Request-Id`).
+  - Sem token → `401 token_required`.
+  - Token inválido, expirado, de outro emissor ou audiência, adulterado ou com `kid` desconhecido → `401 invalid_token`.
+  - Papel ou escopo → `403 insufficient_scope`.
+  - Todos com `WWW-Authenticate: Bearer` (acrescido de `error=…`, conforme RFC 6750).
+- **Token de serviço:**
+  - Os erros RFC 6749 §5.2 de `/v1/auth/token` (`invalid_client` e semelhantes) viram rejeição de configuração: `502 assistant_rejected`, sem mudar o ticket.
+  - `429` deixa o ato pendente e a próxima tentativa espera pelo menos o `Retry-After` numérico.
+  - O serviço continua mandando o segredo no formulário (o contrato aceita formulário ou `Basic`).
+- **Eventos ao assistente:**
+  - `429` com `Retry-After` é respeitado da mesma forma.
+  - Um `401` só renova o token de serviço quando o código é `token_required` ou `invalid_token`; `401 invalid_signature` vira rejeição direta.
+- **Assistente falso:** responde nos formatos novos e aceita o segredo também em `Basic`.
+- **Testes novos:**
+  - `test_token_endpoint_errors`: `invalid_client` → 502; `429` espera o `Retry-After`.
+  - `test_assistant_rate_limit_waits_retry_after`.
+  - `test_service_can_obtain_the_token_with_basic_auth_too`: conformidade do falso.
+  - Os negativos de JWT passaram a conferir `token_required`/`invalid_token`/`insufficient_scope` e o `request_id`.
+- **Pergunta 3:** está respondida pelo contrato. O repasse de `404`, `409` e `422` com o mesmo código e corpo continua; o corpo agora é o envelope `{"error": {...}}` do assistente.
+- **Suíte estrita** (`--basetemp .pytest_cache/v070-b-strict`): código 0, 383 aprovados (380 + 3), ruff limpo.

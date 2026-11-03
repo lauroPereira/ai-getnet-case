@@ -49,9 +49,10 @@ Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-t
 - `docker compose config --quiet` terminou com código 0, sem `.env` no worktree. Não subi o Docker.
 - Suíte estrita: `PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v070-b-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict` terminou com código 0 e 380 testes aprovados; ruff limpo.
 - Nenhuma chamada paga. Não toquei em arquivo do Time A.
+- Atualização do contrato de identidade (spec `9c24800`), aplicada na mesma rodada: erros da API no envelope `{"error": {"code", "message", "request_id"}}` com `401 token_required`/`invalid_token` e `403 insufficient_scope` (`WWW-Authenticate: Bearer`); erros RFC 6749 do token → `502`; `429` respeita `Retry-After`; assistente falso nos formatos novos. Suíte estrita: código 0, 383 aprovados.
 
 ## Status
 
 ```text
-Implementada pelo Developer (rodada 1); aguarda revisão independente e as respostas do Supervisor às 3 perguntas da passagem.
+Implementada pelo Developer (rodada 1); aguarda revisão independente e as respostas do Supervisor às perguntas 1 e 2 da passagem (a 3 foi resolvida pela spec 9c24800).
 ```
