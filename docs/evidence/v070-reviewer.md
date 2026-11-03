@@ -52,3 +52,43 @@ Comprovados por execução: CA-46 (401, `identity_mismatch`, B não lê A, N cal
 ### Próxima ação
 
 Developer corrige P1-1 e P2-1 a P2-3 com teste e avalia os P3; o mesmo Reviewer revê o novo HEAD (e os mutantes M12 a M21). Decisões de contrato do Supervisor sobre P2-3, P3-1 e P3-2 na spec (D18 ampliada, D20, D21).
+
+## Tarefa 64 e ajustes de contrato da 63 (`dab83ab`), rodada 1 — correções necessárias
+
+- **Papel:** mesmo Reviewer do Time A, contexto frio; não leu `v070-developer.md` nem Validação e Status da 64. Independente.
+- **Critérios:** tarefa 64; spec no candidato (D6, D7, D9, D10, D14, D19, tabela "Ticketing → assistente", CA-47 e CA-48 na parte da fila); plano (decisões 7 e 8, 0009); ADR 0018; contrato esclarecido da 63 (RFC 6749, `insufficient_scope`, D18, D19). D18 ampliada, D20 e D21 (posteriores) não cobertas.
+- **Candidato:** `review-a` destacado em `0dc1ea5` (contém `dab83ab`), base `de3a760`; árvore limpa; sha256 de `handoffs.py`, `v1.py`, `app.py`, `migrations.py`, `escalation.py` e `cli.py` iguais antes e depois.
+- **Parecer:** correções necessárias — 0 P1, 2 P2, 5 P3.
+
+### Comandos e números
+
+- Suíte estrita (`PYTHONPATH=src`): **422 passed**, Ruff e skills ok, código 0.
+- Sondas próprias: fila pela API 30/31 (falha = P2-1); concorrência 5/5; migração 13/13; RFC 6749 e D19 15/15; CLI em processo separado 10/10; mascaramento 2/2.
+- Mutação manual (cópia de `0dc1ea5`): **19/20 mortos** (`BEGIN` adiado, segunda retomada, conflito de chave ignorado, `claimed_by_other` na reivindicação e na ação, sem reivindicação implícita, ação em caso fechado, `reject`→`answered`, portão das rotas, protocolo `SIM-`, `thread_id` = conversa, recusa não auditada, retomada no replay, D19 desligado, `invalid_grant` como 401, descida mantendo `queue_state`, `simulated` no payload, reivindicação repetida gravando, replay como novo). Sobreviveu: regex da `idempotency_key` afrouxado no serviço (P3-4).
+
+### Re-derivado
+
+1. Encaminhamento: `status=handoff`, protocolo `^HO-\d{8}-[0-9A-F]{6}$`, sem `simulated` no JSON nem no payload; fila `open` com resumo; detalhe com rascunho, pergunta pendente, `thread_id` = `request_id` (D6), `channel=api`, `deliveries=[]`, conversa mascarada (cartão e CPF removidos).
+2. Rotas de fila: lojista, admin e serviço 403 `insufficient_scope` (com `WWW-Authenticate`), anônimo 401, nas quatro.
+3. Reivindicação 200, repetida `replayed: true`, outro operador `409 claimed_by_other` (reivindicação e ação); ação K → 200 `answered`; K de novo → `replayed: true` e mesmo `event_id`; outra chave → `409 already_resumed`; retomada chamada **1 vez**; chave em outro caso → `409 idempotency_conflict` sem tocar o outro caso; caso fechado → `409 case_closed`; 422 e 404 nos inválidos; auditoria em cada chamada ao serviço, inclusive recusas do serviço.
+4. Concorrência real (threads com conexões próprias e barreira): 5 rodadas × 12 threads com chaves diferentes → sempre 1 vencedor, 11 `already_resumed`, 1 retomada; mesma chave em 10 threads → 1 evento, 1 retomada; 8 threads por HTTP → um 200, sete 409, 1 retomada; corrida de reivindicação com 10 threads → um dono.
+5. 0009 com dados: caso pré-0009 entra `open`; UNIQUE na chave, CHECK em `queue_state`, FK de `handoff_events`; `foreign_key_check` limpo em 9 e 8; descida preserva casos e mensagens; subidas 8→9 e 0→9.
+6. CLI `operator` em processo separado com `MERCHANT_ASSISTANT_TOKEN`: `list`/`show` veem o caso da API; recusa token de lojista e inválido; `act` como `op_bruno` (do token) e replay pela mesma chave; a API enxerga a ação da CLI; auditoria `operator:op_bruno`.
+7. Token: `{error, error_description}` e `Cache-Control: no-store`; 400 `invalid_request`/`unsupported_grant_type`/`invalid_grant` (mensagem idêntica para senha errada e usuário inexistente); 401 `invalid_client` com `WWW-Authenticate: Basic`; D19 (limite 3): 4ª tentativa 429 com `Retry-After`, inclusive com a senha certa; outra conta no mesmo endereço não é afetada; vale para `client_credentials` e Basic. Demais rotas: `token_required`/`invalid_token` com `WWW-Authenticate: Bearer`, `insufficient_scope`. D18 (época) implementada (`LIMITED_ROLES`).
+
+### P2
+
+- **P2-1 — texto ainda diz simulação (D7):** `agents/personality.py:24-25` ("(simulação desta demonstração)", "(simulated in this demo)") e `personality.py:59` (`"simulated": True` nos dados entregues à Personality). Aparece na resposta ao lojista e no `transcript` do operador. Reprodução: `POST /messages` "Quero falar com um atendente humano, por favor" → `answer` termina em "(simulação desta demonstração). Protocolo: HO-…".
+- **P2-2 — CLI `operator act` contorna o ponto único de retomada:** `cli.py:432` chama `handoffs.act(...)` sem `resume`, enquanto a API passa `resume_handoff` (`v1.py:1537`). A ação pela CLI consome a única retomada sem retomar o grafo; depois da 65 o caso ficaria sem entrega e qualquer nova ação `409 already_resumed`. Reprodução: `operator act <caso> --action reply …` → 200; ação pela API em seguida → 409; nenhum hook chamado. Correção: a CLI usa o mesmo ponto de retomada, com teste.
+
+### P3
+
+- **P3-1:** `GET /v1/handoffs` e `GET /v1/handoffs/{id}` (`v1.py:1453,1468`) não auditam, embora exponham conversas mascaradas; recusas no portão (`_operator_id`, `v1.py:1439`) também não (16 recusas, 0 linhas).
+- **P3-2:** mesma chave com texto diferente devolve o registro antigo sem aviso (`handoffs.py:257-263`).
+- **P3-3:** D19 por par conta@endereço deixa *spraying* livre (`v1.py:429`): 12 usuários diferentes do mesmo endereço, 12 × 400 sem 429, cada um com PBKDF2 de 600 mil iterações.
+- **P3-4:** regex da `idempotency_key` no serviço (`handoffs.py:28`), única validação no caminho da CLI e do ticketing, sem teste.
+- **P3-5:** casos pré-0009 entram sem `thread_id` (a 65 trata); `list_cases` com `LIMIT 100` sem paginação (`handoffs.py:138`).
+
+### Próxima ação
+
+Developer corrige P2-1 e P2-2 com teste e, por decisão do Supervisor, P3-1 a P3-4 (D19 e D22 na spec); P3-5 fica com a 65 e como limitação. Nova rodada do mesmo Reviewer sobre o novo HEAD, com mutante para a CLI com retomada.
