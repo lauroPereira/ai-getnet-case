@@ -29,12 +29,9 @@ from merchant_assistant.ticketing.signing import verify
 from merchant_assistant.ticketing.store import STATUSES, TicketStore
 
 INBOUND_EVENTS = {"handoff.created", "conversation.replied", "handoff.closed"}
-PASS_THROUGH = {404, 409, 422}
-LOCAL_DELIVERY_ERRORS = {
-    "assistant_malformed_response",
-    "service_token_malformed",
-    "delivery_error",
-}  # assistant errors the screen receives with the same code and body
+PASS_THROUGH = {404, 409, 422}  # assistant errors the screen receives with the same code and body
+# Recorded final failures of the ticketing's own delivery (malformed answer, unexpected error): 502 with this code.
+LOCAL_DELIVERY_ERRORS = {"assistant_malformed_response", "service_token_malformed", "delivery_error"}
 
 
 class ActionRequest(BaseModel):

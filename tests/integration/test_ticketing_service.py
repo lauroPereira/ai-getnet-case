@@ -69,6 +69,7 @@ class FakeAssistant:
         self.token_raw: bytes | None = None  # forced 200 body of /v1/auth/token (malformed answers)
         self.events_raw: bytes | None = None  # forced 200 body of the events endpoint (malformed answers)
         self.events_delay = 0.0  # a slow assistant, to exercise the outbox lease
+        self.events_exception: Exception | None = None  # an unexpected failure while sending (not httpx)
 
     # --- tokens --------------------------------------------------------------------------------------------------
 
@@ -146,6 +147,8 @@ class FakeAssistant:
         return err(404, "not_found")
 
     def _event(self, request: httpx.Request) -> httpx.Response:
+        if self.events_exception is not None:
+            raise self.events_exception
         if self.events_delay:
             time.sleep(self.events_delay)
         if self.events_raw is not None:
@@ -742,3 +745,20 @@ def test_another_operator_cannot_replay_a_key(env):
     other = client.post(f"/tickets/{tid}/actions", headers=fake.operator("op_bruno"), json=body)
     assert other.status_code == 409 and other.json()["error"]["code"] == "idempotency_key_reused"
     assert [e["type"] for e in fake.events] == ["ticket.action"]
+
+
+def test_unexpected_error_while_sending_is_a_recorded_failure(env):
+    """Round 3: the `except Exception` path of the outbox: 502 delivery_error, no lease left, no resend loop."""
+    client, fake, clock, app = env
+    tid = ticket_id(client, fake)
+    fake.events_exception = RuntimeError("unexpected")
+    response = client.post(f"/tickets/{tid}/assign", headers=fake.operator())
+    assert response.status_code == 502 and response.json()["error"]["code"] == "delivery_error"
+    detail = client.get(f"/tickets/{tid}", headers=fake.operator()).json()
+    sent = detail["deliveries"]["sent"][0]
+    assert detail["status"] == "new" and sent["status"] == "rejected"
+    assert [a["error"] for a in sent["attempts"]] == ["delivery_error"]
+    clock.advance(60)
+    assert app.state.dispatcher.dispatch_due() == []
+    fake.events_exception = None
+    assert client.post(f"/tickets/{tid}/assign", headers=fake.operator()).status_code == 200

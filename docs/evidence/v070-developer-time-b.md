@@ -152,3 +152,21 @@ Os **atos** passam pelo assistente, que confere o operador em cada evento. O cam
 ### Próxima ação
 
 O mesmo Reviewer revê o diff de correção e o `docker compose config`.
+
+## Tarefa 66b, rodada 3
+
+- Papel e responsável: Developer do Time B, rodada curta de P3 pedida pelo Supervisor depois do apto para QA ([parecer, rodada 2](v070-reviewer-time-b.md), commit `b2779e8`).
+- Escopo: `src/merchant_assistant/ticketing/service.py` (só comentário), `tests/integration/test_ticketing_service.py` e esta passagem. Base `b2779e8`; versão final é o commit desta rodada. Não-independente (relato do autor).
+
+### Mudanças
+
+- **Teste do caminho `delivery_error`** (`except Exception` de `outbox.py`): `test_unexpected_error_while_sending_is_a_recorded_failure`.
+  - O assistente falso levanta um `RuntimeError`, que não é erro do httpx, ao receber o evento.
+  - A API responde `502 delivery_error`. O ticket continua `new` e a caixa de saída fica `rejected`, com uma tentativa registrada com esse código.
+  - `dispatch_due()` não reenvia, e o ato seguinte funciona: nenhum evento fica preso pelo lease.
+- **Comentário de `service.py` corrigido:** o comentário que descreve o repasse de erros do assistente (mesmo código e corpo) passou para a linha de `PASS_THROUGH`. `LOCAL_DELIVERY_ERRORS` ganhou o próprio comentário: falhas finais registradas da entrega do ticketing (resposta malformada, erro inesperado), que viram `502` com esse código.
+
+### Evidência
+
+- Suíte estrita (`--basetemp .pytest_cache/v070-b-strict`) → código 0, **394 aprovados** (393 + 1), ruff limpo.
+- Nenhuma chamada paga, sem Docker, sem push.
