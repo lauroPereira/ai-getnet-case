@@ -49,3 +49,27 @@ No scratchpad compartilhado, apagou `scratchpad\mut` (que outro papel usava) e p
 ### Próxima ação
 
 Developer do Time B corrige P1-1 e, por decisão do Supervisor, também P3-1, P3-3, P3-4 e P3-6; P3-5 vira limitação documentada; P3-2 com teste se barato. O mesmo Reviewer revê o diff de correção e o `docker compose config`.
+
+## Tarefa 66b, rodada 2 — apto para QA
+
+- **Papel:** mesmo Reviewer da rodada 1; não leu a passagem atualizada do Developer.
+- **Candidato:** branch `codex/v0.7.0-ticketing`, diff `d505760..e674041` (`.env.example`, `docker-compose.yml`, `ticketing/auth.py`, `outbox.py`, `service.py`, testes de integração); HEAD e árvore iguais antes e depois.
+- **Parecer:** apto para QA — sem P1 nem P2; 4 P3 novos.
+
+### Comandos e números
+
+- Suíte estrita (`--basetemp .pytest_cache/v070-b-review-r2-strict`): **393 passed** (eram 383), nenhum pulado, Ruff limpo, código 0.
+- `docker compose config --quiet` numa cópia sem `.env`: código 0; `ticketing` resolve `TICKETING_CLIENT_SECRET: ticketing-demo-secret-fictitious`.
+- Integração simulada com a branch da versão (`f2a6b60`) por `git merge-file`, sem escrever no Git: compose mescla sem conflito e passa em `docker compose config` com o mesmo segredo em `api` e `ticketing`; `.env.example` tem conflito textual só por acréscimos no fim, resolvido mantendo os dois blocos (uma única `TICKETING_CLIENT_SECRET=ticketing-demo-secret-fictitious`).
+- Mutação, rodada 2: 8/10 mortas (sobreviveram `alg-header-off`, redundante, e `broad-except-off`).
+
+### Rodada 1
+
+P1-1 resolvido (valor do contrato no compose, `.env.example` sem repetir a chave); P3-1 resolvido (teste do lease mata a mutação; 10 com a mesma chave → 1 POST; 8 `dispatch_due` → 1 POST); P3-2 resolvido (`alg=none` e HS256 com o PEM público → `401 invalid_token`, com teste); P3-3 resolvido (token `200` não JSON → `502 service_token_malformed`, linha `rejected` sem reenvio; evento `200` com lista → `502 assistant_malformed_response`); P3-4 resolvido (`WWW-Authenticate: Bearer` sem código quando falta credencial); P3-6 resolvido (`op_bruno` com a chave de `op_ana` → `409 idempotency_key_reused`). P3-5 e P3-7 seguem registrados.
+
+### P3 novos
+
+1. Caminho `delivery_error` (`outbox.py:96`, `except Exception`) sem teste.
+2. Comentário em `service.py:32-37` preso a `LOCAL_DELIVERY_ERRORS` quando descreve `PASS_THROUGH`.
+3. `2xx` sem o corpo do contrato vira `rejected` final mesmo que o assistente tenha aplicado o evento (borda fora do contrato; a mensagem orienta atualizar).
+4. Conflito trivial de `.env.example` no merge com a branch da versão (manter os dois blocos).
