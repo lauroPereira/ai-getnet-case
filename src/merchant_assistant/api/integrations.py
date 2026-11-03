@@ -3,12 +3,14 @@
 Every event needs both a `client_credentials` token with `handoff:integrate` and the signature with
 `ASSISTANT_WEBHOOK_SECRET` (window of 300 s). `ticket.assigned`, `ticket.action` and `ticket.solved` go through the
 same queue service as `/v1/handoffs` (`handoffs.claim`, `act`, `close`), with the same `409` and idempotency rules,
-and the audit records `service:ticketing` acting on behalf of `operator:<id>`. An event id already answered returns
-the stored answer without a new effect; a `5xx` answer is not stored, so the ticketing's retry processes it again."""
+and the audit records `service:ticketing` acting on behalf of `operator:<id>`. An event id already answered is
+acknowledged without a new effect; a `5xx` answer is not final, so the ticketing's retry processes it again."""
 
 from __future__ import annotations
 
+import hashlib
 import json
+import sqlite3
 import time
 from datetime import UTC, datetime
 
@@ -53,6 +55,10 @@ def _parse(raw: bytes, header_id: str | None) -> dict | None:
         return None
     if header_id is not None and header_id != event["id"]:
         return None
+    try:
+        event["id"].encode("utf-8")
+    except UnicodeEncodeError:
+        return None
     return event
 
 
@@ -64,19 +70,28 @@ def _states(conn, case_id: str) -> tuple[str | None, str | None]:
 
 
 def _store(conn, event: dict, status: int, body: dict) -> None:
-    """Answers below 500 are final: the same event id gets them again without a new effect."""
+    """Answers below 500 are final: the same event id is acknowledged without a new effect."""
     if status >= 500:
         return
     conn.execute(
-        "INSERT OR IGNORE INTO webhook_inbox (event_id, source, event, case_id, status_code, response, received_at) "
-        "VALUES (?,?,?,?,?,?,?)",
+        "UPDATE webhook_inbox SET status_code=?, response=? WHERE event_id=?",
+        (status, json.dumps(body, ensure_ascii=False), event["id"]),
+    )
+
+
+def _event_hash(event: dict) -> str:
+    body = json.dumps(event, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(body.encode("ascii")).hexdigest()
+
+
+def _reserve(conn, event: dict) -> None:
+    """Persist the event's digest before its effects; status 0 permits retry after interruption."""
+    case_id = event["data"].get("case_id")
+    conn.execute(
+        "INSERT INTO webhook_inbox (event_id, source, event, case_id, status_code, response, received_at) "
+        "VALUES (?,?,?,?,0,?,?)",
         (
-            event["id"],
-            SOURCE,
-            event["type"],
-            (event.get("data") or {}).get("case_id"),
-            status,
-            json.dumps(body, ensure_ascii=False),
+            event["id"], SOURCE, event["type"], case_id if isinstance(case_id, str) else None, _event_hash(event),
             datetime.now(UTC).isoformat(timespec="seconds"),
         ),
     )
@@ -120,20 +135,31 @@ def ticketing_events(request: Request, principal=AUTH, raw: bytes = RAW_BODY):
         return _error(400, "invalid_payload", "Expected the webhook envelope {id, type, created_at, data}.", request)
     actor = principal["principal_id"]
     conn = _db(request)
+    # A separate SQLite lock per event permits queue commits and resume while excluding other workers for that id.
+    # SQLite releases it on process exit; the reservation then identifies the only event that may be retried.
+    lock_id = hashlib.sha256(event["id"].encode()).hexdigest()
+    lock = sqlite3.connect(f"{settings.db_path}.webhook-lock-{lock_id}", timeout=5, isolation_level=None)
     try:
-        seen = conn.execute("SELECT status_code, response FROM webhook_inbox WHERE event_id=?", (event["id"],))
+        try:
+            lock.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError:
+            return _error(503, "resume_failed", "The event is still being processed; retry it later.", request)
+        seen = conn.execute("SELECT status_code, response, case_id FROM webhook_inbox WHERE event_id=?", (event["id"],))
         if (stored := seen.fetchone()) is not None:  # delivery already answered: no new effect
-            body = json.loads(stored["response"])
-            if stored["status_code"] == 200:
-                case_state, queue_state = _states(conn, body.get("case_id") or event["data"].get("case_id") or "")
+            if stored["status_code"] != 0:
+                case_state, queue_state = _states(conn, stored["case_id"] or "")
                 return {"status": "replayed", "case_state": case_state, "queue_state": queue_state}
-            return JSONResponse(status_code=stored["status_code"], content=body)
+            if stored["response"] != _event_hash(event):
+                return _error(503, "resume_failed", "The original event has not completed; retry it later.", request)
+        else:
+            _reserve(conn, event)
         status, body = _apply(request, conn, event, actor)
         _store(conn, event, status, body)
         if status == 200:
             return {k: body[k] for k in ("status", "case_state", "queue_state")}
         return _error(status, body["error"]["code"], body["error"]["message"], request)
     finally:
+        lock.close()
         conn.close()
 
 
@@ -175,6 +201,8 @@ def _apply(request: Request, conn, event: dict, actor: str) -> tuple[int, dict]:
                 on_behalf_of=on_behalf_of,
                 resume=webhooks.resume_point(getattr(request.app.state.orchestrator, "resume_handoff", None)),
             )
+            if result["resume_status"] != "done":
+                return _failure(503, "resume_failed", "The reply is not ready; retry this event.")
         else:
             result = handoffs.close(conn, case_id, operator_id, actor=actor, on_behalf_of=on_behalf_of)
             if not result["replayed"]:

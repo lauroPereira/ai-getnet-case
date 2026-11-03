@@ -7,13 +7,19 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import subprocess
+import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from merchant_assistant import handoffs
+from merchant_assistant.api import integrations
 from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.webhooks import Webhooks, signature, verify_signature
 from merchant_assistant.mocks.service import create_mocks_app
@@ -309,6 +315,11 @@ def test_failed_resume_is_503_and_the_ticketing_retry_of_the_same_event_resumes(
     data = ticket(case_id, action="approve", text="", idempotency_key="tkt-key-05")
     failed = post_event(client, "ticket.action", data, event_id="evt_retry_0001")
     assert failed.status_code == 503 and failed.json()["error"]["code"] == "resume_failed"
+    assert rows(client, "SELECT status_code FROM webhook_inbox WHERE event_id=?", ("evt_retry_0001",)) == [
+        {"status_code": 0}
+    ]
+    changed = post_event(client, "ticket.action", data | {"case_id": "other"}, event_id="evt_retry_0001")
+    assert changed.status_code == 503 and changed.json()["error"]["code"] == "resume_failed"
     client.app.state.webhooks.wait()
     assert [e for e in receivers.events() if e["type"] == "conversation.replied"] == []  # nothing was produced
     orchestrator.resume_handoff = original
@@ -316,6 +327,188 @@ def test_failed_resume_is_503_and_the_ticketing_retry_of_the_same_event_resumes(
     assert retried.status_code == 200 and retried.json()["queue_state"] == "answered", retried.text
     client.app.state.webhooks.wait()
     assert len([e for e in receivers.events() if e["type"] == "conversation.replied"]) == 2
+
+
+def test_concurrent_same_event_id_for_different_cases_has_one_effect(wired, monkeypatch):
+    client, _, _, _ = wired()
+    cases = [hand_off(client, customer)["case_id"] for customer in ("cliente1988", "cliente_demo_002")]
+    headers = service(client)
+    entered, second_connected, release = Event(), Event(), Event()
+    original_apply, original_db = integrations._apply, integrations._db
+    calls = []
+
+    def apply(*args):
+        calls.append(args[2]["data"]["case_id"])
+        entered.set()
+        assert release.wait(10)
+        return original_apply(*args)
+
+    def db(request):
+        conn = original_db(request)
+        if entered.is_set():
+            second_connected.set()
+        return conn
+
+    monkeypatch.setattr(integrations, "_apply", apply)
+    monkeypatch.setattr(integrations, "_db", db)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(post_event, client, "ticket.assigned", ticket(cases[0]),
+                            headers=headers, event_id="evt_concurrent")
+        assert entered.wait(10)
+        second = pool.submit(post_event, client, "ticket.assigned", ticket(cases[1]),
+                             headers=headers, event_id="evt_concurrent")
+        assert second_connected.wait(10)
+        release.set()
+        responses = [first.result(timeout=10), second.result(timeout=10)]
+    assert [r.status_code for r in responses] == [200, 200]
+    assert [r.json()["status"] for r in responses] == ["accepted", "replayed"]
+    assert calls == [cases[0]]
+    assert [case_snapshot(client, case)[0]["queue_state"] for case in cases] == ["claimed", "open"]
+    assert len(rows(client, "SELECT * FROM webhook_inbox WHERE event_id='evt_concurrent'")) == 1
+    audits = rows(client, "SELECT * FROM audit_events WHERE tool='handoff.claim' AND resource_id IN (?,?)", cases)
+    assert len(audits) == 1
+
+
+def test_interrupted_event_retries_only_its_original_case(wired, monkeypatch):
+    client, _, _, _ = wired()
+    cases = [hand_off(client, customer)["case_id"] for customer in ("cliente1988", "cliente_demo_002")]
+    original = integrations._apply
+
+    def interrupted(*args):
+        original(*args)
+        raise RuntimeError("interrupted after claim")
+
+    monkeypatch.setattr(integrations, "_apply", interrupted)
+    with pytest.raises(RuntimeError, match="interrupted after claim"):
+        post_event(client, "ticket.assigned", ticket(cases[0]), event_id="evt_interrupted")
+    monkeypatch.setattr(integrations, "_apply", original)
+    changed = post_event(client, "ticket.assigned", ticket(cases[1]), event_id="evt_interrupted")
+    assert changed.status_code == 503 and changed.json()["error"]["code"] == "resume_failed"
+    retried = post_event(client, "ticket.assigned", ticket(cases[0]), event_id="evt_interrupted")
+    assert retried.status_code == 200 and retried.json()["status"] == "replayed"
+    assert [case_snapshot(client, case)[0]["queue_state"] for case in cases] == ["claimed", "open"]
+
+
+def test_repeated_final_refusal_is_acknowledged_without_new_effect_or_audit(wired):
+    client, _, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    rejected = post_event(client, "ticket.assigned", ticket(case_id, "op_ghost"), event_id="evt_refused")
+    assert rejected.status_code == 422
+    audits = rows(client, "SELECT * FROM audit_events WHERE resource_id=?", (case_id,))
+    duplicate = post_event(client, "ticket.assigned", ticket(case_id), event_id="evt_refused")
+    assert duplicate.status_code == 200 and duplicate.json()["status"] == "replayed"
+    assert case_snapshot(client, case_id)[0]["queue_state"] == "open"
+    assert rows(client, "SELECT * FROM audit_events WHERE resource_id=?", (case_id,)) == audits
+
+
+def test_distinct_event_ids_do_not_wait_for_each_other(wired, monkeypatch):
+    client, _, _, _ = wired()
+    cases = [hand_off(client, customer)["case_id"] for customer in ("cliente1988", "cliente_demo_002")]
+    headers = service(client)
+    entered, release = Event(), Event()
+    original = integrations._apply
+
+    def apply(*args):
+        if args[2]["id"] == "evt_slow":
+            entered.set()
+            assert release.wait(10)
+        return original(*args)
+
+    monkeypatch.setattr(integrations, "_apply", apply)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(
+            post_event, client, "ticket.assigned", ticket(cases[0]), headers=headers, event_id="evt_slow"
+        )
+        try:
+            assert entered.wait(10)
+            second = pool.submit(post_event, client, "ticket.assigned", ticket(cases[1]),
+                                 headers=headers, event_id="evt_fast")
+            assert second.result(timeout=4).json()["status"] == "accepted"
+        finally:
+            release.set()
+        assert first.result(timeout=10).json()["status"] == "accepted"
+
+
+def test_interrupted_process_releases_event_lock_and_reservation_can_resume(wired):
+    client, _, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    body, headers = signed("ticket.assigned", ticket(case_id), event_id="evt_crashed")
+    event = json.loads(body)
+    conn = sqlite3.connect(client.app.state.settings.db_path, isolation_level=None)
+    try:
+        integrations._reserve(conn, event)
+    finally:
+        conn.close()
+    lock_id = integrations.hashlib.sha256(event["id"].encode()).hexdigest()
+    lock_path = f"{client.app.state.settings.db_path}.webhook-lock-{lock_id}"
+    script = (
+        "import sqlite3, sys; "
+        "conn = sqlite3.connect(sys.argv[1], isolation_level=None); "
+        "conn.execute('BEGIN IMMEDIATE'); print('locked', flush=True); sys.stdin.read()"
+    )
+    process = subprocess.Popen(
+        [sys.executable, "-c", script, lock_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
+    try:
+        assert process.stdout.readline().strip() == "locked"
+        process.kill()
+        process.wait(timeout=10)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
+        process.stdin.close()
+        process.stdout.close()
+    response = client.post(EVENTS_PATH, content=body, headers=headers | service(client))
+    assert response.status_code == 200 and response.json()["status"] == "accepted"
+    assert case_snapshot(client, case_id)[0]["queue_state"] == "claimed"
+
+
+def test_busy_event_is_retryable_and_untrusted_id_is_not_a_path(wired):
+    client, _, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    event_id = "../../arbitrary-id"
+    lock_id = integrations.hashlib.sha256(event_id.encode()).hexdigest()
+    lock_path = f"{client.app.state.settings.db_path}.webhook-lock-{lock_id}"
+    lock = sqlite3.connect(lock_path, isolation_level=None)
+    try:
+        lock.execute("BEGIN IMMEDIATE")
+        blocked = post_event(client, "ticket.assigned", ticket(case_id), event_id=event_id)
+        assert blocked.status_code == 503 and blocked.json()["error"]["code"] == "resume_failed"
+        assert case_snapshot(client, case_id)[0]["queue_state"] == "open"
+        assert rows(client, "SELECT * FROM webhook_inbox WHERE event_id=?", (event_id,)) == []
+    finally:
+        lock.close()
+    retried = post_event(client, "ticket.assigned", ticket(case_id), event_id=event_id)
+    assert retried.status_code == 200 and retried.json()["status"] == "accepted"
+
+
+def test_interrupted_action_stays_retryable_until_resume_completes(wired, monkeypatch):
+    client, _, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    data = ticket(case_id, action="approve", text="", idempotency_key="crash-action-01")
+    original = handoffs._resume
+
+    def crash(*args):
+        raise RuntimeError("stopped before resume")
+
+    monkeypatch.setattr(handoffs, "_resume", crash)
+    with pytest.raises(RuntimeError, match="stopped before resume"):
+        post_event(client, "ticket.action", data, event_id="evt_crashed_action")
+    monkeypatch.setattr(handoffs, "_resume", original)
+    pending = post_event(client, "ticket.action", data, event_id="evt_crashed_action")
+    assert pending.status_code == 503 and pending.json()["error"]["code"] == "resume_failed"
+    conn = sqlite3.connect(client.app.state.settings.db_path)
+    try:
+        conn.execute(
+            "UPDATE handoff_cases SET resume_started_at='2000-01-01T00:00:00+00:00' WHERE case_id=?", (case_id,)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    retried = post_event(client, "ticket.action", data, event_id="evt_crashed_action")
+    assert retried.status_code == 200 and retried.json()["queue_state"] == "answered"
+    assert case_snapshot(client, case_id)[0]["resume_count"] == 1
 
 
 # --- refusals --------------------------------------------------------------------------------------------------------
@@ -351,6 +544,19 @@ def test_bad_signature_window_token_or_scope_change_nothing(wired, settings):
     unconfigured = post_event(client, "ticket.assigned", data)
     assert unconfigured.status_code == 503 and unconfigured.json()["error"]["code"] == "webhook_not_configured"
     assert case_snapshot(client, case_id) == before
+
+
+@pytest.mark.parametrize("invalid", ["t=²,v1=00", "t=999999999999999999999999,v1=00", "t={now},v1=é"])
+def test_malformed_signature_returns_401_without_effect(wired, invalid):
+    client, _, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    before = case_snapshot(client, case_id)
+    body, headers = signed("ticket.assigned", ticket(case_id))
+    headers["X-Signature"] = invalid.format(now=int(time.time())).encode("latin-1")
+    response = client.post(EVENTS_PATH, content=body, headers=headers | service(client))
+    assert response.status_code == 401 and response.json()["error"]["code"] == "invalid_signature"
+    assert case_snapshot(client, case_id) == before
+    assert rows(client, "SELECT * FROM webhook_inbox") == []
 
 
 def test_unknown_operator_case_event_and_payload(wired):

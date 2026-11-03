@@ -56,9 +56,9 @@ def verify_signature(
     timestamp, candidates = None, []
     for part in header.split(","):
         key, _, value = part.strip().partition("=")
-        if key == "t" and value.isdigit():
+        if key == "t" and value.isascii() and value.isdecimal() and len(value) <= 20:
             timestamp = int(value)
-        elif key == "v1" and value:
+        elif key == "v1" and len(value) == 64 and all(c in "0123456789abcdef" for c in value):
             candidates.append(value)
     if timestamp is None or not candidates or abs(now - timestamp) > tolerance_s:
         return False
