@@ -5,8 +5,8 @@ Envelope `{"id": "evt_…", "type", "created_at", "data"}`; headers `X-Webhook-I
 Outgoing events (`handoff.created`, `conversation.replied`, `handoff.closed`) are built in the request with masked
 text and sent by a short thread outside it: up to `WEBHOOK_MAX_ATTEMPTS` attempts (network error, timeout, 5xx or
 429 are retried; another 4xx is final), each attempt recorded in `webhook_deliveries`. The merchant's copy of
-`conversation.replied` omits `operator_id` (D29): one event id, a body per receiver, each signed with its secret. An empty URL sends nothing; a
-receiver that is down never raises in the merchant's or the operator's request."""
+`conversation.replied` omits `operator_id` (D29): one event id, a body per receiver, each signed with its secret.
+An empty URL sends nothing; a receiver that is down never raises in the merchant's or the operator's request."""
 
 from __future__ import annotations
 
