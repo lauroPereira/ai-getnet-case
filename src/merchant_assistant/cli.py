@@ -30,6 +30,13 @@ V080_QA_MAX_CAP_USD = 1.00
 V080_HOLDOUT_CASE_COUNT = 25  # sealed 72a metadata; estimate uses the count without opening the holdout JSONL
 
 
+def _evaluation_budget_runtime_path(settings: Settings) -> Path:
+    try:
+        return settings.budget_runtime_path
+    except ValueError as exc:
+        raise SystemExit(f"eval: {exc}") from None
+
+
 def _evaluation_budget_guard(
     settings: Settings,
     campaign_id: str | None = None,
@@ -41,7 +48,11 @@ def _evaluation_budget_guard(
     if campaign_id is None:
         if campaign_cap_usd != V080_QA_CAP_USD or estimate_report is not None:
             raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
-        return _budget_guard(settings)
+        from merchant_assistant.orchestration.budget import BudgetGuard
+
+        return BudgetGuard(
+            _evaluation_budget_runtime_path(settings) / "budget.sqlite3", settings.budget_limit_usd
+        )
     if campaign_id != V080_QA_CAMPAIGN:
         raise SystemExit(f"eval: unsupported campaign {campaign_id!r}; the only fixed campaign is {V080_QA_CAMPAIGN}.")
     if campaign_cap_usd == V080_QA_CAP_USD:
@@ -67,9 +78,12 @@ def _evaluation_budget_guard(
         FixedBudgetGuard,
     )
 
-    primary = _budget_guard(settings)
+    budget_dir = _evaluation_budget_runtime_path(settings)
+    from merchant_assistant.orchestration.budget import BudgetGuard
+
+    primary = BudgetGuard(budget_dir / "budget.sqlite3", settings.budget_limit_usd)
     campaign = FixedBudgetGuard(
-        settings.runtime_path / f"budget-{V080_QA_CAMPAIGN}.sqlite3",
+        budget_dir / f"budget-{V080_QA_CAMPAIGN}.sqlite3",
         campaign_cap_usd,
         cap_id=V080_QA_CAMPAIGN,
         cap_ceiling_usd=cap_ceiling_usd,
@@ -402,7 +416,12 @@ def cmd_eval(settings: Settings, args) -> int:
         if case_limit < 1:
             raise SystemExit("eval: --limit must be at least 1.")
         cases = cases[:case_limit]
-    judge = _eval_judge(settings, scripted=args.scripted) if args.judge else None  # refuses before anything runs
+    budget = (
+        _eval_budget_for_args(settings, args)
+        if not args.scripted or getattr(args, "campaign", None) is not None
+        else None
+    )
+    judge = _eval_judge(settings, scripted=args.scripted) if args.judge else None  # refuses before any model call
     if args.scripted:
         from merchant_assistant.testing import offline_orchestrator
 
@@ -411,13 +430,12 @@ def cmd_eval(settings: Settings, args) -> int:
             update={"runtime_dir": tmp, "qdrant_url": ":memory:", "retrieval_min_score": 0.05}
         )
         orchestrator, _ = offline_orchestrator(offline)
-        if getattr(args, "campaign", None) is not None:
-            orchestrator.budget = _eval_budget_for_args(offline, args)
+        if budget is not None:
+            orchestrator.budget = budget
         mode, agent_provider, db_path = "scripted", "scripted", offline.db_path
     else:
         from merchant_assistant.main import build_orchestrator
 
-        budget = _eval_budget_for_args(settings, args) if getattr(args, "campaign", None) is not None else None
         orchestrator = build_orchestrator(settings, budget=budget)
         mode, agent_provider, db_path = "real", "openai", settings.db_path
     if judge is not None:
@@ -499,15 +517,14 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     name = _report_name(args, next(iter(splits)) if len(splits) == 1 else None)
     if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
         raise SystemExit(f"eval: the report {name}.json would overwrite the answers being graded; use another --name.")
+    budget = _eval_budget_for_args(settings, args) if not args.scripted else None
     judge = _eval_judge(
         settings, scripted=args.scripted, agent_model=source.get("model"), agent_provider=source.get("agent_provider")
     )
     if args.scripted:
         db_path, mode = Path(tempfile.mkdtemp(prefix="eval-")) / "merchant.sqlite3", "scripted"
     else:
-        judge.meter = BudgetMeter(
-            _eval_budget_for_args(settings, args), request_id="eval-judge-repeat"
-        )
+        judge.meter = BudgetMeter(budget, request_id="eval-judge-repeat")
         db_path, mode = settings.db_path, "real"
     graded = rejudge(rows, judge, args.judge_repeat)
     summary = summarize(graded)
@@ -556,6 +573,49 @@ def cmd_eval_estimate(settings: Settings, args) -> int:
     rows = report.get("cases") if isinstance(report, dict) else None
     if not isinstance(config, dict) or not config.get("judge") or not isinstance(rows, list):
         raise SystemExit("eval-estimate: source must be an eval report with judge measurements.")
+    judge_config = config.get("judge_config")
+    if (
+        config.get("mode") != "real"
+        or config.get("agent_provider") == "scripted"
+        or not isinstance(judge_config, dict)
+        or not isinstance(judge_config.get("provider"), str)
+        or not isinstance(judge_config.get("model"), str)
+        or judge_config.get("provider") == "scripted"
+        or judge_config.get("model") == "scripted-judge-v3"
+        or not isinstance(config.get("agent_provider"), str)
+        or not isinstance(config.get("model"), str)
+        or (config.get("agent_provider"), config.get("model"))
+        == (judge_config.get("provider"), judge_config.get("model"))
+    ):
+        raise SystemExit(
+            "eval-estimate: use a real paid sample with an independent judge; scripted reports "
+            "cannot set the QA cap."
+        )
+    if any(not isinstance(row, dict) for row in rows):
+        raise SystemExit("eval-estimate: report contains an invalid case row.")
+    if (
+        isinstance(config.get("repeat", 1), bool)
+        or config.get("repeat", 1) != 1
+        or any(row.get("repetition", 1) != 1 for row in rows)
+    ):
+        raise SystemExit("eval-estimate: use the single-run five-case measurement, not a repeated campaign report.")
+    first_rows = rows
+    if not first_rows:
+        raise SystemExit("eval-estimate: report has no first-run measurements.")
+    for row in first_rows:
+        judge_row = row.get("judge")
+        if not isinstance(judge_row, dict) or judge_row.get("state") != "completed":
+            raise SystemExit(f"eval-estimate: case {row.get('id', '?')} has an incomplete judge result.")
+        if (
+            judge_row.get("provider") != judge_config["provider"]
+            or judge_row.get("model") != judge_config["model"]
+            or not isinstance(judge_row.get("scores"), dict)
+            or not {"groundedness", "factual_correctness", "relevance", "usefulness"} <= set(judge_row["scores"])
+        ):
+            raise SystemExit(
+                f"eval-estimate: case {row.get('id', '?')} has an incomplete or "
+                "inconsistent judge result."
+            )
 
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
     all_cases = load_cases(
@@ -568,10 +628,28 @@ def cmd_eval_estimate(settings: Settings, args) -> int:
     )
     case_counts = dict(Counter(case.split for case in all_cases))
     case_counts["holdout_v080"] = V080_HOLDOUT_CASE_COUNT
+    followup_path = scenarios / "followup.jsonl"
     try:
-        projection = estimate_campaign_cost(rows, case_counts)
+        followups = [
+            json.loads(line)
+            for line in followup_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"eval-estimate: cannot read follow-up scenarios: {exc}") from None
+    if any(not isinstance(row, dict) or not isinstance(row.get("turns"), list) for row in followups):
+        raise SystemExit("eval-estimate: follow-up scenarios have an invalid format.")
+    try:
+        projection = estimate_campaign_cost(
+            rows,
+            case_counts,
+            followup_conversations=len(followups),
+            followup_turns=sum(len(row["turns"]) for row in followups),
+        )
     except (TypeError, ValueError) as exc:
         raise SystemExit(f"eval-estimate: {exc}") from None
+    if projection["measured_agent_cost_usd"] <= 0 or projection["measured_first_judge_cost_usd"] <= 0:
+        raise SystemExit("eval-estimate: both measured agent and completed judge costs must be positive.")
     estimated_cost = projection["estimated_cost_usd"]
     recommended_cap = 0.50 if estimated_cost <= 0.50 else 1.00 if estimated_cost <= 1.00 else None
     output = {

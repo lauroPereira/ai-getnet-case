@@ -16,7 +16,7 @@ from merchant_assistant.agents import replanner
 from merchant_assistant.api.schemas import MessageRequest
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.evaluation.runner import Case, _checks
-from merchant_assistant.orchestration.budget import BudgetExceeded, FixedBudgetGuard
+from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard, FixedBudgetGuard
 from merchant_assistant.testing import offline_orchestrator
 
 SOURCE_SCENARIOS = PROJECT_ROOT / "tests" / "scenarios"
@@ -58,6 +58,23 @@ def make_story_tree(tmp_path, monkeypatch):
         return str(runtime)
 
     monkeypatch.setattr(tempfile, "mkdtemp", fixed_tempdir)
+    return root
+
+
+def make_estimate_tree(tmp_path, monkeypatch):
+    root = tmp_path / "estimate-project"
+    scenarios = root / "tests" / "scenarios"
+    scenarios.mkdir(parents=True)
+    (scenarios / "challenge_examples.jsonl").write_text("", encoding="utf-8")
+    (scenarios / "core_cases.jsonl").write_text("", encoding="utf-8")
+    (scenarios / "business_journeys.jsonl").write_text(json.dumps(CONDITIONS_CASE) + "\n", encoding="utf-8")
+    (scenarios / "replan.jsonl").write_text(
+        "\n".join(json.dumps(row) for row in REPLAN_CASES) + "\n", encoding="utf-8"
+    )
+    (scenarios / "followup.jsonl").write_text(
+        (SOURCE_SCENARIOS / "followup.jsonl").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    monkeypatch.setattr(cli, "PROJECT_ROOT", root)
     return root
 
 
@@ -149,16 +166,6 @@ def test_story_runs_replanning_agent_and_judge_variations_and_synthetic_split(
     assert judged["summary"]["by_split"]["dev"]["n"] == 5
     capsys.readouterr()
 
-    estimate_path = tmp_path / "out" / "estimate.json"
-    estimate_args = argparse.Namespace(source=str(tmp_path / "out" / "agent.json"), out=str(estimate_path))
-    monkeypatch.setattr(cli, "V080_HOLDOUT_CASE_COUNT", 2)
-    assert cli.cmd_eval_estimate(settings, estimate_args) == 0
-    estimate = json.loads(capsys.readouterr().out)
-    assert estimate["measured_cases"] == 5 and estimate["agent_repetitions"] == 3
-    assert estimate["by_split"]["holdout_v080"]["cases"] == 2
-    assert estimate["by_split"]["holdout_v080"]["sample_source"] == "global sample fallback"
-    assert estimate["estimated_cost_usd"] == 0 and estimate["within_campaign_cap"] is True
-
     assert cli.cmd_eval(
         settings, eval_args(tmp_path, name="with-conversations", repeat=1, include_replan=True)
     ) == 0
@@ -168,6 +175,91 @@ def test_story_runs_replanning_agent_and_judge_variations_and_synthetic_split(
     holdout = json.loads((tmp_path / "out" / "synthetic-holdout.json").read_text(encoding="utf-8"))
     assert {row["split"] for row in holdout["cases"]} == {"holdout_v080"}
     assert holdout["summary"]["by_split"]["holdout_v080"]["n"] == 2
+
+
+def test_eval_estimate_requires_positive_real_measurements_and_projects_followups(
+    settings, tmp_path, monkeypatch, capsys
+):
+    root = make_estimate_tree(tmp_path, monkeypatch)
+    scenarios = root / "tests" / "scenarios"
+    assert not (scenarios / "holdout_v080.jsonl").exists()
+    monkeypatch.setattr(cli, "V080_HOLDOUT_CASE_COUNT", 2)
+    judge_config = {"provider": "deepseek", "model": "deepseek-flash", "independence": "different_provider"}
+    cases = [
+        {
+            "id": f"MEASURED-{index}",
+            "split": "dev",
+            "repetition": 1,
+            "cost_usd": 0.01,
+            "judge": {
+                "state": "completed",
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "cost_usd": 0.002,
+                "scores": {"groundedness": 4, "factual_correctness": 4, "relevance": 4, "usefulness": 4},
+            },
+        }
+        for index in range(1, 6)
+    ]
+    sample = {
+        "config": {
+            "mode": "real",
+            "model": "gpt-6-luna",
+            "agent_provider": "openai",
+            "judge": True,
+            "repeat": 1,
+            "judge_config": judge_config,
+        },
+        "cases": cases,
+    }
+    report_path = tmp_path / "real-sample.json"
+    out_path = tmp_path / "estimate.json"
+    args = argparse.Namespace(source=str(report_path), out=str(out_path))
+    report_path.write_text(json.dumps(sample), encoding="utf-8")
+    scripted = json.loads(json.dumps(sample))
+    scripted["config"].update(mode="scripted", agent_provider="scripted")
+    report_path.write_text(json.dumps(scripted), encoding="utf-8")
+    with pytest.raises(SystemExit, match="real paid sample"):
+        cli.cmd_eval_estimate(settings, args)
+    incomplete = json.loads(json.dumps(sample))
+    incomplete["cases"][0]["judge"]["state"] = "failed"
+    report_path.write_text(json.dumps(incomplete), encoding="utf-8")
+    with pytest.raises(SystemExit, match="incomplete judge result"):
+        cli.cmd_eval_estimate(settings, args)
+    inconsistent = json.loads(json.dumps(sample))
+    inconsistent["cases"][0]["judge"]["provider"] = "openai"
+    report_path.write_text(json.dumps(inconsistent), encoding="utf-8")
+    with pytest.raises(SystemExit, match="incomplete or inconsistent judge result"):
+        cli.cmd_eval_estimate(settings, args)
+    repeated = json.loads(json.dumps(sample))
+    repeated["config"]["repeat"] = 3
+    report_path.write_text(json.dumps(repeated), encoding="utf-8")
+    with pytest.raises(SystemExit, match="single-run five-case measurement"):
+        cli.cmd_eval_estimate(settings, args)
+    zero_cost = json.loads(json.dumps(sample))
+    for row in zero_cost["cases"]:
+        row["cost_usd"] = 0.0
+        row["judge"]["cost_usd"] = 0.0
+    report_path.write_text(json.dumps(zero_cost), encoding="utf-8")
+    with pytest.raises(SystemExit, match="costs must be positive"):
+        cli.cmd_eval_estimate(settings, args)
+    report_path.write_text(json.dumps(sample), encoding="utf-8")
+    assert cli.cmd_eval_estimate(settings, args) == 0
+    estimate = json.loads(capsys.readouterr().out)
+    assert estimate["measured_cases"] == 5
+    assert estimate["estimated_cost_usd"] == pytest.approx(0.394)
+    assert estimate["followup_conversations"] == {
+        "conversations": 4,
+        "turns": 10,
+        "runs_per_turn": 1,
+        "mean_agent_cost_per_turn_usd": 0.01,
+        "agent_cost_usd": 0.1,
+        "judge_runs": 0,
+        "judge_cost_usd": 0.0,
+        "formula": "followup_turns * global_measured_mean_agent_cost; no judge",
+        "estimated_cost_usd": 0.1,
+    }
+    assert not (scenarios / "holdout_v080.jsonl").exists()
 
 
 def test_simple_and_forced_loop_follow_the_story_limits(settings, monkeypatch):
@@ -212,28 +304,52 @@ def test_simple_and_forced_loop_follow_the_story_limits(settings, monkeypatch):
     assert [call.spec.agent for call in loop_llm.calls].count("replan") == 3
 
 
-def test_v080_campaign_cap_is_one_time_and_combined_with_primary_ledger(settings):
-    guard = cli._evaluation_budget_guard(settings, "v080-qa")
-    assert guard.remaining() == pytest.approx(0.5)
-    reservation = guard.reserve(request_id="t73", agent="router", model="test", amount=0.2)
-    guard.settle(reservation, 0.15)
-    assert guard.primary.spent() == guard.campaign.guard.spent() == pytest.approx(0.15)
-    assert guard.remaining() == pytest.approx(0.35)
+def test_v080_campaign_reuses_the_persistent_primary_and_cap_when_runtime_changes(settings, tmp_path):
+    budget_dir = tmp_path / "project-budget"
+    settings = settings.model_copy(
+        update={
+            "data_dir": tmp_path / "data",
+            "runtime_dir": tmp_path / "qa-runtime-one",
+            "budget_runtime_dir": budget_dir,
+        }
+    )
+    primary_path = budget_dir / "budget.sqlite3"
+    prior = BudgetGuard(primary_path, settings.budget_limit_usd)
+    history = prior.reserve(request_id="history", agent="router", model="test", amount=0.2)
+    prior.settle(history, 0.2)
 
-    remounted = cli._evaluation_budget_guard(settings, "v080-qa")
-    assert remounted.campaign.guard.spent() == pytest.approx(0.15)
+    sample_budget = cli._eval_budget_for_args(settings, eval_args(tmp_path))
+    assert sample_budget.path == str(primary_path) and sample_budget.spent() == pytest.approx(0.2)
+    first = cli._evaluation_budget_guard(settings, "v080-qa")
+    reservation = first.reserve(request_id="t73", agent="router", model="test", amount=0.1)
+    first.settle(reservation, 0.1)
+    assert first.primary.spent() == pytest.approx(0.3)
+    assert first.campaign.guard.spent() == pytest.approx(0.1)
+
+    isolated = settings.model_copy(update={"runtime_dir": tmp_path / "qa-runtime-two"})
+    remounted = cli._evaluation_budget_guard(isolated, "v080-qa")
+    assert remounted.primary.path == first.primary.path == str(primary_path)
+    assert remounted.campaign.guard.path == first.campaign.guard.path == str(
+        budget_dir / "budget-v080-qa.sqlite3"
+    )
+    assert remounted.primary.spent() == pytest.approx(0.3)
+    assert remounted.campaign.guard.spent() == pytest.approx(0.1)
+    assert remounted.remaining() == pytest.approx(0.4)
     with pytest.raises(BudgetExceeded):
-        remounted.reserve(request_id="t73-over", agent="judge", model="test", amount=0.36)
-    assert remounted.primary.spent() == pytest.approx(0.15)
-    cap_path = settings.runtime_path / "budget-v080-qa.sqlite3"
-    with pytest.raises(ValueError):
-        FixedBudgetGuard(cap_path, 0.49, cap_id="v080-qa", cap_ceiling_usd=0.5)
-    with pytest.raises(SystemExit, match="unsupported campaign"):
-        cli._evaluation_budget_guard(settings, "other-qa")
+        remounted.reserve(request_id="t73-over", agent="judge", model="test", amount=0.41)
+    assert remounted.primary.spent() == pytest.approx(0.3)
+    assert remounted.campaign.guard.spent() == pytest.approx(0.1)
 
-    higher_estimate = settings.runtime_path / "higher-estimate.json"
+    lower_cap = budget_dir / "budget-v080-qa.sqlite3"
+    with pytest.raises(ValueError):
+        FixedBudgetGuard(lower_cap, 0.49, cap_id="v080-qa", cap_ceiling_usd=0.5)
+    with pytest.raises(SystemExit, match="unsupported campaign"):
+        cli._evaluation_budget_guard(isolated, "other-qa")
+
+    higher_budget = tmp_path / "separate-project-budget"
+    higher_estimate = tmp_path / "higher-estimate.json"
     higher_estimate.write_text(json.dumps({"estimated_cost_usd": 0.75}), encoding="utf-8")
-    higher_settings = settings.model_copy(update={"runtime_dir": settings.runtime_path / "higher-cap"})
+    higher_settings = isolated.model_copy(update={"budget_runtime_dir": higher_budget})
     larger = cli._evaluation_budget_guard(
         higher_settings,
         "v080-qa",
@@ -241,6 +357,20 @@ def test_v080_campaign_cap_is_one_time_and_combined_with_primary_ledger(settings
         estimate_report=higher_estimate,
     )
     assert larger.remaining() == pytest.approx(1.0)
+
+
+def test_paid_sample_refuses_isolated_runtime_without_a_persistent_budget_dir(settings, tmp_path, monkeypatch):
+    isolated = settings.model_copy(
+        update={
+            "data_dir": tmp_path / "data",
+            "runtime_dir": tmp_path / "runtime-isolated",
+            "budget_runtime_dir": None,
+        }
+    )
+    monkeypatch.setattr(cli, "_eval_judge", lambda *args, **kwargs: pytest.fail("provider initialized"))
+    args = eval_args(tmp_path, scripted=False, judge=True, include_replan=True, limit=5, no_conversations=True)
+    with pytest.raises(SystemExit, match="BUDGET_RUNTIME_DIR"):
+        cli.cmd_eval(isolated, args)
 
 
 def test_package_version_and_compose_services_are_ready_for_v080_qa():

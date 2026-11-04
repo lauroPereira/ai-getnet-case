@@ -15,15 +15,23 @@ def estimate_campaign_cost(
     case_counts: dict[str, int],
     *,
     min_measured_cases: int = MIN_MEASURED_CASES,
+    followup_conversations: int = 0,
+    followup_turns: int = 0,
 ) -> dict:
     """Project the v0.8.0 campaign from first-run measurements, keeping each split visible.
 
     The first D12 phase runs each case three times and judges every answer once. The second phase judges the first
     answer three times. A case measured once therefore contributes three agent costs and six judge costs.
     Splits without a sample use the global sample means; the report records that fallback explicitly.
+    Follow-up conversations run once; their turns use the global agent mean and do not add judge calls.
     """
     if not isinstance(case_counts, dict) or not case_counts:
         raise ValueError("At least one split with a case count is required.")
+    for name, value in (("followup_conversations", followup_conversations), ("followup_turns", followup_turns)):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{name} must be a non-negative integer.")
+    if followup_turns and not followup_conversations:
+        raise ValueError("Follow-up turns require at least one conversation.")
 
     counts: dict[str, int] = {}
     for split, count in case_counts.items():
@@ -68,8 +76,10 @@ def estimate_campaign_cost(
         by_split[row["split"]].append(normalized)
         all_costs.append(normalized)
 
-    global_agent = sum(agent for agent, _ in all_costs) / len(all_costs)
-    global_judge = sum(judge for _, judge in all_costs) / len(all_costs)
+    measured_agent_cost = sum(agent for agent, _ in all_costs)
+    measured_judge_cost = sum(judge for _, judge in all_costs)
+    global_agent = measured_agent_cost / len(all_costs)
+    global_judge = measured_judge_cost / len(all_costs)
     split_estimates = {}
     for split, count in sorted(counts.items()):
         sample = by_split.get(split)
@@ -94,11 +104,26 @@ def estimate_campaign_cost(
             "estimated_cost_usd": round(agent_total + first_phase_judge_total + judge_repeat_total, 8),
         }
 
+    estimated_case_cost = sum(part["estimated_cost_usd"] for part in split_estimates.values())
+    followup_agent_cost = followup_turns * global_agent
     return {
         "measured_cases": len(first_rows),
+        "measured_agent_cost_usd": round(measured_agent_cost, 8),
+        "measured_first_judge_cost_usd": round(measured_judge_cost, 8),
         "agent_repetitions": AGENT_REPETITIONS,
         "judge_repetitions": JUDGE_REPETITIONS,
         "formula_per_case": "3 * measured_agent_cost + 6 * measured_first_judge_cost",
         "by_split": split_estimates,
-        "estimated_cost_usd": round(sum(part["estimated_cost_usd"] for part in split_estimates.values()), 8),
+        "followup_conversations": {
+            "conversations": followup_conversations,
+            "turns": followup_turns,
+            "runs_per_turn": 1,
+            "mean_agent_cost_per_turn_usd": round(global_agent, 8),
+            "agent_cost_usd": round(followup_agent_cost, 8),
+            "judge_runs": 0,
+            "judge_cost_usd": 0.0,
+            "formula": "followup_turns * global_measured_mean_agent_cost; no judge",
+            "estimated_cost_usd": round(followup_agent_cost, 8),
+        },
+        "estimated_cost_usd": round(estimated_case_cost + followup_agent_cost, 8),
     }

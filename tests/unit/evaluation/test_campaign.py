@@ -25,9 +25,13 @@ def test_campaign_estimate_applies_both_d12_phases_and_keeps_splits_separate():
         measured("D1", "dev", 99.0, 99.0, repetition=2),  # D12 repeats never inflate the five-case sample.
     ]
 
-    estimate = estimate_campaign_cost(rows, {"dev": 10, "holdout": 5, "holdout_v080": 20})
+    estimate = estimate_campaign_cost(
+        rows, {"dev": 10, "holdout": 5, "holdout_v080": 20}, followup_conversations=4, followup_turns=10
+    )
 
     assert estimate["measured_cases"] == 5
+    assert estimate["measured_agent_cost_usd"] == 0.13
+    assert estimate["measured_first_judge_cost_usd"] == 0.015
     assert estimate["agent_repetitions"] == estimate["judge_repetitions"] == 3
     assert estimate["formula_per_case"] == "3 * measured_agent_cost + 6 * measured_first_judge_cost"
     assert estimate["by_split"]["dev"] == {
@@ -44,7 +48,18 @@ def test_campaign_estimate_applies_both_d12_phases_and_keeps_splits_separate():
     assert estimate["by_split"]["holdout"]["estimated_cost_usd"] == 0.54
     assert estimate["by_split"]["holdout_v080"]["sample_source"] == "global sample fallback"
     assert estimate["by_split"]["holdout_v080"]["estimated_cost_usd"] == 1.92
-    assert estimate["estimated_cost_usd"] == 3.24
+    assert estimate["followup_conversations"] == {
+        "conversations": 4,
+        "turns": 10,
+        "runs_per_turn": 1,
+        "mean_agent_cost_per_turn_usd": 0.026,
+        "agent_cost_usd": 0.26,
+        "judge_runs": 0,
+        "judge_cost_usd": 0.0,
+        "formula": "followup_turns * global_measured_mean_agent_cost; no judge",
+        "estimated_cost_usd": 0.26,
+    }
+    assert estimate["estimated_cost_usd"] == 3.5
 
 
 def test_campaign_estimate_requires_five_distinct_first_run_cases():

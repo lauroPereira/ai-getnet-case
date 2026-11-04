@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     data_dir: Path = PROJECT_ROOT / "data"
     prompts_dir: Path = PROJECT_ROOT / "prompts"
     runtime_dir: Path | None = None
+    budget_runtime_dir: Path | None = None  # persistent budget ledgers, independent of isolated QA runtime
     checkpoints_path: Path | None = None  # v0.7.0: graph checkpoints of handed-off cases (default: runtime dir)
 
     qdrant_url: str | None = None
@@ -87,6 +88,7 @@ class Settings(BaseSettings):
 
     @field_validator(
         "runtime_dir",
+        "budget_runtime_dir",
         "checkpoints_path",
         "jwt_private_key_path",
         "jwt_jwks_url",
@@ -106,6 +108,18 @@ class Settings(BaseSettings):
     @property
     def runtime_path(self) -> Path:
         return self.runtime_dir or (self.data_dir / "runtime")
+
+    @property
+    def budget_runtime_path(self) -> Path:
+        if self.budget_runtime_dir is not None:
+            return self.budget_runtime_dir
+        default_runtime = self.data_dir / "runtime"
+        if self.runtime_dir is None or self.runtime_dir == default_runtime:
+            return self.runtime_path
+        raise ValueError(
+            "RUNTIME_DIR is isolated but BUDGET_RUNTIME_DIR is unset; set it to the persistent project budget "
+            "directory before paid evaluation."
+        )
 
     @property
     def checkpoint_db_path(self) -> Path:
