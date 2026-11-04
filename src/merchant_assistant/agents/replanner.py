@@ -1,11 +1,11 @@
 """Replanner (task 69; spec v0.8.0 D1 to D7, ADR 0019): after `knowledge`, `web` and `support`, a step observes what
 came back and decides what happens next: finish, another specialist, the web, a human, or a question to the merchant.
 
-Named rules settle the clear cases without a model call. `replan.v1` decides only when no rule applies or two rules
-disagree about the next step. Whatever decides, the guards come last: a specialist runs at most once per request (D5),
-decisions that leave the Router's initial plan are limited to `MAX_PLAN_HOPS` (D6), and the request's own limits of
-calls, time and cost still hold. The decision, its reason, its origin (`rule:<name>` or `model`) and what was observed
-go to the trace (D7). Nothing here touches the review graph that resumes a handed-off case (D3)."""
+Named rules settle the clear cases without a model call. The `replan` prompt decides only when no rule applies or
+two rules disagree about the next step. Whatever decides, the guards come last: a specialist runs at most once per
+request (D5), decisions that leave the Router's initial plan are limited to `MAX_PLAN_HOPS` (D6), and the request's own
+limits of calls, time and cost still hold. The decision, its reason, its origin (`rule:<name>` or `model`) and what
+was observed go to the trace (D7). Nothing here touches the review graph that resumes a handed-off case (D3)."""
 
 from __future__ import annotations
 
@@ -308,7 +308,7 @@ RULES = (
 
 def apply_rules(o: Observed) -> list[Match]:
     """Every rule that applies, in rule order. One distinct `next` is a rule decision; none, or two that disagree,
-    goes to `replan.v1`."""
+    goes to the `replan` prompt."""
     return [match for rule in RULES if (match := rule(o)) is not None]
 
 

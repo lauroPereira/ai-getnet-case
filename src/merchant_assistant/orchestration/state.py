@@ -97,12 +97,15 @@ ReplanNext = Literal["finish", "knowledge", "web", "support", "escalate", "clari
 
 
 class ReplanDecision(BaseModel):
-    """What `replan.v1` returns when no rule settles the next step (task 69, spec v0.8.0 D2, D4)."""
+    """What the `replan` prompt returns when no rule settles the next step (task 69, spec v0.8.0 D2, D4)."""
 
     next: ReplanNext = Field(
         description="The next step: one specialist that has not run yet, or finish, escalate or clarify."
     )
-    reason: str = Field(description="One short sentence saying why, for the trace.")
+    reason: str = Field(
+        description="One short sentence saying why, for the trace. With finish and review=incomplete it is also "
+        "what the reply says could not be confirmed, so state that missing fact."
+    )
     review: Literal["complete", "incomplete"] = Field(
         description="complete only when the results collected so far answer the merchant's question."
     )

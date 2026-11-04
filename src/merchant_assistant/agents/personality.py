@@ -92,12 +92,16 @@ def deterministic_answer(state: GraphState, language: str, case_state: str | Non
     parts: list[str] = []
     if state.policy:
         parts.append(state.policy)
+    already_says_missing = False
     if state.knowledge and state.knowledge.mode != "procedure":  # procedure points are guidance for the support agent
         parts += state.knowledge.points or (
             [policy("no_evidence", language)] if state.knowledge.mode != "web" else [policy("unavailable", language)]
         )
+        already_says_missing = not state.knowledge.points
     if state.support:
         parts += state.support.points
+    if state.plan.get("gap") and not already_says_missing:  # the replanner declared something it could not confirm
+        parts.append(policy("unconfirmed", language))
     if state.escalation:
         parts.append(HANDOFF_LINE[language].format(protocol=state.escalation.protocol))
     return "\n".join(p for p in parts if p) or policy("unavailable", language)

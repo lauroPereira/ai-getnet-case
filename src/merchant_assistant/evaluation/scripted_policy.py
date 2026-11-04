@@ -411,7 +411,7 @@ def _web(call: ScriptedCall) -> dict | Exception:
     }
 
 
-# What the scripted planner prefers when `replan.v1` is asked (the rules disagree): a human, then the merchant's
+# What the scripted planner prefers when the `replan` prompt is asked (the rules disagree): a human, then the merchant's
 # account, then the official pages, then the web, then a question.
 REPLAN_PREFERENCE = ("escalate", "support", "knowledge", "web", "clarify")
 

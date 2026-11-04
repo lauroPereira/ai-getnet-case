@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from merchant_assistant.agents import replanner
+from merchant_assistant.agents.common import policy
 from merchant_assistant.api.schemas import MessageRequest
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.evaluation.runner import _checks, load_cases
@@ -182,7 +183,7 @@ def test_the_model_is_called_only_when_rules_disagree_or_none_applies(offline):
     assert body["agents"] == ["router", "knowledge", "customer_support", "personality"]
     spec = replan_calls(llm)[0].spec
     assert spec.agent == "replan" and spec.effort == "none" and spec.max_output_tokens <= 80
-    assert "replan@1" in [s["detail"].get("prompt") for s in trace["steps"] if s["step"] == "replan"]
+    assert "replan@2" in [s["detail"].get("prompt") for s in trace["steps"] if s["step"] == "replan"]
 
 
 def test_the_planner_unavailable_ends_with_what_was_collected(offline):
@@ -470,3 +471,144 @@ def test_the_review_graph_that_resumes_a_handed_off_case_has_no_replanning():
     nodes = set(build_review_graph(None).get_graph().nodes)
     assert {"human_review", "support", "personality", "output_guard"} <= nodes
     assert not nodes & {"replan", "web", "knowledge", "escalation"}  # D3: support -> personality, as in v0.7.0
+
+
+# --- task 72b, review of task 69, round 2 (P3): the declared gap, from the planner to the text ---------------------
+
+REASON = "the fee for 12 installments could not be confirmed"
+SIMPLE_PT = "Qual a diferença entre a Get Clássica e a Get Smart?"
+
+
+def model_decides(*answers, **extra):
+    """Rules off by the caller; the planner answers with `answers` in order, then closes with a complete finish."""
+    queue = iter(answers)
+    closing = {"next": "finish", "review": "complete", "reason": "the results answer it"}
+    return with_handlers(replan=lambda call: next(queue, closing), **extra)
+
+
+def personality_call(llm):
+    return next(c for c in llm.calls if c.spec.agent == "personality")
+
+
+@pytest.mark.parametrize("wanted", ["clarify", "escalate", "web", "support"])
+def test_only_a_finish_declares_the_models_reason_as_the_gap(offline, monkeypatch, wanted):
+    """Mutant A08: `clarify` (and the others) with an incomplete review must not turn the reason into the gap."""
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    incomplete = {"next": wanted, "review": "incomplete", "reason": REASON}
+    client, orchestrator, llm = offline(handler=model_decides(incomplete))
+    body, trace = handle(orchestrator, SIMPLE)
+    assert replan_steps(trace)[0]["next"] == wanted and body["answer"].strip()
+    assert "unconfirmed" not in personality_call(llm).spec.context["contributions"]
+
+
+@pytest.mark.parametrize("reason", ["", "   ", "\n\t "])
+def test_an_empty_reason_on_an_incomplete_finish_is_not_declared_as_an_empty_gap(offline, monkeypatch, reason):
+    """Mutant A09: nothing to say is not a gap; the Personality is not told to confirm an empty string."""
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    incomplete = {"next": "finish", "review": "incomplete", "reason": reason}
+    client, orchestrator, llm = offline(handler=model_decides(incomplete))
+    body, trace = handle(orchestrator, SIMPLE)
+    assert decisions(trace) == [("finish", "model", 0, "incomplete")]
+    assert "unconfirmed" not in personality_call(llm).spec.context["contributions"]
+    assert body["answer"].strip()
+
+
+def test_the_gap_is_in_what_the_personality_reads_and_its_prompt_says_to_state_it(offline, monkeypatch):
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    incomplete = {"next": "finish", "review": "incomplete", "reason": REASON}
+    client, orchestrator, llm = offline(handler=model_decides(incomplete))
+    handle(orchestrator, SIMPLE)
+    instructions = personality_call(llm).spec.instructions
+    assert '"unconfirmed"' in instructions and REASON in instructions
+    prompt = " ".join((PROJECT_ROOT / "prompts" / "personality.v5.md").read_text(encoding="utf-8").split())
+    assert "If the contributions include `unconfirmed`" in prompt
+    assert "tell the merchant plainly, in their language, what you could not confirm" in prompt
+    assert "never fill it in with a guess and never present it as confirmed" in prompt
+
+
+@pytest.mark.parametrize(("message", "language"), [(SIMPLE, "en"), (SIMPLE_PT, "pt")])
+def test_the_fallback_answer_says_what_could_not_be_confirmed(offline, monkeypatch, message, language):
+    """The Personality is down, so the deterministic fallback writes the reply: it must still carry the gap."""
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    incomplete = {"next": "finish", "review": "incomplete", "reason": REASON}
+    down = lambda call: LLMError("personality down")  # noqa: E731
+    client, orchestrator, llm = offline(handler=model_decides(incomplete, personality=down))
+    body, trace = handle(orchestrator, message)
+    assert body["language"] == language and body["status"] == "answered"
+    assert body["answer"].endswith(policy("unconfirmed", language))
+    assert len(body["answer"]) > len(policy("unconfirmed", language))  # the confirmed part comes first
+
+
+def test_the_fallback_does_not_say_it_twice_when_the_knowledge_part_already_says_nothing_was_found(offline):
+    base = stubborn()
+    handler = lambda call: LLMError("personality down") if call.spec.agent == "personality" else base(call)  # noqa: E731
+    client, orchestrator, llm = offline(handler=handler)
+    body, trace = handle(orchestrator, UNKNOWN_PRODUCT)
+    assert decisions(trace)[-1][:2] == ("finish", "rule:gap_declared")
+    assert policy("unconfirmed", "pt") not in body["answer"]
+    assert body["answer"].strip() and "\n" not in body["answer"]
+
+
+def test_the_fallback_is_unchanged_when_nothing_was_declared(offline):
+    down = lambda call: LLMError("personality down")  # noqa: E731
+    client, orchestrator, llm = offline(handler=with_handlers(personality=down))
+    body, trace = handle(orchestrator, SIMPLE)
+    assert decisions(trace) == [("finish", "rule:complete", 0, "complete")]
+    assert policy("unconfirmed", "en") not in body["answer"] and body["answer"].strip()
+
+
+def test_replan_v2_tells_the_planner_its_reason_may_reach_the_merchant_and_v1_is_left_alone():
+    from merchant_assistant.orchestration.state import ReplanDecision
+
+    v2 = " ".join((PROJECT_ROOT / "prompts" / "replan.v2.md").read_text(encoding="utf-8").split())
+    assert v2.startswith("--- id: replan version: 2 ---")
+    assert 'With `finish` and review "incomplete" it is also what the reply tells the merchant' in v2
+    assert "could not be confirmed, so write that missing fact in plain words" in v2
+    v1 = " ".join((PROJECT_ROOT / "prompts" / "replan.v1.md").read_text(encoding="utf-8").split())
+    assert v1.startswith("--- id: replan version: 1 ---") and "for the trace. Keep the whole answer short." in v1
+    description = ReplanDecision.model_json_schema()["properties"]["reason"]["description"]
+    assert "for the trace" in description and "could not be confirmed" in description
+
+
+# --- task 72b, review of task 69, round 2 (P3): REPLAN-WEB accepts honest admissions, not an invented yes -----------
+
+HONEST_WEB_ANSWERS = [
+    "Não encontrei informações sobre a Get XYZ nas fontes que consultei.",
+    "Não consegui encontrar informações confiáveis sobre a Get XYZ.",
+    "Não foi possível confirmar se a Get XYZ aceita pagamento por aproximação.",
+    "Não foi possível encontrar essa informação em fontes confiáveis.",
+    "Não há informações públicas sobre esse modelo, então não posso confirmar.",
+    "Uma página de terceiros diz que a Get XYZ aceita pagamento por aproximação (NFC), mas não é uma fonte oficial.",
+]
+INVENTED_WEB_ANSWERS = [
+    "Sim, a Get XYZ aceita pagamento por aproximação.",
+    "Sim, aceita NFC e carteiras digitais.",
+    "A Get XYZ aceita NFC.",
+    "A Get XYZ tem NFC e é compatível com Apple Pay.",
+    "A Get XYZ é ótima, aceita tudo.",
+    "Não encontrei fontes oficiais, mas sim, a Get XYZ aceita pagamento por aproximação.",
+    "Não consegui confirmar na página oficial, mas sim, aceita pagamento por aproximação.",
+    "Não localizei a página oficial, porém a Get XYZ possui NFC.",
+]
+
+
+def web_label_checks(answer):
+    case = REPLAN_CASES["REPLAN-WEB"]
+    body = {"answer": answer, "route": "knowledge", "status": "answered", "language": "pt", "sources": []}
+    return _checks(case, body, {"steps": [], "detail": {}})
+
+
+@pytest.mark.parametrize("answer", HONEST_WEB_ANSWERS)
+def test_the_web_label_accepts_an_honest_admission_or_a_claim_named_as_third_party(answer):
+    checks = web_label_checks(answer)
+    assert checks["content_ok"] and checks["forbidden_ok"], answer
+
+
+@pytest.mark.parametrize("answer", INVENTED_WEB_ANSWERS)
+def test_the_web_label_rejects_an_invented_yes_for_the_fictional_product(answer):
+    checks = web_label_checks(answer)
+    assert not (checks["content_ok"] and checks["forbidden_ok"]), answer
+
+
+def test_nfc_alone_no_longer_satisfies_the_web_label():
+    assert not web_label_checks("A maquininha tem NFC.")["content_ok"]
