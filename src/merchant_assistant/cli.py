@@ -24,6 +24,68 @@ def _budget_guard(settings: Settings):
     return BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd)
 
 
+V080_QA_CAMPAIGN = "v080-qa"
+V080_QA_CAP_USD = 0.50
+V080_QA_MAX_CAP_USD = 1.00
+V080_HOLDOUT_CASE_COUNT = 25  # sealed 72a metadata; estimate uses the count without opening the holdout JSONL
+
+
+def _evaluation_budget_guard(
+    settings: Settings,
+    campaign_id: str | None = None,
+    *,
+    campaign_cap_usd: float = V080_QA_CAP_USD,
+    estimate_report: str | Path | None = None,
+):
+    """Return the installation ledger, optionally combined with the one-time v0.8.0 QA cap."""
+    if campaign_id is None:
+        if campaign_cap_usd != V080_QA_CAP_USD or estimate_report is not None:
+            raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
+        return _budget_guard(settings)
+    if campaign_id != V080_QA_CAMPAIGN:
+        raise SystemExit(f"eval: unsupported campaign {campaign_id!r}; the only fixed campaign is {V080_QA_CAMPAIGN}.")
+    if campaign_cap_usd == V080_QA_CAP_USD:
+        cap_ceiling_usd = V080_QA_CAP_USD
+    elif campaign_cap_usd == V080_QA_MAX_CAP_USD:
+        if estimate_report is None:
+            raise SystemExit("eval: a USD 1.00 v080-qa cap requires --campaign-estimate from the measured cost report.")
+        try:
+            estimate = json.loads(Path(estimate_report).read_text(encoding="utf-8"))["estimated_cost_usd"]
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise SystemExit(f"eval: cannot read --campaign-estimate: {exc}") from None
+        if isinstance(estimate, bool) or not isinstance(estimate, (int, float)) or not 0.50 < estimate <= 1.00:
+            raise SystemExit(
+    "eval: USD 1.00 is allowed only when the measured campaign estimate is "
+    "above USD 0.50 and at most USD 1.00."
+)
+        cap_ceiling_usd = V080_QA_MAX_CAP_USD
+    else:
+        raise SystemExit("eval: --campaign-cap-usd must be 0.50 or 1.00.")
+
+    from merchant_assistant.orchestration.budget import (
+        CombinedBudgetGuard,
+        FixedBudgetGuard,
+    )
+
+    primary = _budget_guard(settings)
+    campaign = FixedBudgetGuard(
+        settings.runtime_path / f"budget-{V080_QA_CAMPAIGN}.sqlite3",
+        campaign_cap_usd,
+        cap_id=V080_QA_CAMPAIGN,
+        cap_ceiling_usd=cap_ceiling_usd,
+    )
+    return CombinedBudgetGuard(primary, campaign)
+
+
+def _eval_budget_for_args(settings: Settings, args):
+    return _evaluation_budget_guard(
+        settings,
+        getattr(args, "campaign", None),
+        campaign_cap_usd=getattr(args, "campaign_cap_usd", V080_QA_CAP_USD),
+        estimate_report=getattr(args, "campaign_estimate", None),
+    )
+
+
 def build_embedder(settings: Settings, *, fake: bool = False, budget=None):
     from merchant_assistant.rag.embed import HashEmbedder, OpenAIEmbedder
 
@@ -313,19 +375,33 @@ def cmd_eval(settings: Settings, args) -> int:
         write_report,
     )
 
+    if getattr(args, "campaign", None) is None and (
+        getattr(args, "campaign_cap_usd", V080_QA_CAP_USD) != V080_QA_CAP_USD
+        or getattr(args, "campaign_estimate", None) is not None
+    ):
+        raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
     if getattr(args, "judge_repeat", None) is not None:
         return cmd_eval_rejudge(settings, args)
     repeat = getattr(args, "repeat", 1)
     if repeat < 1:
         raise SystemExit("eval: --repeat must be at least 1.")
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
-    cases = load_cases(
-        [scenarios / "challenge_examples.jsonl", scenarios / "core_cases.jsonl", scenarios / "business_journeys.jsonl"]
-    )
+    case_files = [
+    scenarios / name
+    for name in ("challenge_examples.jsonl", "core_cases.jsonl", "business_journeys.jsonl")
+]
+    if getattr(args, "include_replan", False):
+        case_files.insert(0, scenarios / "replan.jsonl")
+    cases = load_cases(case_files)
     if args.split == "holdout_v080":  # reported apart (D14): never part of `all`, and without the dev conversations
         cases = load_cases([scenarios / "holdout_v080.jsonl"])
     elif args.split != "all":
         cases = [c for c in cases if c.split == args.split]
+    case_limit = getattr(args, "limit", None)
+    if case_limit is not None:
+        if case_limit < 1:
+            raise SystemExit("eval: --limit must be at least 1.")
+        cases = cases[:case_limit]
     judge = _eval_judge(settings, scripted=args.scripted) if args.judge else None  # refuses before anything runs
     if args.scripted:
         from merchant_assistant.testing import offline_orchestrator
@@ -335,11 +411,14 @@ def cmd_eval(settings: Settings, args) -> int:
             update={"runtime_dir": tmp, "qdrant_url": ":memory:", "retrieval_min_score": 0.05}
         )
         orchestrator, _ = offline_orchestrator(offline)
+        if getattr(args, "campaign", None) is not None:
+            orchestrator.budget = _eval_budget_for_args(offline, args)
         mode, agent_provider, db_path = "scripted", "scripted", offline.db_path
     else:
         from merchant_assistant.main import build_orchestrator
 
-        orchestrator = build_orchestrator(settings)
+        budget = _eval_budget_for_args(settings, args) if getattr(args, "campaign", None) is not None else None
+        orchestrator = build_orchestrator(settings, budget=budget)
         mode, agent_provider, db_path = "real", "openai", settings.db_path
     if judge is not None:
         judge.meter = BudgetMeter(orchestrator.budget)
@@ -356,13 +435,19 @@ def cmd_eval(settings: Settings, args) -> int:
         "judge": bool(judge),
         "judge_config": judge.config() if judge else None,
         "repeat": repeat,
+        "limit": case_limit,
+        "include_replan": bool(getattr(args, "include_replan", False)),
+        "campaign": getattr(args, "campaign", None),
+        "campaign_cap_usd": getattr(args, "campaign_cap_usd", V080_QA_CAP_USD)
+        if getattr(args, "campaign", None)
+        else None,
         "cases": len(cases),
     }
     md, js = write_report(rows, summary, Path(args.out), _report_name(args), config)
     print(json.dumps(summary["overall"], indent=1))
     if judge is not None:
         _store_judgements(db_path, judge, rows, persist_judgements)
-    if not args.no_conversations and args.split != "holdout_v080":
+    if not args.no_conversations and args.split != "holdout_v080" and case_limit is None:
         from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
 
         conversations = run_conversations(orchestrator, scenarios / "followup.jsonl")
@@ -390,6 +475,11 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         write_report,
     )
 
+    if getattr(args, "campaign", None) is None and (
+        getattr(args, "campaign_cap_usd", V080_QA_CAP_USD) != V080_QA_CAP_USD
+        or getattr(args, "campaign_estimate", None) is not None
+    ):
+        raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
     if not args.answers_from:
         raise SystemExit("eval: --judge-repeat needs --answers-from <report.json> (a campaign that recorded answers).")
     if getattr(args, "repeat", 1) > 1:
@@ -415,7 +505,9 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     if args.scripted:
         db_path, mode = Path(tempfile.mkdtemp(prefix="eval-")) / "merchant.sqlite3", "scripted"
     else:
-        judge.meter = BudgetMeter(_budget_guard(settings), request_id="eval-judge-repeat")
+        judge.meter = BudgetMeter(
+            _eval_budget_for_args(settings, args), request_id="eval-judge-repeat"
+        )
         db_path, mode = settings.db_path, "real"
     graded = rejudge(rows, judge, args.judge_repeat)
     summary = summarize(graded)
@@ -431,6 +523,10 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         "repeat": 1,
         "judge_repeat": args.judge_repeat,
         "answers_from": Path(args.answers_from).name,
+        "campaign": getattr(args, "campaign", None),
+        "campaign_cap_usd": getattr(args, "campaign_cap_usd", V080_QA_CAP_USD)
+        if getattr(args, "campaign", None)
+        else None,
         "cases": len(graded),
     }
     md, js = write_report(graded, summary, Path(args.out), name, config)
@@ -438,6 +534,65 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     _store_judgements(db_path, judge, graded, persist_judgements)
     print(f"report: {md}")
     print(f"results: {js}")
+    return 0
+
+
+def cmd_eval_estimate(settings: Settings, args) -> int:
+    """Estimate all v0.8.0 splits from a report with five measured first-run cases.
+
+    No model is called.
+    """
+    from collections import Counter
+
+    from merchant_assistant.evaluation.campaign import estimate_campaign_cost
+    from merchant_assistant.evaluation.runner import load_cases
+
+    source = Path(args.source)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"eval-estimate: cannot read report: {exc}") from None
+    config = report.get("config") if isinstance(report, dict) else None
+    rows = report.get("cases") if isinstance(report, dict) else None
+    if not isinstance(config, dict) or not config.get("judge") or not isinstance(rows, list):
+        raise SystemExit("eval-estimate: source must be an eval report with judge measurements.")
+
+    scenarios = PROJECT_ROOT / "tests" / "scenarios"
+    all_cases = load_cases(
+        [
+            scenarios / "challenge_examples.jsonl",
+            scenarios / "core_cases.jsonl",
+            scenarios / "business_journeys.jsonl",
+            scenarios / "replan.jsonl",
+        ]
+    )
+    case_counts = dict(Counter(case.split for case in all_cases))
+    case_counts["holdout_v080"] = V080_HOLDOUT_CASE_COUNT
+    try:
+        projection = estimate_campaign_cost(rows, case_counts)
+    except (TypeError, ValueError) as exc:
+        raise SystemExit(f"eval-estimate: {exc}") from None
+    estimated_cost = projection["estimated_cost_usd"]
+    recommended_cap = 0.50 if estimated_cost <= 0.50 else 1.00 if estimated_cost <= 1.00 else None
+    output = {
+        "campaign": V080_QA_CAMPAIGN,
+        "campaign_cap_usd": recommended_cap,
+        "requires_supervisor_decision": estimated_cost > V080_QA_MAX_CAP_USD,
+        "source_report": source.name,
+        "agent_model": config.get("model"),
+        "judge": config.get("judge_config"),
+        **projection,
+    }
+    output["within_campaign_cap"] = recommended_cap is not None
+    rendered = json.dumps(output, indent=1, ensure_ascii=False)
+    output_path = getattr(args, "out", None)
+    if output_path is not None:
+        destination = Path(output_path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(rendered + "\n", encoding="utf-8")
+        output["estimate_file"] = str(destination)
+        rendered = json.dumps(output, indent=1, ensure_ascii=False)
+    print(rendered)
     return 0
 
 
@@ -702,6 +857,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout", "holdout_v080"], default="all")
     p_evalx.add_argument(
+        "--include-replan", action="store_true", help="Include the four v0.8.0 replanning scenarios in this evaluation."
+    )
+    p_evalx.add_argument(
         "--repeat", type=int, default=1, help="Run the agent N times per case; the judge grades each answer once."
     )
     p_evalx.add_argument(
@@ -713,6 +871,28 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
     )
+    p_evalx.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Run at most N cases for a measured cost sample; follow-up conversations are skipped.",
+    )
+    p_evalx.add_argument(
+        "--campaign",
+        choices=[V080_QA_CAMPAIGN],
+        default=None,
+        help="Reserve every paid call against the one-time v080-qa cap as well as the installation ledger.",
+    )
+    p_evalx.add_argument(
+        "--campaign-cap-usd",
+        type=float,
+        choices=[V080_QA_CAP_USD, V080_QA_MAX_CAP_USD],
+        default=V080_QA_CAP_USD,
+        help="Fixed cap for v080-qa (USD 1.00 requires a measured estimate above USD 0.50 and --campaign-estimate).",
+    )
+    p_evalx.add_argument(
+        "--campaign-estimate", default=None, help="Measured eval-estimate JSON; required for a USD 1.00 cap."
+    )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument(
         "--name",
@@ -721,6 +901,11 @@ def main(argv: list[str] | None = None) -> int:
         "the split of the answers appended, for example avaliacao-juiz-holdout-v080).",
     )
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
+    p_estimate = sub.add_parser(
+        "eval-estimate", help="Project the v0.8.0 campaign cost from a five-case measured eval report (no model call)."
+    )
+    p_estimate.add_argument("--from", dest="source", required=True, help="Measured eval report JSON.")
+    p_estimate.add_argument("--out", default=None, help="Optional JSON output path for the measured estimate.")
     p_calibrate = sub.add_parser(
         "eval-calibrate",
         help="Human calibration of the judge: --sample writes the CSV to rate, --import measures the agreement.",
@@ -785,6 +970,7 @@ def main(argv: list[str] | None = None) -> int:
         "ask": cmd_ask,
         "smoke": cmd_smoke,
         "eval": cmd_eval,
+        "eval-estimate": cmd_eval_estimate,
         "eval-calibrate": cmd_eval_calibrate,
         "migrate": cmd_migrate,
         "mcp": cmd_mcp,

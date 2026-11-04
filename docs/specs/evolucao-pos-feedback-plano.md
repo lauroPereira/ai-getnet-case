@@ -87,7 +87,7 @@ Adoções do `ampeli-sdd`, aplicadas uma vez, em uma tarefa de documentação e 
 | `prompts/` | `escalation.v2`, `personality.v4` | `judge.v3`, `replan.v1`, `router.v6`, `support.v8` | `rerank.v1` | `summary.v1` |
 | `cli.py`, `mcp_server.py` | `operator …`; `--access-key` | `eval --repeat`, `eval-calibrate` | `eval-retrieval --mode --split` | — |
 | `tests/` | identidade, escopos, fila, interrupção/retomada, idempotência, webhooks, reinício | replan, rubrica, agregação, calibração, holdout | híbrido, reranker, nDCG | métricas, alertas, retomada, resumo |
-| `docker-compose.yml`, `.env.example` | chaves sintéticas, URLs de webhook | `EVALUATOR_MODEL` | `RETRIEVAL_MODE`, `RERANK` | OTLP |
+| `docker-compose.yml`, `.env.example` | chaves sintéticas, URLs de webhook | `EVALUATOR_*`, `JUDGE_*` | `RETRIEVAL_MODE`, `RERANK` | OTLP |
 | Projeto web | aba Operador; login por papel | formulário de calibração | — | — |
 | `docs/` | spec complementar, tarefas, ADRs 0017 (identidade) e 0018 (interrupção e webhooks) | ADR 0019 (replanejamento) | ADR 0020 (híbrido) | — |
 
@@ -99,7 +99,7 @@ Não alterar: regras financeiras das ferramentas, snapshots públicos, ledger de
 
 **Migração 0010 (v0.7.0).** `webhook_outbox`: intenção durável de entrega por evento e destinatário, com corpo mascarado, estado e tentativas (outbox autorizada pelo responsável em 2026-11-03).
 
-**Migração 0011 (v0.8.0).** `run_evaluations.rubric_version`, `scores`, `repetition`, `unsupported_claim`; `calibrations`.
+**Migração 0011 (v0.8.0).** Acrescenta `scores`, `repetition` e `unsupported_claim` a `run_evaluations` e cria `calibrations`; `rubric_version` já existe desde a migração 0008.
 
 **Migração 0012 (v0.10.0).** `comparisons.cells` com estado por célula; `conversations.summary`, `last_summarized_message_id`.
 
@@ -152,7 +152,7 @@ Retorno por versão: tag anterior + migração descendente + remoção de `check
 
 ## Orçamento
 
-Acumulado do projeto: US$0,69 de US$5,00. Campanhas: v0.7.0 ≤ US$0,20; v0.8.0 ≤ US$0,50; v0.9.0 ≤ US$0,10; v0.10.0 ≤ US$0,10; v1.0.0 smoke ≤ US$0,05. Total adicional ≤ US$0,95. Testes automatizados sem chamadas pagas.
+Acumulado do projeto: US$0,69 de US$5,00. Campanhas: v0.7.0 ≤ US$0,20; v0.8.0 ≤ US$1,00 (uma única montagem acima de US$0,50 se a estimativa medida passar desse valor); v0.9.0 ≤ US$0,10; v0.10.0 ≤ US$0,10; v1.0.0 smoke ≤ US$0,05. Total adicional ≤ US$1,45. Testes automatizados sem chamadas pagas.
 
 ## Plano de implementação
 

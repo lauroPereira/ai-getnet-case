@@ -335,6 +335,15 @@ def test_campaign_cap_stays_within_the_fixed_half_dollar(tmp_path, bad):  # R1-0
         FixedBudgetGuard(tmp_path / "campaign.sqlite3", bad, cap_id="v050-qa")
 
 
+def test_one_dollar_campaign_ceiling_is_scoped_to_v080_qa(tmp_path):
+    v080 = FixedBudgetGuard(
+        tmp_path / "campaign-v080.sqlite3", 1.0, cap_id="v080-qa", cap_ceiling_usd=1.0
+    )
+    assert v080.remaining() == pytest.approx(1.0)
+    with pytest.raises(ValueError):
+        FixedBudgetGuard(tmp_path / "campaign-v070.sqlite3", 1.0, cap_id="v070-qa", cap_ceiling_usd=1.0)
+
+
 def test_campaign_cap_cannot_be_changed_in_either_direction_by_remounting(tmp_path):  # R1-06
     path = tmp_path / "campaign.sqlite3"
     first = FixedBudgetGuard(path, 0.15, cap_id="v050-qa")

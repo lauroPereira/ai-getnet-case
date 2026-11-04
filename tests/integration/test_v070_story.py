@@ -365,7 +365,7 @@ def test_story_moments_1_to_15_and_17(offline, settings, tmp_path):
     audited = db_rows(settings, "SELECT COUNT(*) AS n FROM audit_events WHERE tool NOT LIKE 'handoff%'")[0]["n"]
     assert traced > 1 and audited == traced
     versions = client.get("/ready").json()["versions"]
-    assert versions["schema"] == 11 and versions["app"] == "0.7.0"
+    assert versions["schema"] == 11 and versions["app"] == "0.8.0"
 
 
 # --- moment 16: restart between handing off and acting (two processes) ------------------------------------------------

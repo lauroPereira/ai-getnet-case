@@ -240,6 +240,7 @@ def scenario_tree(tmp_path, monkeypatch):
     )
     (scenarios / "core_cases.jsonl").write_text("\n".join(scenario_lines("UC14")) + "\n", encoding="utf-8")
     (scenarios / "business_journeys.jsonl").write_text("", encoding="utf-8")
+    (scenarios / "replan.jsonl").write_text("", encoding="utf-8")
     synthetic = []
     for new_id, line in zip(("SYN-H1", "SYN-H2"), scenario_lines("EX01", "EX03"), strict=True):
         synthetic.append(json.dumps(json.loads(line) | {"id": new_id, "split": "holdout_v080"}))

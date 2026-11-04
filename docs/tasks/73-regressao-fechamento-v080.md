@@ -30,6 +30,15 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 - [ ] Suíte estrita com código 0; nenhuma chamada paga.
 - [ ] Campanha `v080-qa` montável com US$0,50 e estimativa reproduzível (teste).
 
+## Roteiro do QA (D17)
+
+1. Com as validações determinísticas, o smoke Docker e os demais momentos aptos, meça cinco casos de `dev` com `eval --judge --include-replan --split dev --limit 5 --no-conversations --name v080-custo-amostra`.
+2. Gere a estimativa sem nova chamada de modelo: `merchant-assistant eval-estimate --from docs/evidence/v080-custo-amostra.json --out docs/evidence/v080-custo-estimativa.json`. Ela projeta os splits `dev`, `holdout` e `holdout_v080` (25 casos conforme a tarefa 72a), sem abrir o JSONL lacrado; separa as três execuções do agente e as três reavaliações do juiz sobre a primeira resposta, e usa a média global quando o sample não contém um split.
+3. Monte `v080-qa` uma vez com o teto recomendado no JSON. Até US$0,50, use `--campaign v080-qa`. Acima de US$0,50 e até US$1,00, use `--campaign v080-qa --campaign-cap-usd 1.00 --campaign-estimate docs/evidence/v080-custo-estimativa.json` em cada fase. Acima de US$1,00, pare e peça decisão ao responsável. O mesmo ledger fixo e o ledger primário guardam agente, ferramentas pagas e juiz.
+4. Rode os splits de desenvolvimento e o holdout legado com `eval --campaign v080-qa --include-replan --judge --repeat 3 --split all --name v080-all`; depois `eval --campaign v080-qa --judge-repeat 3 --answers-from docs/evidence/v080-all.json --name v080-all-judge`. O `all` contém os 40 casos, os quatro cenários de replanejamento e as quatro conversas de acompanhamento.
+5. Antes do holdout, conclua correções, revisão, sorteio da amostra de calibração a partir dos relatórios de desenvolvimento e o smoke final. Só então rode `eval --campaign v080-qa --judge --repeat 3 --split holdout_v080 --name v080-holdout-v080`, seguido de `eval --campaign v080-qa --judge-repeat 3 --answers-from docs/evidence/v080-holdout-v080.json --name v080-holdout-v080-judge`. Esse par fecha a rodada técnica; não ajuste prompts ou código com base no resultado. Uma nova rodada deve marcar o holdout como já visto.
+6. O responsável preenche e importa a calibração depois do bloco técnico final; ela não autoriza nova correção baseada no holdout.
+
 ## Validação
 
 A preencher pelo Developer.

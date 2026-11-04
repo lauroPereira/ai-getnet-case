@@ -15,7 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 ABSOLUTE_BUDGET_LIMIT_USD = 5.0  # project-wide ceiling for every paid call; no setting or ledger may exceed it
-CAMPAIGN_CAP_LIMIT_USD = 0.50  # largest additional cap a bounded QA campaign may fix (v0.6.0 plan: v060-qa)
+CAMPAIGN_CAP_LIMIT_USD = 0.50  # default ceiling for fixed QA campaigns; v0.8.0 has a measured one-time exception
+V080_CAMPAIGN_CAP_LIMIT_USD = 1.00  # approved one-time ceiling when the measured v080-qa estimate exceeds USD 0.50
 
 LEDGER_SCHEMA = """
 CREATE TABLE IF NOT EXISTS ledger (
@@ -164,9 +165,22 @@ class BudgetGuard:
 class FixedBudgetGuard:
     """Persistent one-time cap for a bounded QA campaign."""
 
-    def __init__(self, path: Path | str, limit_usd: float, *, cap_id: str) -> None:
-        if not math.isfinite(limit_usd) or not 0 < limit_usd <= CAMPAIGN_CAP_LIMIT_USD:
-            raise ValueError("QA campaign cap must be greater than zero and no more than USD 0.50.")
+    def __init__(
+        self,
+        path: Path | str,
+        limit_usd: float,
+        *,
+        cap_id: str,
+        cap_ceiling_usd: float = CAMPAIGN_CAP_LIMIT_USD,
+    ) -> None:
+        if (
+            not math.isfinite(cap_ceiling_usd)
+            or not CAMPAIGN_CAP_LIMIT_USD <= cap_ceiling_usd <= V080_CAMPAIGN_CAP_LIMIT_USD
+            or (cap_ceiling_usd > CAMPAIGN_CAP_LIMIT_USD and cap_id != "v080-qa")
+            or not math.isfinite(limit_usd)
+            or not 0 < limit_usd <= cap_ceiling_usd
+        ):
+            raise ValueError(f"QA campaign cap must be greater than zero and no more than USD {cap_ceiling_usd:.2f}.")
         self.guard = BudgetGuard(path, limit_usd)
         conn = self.guard._conn()
         try:
