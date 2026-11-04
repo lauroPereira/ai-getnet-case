@@ -534,7 +534,7 @@ Todos com `.venv/Scripts/python.exe -m pytest -p no:cacheprovider --basetemp .py
 - `docker compose config` valida o arquivo, não sobe os containers.
 - **README, linha 214, desatualizado:** ainda diz `{"protocol": "SIM-…", "simulated": true}`. Fora do meu escopo (fechamento do Supervisor), junto com CHANGELOG e ADRs.
 - **Diretório vazio criado por engano fora do repositório:** passei um caminho no estilo do Git Bash (`/c/Users/...`) como `--out` do primeiro eval, e o Python do Windows o interpretou como `C:\c\Users\...`. Movi os dois arquivos para o scratchpad e sobrou a árvore **vazia** `C:\c\Users\lauro\AppData\Local\Temp\claude\...\out`. A remoção foi barrada pela verificação de segurança; fica para o Supervisor remover (`C:\c`), depois de conferir que está vazia.
-- Dentro do repositório, deixei 23 diretórios `.pytest_cache/t68-dev-*` (cerca de 490 MB), meus e ignorados pelo Git.
+- Os 23 diretórios `.pytest_cache/t68-dev-*` (cerca de 490 MB) que criei como `--basetemp` foram removidos no fim; os demais itens de `.pytest_cache/` não foram tocados.
 
 ### Próximo responsável
 
