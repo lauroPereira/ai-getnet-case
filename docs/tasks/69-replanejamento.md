@@ -14,7 +14,7 @@ Spec v0.8.0 aprovada pelo responsável; v0.7.0 na `main`; branch `codex/v0.8.0-r
 
 ## Arquivos prováveis
 
-`orchestration/graph.py` (nó e arestas do grafo de atendimento), `orchestration/state.py` (resumo observado, saltos), `orchestration/run.py` e `config.py` (`MAX_PLAN_HOPS`), `agents/replanner.py` (novo: regras e chamada), `prompts/replan.v1.md` (novo), `llm/scripted.py` (política programada), `data/scenarios/catalog.json`, `tests/scenarios/replan.jsonl` (novo), testes.
+`orchestration/graph.py` (nó e arestas do grafo de atendimento), `orchestration/state.py` (resumo observado, saltos), `orchestration/run.py` e `config.py` (`MAX_PLAN_HOPS`), `agents/replanner.py` (novo: regras e chamada), `prompts/replan.v1.md` (novo), `evaluation/scripted_policy.py` (política programada), `data/scenarios/catalog.json`, `tests/scenarios/replan.jsonl` (novo), testes.
 
 ## Passos
 

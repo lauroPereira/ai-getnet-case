@@ -6,7 +6,7 @@ Provar a história da v0.8.0 com modelo programado sobre as tarefas 69, 70, 71 e
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) (rascunho), critérios e requisitos não funcionais; [história](../historias/orquestracao-avaliacao-v080.md); [plano](../specs/evolucao-pos-feedback-plano.md) tarefa 73 e "Estratégia de testes".
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md), critérios e requisitos não funcionais; [história](../historias/orquestracao-avaliacao-v080.md); [plano](../specs/evolucao-pos-feedback-plano.md) tarefa 73 e "Estratégia de testes".
 
 ## Pré-condições
 
