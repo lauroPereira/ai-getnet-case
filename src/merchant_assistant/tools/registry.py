@@ -171,6 +171,11 @@ class ToolOutcome:
         return json.dumps(self.data if self.ok else {"error": self.error}, ensure_ascii=False, default=str)
 
 
+# Observers of finished tool calls, empty in production. The evaluation runner registers one to read the data each tool
+# returned (the trace keeps only the call), so the judge can check a reply against its evidence.
+OUTCOME_OBSERVERS: list[Callable[[ToolOutcome], None]] = []
+
+
 def audit_outcome(outcome: ToolOutcome) -> str:
     if outcome.ok:
         return "ok"
@@ -218,4 +223,6 @@ def execute(name: str, arguments: dict | str | None, env: ToolEnv, *, agent: str
         write_audit(env, name, TOOLS[name].scope if name in TOOLS else None, "error", env.resource_id)
         raise
     record(env, outcome)
+    for observe in OUTCOME_OBSERVERS:
+        observe(outcome)
     return outcome

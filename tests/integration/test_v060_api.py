@@ -168,8 +168,8 @@ def test_evaluation_grades_the_persisted_reply_once_and_repeats_only_on_request(
     estimate, created = _evaluate(client, headers, request_id)
     assert estimate["method"] == "model" and estimate["rubric"] == "judge" and estimate["rubric_version"] == "2"
     assert estimate["evaluator"] == {
-        "provider": "openai",
-        "model": "gpt-6-luna",
+        "provider": "deepseek",
+        "model": "deepseek-flash",
         "parameters": {"max_output_tokens": 200, "effort": "none"},
     }
     assert estimate["estimated_cost_usd"] > 0 and estimate["existing_evaluation_id"] is None

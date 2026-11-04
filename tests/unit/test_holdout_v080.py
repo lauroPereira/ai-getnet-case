@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import MAIN_CUSTOMER, seed
@@ -133,7 +134,8 @@ def test_tool_backed_amounts_come_from_the_calls_of_each_case(tmp_path):
     clock = FixedClock(DEFAULT_CLOCK)
     conn = connect(tmp_path / "holdout.sqlite3")
     seed(conn, clock)
-    env = ToolEnv(conn, clock, CustomerContext(MAIN_CUSTOMER, True), mock_services=in_process_client())
+    customer = CustomerContext.for_principal(Principal.merchant(MAIN_CUSTOMER), MAIN_CUSTOMER, True)  # v0.7.0 scopes
+    env = ToolEnv(conn, clock, customer, mock_services=in_process_client())
     cases = {c.id: c for c in load_cases([HOLDOUT])}
     try:
         for case_id, calls in TOOL_DERIVATION.items():

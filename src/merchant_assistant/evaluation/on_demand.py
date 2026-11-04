@@ -26,6 +26,9 @@ from merchant_assistant.profiles import digest
 
 METHOD = "model"
 RUBRIC = "judge"
+# The /v1 evaluation keeps the three-criteria rubric that the web app and the profile comparison read; the four-criteria
+# `judge.v3` belongs to the campaign evaluation (`eval --judge`, `evaluation/judge.py`).
+RUBRIC_VERSION = "2"
 STALE_RUNNING_SECONDS = 600
 
 
@@ -84,7 +87,7 @@ def list_for(conn, request_id: str, principal_id: str) -> list[dict]:
 def estimate(app_state, conn, request_id: str, snapshot: dict, principal: dict) -> dict:
     """No paid call: price of one judge call over the persisted reply, plus any reusable evaluation."""
     settings = app_state.settings
-    prompt = load_prompt(settings.prompts_dir, RUBRIC)
+    prompt = load_prompt(settings.prompts_dir, RUBRIC, RUBRIC_VERSION)
     evaluator = evaluator_config(settings)
     evidence = _evidence(conn, request_id, snapshot)
     spec = judge_spec(prompt, evidence)
@@ -151,7 +154,7 @@ def evaluate(
         llm = orchestrator._profile_llm("evaluation", {"provider": evaluator["provider"], "model": evaluator["model"]})
     except RuntimeError:
         return 503, {"code": "evaluator_unavailable", "message": "The configured evaluator is not available."}
-    prompt = load_prompt(app_state.settings.prompts_dir, RUBRIC)
+    prompt = load_prompt(app_state.settings.prompts_dir, RUBRIC, RUBRIC_VERSION)
     evidence = _evidence(conn, request_id, snapshot)
     meter = BudgetMeter(orchestrator.budget, request_id=f"eval:{request_id}", max_cost_usd=max_cost_usd)
     checks = run_checks(app_state, conn, request_id, snapshot, principal)
