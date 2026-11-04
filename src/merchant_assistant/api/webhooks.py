@@ -25,7 +25,7 @@ import httpx
 
 from merchant_assistant.config import Settings
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.webhook_outbox import enqueue
+from merchant_assistant.data.webhook_outbox import enqueue, webhook_targets
 
 SIGNATURE_TOLERANCE_S = 300
 TICKETING, MERCHANT = "ticketing", "merchant"
@@ -101,8 +101,9 @@ class Webhooks:
     def handoff_closed(self, case: dict) -> None:
         self._wake()
 
-    def recover_handoff_closed(self) -> None:
-        """Recover new durable intentions and unfinished closing events written before migration 0010."""
+    def recover_pending_intents(self) -> None:
+        """Start of the API: delivers every intention still `pending` in the outbox (`handoff.created`,
+        `conversation.replied`, `handoff.closed`) and queues the closing events of cases closed before 0010."""
         conn = connect(self.settings.db_path)
         try:
             cases = conn.execute(
@@ -117,7 +118,7 @@ class Webhooks:
                 enqueue(conn, "handoff.closed", {
                     "case_id": case["case_id"], "protocol": case["protocol"], "closed_at": case["closed_at"],
                     "closed_by": case["closed_by"],
-                }, case["case_id"])
+                }, case["case_id"], webhook_targets(self.settings))
         finally:
             conn.close()
         self.dispatch_pending()

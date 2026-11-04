@@ -34,7 +34,7 @@ from merchant_assistant.config import Settings
 from merchant_assistant.conversations import Conversation, ConversationStore
 from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.webhook_outbox import enqueue
+from merchant_assistant.data.webhook_outbox import TARGETS, enqueue, webhook_targets
 from merchant_assistant.guardrails.input import check_input
 from merchant_assistant.handoffs import transcript
 from merchant_assistant.llm.base import LLM, OutputTokenLimitLLM
@@ -277,12 +277,14 @@ class Orchestrator:
                 self._review_graph = build_review_graph(SqliteSaver(self._checkpoint_conn, serde=serde))
             return self._review_graph
 
-    def _suspend(self, final: GraphState, ctx: RunContext) -> None:
-        """Saves the handed-off flow at `human_review` (interrupt) under thread = request id (D6)."""
+    def _suspend(self, final: GraphState, ctx: RunContext, thread_id: str | None = None) -> None:
+        """Saves the handed-off flow at `human_review` (interrupt) under thread = request id (D6). `thread_id` is the
+        case's own thread when a later turn completes a flow that the escalating request did not get to save."""
+        thread_id = thread_id or final.request_id
         step, t0 = ctx.trace.start("human_review")
         try:
-            self.review_graph().invoke(final, config={"configurable": {"thread_id": final.request_id, "ctx": ctx}})
-            ctx.trace.finish(step, t0, "interrupted", thread_id=final.request_id)
+            self.review_graph().invoke(final, config={"configurable": {"thread_id": thread_id, "ctx": ctx}})
+            ctx.trace.finish(step, t0, "interrupted", thread_id=thread_id)
         except Exception as exc:  # the reply to the merchant never fails because of the checkpoint
             log.exception("suspend failed", extra={"event": {"request_id": final.request_id}})
             ctx.trace.finish(step, t0, "error", error=f"{type(exc).__name__}: {exc}")
@@ -379,9 +381,14 @@ class Orchestrator:
             final = GraphState.model_validate(
                 self.graph.invoke(initial, config={"configurable": {"ctx": ctx}, "recursion_limit": 30})
             )
-            if final.escalation and final.escalation.created and db_path is None:
-                self._suspend(final, ctx)  # isolated comparison runs never leave a case to resume
-            if final.escalation and final.escalation.created and db_path is None and channel in ("api", "web"):
+            announce = False  # does this turn queue `handoff.created` together with its messages?
+            if final.escalation and db_path is None:  # isolated comparison runs never leave a case to resume
+                if final.escalation.created:
+                    self._suspend(final, ctx)
+                    announce = channel in ("api", "web")
+                else:
+                    announce = self._complete_interrupted_handoff(conn, final, ctx, channel)
+            if announce:
                 conn.execute("BEGIN IMMEDIATE")
                 try:
                     self._persist(store, conv, final)
@@ -394,7 +401,7 @@ class Orchestrator:
                         "language": payload.get("language"), "reason": case["reason"],
                         "summary": payload.get("summary"), "pending_question": payload.get("pending_question"),
                         "draft_reply": payload.get("draft_reply"), "transcript": transcript(conn, conv.conversation_id),
-                    }, case["case_id"])
+                    }, case["case_id"], webhook_targets(self.settings))
                     conn.execute("COMMIT")
                 except BaseException:
                     conn.execute("ROLLBACK")
@@ -406,6 +413,33 @@ class Orchestrator:
             return response
         finally:
             conn.close()
+
+    def _complete_interrupted_handoff(self, conn, final: GraphState, ctx: RunContext, channel: str) -> bool:
+        """The case found by this turn (`created=False`) may have been opened by a turn that stopped between writing the
+        case and finishing: the flow is not saved, or `handoff.created` was never queued. Saves the flow under the
+        case's own thread when it is missing (or marks the failure, D28) and says whether the intention is still to be
+        queued with this turn's messages. A case already ticketed, worked on or from before v0.7.0 is left alone."""
+        case = conn.execute("SELECT * FROM handoff_cases WHERE case_id=?", (final.escalation.case_id,)).fetchone()
+        if case is None or not case["thread_id"] or case["queue_state"] != "open" or case["ticket_id"]:
+            return False
+        if case["resume_status"] is None and not self._has_checkpoint(case["thread_id"]):
+            self._suspend(final, ctx, thread_id=case["thread_id"])
+        if channel not in ("api", "web"):
+            return False
+        queued = {
+            row[0]
+            for row in conn.execute(
+                "SELECT target FROM webhook_outbox WHERE event='handoff.created' AND case_id=?", (case["case_id"],)
+            )
+        }
+        return bool((webhook_targets(self.settings) & set(TARGETS["handoff.created"])) - queued)
+
+    def _has_checkpoint(self, thread_id: str) -> bool:
+        try:
+            return bool(self.review_graph().get_state({"configurable": {"thread_id": thread_id}}).values)
+        except Exception:  # unknown is not missing: only a checkpoint known to be absent is rebuilt
+            log.exception("checkpoint lookup failed", extra={"event": {"thread_id": thread_id}})
+            return True
 
     def _deliver(self, store, conv, pending: dict, request, request_id: str, principal, trace_tags) -> MessageResponse:
         """D8: records the merchant's message and returns the operator's reply (route human_reply), no model call."""
@@ -536,7 +570,7 @@ class Orchestrator:
                         "operator_id": record["operator_id"], "reply_text": final.answer, "via": "operator",
                         "request_id": request_id,
                         "delivered_at": datetime.now(UTC).isoformat(timespec="seconds"),
-                    }, record["event_id"])
+                    }, record["event_id"], webhook_targets(self.settings))
                     conn.execute("COMMIT")
                 except BaseException:
                     conn.execute("ROLLBACK")

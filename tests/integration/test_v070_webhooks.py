@@ -533,7 +533,7 @@ def test_closed_intent_survives_process_death_before_emit(wired):
     assert process.returncode == 23
     assert case_snapshot(client, case_id)[0]["queue_state"] == "closed"
     receivers.requests.clear()
-    client.app.state.webhooks.recover_handoff_closed()
+    client.app.state.webhooks.recover_pending_intents()
     client.app.state.webhooks.wait()
     [closed] = receivers.events()
     assert closed["type"] == "handoff.closed" and closed["data"]["case_id"] == case_id
@@ -561,7 +561,7 @@ def test_closed_delivery_retries_with_same_id_after_ack_is_lost(wired, monkeypat
     receivers.requests.clear()
     assert post_event(client, "ticket.solved", ticket(case_id)).status_code == 200
     assert webhooks.wait()
-    webhooks.recover_handoff_closed()
+    webhooks.recover_pending_intents()
     assert webhooks.wait()
     events = receivers.events()
     assert len(events) == 2 and events[0] == events[1]
@@ -569,6 +569,7 @@ def test_closed_delivery_retries_with_same_id_after_ack_is_lost(wired, monkeypat
 
 
 def _child_settings_script() -> str:
+    # both receivers configured: a destination without a URL gets no intention
     return (
         "import os, sys; from pathlib import Path; from pydantic import SecretStr; "
         "from merchant_assistant.config import Settings; "
@@ -576,6 +577,8 @@ def _child_settings_script() -> str:
         "TEST_TICKETING_SECRET; "
         "settings=Settings(_env_file=None,runtime_dir=Path(sys.argv[1]),jwt_private_key_path=Path(sys.argv[2]),"
         "demo_mode=True,budget_limit_usd=1.0,qdrant_url=':memory:',retrieval_min_score=0.05,"
+        "ticketing_webhook_url='http://ticketing.test/webhooks/assistant',"
+        "conversation_webhook_url='http://merchant.test/merchant/events',"
         "demo_user_passwords=SecretStr(passwords_setting(TEST_USER_PASSWORDS)),"
         "ticketing_client_secret=SecretStr(TEST_TICKETING_SECRET),password_hash_iterations=1000); "
         "orchestrator,_=offline_orchestrator(settings); "
@@ -596,7 +599,7 @@ def test_created_outbox_survives_process_death_before_delivery(wired, settings):
     )
     assert process.returncode == 71
     assert rows(client, "SELECT status FROM webhook_outbox WHERE event='handoff.created'") == [{"status": "pending"}]
-    client.app.state.webhooks.recover_handoff_closed()
+    client.app.state.webhooks.recover_pending_intents()
     assert client.app.state.webhooks.wait()
     [created] = receivers.events()
     assert created["type"] == "handoff.created"
@@ -623,7 +626,7 @@ def test_attempt_count_survives_process_death_during_delivery(wired, settings, m
     assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='handoff.created'") == [
         {"status": "pending", "attempts": 1}
     ]
-    client.app.state.webhooks.recover_handoff_closed()
+    client.app.state.webhooks.recover_pending_intents()
     assert client.app.state.webhooks.wait()
     assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='handoff.created'") == [
         {"status": "delivered", "attempts": 2}
@@ -651,7 +654,7 @@ def test_reply_outbox_survives_process_death_before_delivery(wired, settings):
         ("merchant", "pending"), ("ticketing", "pending")
     ]
     receivers.requests.clear()
-    client.app.state.webhooks.recover_handoff_closed()
+    client.app.state.webhooks.recover_pending_intents()
     assert client.app.state.webhooks.wait()
     assert len([event for event in receivers.events() if event["type"] == "conversation.replied"]) == 2
     replay = post_event(client, "ticket.action", ticket(case_id, action="approve", text="", idempotency_key=key))
@@ -666,10 +669,10 @@ def test_domain_change_rolls_back_if_outbox_cannot_be_written(wired, monkeypatch
     target = handoffs if event_type == "handoff.closed" else graph
     original = target.enqueue
 
-    def fail(conn, kind, data, key):
+    def fail(conn, kind, data, key, *targets):
         if kind == event_type:
             raise RuntimeError("outbox unavailable")
-        return original(conn, kind, data, key)
+        return original(conn, kind, data, key, *targets)
 
     if event_type == "handoff.created":
         monkeypatch.setattr(target, "enqueue", fail)
@@ -835,7 +838,7 @@ def test_reply_gets_three_attempts_after_ticket_creation(wired):
     assert attempts == [{"attempt": n, "status": "error"} for n in (1, 2, 3)]
     assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='conversation.replied' "
                         "AND target='ticketing'") == [{"status": "failed", "attempts": 3}]
-    client.app.state.webhooks.recover_handoff_closed()
+    client.app.state.webhooks.recover_pending_intents()
     assert client.app.state.webhooks.wait()
     assert len(rows(client, "SELECT * FROM webhook_deliveries WHERE event='conversation.replied' "
                             "AND target='ticketing'")) == 3
@@ -888,3 +891,216 @@ def test_assistant_delivers_to_the_mocks_merchant_receiver(wired, settings):
     assert events[0]["data"]["conversation_id"] == opened["message"]["conversation_id"]
     delivered = rows(client, "SELECT target, status, response_code FROM webhook_deliveries WHERE target='merchant'")
     assert delivered == [{"target": "merchant", "status": "delivered", "response_code": 200}]
+
+
+# --- a case opened by a turn that stopped before it finished (review round 4, P2-1) ---------------------------------
+
+
+def only_case(client) -> dict:
+    [case] = rows(client, "SELECT * FROM handoff_cases")
+    return case
+
+
+def has_flow(orchestrator, case) -> bool:
+    return bool(orchestrator.review_graph().get_state({"configurable": {"thread_id": case["thread_id"]}}).values)
+
+
+def complete_by_sending_again(client, orchestrator, receivers, case) -> None:
+    """The merchant sends the same message again: the turn completes the case and the operator can act on it."""
+    receivers.requests.clear()
+    body = {"message": HUMAN, "conversation_id": case["conversation_id"]}
+    again = client.post("/messages", json=body, headers=merchant_headers(client))
+    assert again.status_code == 200 and again.json()["status"] == "handoff", again.text
+    assert again.json()["handoff"]["protocol"] == case["protocol"]
+    assert client.app.state.webhooks.wait()
+    after = only_case(client)  # still the one case, now with its flow saved and its intention delivered once
+    assert after["case_id"] == case["case_id"] and after["resume_status"] is None and has_flow(orchestrator, after)
+    [created] = receivers.events()
+    assert created["type"] == "handoff.created" and created["data"]["case_id"] == case["case_id"]
+    assert created["data"]["protocol"] == case["protocol"]
+    assert rows(client, "SELECT status,attempts FROM webhook_outbox") == [{"status": "delivered", "attempts": 1}]
+    assert len(rows(client, "SELECT * FROM messages WHERE role='assistant'")) == 1
+    third = client.post("/messages", json=body, headers=merchant_headers(client))  # nothing is queued twice
+    assert third.status_code == 200 and client.app.state.webhooks.wait()
+    assert len(receivers.events()) == 1 and len(rows(client, "SELECT * FROM webhook_outbox")) == 1
+    assert post_event(client, "ticket.assigned", ticket(case["case_id"])).status_code == 200
+    data = ticket(case["case_id"], action="approve", text="", idempotency_key="after-interrupted-turn")
+    acted = post_event(client, "ticket.action", data)
+    assert acted.status_code == 200 and acted.json()["status"] == "accepted", acted.text  # not 503 checkpoint_missing
+    assert client.app.state.webhooks.wait()
+
+
+@pytest.mark.parametrize("dies", ["before_checkpoint", "after_checkpoint"])
+def test_case_of_a_turn_that_died_is_completed_when_the_message_is_sent_again(wired, settings, dies):
+    client, orchestrator, receivers, _ = wired()
+    script = _child_settings_script() + (
+        "from fastapi.testclient import TestClient; from merchant_assistant.api.app import create_app; "
+        "from merchant_assistant.testing import merchant_headers; app=create_app(orchestrator,settings); "
+        "real=orchestrator._suspend; "
+        "orchestrator._suspend=(lambda *a,**k: os._exit(74)) if sys.argv[3]=='before_checkpoint' "
+        "else (lambda *a,**k: (real(*a,**k), os._exit(74))); "
+        "client=TestClient(app); "
+        "client.post('/messages',json={'message':'Quero falar com um atendente'},headers=merchant_headers(client))"
+    )
+    process = subprocess.run(
+        [sys.executable, "-c", script, str(settings.runtime_path), str(settings.jwt_private_key_path), dies],
+        check=False, timeout=60,
+    )
+    assert process.returncode == 74
+    case = only_case(client)  # written by the escalation, before the end-of-turn transaction that never ran
+    assert case["queue_state"] == "open" and case["resume_status"] is None and case["thread_id"]
+    assert rows(client, "SELECT * FROM webhook_outbox") == [] and rows(client, "SELECT * FROM messages") == []
+    assert has_flow(orchestrator, case) == (dies == "after_checkpoint")
+    complete_by_sending_again(client, orchestrator, receivers, case)
+
+
+def test_case_of_a_turn_whose_outbox_write_failed_is_completed_when_the_message_is_sent_again(wired, monkeypatch):
+    client, orchestrator, receivers, _ = wired()
+    original, failing = graph.enqueue, [True]
+
+    def flaky(conn, kind, data, key, *targets):
+        if kind == "handoff.created" and failing:
+            raise RuntimeError("outbox unavailable")
+        return original(conn, kind, data, key, *targets)
+
+    monkeypatch.setattr(graph, "enqueue", flaky)
+    with pytest.raises(RuntimeError, match="outbox unavailable"):
+        client.post("/messages", json={"message": HUMAN}, headers=merchant_headers(client))
+    case = only_case(client)  # the turn was rolled back, the case written before it was not
+    assert case["queue_state"] == "open" and has_flow(orchestrator, case)
+    assert rows(client, "SELECT * FROM webhook_outbox") == [] and rows(client, "SELECT * FROM messages") == []
+    failing.clear()
+    complete_by_sending_again(client, orchestrator, receivers, case)
+
+
+def test_case_without_a_url_to_send_to_is_not_queued_late_or_twice(wired, settings):
+    client, orchestrator, receivers, _ = wired()
+    settings.ticketing_webhook_url = None
+    opened = hand_off(client)
+    assert rows(client, "SELECT * FROM webhook_outbox") == []
+    again = client.post(
+        "/messages",
+        json={"message": HUMAN, "conversation_id": opened["message"]["conversation_id"]},
+        headers=merchant_headers(client),
+    )
+    assert again.status_code == 200 and client.app.state.webhooks.wait()
+    assert rows(client, "SELECT * FROM webhook_outbox") == [] and receivers.events() == []
+    assert has_flow(orchestrator, only_case(client))
+
+
+# --- destinations, startup and exclusion between processes (review round 4, P3) -------------------------------------
+
+
+def test_destination_without_a_url_receives_no_intention(wired, settings):
+    client, _, receivers, _ = wired()
+    settings.ticketing_webhook_url = None  # the merchant receiver stays configured
+    case_id = hand_off(client)["case_id"]
+    assert rows(client, "SELECT * FROM webhook_outbox") == []
+    assert post_event(client, "ticket.assigned", ticket(case_id)).status_code == 200
+    data = ticket(case_id, action="approve", text="", idempotency_key="no-ticketing-url")
+    assert post_event(client, "ticket.action", data).status_code == 200
+    assert post_event(client, "ticket.solved", ticket(case_id)).status_code == 200
+    assert client.app.state.webhooks.wait()
+    assert rows(client, "SELECT event,target,status FROM webhook_outbox") == [
+        {"event": "conversation.replied", "target": "merchant", "status": "delivered"}
+    ]
+    assert [request.url.host for request in receivers.requests] == ["merchant.test"]
+
+
+def test_failing_recovery_does_not_keep_the_api_from_starting(offline, monkeypatch, caplog):
+    client, _, _ = offline()
+    calls = []
+
+    def broken():
+        calls.append(1)
+        raise RuntimeError("outbox unreadable")
+
+    monkeypatch.setattr(client.app.state.webhooks, "recover_pending_intents", broken)
+    with TestClient(client.app) as started:  # runs the lifespan
+        assert started.get("/health").status_code == 200
+    assert calls == [1] and "could not recover the pending webhook intentions" in caplog.text
+
+
+def _hold(script: str, *args: str) -> subprocess.Popen:
+    process = subprocess.Popen(
+        [sys.executable, "-c", script, *args], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
+    assert process.stdout.readline().strip() == "locked"
+    return process
+
+
+def _release(process: subprocess.Popen) -> None:
+    process.stdin.close()
+    process.wait(timeout=20)
+    process.stdout.close()
+
+
+HOLD_CASE_LOCK = (
+    "import sys\n"
+    "from merchant_assistant.data.db import connect\n"
+    "from merchant_assistant.handoffs import _case_lock\n"
+    "conn = connect(sys.argv[1])\n"
+    "with _case_lock(conn, sys.argv[2]):\n"
+    "    print('locked', flush=True)\n"
+    "    sys.stdin.read()\n"
+)
+HOLD_DELIVERY_LOCKS = (
+    "import sqlite3, sys\n"
+    "held = []\n"
+    "for stripe in range(64):\n"
+    "    lock = sqlite3.connect(f'{sys.argv[1]}.delivery-lock-{stripe:02d}', isolation_level=None)\n"
+    "    lock.execute('BEGIN IMMEDIATE')\n"
+    "    held.append(lock)\n"
+    "print('locked', flush=True)\n"
+    "sys.stdin.read()\n"
+)
+
+
+def test_action_on_a_case_waits_for_another_process_holding_the_case(wired, settings, monkeypatch):
+    from merchant_assistant.data.db import connect
+
+    client, _, _, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    real_connect = sqlite3.connect
+
+    def quick_lock(path, *args, **kwargs):  # the lock files wait 5 s by default: shorten it for the test
+        return real_connect(path, *args, **(kwargs | {"timeout": 0.2} if ".case-lock-" in str(path) else kwargs))
+
+    monkeypatch.setattr(sqlite3, "connect", quick_lock)
+    other = _hold(HOLD_CASE_LOCK, str(settings.db_path), case_id)
+    conn = connect(settings.db_path)
+    try:
+        with pytest.raises(handoffs.HandoffError) as busy:
+            handoffs.act(conn, case_id, "op_ana", "approve", None, "case-lock-key-1", actor="service:ticketing")
+        assert (busy.value.status, busy.value.code) == (503, "resume_failed")
+        assert case_snapshot(client, case_id) == (
+            {"queue_state": "open", "claimed_by": None, "resume_count": 0, "closed_at": None, "ticket_id": None}, 0
+        )
+        _release(other)
+        done = handoffs.act(conn, case_id, "op_ana", "approve", None, "case-lock-key-1", actor="service:ticketing")
+        assert done["queue_state"] == "answered" and done["replayed"] is False
+    finally:
+        conn.close()
+        if other.poll() is None:
+            other.kill()
+
+
+def test_delivery_waits_for_another_process_delivering_the_same_event(wired, settings, monkeypatch):
+    client, _, receivers, _ = wired()
+    webhooks = client.app.state.webhooks
+    monkeypatch.setattr(webhooks, "handoff_created_for", lambda *_: None)  # queue it, deliver it by hand below
+    assert client.post("/messages", json={"message": HUMAN}, headers=merchant_headers(client)).status_code == 200
+    assert rows(client, "SELECT status,attempts FROM webhook_outbox") == [{"status": "pending", "attempts": 0}]
+    other = _hold(HOLD_DELIVERY_LOCKS, str(settings.db_path))
+    try:
+        webhooks.dispatch_pending()
+        time.sleep(1.0)  # long enough for an unguarded delivery to have reached the receiver
+        assert receivers.requests == []
+        assert rows(client, "SELECT status,attempts FROM webhook_outbox") == [{"status": "pending", "attempts": 0}]
+        _release(other)
+        assert webhooks.wait(timeout=30)
+    finally:
+        if other.poll() is None:
+            other.kill()
+    assert [event["type"] for event in receivers.events()] == ["handoff.created"]
+    assert rows(client, "SELECT status,attempts FROM webhook_outbox") == [{"status": "delivered", "attempts": 1}]

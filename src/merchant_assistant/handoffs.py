@@ -441,9 +441,16 @@ def _resume(
 
 
 def close(
-    conn: sqlite3.Connection, case_id: str, operator_id: str, *, actor: str, on_behalf_of: str | None = None
+    conn: sqlite3.Connection,
+    case_id: str,
+    operator_id: str,
+    *,
+    actor: str,
+    on_behalf_of: str | None = None,
+    targets: set[str] | None = None,
 ) -> dict:
-    """D14: the case leaves the queue (`closed`), for instance when the ticket is solved. Idempotent."""
+    """D14: the case leaves the queue (`closed`), for instance when the ticket is solved. Idempotent. `targets` are the
+    webhook destinations configured now (`handoff.closed` is queued only for them; default: all)."""
     case = None
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -462,7 +469,7 @@ def close(
             _event(conn, case_id, "close", operator_id, None, {})
             enqueue(conn, "handoff.closed", {
                 "case_id": case_id, "protocol": case["protocol"], "closed_at": stamp, "closed_by": operator_id,
-            }, case_id)
+            }, case_id, targets)
         _audit(conn, case, "handoff.close", "ok", actor, on_behalf_of, case_id)
         conn.execute("COMMIT")
     except HandoffError as exc:

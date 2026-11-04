@@ -22,6 +22,7 @@ from merchant_assistant.api.identity import HANDOFF_INTEGRATE, active_operator
 from merchant_assistant.api.schemas import ErrorBody
 from merchant_assistant.api.v1 import AUTH, _db, _error, insufficient_scope, rate_limited
 from merchant_assistant.api.webhooks import verify_signature
+from merchant_assistant.data.webhook_outbox import webhook_targets
 
 router = APIRouter(prefix="/v1/integrations", tags=["integrations"])
 EVENTS = ("ticket.assigned", "ticket.action", "ticket.solved")
@@ -214,7 +215,14 @@ def _apply(request: Request, conn, event: dict, actor: str) -> tuple[int, dict]:
             if result["resume_status"] != "done":
                 return _failure(503, "resume_failed", "The reply is not ready; retry this event.")
         else:
-            result = handoffs.close(conn, case_id, operator_id, actor=actor, on_behalf_of=on_behalf_of)
+            result = handoffs.close(
+                conn,
+                case_id,
+                operator_id,
+                actor=actor,
+                on_behalf_of=on_behalf_of,
+                targets=webhook_targets(request.app.state.settings),
+            )
             webhooks.handoff_closed(dict(handoffs._case(conn, case_id)))
     except handoffs.HandoffError as exc:
         return _failure(exc.status, exc.code, exc.message)

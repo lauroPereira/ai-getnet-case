@@ -128,7 +128,10 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        app.state.webhooks.recover_handoff_closed()
+        try:  # a broken outbox never keeps the API from starting: the intentions stay pending
+            app.state.webhooks.recover_pending_intents()
+        except Exception:
+            log.exception("could not recover the pending webhook intentions")
         yield
         close = getattr(app.state.orchestrator, "close", None)
         if close:

@@ -28,6 +28,8 @@ services:
         condition: service_started
       mocks:
         condition: service_healthy
+      ticketing:  # the first handoff.created after `up` finds the receiver listening (the ticketing never waits for the api)
+        condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"  # only the Streamlit interface is exposed outside this host (ADR 0015)
     env_file:
