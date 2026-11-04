@@ -1062,6 +1062,7 @@ def execute_run(
     from merchant_assistant.llm.prompts import prompt_versions
 
     orchestrator, settings = app_state.orchestrator, app_state.settings
+    prompt_set = prompt_versions(settings.prompts_dir)
     actual_models = {name: f"{config['provider']}:{config['model']}" for name, config in profile["agents"].items()}
     if mechanism == "jev":
         actual_models["router"] = "typesafe:jev-1.14.0"
@@ -1072,8 +1073,8 @@ def execute_run(
         "agents": profile["agents"],
         "models": actual_models,
         "router_mechanism": mechanism,
-        "prompt_versions": {"router": "router.v5"},
-        "prompt_set": prompt_versions(settings.prompts_dir),
+        "prompt_versions": {"router": f"router.v{prompt_set['router']}"},
+        "prompt_set": prompt_set,
         "knowledge_base": "current",
         "execution_mode": _execution_mode(orchestrator),
         "comparison_id": router_comparison_id,
