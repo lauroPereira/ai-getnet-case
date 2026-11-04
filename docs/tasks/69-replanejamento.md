@@ -21,7 +21,7 @@ Spec v0.8.0 aprovada pelo responsável; v0.7.0 na `main`; branch `codex/v0.8.0-r
 1. Resumo observado por especialista: `evidence_sufficient`, `missing`, `needs_selection`, ferramentas com falha, `escalate`, saltos feitos, especialistas já usados e rota original.
 2. Regras da D4 numa função pura, cada uma com nome; `replan.v1` (saída estruturada `next`, `reason`, `review`; esforço `none`, ≤ 80 tokens) só quando nenhuma regra se aplica ou duas se contradizem.
 3. Nó `replan` no lugar de `_after_knowledge` e `_after_support`; D5 (cada especialista uma vez) e D6 (`MAX_PLAN_HOPS=3`, no limite `finish` com a lacuna declarada). Grafo de retomada inalterado (D3).
-4. Passo de trace `replan` com os campos da D7; `GET /v1/runs/{id}` o mostra sem mudar o contrato existente.
+4. Passo de trace `replan` com os campos da D7; `GET /v1/runs/{id}` o mostra sem mudar o contrato existente. `route` continua sendo o plano inicial do Router; o caminho executado sai em `executed_path` (D16), no trace e no runner.
 5. Os quatro cenários do RF-88 em `tests/scenarios/replan.jsonl` e no catálogo (`SC-REPLAN-*`), com a política programada; regressão dos 40 casos e das 4 conversas.
 6. Proposta da ADR 0019 (replanejamento) com o desenho, as regras e o plano B.
 
@@ -31,7 +31,8 @@ Spec v0.8.0 aprovada pelo responsável; v0.7.0 na `main`; branch `codex/v0.8.0-r
 - [ ] Laço forçado (especialistas que nunca resolvem) termina em ≤ 3 saltos sem repetir especialista.
 - [ ] Os quatro cenários passam com modelo programado; o trace mostra `next`, `reason`, `review`, `hops` e `origin`.
 - [ ] Pergunta simples não ganha chamada a mais (ledger e trace).
-- [ ] 40 casos e 4 conversas sem piora contra a v0.7.0 no eval programado, salvo diferença justificada caso a caso.
+- [ ] 40 casos e 4 conversas sem piora contra a v0.7.0 no eval programado, salvo diferença justificada caso a caso; `route_ok` medido pelo plano inicial e `executed_path` registrado (D16).
+- [ ] Trava da v0.7.0 (D18): `tests/integration/test_v070_story.py`, `test_v070_webhooks.py`, `test_v070_resume*.py` e `test_v070_ticketing_integration.py` verdes sem alteração; o nó `escalation` e o grafo de retomada não mudam.
 - [ ] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
