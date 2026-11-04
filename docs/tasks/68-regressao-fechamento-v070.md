@@ -31,10 +31,22 @@ Tarefas 63 a 66 e 66b com parecer apto; branch do Time B integrada pelo Supervis
 
 ## Validação
 
-A preencher pelo Developer.
+Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 68". Os critérios ficam desmarcados até a revisão e o QA.
+
+| Critério | Evidência determinística |
+| --- | --- |
+| CA-46 | `tests/integration/test_v070_story.py::test_story_moments_1_to_15_and_17` (momentos 1 a 5 e 17): sem token `401` sem chamada a modelo; login e claims validadas pelo JWKS; token adulterado e revogado `401`; `user_id` forjado `403 identity_mismatch`; auditoria por tool call (principal, escopo, resultado) com a soma dos `tool_calls` de todas as requisições igual às linhas de auditoria; outro lojista sem dado do primeiro na conversa, no trace, na fila e no ticketing. Expirado, outro emissor e outra audiência: `tests/unit/test_identity.py` (tarefa 63) |
+| CA-47 | mesmo teste (momentos 6 a 7, 10 a 15): caso vira ticket `new` com resumo, pergunta, rascunho e conversa mascarada; `reply`, `approve` e `reject` feitos no ticketing real produzem turno `via=operator`, entrega ao lojista (webhook sem `operator_id`) e volta ao ticket; `reject` reexecuta o Support uma vez sob `operator:op_ana` e o lojista do caso; `solve` fecha o caso e o ticketing recebe `handoff.closed`; a outbox durável tem as dez linhas `delivered`, uma tentativa cada |
+| CA-48 | mesmo teste (momentos 8, 9, 11): a insistência do lojista não perde a interrupção; `409 claimed_by_other`; resposta perdida no caminho de volta e repetida pela caixa de saída do ticketing (`replayed`, uma retomada só); ação nova `409 already_resumed`. `test_story_moment_16_restart_between_handoff_and_action`: encaminha num processo, ele termina, outro processo age no ticketing sobre o mesmo runtime e checkpoint (`resume_status=done`), mesma chave depois do reinício devolve o registro |
+| Eval dos 40 casos e do `followup` no caminho da versão | `tests/integration/test_v070_closing.py::test_eval_cli_runs_the_40_cases_and_the_followup_conversations`; `content_ok` 0,575 → 0,625 (igual à v0.6.0, caso a caso): `UC14` (rótulo `SIM-` → `HO-`, D7) e `V030-CONTRACT-TERMINATION` (linha de reserva em inglês voltou a dizer "human agent"). Investigação e antes/depois na passagem |
+| Campanha `v070-qa` montável com US$0,20 (teste) | `test_v070_campaign_cap_mounts_once_at_twenty_cents_combined_with_the_primary_ledger` e `test_a_request_runs_through_the_campaign_guard_and_both_ledgers_record_it` |
+| Versão 0.7.0 e compose | `test_package_version_is_0_7_0`; `test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contract`; `docker compose config --quiet` numa cópia sem `.env`: código 0, serviços `api`, `mocks`, `qdrant`, `ticketing` |
+| Lacunas da revisão da T66 (rodada 5) e P3-2 | `tests/integration/test_v070_webhooks.py` (15 testes novos: guardas de `_complete_interrupted_handoff` e `_has_checkpoint`, filtro de destino da recuperação, regra de canal) e `tests/unit/test_webhook_outbox.py` (`webhook_targets` exige URL e segredo); nove mutantes mortos |
+| P3-A, P3-B e P3-C do Time A | `tests/integration/test_v070_review_gaps.py` (7 testes); três mutantes mortos |
+| Suíte | Estrita não rodada pelo Developer (fica com o Supervisor). Conjuntos focados: 242 (unit) + 78 + 81 + 231 (integração) = **632 passed**, os 579 da T66 mais 53 novos; `ruff check src tests` ok; nenhuma chamada paga; `WinError 5` não ocorreu |
 
 ## Status
 
 ```text
-pendente
+pronta para revisão (Developer, rodada 1)
 ```

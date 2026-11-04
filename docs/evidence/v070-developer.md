@@ -409,3 +409,133 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
   - `service_healthy` do `ticketing` no `api`: se o ticketing não ficar saudável, o `api` não sobe. Sem comando de reenvio nesta versão: a limitação vai para README/ADR no fechamento, como decidido.
   - Os bloqueios entre processos foram exercitados só no Windows.
 - **Próximo responsável:** Supervisor roda a suíte estrita no candidato desta rodada; depois, Reviewer independente (o parecer da rodada 4 pede nova revisão para os dois P2). Sem aprovação própria, push ou ação externa.
+
+## Tarefa 68
+
+- **Papel e base:** Developer (Time A), branch `codex/v0.7.0-identidade-hitl`, base `6876adc`. Seis commits de produto e teste, mais o commit desta passagem, todos locais, com a identidade conferida (`lauroPereira`, `lauro.s.pereira@gmail.com`). Sem push, sem Docker em execução, sem `.env`, sem chamada paga nem rede externa. A branch `codex/v0.7.0-wip-68` não foi alterada.
+- **Commits:**
+
+| SHA | Conteúdo |
+| --- | --- |
+| `fea0b05` | Cherry-pick de `15909cd` (versão 0.7.0, primeira versão dos testes da história e do fechamento). Conflito em `test_use_cases.py::test_readiness` resolvido para esquema `10` e app `0.7.0` |
+| `227153c` | `content_ok` do eval programado de volta a 0,625 (investigação abaixo) |
+| `c87b248` | Teste da história adaptado à outbox durável, ao despachante e ao esquema 10 |
+| `8f1b732` | Campanha `v070-qa` por uma requisição de verdade; dependências do compose |
+| `d22da02` | Testes das lacunas da revisão da T66 (rodada 5) e P3-2 de produto |
+| `f536d9d` | P3-A, P3-B e P3-C do Time A |
+
+- **Arquivos alterados** (`git diff --stat 6876adc..f536d9d`, 13 arquivos, 965 inserções e 23 remoções):
+  - produto: `pyproject.toml`, `src/merchant_assistant/__init__.py` (versão 0.7.0), `agents/personality.py` (uma linha), `api/v1.py` (docstring de `operator_forbidden`), `api/webhooks.py` e `data/webhook_outbox.py` (P3-2);
+  - rótulo: `tests/scenarios/core_cases.jsonl` (UC14);
+  - testes: `tests/integration/test_v070_story.py`, `test_v070_closing.py` e `test_v070_review_gaps.py` (novos), `test_v070_webhooks.py`, `test_use_cases.py`, `tests/unit/test_webhook_outbox.py`.
+  - Esta passagem e `docs/tasks/68-regressao-fechamento-v070.md`.
+
+### Investigação da queda de `content_ok` (0,625 → 0,575)
+
+- **Como medi.** `git archive v0.6.0` e `git archive` do candidato (`fea0b05`) em diretórios novos do scratchpad, cada um com `PYTHONPATH` da própria cópia e `merchant_assistant.__file__` conferido (0.6.0 e 0.7.0). `merchant-assistant eval --scripted --split all`, que roda os 40 casos e as 4 conversas de `followup`, sem `.env`. Uma verificação de importação com `python -I` ignorou o `PYTHONPATH` e carregou o pacote editável do checkout principal; sem `-I`, o `PYTHONPATH` vale e foi o que usei nos dois evals.
+- **Resultado antes da correção.** v0.6.0: `passed` 0,625, `content_ok` 0,625, conversas 4/4. Candidato: `passed` 0,575, `content_ok` 0,575, conversas 4/4. Todos os outros campos iguais (`route_ok`, `status_ok`, `language_ok`, `tools_ok`, `amounts_ok`, `forbidden_ok`, `sources_ok`, `grounded_ok` = 1,0). A comparação caso a caso mostra **dois casos**, só neles `content_ok` passa de verdadeiro a falso:
+
+| Caso | Rótulo (`must_include_any`) | Resposta na v0.6.0 | Resposta no candidato | Causa |
+| --- | --- | --- | --- | --- |
+| `UC14` ("Quero falar com um atendente humano", split `holdout` dos 40) | `[["SIM-"]]` | `... (simulação desta demonstração). Protocolo: SIM-20261026-2BA31A.` | `Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261026-87ED44.` | **Mudança de contrato (D7):** o protocolo passou de `SIM-` a `HO-`. O rótulo era do prefixo antigo |
+| `V030-CONTRACT-TERMINATION` ("I want to close my contract.") | `[["human"]]` | `I've handed your case to a human agent (simulated in this demo). Protocol: SIM-...` | `I've handed your case to a member of our support team, who will reply here. Protocol: HO-...` | **Regressão de texto de produto, colateral da D7:** ao tirar "simulated" (a 65 reescreveu `HANDOFF_LINE` e o `personality.v4`), a palavra "human" saiu junto. A D7 só mandava tirar "simulated" |
+
+- **A política programada não é a causa.** Ela devolve exatamente `HANDOFF_LINE` (a rota é determinística nos dois casos). Os outros 15 casos que falham `content_ok` (EX01, EX02, EX04, EX05, EX06, EX09, EX10, NOEV, PT01, PT02, PT04, PT05, PT06, PT09, PT10) falham igualmente na v0.6.0: a política programada de Knowledge devolve o trecho recuperado em vez de redigir a resposta; é limite do modelo programado, medido pela campanha real.
+- **O que mudei (`227153c`), sem afrouxar nenhum check:**
+  - `UC14`: `"must_include_any": [["SIM-"]]` → `[["HO-"]]`. Mesmo rigor (um prefixo de protocolo), seguindo a D7. É um caso do split `holdout` das 40 (não do lacrado `holdout_v080`, que não existe nesta branch); confirmar na revisão.
+  - `V030-CONTRACT-TERMINATION`: **rótulo intacto**. Corrigi o produto: `HANDOFF_LINE["en"]` passou de "a member of our support team" para "a human agent on our support team, who will reply here". O texto em português não mudou ("atendente"; nenhum rótulo pede mais).
+  - Depois: `passed` 0,625, `content_ok` 0,625, conversas 4/4, os mesmos 15 casos falhando. Repeti no commit final `f536d9d` (cópia `git archive`): n 40, `passed` 0,625, `content_ok` 0,625, os demais campos 1,0, custo 0, conversas 4/4 (FU01 a FU04). Comparação caso a caso com a v0.6.0: nenhuma diferença em rota, status, agentes, ferramentas e nos nove checks. As respostas diferentes são quatro, todas só na linha de encaminhamento (UC14, V030-CONTRACT-TERMINATION, V030-PRICE-DIVERGENCE e V030-PT-PRICE-DIVERGENCE: `SIM-`→`HO-` e sem "simulação").
+  - **Guarda contra a regressão:** `test_eval_cli_runs_the_40_cases_and_the_followup_conversations` passou a conferir `sources_ok` e `grounded_ok`, e que os casos com `content_ok` falso sejam um subconjunto dos 15 medidos na v0.6.0 (`V060_CONTENT_FAILURES`), além de `content_ok >= 0,625`. Provei que o teste pega: com a árvore anterior à correção ele falha com `content_ok worse than v0.6.0 in: ['UC14', 'V030-CONTRACT-TERMINATION']`.
+- **Risco para a campanha real (não medido):** o `personality.v4` instrui o modelo real a confirmar "que o caso foi para um membro da equipe de suporte", sem a palavra "human". Com o modelo real, `V030-CONTRACT-TERMINATION` pode falhar `content_ok` mesmo com a linha de reserva corrigida. A correção seria um `personality.v5` (prompt é arquivo versionado). Não criei: exige medição com modelo real e decisão do Supervisor.
+
+### Teste da história de ponta a ponta
+
+`tests/integration/test_v070_story.py` (2 testes), com o modelo programado, o assistente, o serviço de ticketing real (`merchant_assistant.ticketing`, sem alteração) e o receptor do lojista do `mocks`, todos em processo e falando só por um transporte HTTP de teste que roteia por host (`testing.AppTransport`; sem socket). Revisei cada asserção que veio do trabalho parcial; as que já valiam ficaram, e acrescentei as que dependem do estado atual:
+
+| Momento | Onde | O que prova |
+| --- | --- | --- |
+| 1 a 4 | `test_story_moments_1_to_15_and_17` | sem token `401 token_required` sem chamada a modelo; login e claims validadas pelo JWKS publicado; token adulterado e token revogado `401`; `user_id` forjado `403 identity_mismatch` sem dado do outro lojista |
+| 5 | idem | dados do lojista; **uma linha de auditoria por tool call** (principal, escopo, resultado) e, no fim da história, a soma dos `tool_calls` de todas as requisições (inclusive a retomada do `reject`) é igual às linhas de auditoria de ferramentas |
+| 6 e 7 | idem | `HO-…` sem "simulação"; caso na fila; ticket `new` com resumo, pergunta, rascunho e conversa mascarada; `handoff.created` entregue e registrado nos dois lados |
+| 8 | idem | o lojista insiste: segue `handoff`, nenhum `human_reply`, um só checkpoint e o caso continua `open`, sem retomada e sem ticket |
+| 9 | idem | `op_ana` assume (`open`); `op_bruno` recebe `409 claimed_by_other` repassado |
+| 10 e 11 | idem | `reply` com a resposta perdida no caminho de volta (transporte falha uma vez): ticket `pending` ("envio pendente"), a caixa de saída repete o mesmo evento e o assistente responde `replayed` sem retomar duas vezes (`network_error` e depois `delivered`); turno `via=operator`; ticket entregue; webhook ao lojista sem `operator_id`; ação repetida devolve o registro; ação nova `409 already_resumed` |
+| 12 e 13 | idem | `human_reply` com `via=operator`, sem nenhuma chamada a modelo; `solve` fecha o ticket e o caso e o ticketing recebe `handoff.closed` |
+| 14 e 15 | idem | `approve` libera o rascunho como turno do atendente e entrega; `reject` reexecuta o Support **uma vez** (uma linha de auditoria de `get_device_status`), com o principal `operator:op_ana` e o lojista do caso, sem novo caso |
+| 17 | idem | outro lojista: conversa, trace e fila `404`/`403`; API do ticketing `401`; nenhum dado de `cliente1988` nem o protocolo |
+| fim | idem | a **outbox durável (0010)**: dez linhas (três `handoff.created`, seis `conversation.replied` em duas cópias, um `handoff.closed`), todas `delivered` com uma tentativa; nenhuma entrega que não seja `delivered`; as sete entregas do ticketing ao assistente, com as duas recusas finais da história (o `409` de `op_bruno` e o da ação nova) e a resposta perdida; `/ready` com esquema 10 e app 0.7.0 |
+| 16 | `test_story_moment_16_restart_between_handoff_and_action` | **dois processos**: um processo-filho (com `LANGGRAPH_STRICT_MSGPACK=true`) sobe a API e o ticketing, encaminha, espera a entrega e **termina**; o outro (o do teste) sobe uma API e um ticketing novos sobre o mesmo runtime, o mesmo checkpoint e o mesmo banco do ticketing, e age no ticket: retomada sobre o checkpoint salvo (`resume_status=done`, protocolo igual), turno e entrega ao lojista; a mesma chave depois do reinício devolve o registro (`replayed`) e continua um só turno; a outbox escrita pelos dois processos fica toda `delivered` |
+
+- **Sondas de mutação do teste da história** (cópia da árvore no scratchpad; arquivo restaurado depois de cada uma): entrega D8 desligada (morre em `acknowledgement == human_reply`), reivindicação sem `claimed_by_other` (morre em `200 == 409`), auditoria desligada (morre em `0 == 4`), fluxo não salvo antes do reinício (morre em `202 == 200` no processo 2). Todas mortas.
+- **Fora do teste:** momento 18 (Docker), do QA. O teste não cobre token expirado, de outro emissor ou de outra audiência (CA-46 também os lista): estão em `tests/unit/test_identity.py::test_verifier_refuses_bad_claims` e `test_verifier_refuses_tampering_other_keys_and_types` (tarefa 63). O momento 5 usa "Quando cai o dinheiro das vendas de ontem?" no lugar de "Quando cai meu próximo recebimento?": a política programada roteia por palavra-chave e a frase da história cairia em `clarify`; com o modelo real o QA usa a frase da história.
+
+### Fechamento técnico
+
+`tests/integration/test_v070_closing.py` (5 testes):
+
+- **Eval dos 40 casos e do `followup`** no caminho da versão (`cmd_eval --scripted`): 40 casos, custo 0, conversas 4/4, `content_ok` não pior que a v0.6.0 caso a caso (acima).
+- **Campanha `v070-qa`:** `FixedBudgetGuard` de US$0,20 montado **uma vez** (remontar com o mesmo teto reabre o mesmo registro; outro teto ou outro id de campanha são recusados) e combinado com o ledger primário já com US$0,69 gastos (`CombinedBudgetGuard`): o teto da campanha manda (`remaining` 0,20 contra US$4,31 do total), uma cobrança aparece nos dois ledgers, a reserva acima da campanha é recusada sem deixar nada no ledger primário. Acrescentei uma requisição `POST /messages` inteira com o guarda combinado montado no orquestrador: os dois ledgers registram as mesmas chamadas de modelo (custo 0 com o modelo programado). Sem rede.
+- **Versão `0.7.0`:** `pyproject.toml == merchant_assistant.__version__ == "0.7.0"`; `/ready` informa app `0.7.0` e esquema 10.
+- **Compose:** `docker compose config --quiet` numa cópia do `docker-compose.yml` num diretório sem `.env`, fora do repositório: **código 0**; `docker compose config --services`: `api`, `mocks`, `qdrant`, `ticketing`. O teste confere os quatro serviços, as URLs e segredos do contrato, as portas (`api` e `ticketing` em `127.0.0.1`, `mocks` e `qdrant` sem porta publicada) e que o `api` espera `ticketing` e `mocks` saudáveis sem ciclo.
+- **OpenAPI:** comparei o documento gerado por `git archive 6876adc` com o do commit final: **a única diferença é `info.version` (`0.6.0` → `0.7.0`)**, vinda da mudança de versão que a tarefa pede. Nenhuma rota, esquema nem código de erro mudou.
+
+### Testes que a revisão da T66, rodada 5, pediu
+
+Em `tests/integration/test_v070_webhooks.py` (15 testes novos) e `tests/unit/test_webhook_outbox.py` (24 novos, parametrizados):
+
+- `test_sending_the_message_again_saves_the_flow_at_most_once[kept|lost]`: a contagem de linhas do checkpoint (`checkpoints` e `writes`) do caso é igual à de um encaminhamento normal e **não muda em três reenvios**; com o fluxo perdido, o primeiro reenvio o salva uma vez.
+- `test_unreadable_checkpoint_is_taken_as_present_not_as_missing[False|True]`: `get_state` com exceção não salva de novo, não marca `checkpoint_failed` (nem quando o salvar também falharia) e o anúncio segue.
+- `test_only_an_open_case_of_this_version_without_a_ticket_is_announced_late[open|answered|ticketed|before_0_7_0]`: o aberto é anunciado uma vez; o respondido, o com `ticket_id` e o sem `thread_id` **não alteram a outbox nem os checkpoints**.
+- `test_a_turn_over_the_in_process_channel_completes_the_flow_but_queues_nothing`: o canal `in_process` salva o fluxo e não enfileira; o mesmo reenvio pela API enfileira uma vez (comportamento documentado, P3-4).
+- `test_a_new_case_is_announced_only_over_the_api_and_web_channels[api|web|in_process]` (N20).
+- `test_recovery_of_a_closed_case_queues_nothing_for_a_destination_without_a_url[False|True]` (N09): sem URL do ticketing a recuperação não deixa `handoff.closed` pendente; com URL enfileira e entrega uma vez.
+- **P3-2 de produto:** `data/webhook_outbox.py` ganhou `target_config(settings, name)`, que devolve (URL, segredo) e é lido tanto por `webhook_targets` quanto pelo despachante (`Webhooks._target`). `webhook_targets` só considera destino com URL **e** segredo. Testes: `test_destination_is_a_target_only_with_a_url_and_a_secret_like_the_delivery` (URL × segredo × destino, 24 combinações, igual ao que o despachante confere) e `test_destination_with_a_url_but_no_secret_receives_no_intention`.
+- **Efeito em testes existentes:** `test_destination_without_a_url_gets_no_intention` (unitário) passou a configurar os segredos, e `_child_settings_script` (processos-filho dos testes da outbox) também. Sem isso, a regra nova (corretamente) não enfileirava nada. Removi as constantes `TICKETING, MERCHANT` de `api/webhooks.py`, que ficaram sem uso.
+- **Mutação** (cópia da árvore no scratchpad; arquivo restaurado depois de cada uma): M1 checkpoint sempre ausente, M2 leitura que falha tratada como ausente (N14/N15), M3 sem a guarda de `queue_state`, M4 sem a de `ticket_id`, M5 sem a de `thread_id`, M6 sem a de canal, M7 `announce = True` (N20), M8 recuperação sem filtro de destino (N09), M9 destinos só por URL (P3-2). **Nove de nove mortos.**
+
+### P3 do Time A (`v070-reviewer.md`)
+
+`tests/integration/test_v070_review_gaps.py` (7 testes):
+
+- **P3-A:** `test_mcp_command_checks_the_token_again_on_every_call` passa pelo comando `cmd_mcp` (com `serve_stdio` capturado): token revogado depois da subida → `INVALID_TOKEN` e linha de auditoria `invalid_token` com o principal; mais `test_mcp_command_refuses_to_start_without_a_valid_merchant_token` (sem token e com token de operador, código 2 e mensagem). Mutante N02 (sem `authorize=`) morto.
+- **P3-B:** `test_tool_call_refused_by_the_request_limit_is_audited_with_the_principal`: com `max_tool_calls=1`, a segunda ferramenta do Escalation é recusada, auditada como `limit_reached` com o principal, o escopo `support:read` e o lojista, enquanto o trace conta só a que rodou. Mutante M20 morto.
+- **P3-C:** deixei a guarda `operator_forbidden`, **sem remover**, e documentei na docstring que ela é redundante atrás do `READER` e fica como segunda guarda. Teste: alargar `READER_ROLES` com `operator` ou `service` não abre `/v1/messages` nem `/v1/router/compare` (`403 insufficient_scope`, sem chamada a modelo). Sem a guarda, o teste falha.
+
+### Comandos e números
+
+Todos com `.venv/Scripts/python.exe -m pytest -p no:cacheprovider --basetemp .pytest_cache/t68-dev-<etiqueta>-<data> ...`, um pytest por vez, sem rede nem chamada paga:
+
+| Conjunto | Resultado |
+| --- | --- |
+| `tests/unit` | **242 passed** (66 s) |
+| `test_v070_story`, `test_v070_closing`, `test_v070_review_gaps`, `test_v070_webhooks`, `test_v070_ticketing_integration` | **78 passed** (138 s) |
+| `test_v070_handoffs`, `_handoffs_r2`, `_resume`, `_resume_r2`, `_identity`, `_identity_r2` | **81 passed** (97 s) |
+| o restante de `tests/integration` | **231 passed** (161 s) |
+| **Total** | **632 passed** = os 579 da suíte estrita da T66 + 53 novos (2 da história, 5 do fechamento, 7 das lacunas P3, 15 das guardas da T66 e 24 do unitário parametrizado) |
+
+- `ruff check src tests` → ok. `docker compose config --quiet` (cópia sem `.env`) → código 0. Eval programado: acima.
+- **Não rodei** a suíte estrita (`lint_and_tests.py --strict`, que inclui ruff e as skills): fica com o Supervisor, conforme o pedido. O `WinError 5` no hardlink da guarda de orçamento não ocorreu nesta máquina; nenhuma guarda foi enfraquecida.
+- Nada ficou em segundo plano (nenhum uvicorn, Qdrant, Docker nem laço de espera): os únicos subprocessos foram os dos próprios testes, que terminam.
+
+### Decisões além do texto (reversíveis)
+
+1. Rótulo `UC14` `SIM-` → `HO-` (D7). Reversão: voltar o rótulo (o teste do eval passaria a acusar `UC14`).
+2. Linha de reserva em inglês com "human agent" (produto). Reversão: voltar o texto e o rótulo de `V030-CONTRACT-TERMINATION`.
+3. A linha de base do `content_ok` da v0.6.0 ficou fixa no teste (`V060_CONTENT_FAILURES`, 15 casos, medida na tag). Melhorar a política programada de Knowledge não quebra o teste (é subconjunto); piorar, sim.
+4. `target_config` como ponto único da leitura de URL e segredo (P3-2), em vez de duplicar a regra em `webhook_targets`.
+5. P3-C: guarda mantida e documentada; teste que a mantém viva.
+6. O momento 16 usa um processo-filho que termina e o próprio processo do teste como segundo processo, não dois filhos.
+
+### Limitações e riscos
+
+- **Texto do modelo real:** ver o risco do `personality.v4` e da palavra "human" acima (campanha `v070-qa`, caso `V030-CONTRACT-TERMINATION`).
+- **Transporte de teste, não sockets:** a história roda sobre `AppTransport` (cada host é um app ASGI em processo). Não cobre uvicorn, DNS do compose, `healthcheck` nem os volumes; é o momento 18 (QA).
+- **Locks entre processos e reinício só exercitados no Windows.** `LANGGRAPH_STRICT_MSGPACK=true` só no processo-filho.
+- `docker compose config` valida o arquivo, não sobe os containers.
+- **README, linha 214, desatualizado:** ainda diz `{"protocol": "SIM-…", "simulated": true}`. Fora do meu escopo (fechamento do Supervisor), junto com CHANGELOG e ADRs.
+- **Diretório vazio criado por engano fora do repositório:** passei um caminho no estilo do Git Bash (`/c/Users/...`) como `--out` do primeiro eval, e o Python do Windows o interpretou como `C:\c\Users\...`. Movi os dois arquivos para o scratchpad e sobrou a árvore **vazia** `C:\c\Users\lauro\AppData\Local\Temp\claude\...\out`. A remoção foi barrada pela verificação de segurança; fica para o Supervisor remover (`C:\c`), depois de conferir que está vazia.
+- Dentro do repositório, deixei 23 diretórios `.pytest_cache/t68-dev-*` (cerca de 490 MB), meus e ignorados pelo Git.
+
+### Próximo responsável
+
+Supervisor roda a suíte estrita no candidato desta rodada (esperado: 632 testes) e despacha a revisão independente da T68 (diff `6876adc..f536d9d` mais esta passagem), com atenção a: rótulo de `UC14`, linha de reserva em inglês, `target_config`/P3-2 e a história. Depois o QA monta a campanha `v070-qa` (US$0,20) e cumpre o momento 18. Sem aprovação própria, push ou ação externa.
