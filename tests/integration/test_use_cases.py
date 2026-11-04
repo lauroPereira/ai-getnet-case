@@ -215,7 +215,7 @@ def test_readiness(offline):
     client, _, _ = offline()
     ready = client.get("/ready").json()
     assert ready["ready"] is True and ready["index_chunks"] > 100
-    assert ready["versions"]["schema"] == 11 and ready["versions"]["app"].startswith("0.7.0")
+    assert ready["versions"]["schema"] == 11 and ready["versions"]["app"].startswith("0.8.0")
     assert ready["versions"]["prompts"]["router"]
 
 

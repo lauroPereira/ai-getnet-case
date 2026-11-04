@@ -180,6 +180,8 @@ def test_story_runs_replanning_agent_and_judge_variations_and_synthetic_split(
 def test_eval_estimate_requires_positive_real_measurements_and_projects_followups(
     settings, tmp_path, monkeypatch, capsys
 ):
+    from pydantic import SecretStr
+
     root = make_estimate_tree(tmp_path, monkeypatch)
     scenarios = root / "tests" / "scenarios"
     assert not (scenarios / "holdout_v080.jsonl").exists()
@@ -260,6 +262,85 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
         "estimated_cost_usd": 0.1,
     }
     assert not (scenarios / "holdout_v080.jsonl").exists()
+
+    high_sample = json.loads(json.dumps(sample))
+    monkeypatch.setattr(cli, "V080_HOLDOUT_CASE_COUNT", 5)
+    high_sample_path = tmp_path / "real-high-sample.json"
+    high_estimate_path = tmp_path / "verified-estimate.json"
+    high_sample_path.write_text(json.dumps(high_sample), encoding="utf-8")
+    assert cli.cmd_eval_estimate(
+        settings, argparse.Namespace(source=str(high_sample_path), out=str(high_estimate_path))
+    ) == 0
+    capsys.readouterr()
+    verified_estimate = json.loads(high_estimate_path.read_text(encoding="utf-8"))
+    assert 0.50 < verified_estimate["estimated_cost_usd"] <= 1.00
+    assert verified_estimate["campaign_cap_usd"] == 1.00
+    assert verified_estimate["source_report"] == high_sample_path.name
+    assert verified_estimate["estimate_format_version"] == 1
+
+    budget_dir = tmp_path / "verified-budget"
+    high_cap_settings = settings.model_copy(update={"budget_runtime_dir": budget_dir})
+    guard = cli._evaluation_budget_guard(
+        high_cap_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=high_estimate_path
+    )
+    assert guard.remaining() == pytest.approx(1.00)
+
+    minimal_path = tmp_path / "minimal-estimate.json"
+    minimal_path.write_text(json.dumps({"estimated_cost_usd": 0.75}), encoding="utf-8")
+    minimal_budget = tmp_path / "minimal-budget"
+    minimal_settings = settings.model_copy(
+        update={
+            "budget_runtime_dir": minimal_budget,
+            "deepseek_api_key": SecretStr("synthetic-deepseek-key"),
+        }
+    )
+    with pytest.raises(SystemExit, match="safe measured source-report reference"):
+        cli._evaluation_budget_guard(
+            minimal_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=minimal_path
+        )
+    assert not minimal_budget.exists()
+
+    provider_calls = []
+    monkeypatch.setattr(cli, "_eval_judge", lambda *args, **kwargs: provider_calls.append(True))
+    paid_args = eval_args(
+        tmp_path,
+        scripted=False,
+        judge=True,
+        split="dev",
+        limit=1,
+        no_conversations=True,
+        campaign="v080-qa",
+        campaign_cap_usd=1.00,
+        campaign_estimate=str(minimal_path),
+    )
+    with pytest.raises(SystemExit, match="safe measured source-report reference"):
+        cli.cmd_eval(minimal_settings, paid_args)
+    assert not provider_calls
+    assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
+
+    tampered = json.loads(json.dumps(verified_estimate))
+    tampered["estimated_cost_usd"] = 0.75
+    tampered_path = tmp_path / "tampered-estimate.json"
+    tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(SystemExit, match="altered or does not match"):
+        cli._evaluation_budget_guard(
+            minimal_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=tampered_path
+        )
+    assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
+
+    scripted_sample = json.loads(json.dumps(high_sample))
+    scripted_sample["config"].update(mode="scripted", agent_provider="scripted")
+    scripted_sample_path = tmp_path / "scripted-sample.json"
+    scripted_sample_path.write_text(json.dumps(scripted_sample), encoding="utf-8")
+    incompatible = json.loads(json.dumps(verified_estimate))
+    incompatible["source_report"] = scripted_sample_path.name
+    incompatible_path = tmp_path / "incompatible-estimate.json"
+    incompatible_path.write_text(json.dumps(incompatible), encoding="utf-8")
+    with pytest.raises(SystemExit, match="source is invalid.*real paid sample"):
+        cli._evaluation_budget_guard(
+            minimal_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=incompatible_path
+        )
+    assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
 
 
 def test_simple_and_forced_loop_follow_the_story_limits(settings, monkeypatch):
@@ -346,25 +427,15 @@ def test_v080_campaign_reuses_the_persistent_primary_and_cap_when_runtime_change
     with pytest.raises(SystemExit, match="unsupported campaign"):
         cli._evaluation_budget_guard(isolated, "other-qa")
 
-    higher_budget = tmp_path / "separate-project-budget"
-    higher_estimate = tmp_path / "higher-estimate.json"
-    higher_estimate.write_text(json.dumps({"estimated_cost_usd": 0.75}), encoding="utf-8")
-    higher_settings = isolated.model_copy(update={"budget_runtime_dir": higher_budget})
-    larger = cli._evaluation_budget_guard(
-        higher_settings,
-        "v080-qa",
-        campaign_cap_usd=1.0,
-        estimate_report=higher_estimate,
-    )
-    assert larger.remaining() == pytest.approx(1.0)
-
-
 def test_paid_sample_refuses_isolated_runtime_without_a_persistent_budget_dir(settings, tmp_path, monkeypatch):
+    from pydantic import SecretStr
+
     isolated = settings.model_copy(
         update={
             "data_dir": tmp_path / "data",
             "runtime_dir": tmp_path / "runtime-isolated",
             "budget_runtime_dir": None,
+            "deepseek_api_key": SecretStr("synthetic-deepseek-key"),
         }
     )
     monkeypatch.setattr(cli, "_eval_judge", lambda *args, **kwargs: pytest.fail("provider initialized"))

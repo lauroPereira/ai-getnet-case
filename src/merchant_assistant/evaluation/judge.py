@@ -37,6 +37,17 @@ class JudgeRefused(RuntimeError):
     """The configured judge cannot be used. Raised before any model call; nothing was spent."""
 
 
+@dataclass(frozen=True)
+class JudgeSetup:
+    """Validated local judge configuration, prepared before a spending guard or provider client is created."""
+
+    agent: tuple[str, str]
+    provider: str
+    model: str
+    prompt: Prompt
+    independence: str
+
+
 class JudgeScoreV3(BaseModel):
     groundedness: int = Field(description="1-5: every fact in the reply is supported by the evidence.")
     groundedness_reason: str = Field(description="One short sentence (at most 25 words).")
@@ -163,15 +174,8 @@ def default_factory(settings) -> Callable[[str, str], LLM]:
     return model_factory(settings)
 
 
-def resolve_judge(
-    settings,
-    *,
-    agent: tuple[str, str],
-    meter: Meter | None = None,
-    factory: Callable[[str, str], LLM] | None = None,
-) -> Judge:
-    """The configured judge, or a refusal. Every check runs before the client is built, so a refusal costs nothing.
-    The spending meter can be bound afterwards (`judge.meter = ...`), once the budget guard of the run exists."""
+def validate_judge(settings, *, agent: tuple[str, str]) -> JudgeSetup:
+    """Validate provider, price, independence, key and prompt without constructing a provider client."""
     provider, model = settings.judge_provider, settings.judge_model
     if provider not in JUDGE_PROVIDERS:
         raise JudgeRefused(
@@ -204,11 +208,32 @@ def resolve_judge(
             "No call was made."
         )
     prompt = load_prompt(settings.prompts_dir, RUBRIC, RUBRIC_VERSION)
+    return JudgeSetup(agent, provider, model, prompt, independence)
+
+
+def resolve_judge(
+    settings,
+    *,
+    agent: tuple[str, str],
+    meter: Meter | None = None,
+    factory: Callable[[str, str], LLM] | None = None,
+    validated: JudgeSetup | None = None,
+) -> Judge:
+    """Build a judge after validation; its spending meter can be bound after the run guard exists."""
+    setup = validated or validate_judge(settings, agent=agent)
+    if (
+        setup.agent != agent
+        or setup.provider != settings.judge_provider
+        or setup.model != settings.judge_model
+    ):
+        raise JudgeRefused("The judge configuration changed after validation. No call was made.")
     try:
-        llm = (factory or default_factory(settings))(provider, model)
+        llm = (factory or default_factory(settings))(setup.provider, setup.model)
     except RuntimeError as exc:
-        raise JudgeRefused(f"The judge {provider}/{model} is not available: {exc}. No call was made.") from exc
-    return Judge(llm, provider, model, prompt, meter or NullMeter(), independence)
+        raise JudgeRefused(
+            f"The judge {setup.provider}/{setup.model} is not available: {exc}. No call was made."
+        ) from exc
+    return Judge(llm, setup.provider, setup.model, setup.prompt, meter or NullMeter(), setup.independence)
 
 
 # --- persistence ----------------------------------------------------------------------------------------------------
