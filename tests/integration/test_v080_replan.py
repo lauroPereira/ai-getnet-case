@@ -579,6 +579,18 @@ HONEST_WEB_ANSWERS = [
     "Não foi possível encontrar essa informação em fontes confiáveis.",
     "Não há informações públicas sobre esse modelo, então não posso confirmar.",
     "Uma página de terceiros diz que a Get XYZ aceita pagamento por aproximação (NFC), mas não é uma fonte oficial.",
+    # review P3-4: admissions the first list missed
+    "Não consegui verificar se a Get XYZ aceita pagamento por aproximação.",
+    "Não identifiquei informações sobre esse modelo.",
+    "Não achei nada sobre a Get XYZ.",
+    "Não foi possível verificar essa informação.",
+    "Não sei dizer se a Get XYZ aceita pagamento por aproximação.",
+    "Não posso afirmar que a Get XYZ aceita pagamento por aproximação.",
+    "Não existe informação pública sobre a Get XYZ.",
+    "Não consigo confirmar se esse modelo tem pagamento por aproximação.",
+    # an honest answer may repeat the question, NFC included, behind an expression of doubt
+    "Não foi possível confirmar se a Get XYZ aceita NFC.",
+    "Não sei se a Get XYZ tem NFC.",
 ]
 INVENTED_WEB_ANSWERS = [
     "Sim, a Get XYZ aceita pagamento por aproximação.",
@@ -589,6 +601,12 @@ INVENTED_WEB_ANSWERS = [
     "Não encontrei fontes oficiais, mas sim, a Get XYZ aceita pagamento por aproximação.",
     "Não consegui confirmar na página oficial, mas sim, aceita pagamento por aproximação.",
     "Não localizei a página oficial, porém a Get XYZ possui NFC.",
+    # review P3-4: the invention that comes after the caveat
+    "Não encontrei fonte oficial, mas a Get XYZ aceita pagamento por aproximação.",
+    "Não consegui verificar, porém a Get XYZ possui NFC.",
+    "Não tenho certeza, no entanto, a Get XYZ aceita pagamento por aproximação.",
+    "Não achei a página oficial, contudo a Get XYZ tem NFC.",
+    "Não sei dizer, mas aceita pagamento por aproximação.",
 ]
 
 
@@ -612,3 +630,18 @@ def test_the_web_label_rejects_an_invented_yes_for_the_fictional_product(answer)
 
 def test_nfc_alone_no_longer_satisfies_the_web_label():
     assert not web_label_checks("A maquininha tem NFC.")["content_ok"]
+
+
+# --- task 72b, round 2 (review P3-6): the fallback with the Support part present ----------------------------------
+
+
+def test_the_fallback_keeps_the_support_points_before_the_declared_gap(offline, monkeypatch):
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    incomplete = {"next": "finish", "review": "incomplete", "reason": REASON}
+    down = lambda call: LLMError("personality down")  # noqa: E731
+    client, orchestrator, llm = offline(handler=model_decides(incomplete, personality=down))
+    body, trace = handle(orchestrator, "Quando vai cair o dinheiro das vendas de ontem?")
+    sentence = policy("unconfirmed", "pt")
+    assert body["route"] == "support" and "customer_support" in body["agents"]
+    assert body["answer"].endswith(sentence) and body["answer"].count(sentence) == 1
+    assert "crédito" in body["answer"][: -len(sentence)]  # the account figures come first, then the gap

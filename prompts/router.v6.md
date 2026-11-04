@@ -21,6 +21,10 @@ Routes:
   conditions used for yesterday's credit charge?", "Was yesterday's credit sale charged under a different plan?",
   "Did the conditions change on yesterday's debit sale?", "A cobrança de crédito de ontem foi feita em condições
   diferentes?"). It asks about one real charge of this merchant, so it is never `knowledge` and never `clarify`.
+  Contrast: a general question that does not point at a charge the merchant already had stays `knowledge` ("What are
+  the fees for credit sales?", "Can I change my plan?", "Do the conditions change for sales above R$ 1.000?"); a
+  question about the merchant's own recorded charge ("Were different conditions used for yesterday's credit charge?",
+  "Is the fee on yesterday's debit sale consistent?") is support with topic `pricing`.
 - support with topic `enablement`: the merchant asks about an existing card scheme request, its activation or its availability
   on a device.
 - support with topic `cancellation`: the merchant asks for the status of a sale cancellation already requested.

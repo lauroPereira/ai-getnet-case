@@ -16,12 +16,14 @@ from merchant_assistant.llm.scripted import ScriptedCall, ToolPlan
 
 # `router.v6`: a question about whether different conditions, plan or rate were used for a charge or sale (any
 # interrogative form, "Were...", "Was...", "Did...", "Foi...") is a pricing question about one real charge of the
-# merchant, never a clarification. It needs a word of difference or change, the conditions or plan, and a charge or
-# sale.
+# merchant, never a clarification. It needs a word of difference or change, the conditions or plan, a charge or sale,
+# and a period that points at one the merchant already had ("yesterday's credit charge"): a general question such as
+# "Do the conditions change for sales above R$ 1.000?" stays a knowledge question.
 CONDITIONS_QUESTION = (
     r"(?s)^(?=.*\b(?:differ(?:s|ed)?|different|chang(?:e|es|ed)|diferentes?|distint[ao]s?|mudou|mudaram)\b)"
     r"(?=.*(?:\bconditions?\b|\bplans?\b|\bplano\b|condi[cç][aãoõ]\w*))"
     r"(?=.*(?:\bcharge[ds]?\b|\bsales?\b|\bvendas?\b|cobran[cç]a|cobrad))"
+    r"(?=.*\b(?:yesterday|today|last|latest|ontem|hoje|passad[ao]|[uú]ltim[ao])\b)"
 )
 
 ROUTE_RULES: list[tuple[str, str, str | None]] = [
