@@ -56,6 +56,17 @@ def _has_persisted_v080_cap(path: Path, cap_usd: float) -> bool:
     return ceiling == cap_usd and rows == [(V080_QA_CAMPAIGN, cap_usd)]
 
 
+def _path_entry_exists(path: Path) -> bool:
+    """Detect files and links, including dangling links that Path.exists() follows."""
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+    return True
+
+
 def _evaluation_budget_guard(
     settings: Settings,
     campaign_id: str | None = None,
@@ -117,15 +128,19 @@ def _evaluation_budget_guard(
     campaign_path = budget_dir / f"budget-{V080_QA_CAMPAIGN}.sqlite3"
     if campaign_cap_usd == V080_QA_EXCEPTIONAL_CAP_USD:
         persisted_cap_matches = _has_persisted_v080_cap(campaign_path, campaign_cap_usd)
+        campaign_sidecar = Path(f"{campaign_path}.limit")
+        if (
+            (_path_entry_exists(campaign_path) or _path_entry_exists(campaign_sidecar))
+            and not persisted_cap_matches
+        ):
+            raise SystemExit(
+                "eval: a pre-existing v080-qa database or ceiling sidecar does not match "
+                "the fixed USD 1.10 cap; refusing to mount."
+            )
         if not persisted_cap_matches and campaign_cap_usd > primary.remaining():
             raise SystemExit(
                 "eval: the USD 1.10 v080-qa cap does not fit in the remaining primary budget; "
                 "the campaign cap was not mounted."
-            )
-        if campaign_path.exists() and not persisted_cap_matches:
-            raise SystemExit(
-                "eval: an existing v080-qa ledger lacks a matching USD 1.10 cap record and sidecar; "
-                "it cannot be remounted."
             )
     campaign = FixedBudgetGuard(
         campaign_path,

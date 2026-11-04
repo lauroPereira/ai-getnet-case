@@ -428,28 +428,6 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
         )
     assert not (insufficient_dir / "budget-v080-qa.sqlite3").exists()
 
-    legacy_dir = tmp_path / "legacy-cap-ledger"
-    legacy_dir.mkdir()
-    legacy_cap_path = legacy_dir / "budget-v080-qa.sqlite3"
-    legacy_cap_path.write_bytes(b"pre-existing-without-matching-sidecar")
-    legacy_primary = BudgetGuard(legacy_dir / "budget.sqlite3", 1.70)
-    legacy_spend = legacy_primary.reserve(
-        request_id="legacy-low-balance", agent="router", model="test", amount=0.6001
-    )
-    legacy_primary.settle(legacy_spend, 0.6001)
-    legacy_settings = settings.model_copy(
-        update={"budget_runtime_dir": legacy_dir, "budget_limit_usd": 1.70}
-    )
-    with pytest.raises(SystemExit, match="does not fit in the remaining primary budget"):
-        cli._evaluation_budget_guard(
-            legacy_settings,
-            "v080-qa",
-            campaign_cap_usd=1.10,
-            estimate_report=exceptional_estimate_path,
-        )
-    assert not (legacy_dir / "budget-v080-qa.sqlite3.limit").exists()
-    assert legacy_cap_path.read_bytes() == b"pre-existing-without-matching-sidecar"
-
     above_limit_sample = json.loads(json.dumps(exceptional_sample))
     for row in above_limit_sample["cases"]:
         row["cost_usd"] = 0.0212
@@ -505,6 +483,45 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
             minimal_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=incompatible_path
         )
     assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
+
+
+@pytest.mark.parametrize(
+    ("database_bytes", "sidecar_text"),
+    [
+        (None, "1.1\n"),
+        (None, "1.15\n"),
+        (b"invalid sqlite database", "1.1\n"),
+    ],
+    ids=["orphan-exact-sidecar", "orphan-higher-sidecar", "invalid-database"],
+)
+def test_exceptional_campaign_refuses_preexisting_unmatched_files(
+    settings, tmp_path, monkeypatch, database_bytes, sidecar_text
+):
+    budget_dir = tmp_path / "budget"
+    settings = settings.model_copy(update={"budget_runtime_dir": budget_dir, "budget_limit_usd": 1.70})
+    primary = BudgetGuard(budget_dir / "budget.sqlite3", 1.70)
+    assert primary.remaining() == pytest.approx(1.70)
+
+    campaign_path = budget_dir / "budget-v080-qa.sqlite3"
+    sidecar_path = budget_dir / "budget-v080-qa.sqlite3.limit"
+    if database_bytes is not None:
+        campaign_path.write_bytes(database_bytes)
+    sidecar_path.write_text(sidecar_text, encoding="ascii")
+    monkeypatch.setattr(cli, "_verified_v080_campaign_estimate", lambda _path: 1.01)
+
+    with pytest.raises(SystemExit, match="pre-existing v080-qa database or ceiling sidecar.*does not match"):
+        cli._evaluation_budget_guard(
+            settings,
+            "v080-qa",
+            campaign_cap_usd=1.10,
+            estimate_report=tmp_path / "synthetic-estimate.json",
+        )
+
+    assert primary.remaining() == pytest.approx(1.70)
+    assert campaign_path.exists() is (database_bytes is not None)
+    if database_bytes is not None:
+        assert campaign_path.read_bytes() == database_bytes
+    assert sidecar_path.read_text(encoding="ascii") == sidecar_text
 
 
 def test_simple_and_forced_loop_follow_the_story_limits(settings, monkeypatch):

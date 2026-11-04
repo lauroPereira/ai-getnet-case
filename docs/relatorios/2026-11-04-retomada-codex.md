@@ -29,8 +29,8 @@ Períodos das 09h09 às 14h43 e das 15h29 às 16h10, horário de São Paulo. O d
 
 | Tarefa | Papel | Candidato ou base | Situação |
 | --- | --- | --- | --- |
-| Extensão controlada do orçamento | Developer e Reviewer | `9057aaa` + ajuste de guarda | Autorizada e em validação. O ensaio sintético do procedimento local preservou o histórico e recusou uma segunda aplicação. |
-| QA técnico | QA independente | `9057aaa` | A campanha paga aguarda a extensão validada e a prova local do serviço sintético de preços. Campanha sem montagem. |
+| Extensão controlada do orçamento | Developer e Reviewer | `27add60` | Suíte estrita aprovada. Correção P2 da montagem de campanha em andamento. Procedimento local ensaiado em cópia sintética. |
+| QA técnico | QA independente | Candidato após correção P2 | Mock local conferido. A campanha paga aguarda novo parecer e aplicação da extensão. Campanha sem montagem. |
 
 O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A amostra foi complementada dentro desse limite. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
 
@@ -72,6 +72,8 @@ O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com r
 | 15h28 | 9,52 GiB | 1,19 GiB | Checagem liberou o complemento da amostra. |
 | 16h05 | 9,52 GiB | 1,45 GiB | Sem alertas recentes. |
 | 16h33 | 9,51 GiB | 1,22 GiB | Folga virtual de 12,72 GiB e zero alertas recentes. |
+| 16h49 | 9,47 GiB | 0,77 GiB | Folga virtual de 12,61 GiB, zero alertas e suíte estrita liberada. |
+| 19h02 | 8,99 GiB | 1,43 GiB | Folga virtual de 11 GiB e zero alertas. |
 
 O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de despachar trabalho pesado. Nesta retomada, as primeiras passagens usam testes focados. A estimativa de custo usa entrada sem cache, entrada em cache e saída por subagente, com a tarifa Standard publicada pela OpenAI. Os valores são equivalentes de API. [Tarifas da API](https://developers.openai.com/api/docs/pricing)
 
@@ -135,5 +137,9 @@ A revisão controlada foi iniciada após a confirmação. A aplicação anterior
 Na retomada do ajuste, `acf4b74` correspondia ao commit que registrava a proposta acima de `26c3bd0`. Os HEADs e as branches dos demais worktrees e do web conferiram com a tabela. O web local estava 15 commits à frente da referência local de `origin/main`. A entrada Git órfã e os diretórios não rastreados preexistentes foram preservados.
 
 O Supervisor validou o mock em `127.0.0.1:18765` com Uvicorn da `.venv` do projeto e fixtures de `data/mock-services`. OpenAPI, as duas simulações (aplicável e não aplicável) e uma cobrança responderam HTTP 200, com os campos conferidos contra as fixtures. O processo temporário foi encerrado sem chamadas pagas. Para a avaliação, usar o mesmo executável, `MOCK_SERVICES_DIR` no mock e `MOCKS_URL` somente no processo de QA.
+
+O candidato `27add60` passou na suíte estrita, com 1.031 testes em 16 min 57 s de pytest, Ruff e validação de skills. O parecer independente foi retomado após o limite de uso do Luna e encontrou um P2. Um arquivo de teto de campanha preexistente sem o SQLite pode ser adotado na primeira montagem e impedir a reabertura. O ajuste foi devolvido ao Developer. O manifesto r2 e a projeção de US$1,00929931 calculada sobre a amostra anterior ficam como evidência do candidato substituído. [Manifesto r2](../evidence/v080-candidato-r2.json) [Estimativa de preflight](../evidence/v080-custo-estimativa-r3-preflight.json)
+
+O ensaio sintético do procedimento operacional r3 verificou histórico, backup, recusa de segunda montagem, falhas antes e depois do registro preparado e recuperação de interrupção. A revisão aceitou o procedimento sob quiescência conferida antes e depois. Se houver falha após `prepared`, suspender o QA e reconciliar ou recuperar em quiescência, preservando o diretório de auditoria. A tentativa se encerra e qualquer nova execução exige diretório distinto e nova revisão. No último preflight, o ledger real mantinha 1.605 entradas, US$0,55947501 contabilizados, zero reservas, teto US$1,00 e campanha sem montagem.
 
 Após o QA da v0.8.0, incluir na definição de escopo da v0.9.0 um cliente Claude API para Sonnet 5.5 **na aplicação**. A escolha do papel depende da medição de custo por etapa e ferramenta, qualidade e latência. A prova técnica e o teto do piloto ficam para a especificação da v0.9.0.
