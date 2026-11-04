@@ -28,3 +28,14 @@
 ## Não comprovado
 
 Docker em execução e o momento 18 (QA); modelo real; `ask` por execução; MCP por stdio real; migrações (não tocadas pela tarefa).
+
+## Rodada 2 — apto para QA
+
+- **Candidato:** `4be9130247b8b233b37d94e67b76a891fc6d77b0` (código em `a7fb6b0`), worktree `review-a2`; HEAD e status iguais antes e depois. Diff `861a80f..a7fb6b0`, 7 arquivos fora de `docs/`.
+- **Independência:** Reviewer novo em contexto frio (sonnet/xhigh), escopo estreito e congelado; leu a tarefa até "Validação" e o parecer da rodada 1; não leu as passagens do Developer (buscas com `-l` e `--stat` só listaram nomes de arquivo).
+- **Parecer:** **apto para QA** — nenhum P1 nem P2.
+- **P2-1 resolvido:** `SC-HANDOFF` exige `HO-` e recusa `SIM-` e "simul"; pela API com modelo programado, 11/11. Os 10 cenários do catálogo pela API e pelo runner: idênticos aos da v0.6.0 (8 com 11/11; `SC-DEVICE` e `SC-KNOWLEDGE-PRODUCTS` com 10/11 por `content_ok` nos dois lados). Os 9 cenários com `source_case` concordam com os casos de origem em mensagem, idioma e rótulos.
+- **P3-1 e P3-2 resolvidos:** `must_not_include` em UC14 e `SC-HANDOFF` sem afrouxar nada (mutantes M1–M9 mortos, inclusive "(simulação desta demonstração)" com `HO-`); aviso na subida para destino com URL e sem segredo, sem expor valores, pelo mesmo caminho de `get_settings`, `configure_logging` e `create_app` (mutantes W1–W10 mortos).
+- **Regressão × v0.6.0:** `eval --scripted` (40 casos e followup) nas cópias de `v0.6.0` e `4be9130`: mesmos números (`passed` e `content_ok` 0,625; demais 1,0; custo 0; conversas 4/4) e os mesmos 15 casos falhando `content_ok`; caso a caso, só a resposta difere em 4 casos e 2 turnos, só na linha de encaminhamento da D7. 101 testes dos arquivos tocados passaram; Ruff limpo. Suíte estrita (Supervisor, neste candidato): **640 passed**, código 0.
+- **P3 (registrados):** (1) a versão do catálogo continua `"1"` com o rótulo de `SC-HANDOFF` mudado; `_compatible_runs` (`comparisons.py:61-83`) não olha rótulos, então num runtime reaproveitado da v0.6.0 uma execução gravada com `SIM-` poderia entrar numa comparação nova (não reproduzido; o QA usa runtime novo); (2) `README.md:214` com `SIM-`/`simulated` (fechamento); (3) redação do aviso de subida; (4) `ruff format --check` acusa código antigo em `webhook_outbox.py:75`, fora do gate.
+- **Não comprovado:** Docker e `uvicorn` reais, modelo real, MCP por stdio, comparações de perfis com `SC-HANDOFF` pela API (cobertas pela suíte estrita).
