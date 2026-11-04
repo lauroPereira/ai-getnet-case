@@ -6,7 +6,7 @@ As jornadas de negócio passam de 7/13 para pelo menos 12/13 pela rubrica: as qu
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) (rascunho) — D15; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-93, CA-51; [plano](../specs/evolucao-pos-feedback-plano.md) decisão técnica 16; limitações em `docs/evidence/v060-resultado.md`.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D15; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-93, CA-51; [plano](../specs/evolucao-pos-feedback-plano.md) decisão técnica 16; limitações em `docs/evidence/v060-resultado.md`.
 
 ## Pré-condições
 
@@ -36,5 +36,5 @@ A preencher pelo Developer.
 ## Status
 
 ```text
-pendente (aguarda aprovação da spec v0.8.0)
+pendente (spec aprovada; começa depois do merge da v0.7.0)
 ```

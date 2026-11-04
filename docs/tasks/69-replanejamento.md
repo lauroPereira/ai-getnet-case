@@ -6,7 +6,7 @@ Depois de `knowledge` e de `support`, um nó `replan` observa o resultado e deci
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) (rascunho) — D1 a D8; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-86 a RF-88, CA-49, UC-23; [plano](../specs/evolucao-pos-feedback-plano.md) decisões técnicas 9 a 11.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D1 a D8; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-86 a RF-88, CA-49, UC-23; [plano](../specs/evolucao-pos-feedback-plano.md) decisões técnicas 9 a 11.
 
 ## Pré-condições
 
@@ -42,5 +42,5 @@ A preencher pelo Developer.
 ## Status
 
 ```text
-pendente (aguarda aprovação da spec v0.8.0)
+pendente (spec aprovada; começa depois do merge da v0.7.0)
 ```
