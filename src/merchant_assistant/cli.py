@@ -441,6 +441,61 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     return 0
 
 
+def cmd_eval_calibrate(settings: Settings, args) -> int:
+    """`eval-calibrate`: `--sample` writes the CSV the owner rates, without the judge's scores; `--import` reads it
+    back, stores the ratings in `calibrations` and measures the agreement with the judge (spec v0.8.0 D10, D19). No
+    model is called."""
+    from merchant_assistant.evaluation import calibration
+
+    size, filled = getattr(args, "sample", None), getattr(args, "import_csv", None)
+    if (size is None) == (filled is None):
+        raise SystemExit("eval-calibrate: choose --sample N --from <report.json>, or --import <csv>.")
+    evidence_dir = PROJECT_ROOT / "docs" / "evidence"
+    try:
+        if size is not None:
+            if not args.source:
+                raise SystemExit("eval-calibrate: --sample needs --from <report.json> (a campaign with --judge).")
+            seed = calibration.DEFAULT_SEED if args.seed is None else args.seed
+            rows, meta = calibration.make_sample(Path(args.source), size, seed, args.campaign)
+            out = Path(args.out) if args.out else evidence_dir / "v080-calibracao-amostra.csv"
+            calibration.write_csv(out, rows, meta, delimiter=args.delimiter)
+            print(
+                f"sample: {len(rows)} answers of {meta['eligible']} eligible, seed {seed}, campaign {meta['campaign']}"
+            )
+            print(f"csv: {out}")
+            if len(rows) < calibration.DEFAULT_SAMPLE:
+                print(
+                    f"eval-calibrate: the sample has {len(rows)} answers; RF-91 asks for at least "
+                    f"{calibration.DEFAULT_SAMPLE}.",
+                    file=sys.stderr,
+                )
+            return 0
+        if not settings.db_path.exists():
+            raise SystemExit(f"eval-calibrate: no database at {settings.db_path}: the judgements are stored there.")
+        from merchant_assistant.data.db import connect
+
+        conn = connect(settings.db_path)
+        try:
+            result = calibration.import_filled(conn, Path(filled), rater=args.rater, campaign=args.campaign)
+        finally:
+            conn.close()
+        out = Path(args.out) if args.out else evidence_dir / "v080-calibracao.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result["report"], encoding="utf-8")
+        counts = result["counts"]
+        print(
+            f"calibrations: {counts['created']} stored, {counts['updated']} updated, {len(result['skipped'])} skipped "
+            f"(campaign {result['meta']['campaign']}, rater {result['rater']})"
+        )
+        print(f"report: {out}")
+        return 0
+    except calibration.CalibrationError as exc:
+        shown = exc.messages[: calibration.MAX_REPORTED_ERRORS]
+        more = len(exc.messages) - len(shown)
+        lines = [f"eval-calibrate: {shown[0]}", *shown[1:], *([f"(+{more} more)"] if more else [])]
+        raise SystemExit("\n".join(lines)) from None
+
+
 def cmd_migrate(settings: Settings, args) -> int:
     """Moves the database schema to a version (default: latest). Use --to to roll back."""
     import sqlite3
@@ -651,6 +706,28 @@ def main(argv: list[str] | None = None) -> int:
         "the split of the answers appended, for example avaliacao-juiz-holdout-v080).",
     )
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
+    p_calibrate = sub.add_parser(
+        "eval-calibrate",
+        help="Human calibration of the judge: --sample writes the CSV to rate, --import measures the agreement.",
+    )
+    p_calibrate.add_argument("--sample", type=int, default=None, help="Draw N answers (at least 24) into a CSV.")
+    p_calibrate.add_argument("--from", dest="source", default=None, help="Campaign report JSON (used with --sample).")
+    p_calibrate.add_argument("--import", dest="import_csv", default=None, help="The CSV the owner filled in.")
+    p_calibrate.add_argument("--seed", type=int, default=None, help="Seed of the draw (default 20261104).")
+    p_calibrate.add_argument("--campaign", default=None, help="Campaign name (default: the report name).")
+    p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
+    p_calibrate.add_argument(
+        "--delimiter",
+        choices=[";", ","],
+        default=";",
+        help="CSV separator (default ';', which a pt-BR spreadsheet opens; --import accepts ';', ',' and tab).",
+    )
+    p_calibrate.add_argument(
+        "--out",
+        default=None,
+        help="Output file: the CSV (default docs/evidence/v080-calibracao-amostra.csv) or, with --import, the "
+        "report (default docs/evidence/v080-calibracao.md).",
+    )
     p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
     p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")
     sub.add_parser("mcp", help="Serve the support tools over MCP (stdio) for the merchant of MERCHANT_ASSISTANT_TOKEN.")
@@ -686,6 +763,7 @@ def main(argv: list[str] | None = None) -> int:
         "ask": cmd_ask,
         "smoke": cmd_smoke,
         "eval": cmd_eval,
+        "eval-calibrate": cmd_eval_calibrate,
         "migrate": cmd_migrate,
         "mcp": cmd_mcp,
         "mcp-demo": cmd_mcp_demo,

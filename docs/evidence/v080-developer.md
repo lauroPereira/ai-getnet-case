@@ -391,3 +391,73 @@ O Reviewer faz a revisão final dos casos 15 e 16 e do lacre. Em seguida, o Supe
 
 - A regra da conta no substituto programado é lista de palavras; o juiz real decide pelo prompt, que o `judge.v3` já tem. Efeito no juiz real continua para o QA e a calibração.
 - Nada de chamada paga nem de rede.
+
+## Tarefa 71
+
+- Papel e responsável: Developer do Time B (subagente), despachado pelo Supervisor. Tarefa [71](../tasks/71-calibracao-humana.md); spec v0.8.0 D10, D12, D14, D16 e D19; RF-91 e CA-50 da spec 0.2; plano, decisão técnica 14.
+- Objetivo e critérios: gerar uma amostra de respostas para o responsável avaliar com a rubrica do juiz, sem ver os scores dele, e calcular a concordância humano × juiz por critério. Critérios da tarefa: CSV sem nenhum score do juiz (teste procura os valores); kappa e concordâncias com números fixos e casos de borda; CSV malformado com erro claro e a linha; nenhuma chamada paga. A marcação é do Supervisor.
+- Escopo:
+  - **Novos:** `src/merchant_assistant/evaluation/calibration.py`; `tests/unit/evaluation/test_calibration.py` (57 testes); `tests/integration/test_calibration_flow.py` (5); `docs/evidence/v080-calibracao-modelo.md` (formato do relatório, com dados inventados).
+  - **Alterados:** `cli.py` só por acréscimo (`cmd_eval_calibrate`, o subcomando `eval-calibrate` e a entrada em `handlers`; 78 linhas, nenhuma removida), a tarefa 71 (Validação e Status) e esta passagem.
+  - **Intocados:** `orchestration/`, `agents/`, `api/`, `scripted_policy.py`, `catalog.json`, todos os prompts, `config.py`, `migrations.py` (a tabela `calibrations` é a da 0011, sem mudança), `tests/scenarios/` e o holdout (lacre `91aa5158…4f1bac` conferido por `sha256sum` e pelo teste, sem abrir o conteúdo), `_tmp/`, `.env`, o checkout principal e os outros worktrees.
+- Estado: implementada; em andamento até a revisão independente.
+- Branch e PR: `codex/v0.8.0-avaliacao`, sem PR, sem push.
+- Base e versão final: base `3598a48` (P3 da rodada 2 da tarefa 70); versão final é o commit desta tarefa (SHA no retorno ao Supervisor).
+- Independência: não-independente (relato do autor).
+
+### Como o responsável e o QA usam
+
+1. Depois da campanha real (`eval --judge`, que grava os julgamentos no banco do runtime), sortear a amostra: `merchant-assistant eval-calibrate --sample 24 --from docs/evidence/<relatório da campanha>.json`. Escreve `docs/evidence/v080-calibracao-amostra.csv` (ou `--out`); o responsável preenche as colunas em branco.
+2. Importar no mesmo banco em que a campanha gravou os julgamentos: `merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv --rater <nome>`. Grava em `calibrations` e escreve `docs/evidence/v080-calibracao.md` (ou `--out`).
+
+O relatório de origem precisa ter a evidência das respostas (campanha com `--judge` ou `--repeat`). A amostra sai da **primeira execução** do relatório. Uma campanha `--scripted` grava os julgamentos num banco temporário que se perde; só a campanha real pode ser importada. Para o `holdout_v080` (D14, D17), que o QA roda à parte, o QA pode sortear outra amostra do relatório dele (`--campaign` dá outro nome); a escolha é do Supervisor.
+
+### O que a tarefa entrega
+
+- **Amostra (`--sample N --from`).** Balanceada por estrato (rota, split): uma resposta de cada estrato por vez, na ordem que só a semente decide, até completar N (todo estrato aparece antes de algum aparecer duas vezes). Com 24 e os estratos de uma campanha típica cada rota e cada split entram; um estrato raro não é pulado, como seria numa amostra proporcional. A ordem usa SHA-256 de `semente|papel|chave`, não o gerador do Python, então o mesmo relatório e a mesma semente dão o mesmo CSV em qualquer versão. A lista final sai embaralhada pela semente, sem agrupar por rota. Elegíveis: primeira execução, com a evidência gravada e julgamento completo. Se houver menos que N, leva todos; menos de 24 avisa no erro padrão (RF-91).
+- **CSV.** UTF-8 com BOM, separador `;` (padrão), 10 linhas de instruções em português que começam com `#`, uma linha `# amostra: campanha=…; semente=…; origem=…; sorteadas=…; pedidas=…; elegiveis=…; rubrica=judge.v3`, o cabeçalho e uma linha por resposta: `sample_id` (S01…), `route`, `split`, `status`, `message`, `answer`, `sources`, `evidence`, as colunas do avaliador (`groundedness`, `factual_correctness`, `relevance`, `usefulness`, `unsupported_claim`, `note`; vazias) e, ao final, `request_id` e `case_id`. As instruções trazem a rubrica dos quatro critérios 1-5 e o veredito, com as mesmas definições do `judge.v3`, a regra do resultado de ferramenta e a da nota de busca web.
+- **Sem o juiz.** `sample_rows` lê só `judge_input` (a entrada que o juiz recebe) e os rótulos da linha (`route`, `split`, `id`, `request_id`). O registro `judge` do relatório não é lido em lugar nenhum além do filtro de elegibilidade (`state == completed`).
+- **Importação (`--import`).** Valida tudo antes de gravar, mostra os problemas juntos (até 25) com a linha física e o `sample_id`. Meio preenchida é erro; vazia é pulada; nada é gravado se uma linha estiver errada ou sem julgamento. Ligação ao julgamento: `run_evaluations` com a mesma `request_id`, principal `cli:eval`, rubrica `judge`, `state = completed`, `repetition = 1`, com `scores`, o mais antigo (a campanha, não uma reavaliação posterior da mesma resposta). Importar o mesmo arquivo atualiza as linhas.
+- **Medidas.** Por critério: exata, ±1, kappa quadrático ponderado, médias e viés. Veredito: exata, kappa e tabela 2×2. Intervalos de 95%: Wilson (fórmula fechada) para as proporções e bootstrap com semente (2 000 reamostragens das respostas) para o kappa. Definição do kappa: `1 - observado/esperado`, peso `((a-b)/4)²`, esperado pelas marginais das duas séries; as categorias são sempre 1 a 5 (0 e 1 no veredito), não as que apareceram.
+- **Relatório.** Markdown em português: cabeçalho com campanha, avaliador, rubrica, juiz, semente e contagens; ressalva de amostra pequena (D19); tabela por critério; veredito; casos de borda do kappa; divergências de 2 pontos ou mais ou veredito oposto; cobertura por rota e split; "Como ler".
+
+### Decisões além do texto do plano
+
+1. **Separador `;` e BOM.** O responsável usa Windows em português: o Excel pt-BR só separa as colunas com `;` e só lê acentos de UTF-8 com BOM. `--delimiter ,` troca o separador do arquivo gerado, e a importação aceita `;`, `,` e tabulação pelo cabeçalho. Reversível: uma linha.
+2. **Amostra balanceada, não proporcional.** Com 24 de ~69 casos em ~10 estratos, a proporcional deixaria rotas raras de fora e a calibração dessas rotas (web, encaminhamento) seria cega. O custo: o conjunto sorteado não reproduz as proporções da campanha; o relatório lista a cobertura. Reversível trocando o laço de `draw_sample`.
+3. **Ordem por hash.** Para a semente valer entre versões do Python e máquinas.
+4. **`request_id` e `case_id` no CSV.** São identificadores, não notas; `request_id` é o elo com o julgamento (a instrução diz para não apagar). Quem abrir o banco pode achar a nota do juiz; a regra vale para o arquivo.
+5. **A evidência é resumo de 2 000 caracteres**, não os 6 000 do juiz, como o texto da tarefa pede ("evidências resumidas"); a instrução diz isso e que `[...cut]` marca corte. Se o responsável precisar do trecho todo para decidir, a linha tem `request_id` para buscá-lo no relatório JSON da campanha. Mudar o limite é uma constante.
+6. **Mensagens de erro em português** (o leitor é o responsável preenchendo a planilha); o resto da CLI segue em inglês.
+7. **Sem UTF-8, recusa** com a instrução "salvar como CSV UTF-8", em vez de adivinhar a codificação e gravar texto torto.
+8. **Kappa sem intervalo quando um lado não varia** (toda reamostra daria 0): o relatório diz "sem intervalo" e explica na seção de bordas. Com uma linha ou duas séries constantes e iguais, "n/d".
+9. **Modelo do relatório** em `docs/evidence/v080-calibracao-modelo.md`, gerado pelo mesmo código sobre 48 respostas e um avaliador inventados, com a faixa de aviso no topo; o relatório real não se chama assim.
+10. **Importação no banco do runtime.** `calibrations` está no banco onde `eval --judge` real grava os julgamentos; `--import` se recusa a criar um banco que não existe.
+
+### Evidência
+
+- Python do worktree (`merchant_assistant.__file__` → `time-b\src`), `-p no:cacheprovider`, `--basetemp .pytest_cache/t71-dev-<hora>`, um pytest por vez; a suíte estrita completa não foi rodada.
+- `tests/unit`: **368 aprovados** (117 s); novos: 57 de calibração e 7 dos P3. Integração: `test_eval_campaign` (22), `test_calibration_flow` (5), `test_evaluation_runner`, `test_evaluator_settings`, `test_v060_api` e `test_v060_r2`: **88 aprovados** (135 s). ruff `check src tests` sem achados.
+- Números conferidos à mão no teste: `[1,2,3,4,5]` × `[1,3,3,4,4]` → exata 0,6, ±1 1,0, kappa 0,875; 12 notas → exata 7/12, ±1 1,0, kappa 0,8404; um lado constante → 0; pior caso → -1; Cohen em 8 pares → 0,5; Wilson 24/24 → 0,862 a 1,0 e 12/24 → 0,314 a 0,686; mais 400 séries aleatórias contra a fórmula `1 - N·Σd² / Σ(aᵢ-bⱼ)²`.
+- Mutação: 35 mutantes de `calibration.py` (pesos do kappa, bordas, Wilson, bootstrap, balanceamento, semente, ordem, máscara, BOM, nota de web, validação de faixa e de veredito, duplicados, número da linha, colunas a mais, repetição, principal e rubrica do julgamento, upsert, mais antigo, `scores` nulo, resumo de evidência, três formas de vazar o juiz para o arquivo, tabela do veredito, sinal do viés, limiar das divergências, ressalva, intervalo sem variação) e 10 de `cli.py` (modos exclusivos, `--from`, banco ausente, caminhos padrão, aviso de amostra curta, truncamento de erros, avaliador, semente, registro do subcomando): **45 mortos** (a rodada final do módulo, sem cache de bytecode, repetiu os 35). Na primeira passada sobreviveram 4 (repetição, upsert, mais antigo e `scores` nulo); os testes eram fracos (a nota do exemplo já valia o valor novo; o horário de criação deixava o desempate ao relógio, e esse era intermitente), reforcei e rodei de novo.
+- Execução de ponta a ponta fora dos testes: campanha programada de 40 casos, amostra de 24, notas inventadas, importação e relatório pelo código real (descartável; serviu para ler o formato).
+- Nenhuma chamada paga, nenhuma rede, `.env` não lido.
+
+### Critérios
+
+- **Comprovados localmente:** CSV sem nenhum score do juiz (teste procura os valores nas formas JSON, `chave=valor`, `chave: valor` e `chave;valor`, a justificativa, o identificador, o modelo e o provedor do juiz, e confere as colunas vazias); kappa e concordâncias com números fixos e casos de borda (todos iguais, uma linha, sem variação, pior caso); CSV malformado com a linha e o `sample_id` (a linha é a física do arquivo, mesmo com células de várias linhas); importação ligada por `request_id` ao julgamento; relatório com a ressalva D19 e intervalos; a descida da 0011 recusada depois de uma importação.
+- **Não verificados:** planilha real do responsável (Excel pt-BR, LibreOffice); amostra e juiz de uma campanha real; leitura do relatório pelo responsável.
+
+### Achados e limitações
+
+- Com 24 respostas e ~10 estratos, cada recorte tem 2 a 4 casos: o relatório não calcula concordância por rota ou split, só mostra a cobertura. O kappa fica instável quando quase todas as notas são 4 ou 5; as três medidas aparecem juntas por isso.
+- O CSV tem cerca de 40 KB por 24 linhas (resposta e evidência em texto), com células de várias linhas; o Excel mostra tudo numa linha, a menos que se ative a quebra de texto.
+- A importação compara com o julgamento da **repetição 1** do `cli:eval`; as demais repetições do juiz (`--judge-repeat`) não entram na calibração.
+- A ligação é por `request_id` no banco do runtime. Se a campanha rodou em outra máquina, o banco dela precisa estar disponível na importação.
+- Uma amostra tirada de um relatório que inclua o `holdout_v080` mostra essas respostas ao responsável. Isso não vaza nada para ajuste (ele não ajusta prompts), mas D17 pede que o holdout seja visto uma vez; incluí-lo ou não na amostra é decisão do Supervisor.
+
+### Ação externa, identidade e próxima ação
+
+- Ação externa: nenhuma (sem push, sem PR, sem rede, sem chamada paga). Commits locais com `lauroPereira <lauro.s.pereira@gmail.com>`, conferida antes de cada um.
+- Próxima ação: Reviewer independente nas tarefas 71 e P3 da 70 (commits `3598a48` e o desta tarefa). Depois o QA roda a campanha `v080-qa`, sorteia a amostra e entrega o CSV ao responsável; o merge local da v0.8.0 espera a calibração dele (spec, execução confirmada 4).
+- Decisão humana pendente: nenhuma bloqueante. Reversíveis para o relatório do Supervisor: separador `;` e BOM; amostra balanceada; `request_id` visível no CSV; resumo de 2 000 caracteres de evidência.
