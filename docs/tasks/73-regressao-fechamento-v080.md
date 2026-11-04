@@ -41,10 +41,12 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 
 ## Validação
 
-A preencher pelo Developer.
+- O candidato `9057aaa` passou na suíte estrita com 1.031 testes, Ruff e validação das skills, código 0. Os testes programados exercitam as fases D12, a projeção com conversas, a reutilização dos ledgers e a recusa de uma estimativa inválida antes de criar o teto.
+- A revisão independente da rodada 3 foi apta em contexto novo. [Parecer](../evidence/v080-reviewer-t73.md)
+- O lacre foi conferido pelo hash normalizado. [Manifesto do candidato](../evidence/v080-candidato-r1.json)
 
 ## Status
 
 ```text
-pendente (spec aprovada; começa depois do merge da v0.7.0)
+Apta para o QA técnico da v0.8.0 em 2026-11-04. Campanha real e calibração ainda pendentes.
 ```
