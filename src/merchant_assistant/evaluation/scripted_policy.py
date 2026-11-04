@@ -14,6 +14,16 @@ from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.llm.base import LLMError
 from merchant_assistant.llm.scripted import ScriptedCall, ToolPlan
 
+# `router.v6`: a question about whether different conditions, plan or rate were used for a charge or sale (any
+# interrogative form, "Were...", "Was...", "Did...", "Foi...") is a pricing question about one real charge of the
+# merchant, never a clarification. It needs a word of difference or change, the conditions or plan, and a charge or
+# sale.
+CONDITIONS_QUESTION = (
+    r"(?s)^(?=.*\b(?:differ(?:s|ed)?|different|chang(?:e|es|ed)|diferentes?|distint[ao]s?|mudou|mudaram)\b)"
+    r"(?=.*(?:\bconditions?\b|\bplans?\b|\bplano\b|condi[cç][aãoõ]\w*))"
+    r"(?=.*(?:\bcharge[ds]?\b|\bsales?\b|\bvendas?\b|cobran[cç]a|cobrad))"
+)
+
 ROUTE_RULES: list[tuple[str, str, str | None]] = [
     (
         r"encerrar (?:o |meu )?contrato|fechar (?:o |meu )?contrato|terminate (?:the )?contract|close (?:my )?contract",
@@ -37,6 +47,7 @@ ROUTE_RULES: list[tuple[str, str, str | None]] = [
         "support",
         "pricing",
     ),
+    (CONDITIONS_QUESTION, "support", "pricing"),
     (r"won'?t connect|n[aã]o conecta|sem conex|internet|wi-?fi", "knowledge_and_support", "device"),
     (r"decline|negad|recusad", "knowledge_and_support", "authorization"),
     (
@@ -250,10 +261,12 @@ def _support(call: ScriptedCall) -> ToolPlan:
             for word in ("insuficiente", "sem evidência", "no evidence", "not enough evidence", "insufficient")
         ):
             args = {"period": "latest", "payment_type": "credit", "installments": 2}
-        elif any(
+        elif re.search(CONDITIONS_QUESTION, message, flags=re.IGNORECASE) or any(
             word in low for word in ("diferentes condições", "condições diferentes", "different conditions", "legacy")
         ):
-            args["payment_type"] = "credit"
+            args["payment_type"] = (
+                "pix" if "pix" in low else "debit" if re.search(r"d[eé]bito|debit", low) else "credit"
+            )
         elif any(word in low for word in ("divergência", "divergente", "diverg", "mismatch")):
             args["payment_type"] = "pix"
         else:
