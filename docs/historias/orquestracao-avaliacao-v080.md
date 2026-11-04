@@ -1,6 +1,6 @@
 # História: o assistente muda de caminho quando o primeiro especialista não basta, e a avaliação mostra quanto confiar nele
 
-Versão 0 (rascunho), 2026-11-04; roteiro para revisão do responsável, antes de implementar. Spec: [orquestracao-avaliacao-v080.md](../specs/orquestracao-avaliacao-v080.md).
+Versão 1, 2026-11-04; roteiro aprovado com a spec, antes de implementar. Spec: [orquestracao-avaliacao-v080.md](../specs/orquestracao-avaliacao-v080.md).
 
 ## Pessoas e objetivo
 

@@ -2,7 +2,7 @@
 
 # Especificação: v0.8.0 — orquestração adaptativa e avaliação semântica
 
-Versão 0 (rascunho) — 2026-11-04 — escrita pelo Supervisor a pedido do responsável, **para revisão; ainda não aprovada**. Enquanto não for aprovada, a "Autorização por versão" do AGENTS.md não se aplica a esta versão e nenhuma tarefa é despachada. Deriva da [especificação 0.2](evolucao-pos-feedback.md) (RF-86 a RF-93; CA-49 a CA-51; UC-23, UC-24) e do [plano](evolucao-pos-feedback-plano.md) (decisões técnicas 9 a 16, tarefas 69 a 73). História em [orquestracao-avaliacao-v080.md](../historias/orquestracao-avaliacao-v080.md). O holdout de respostas (tarefa 72a) já está escrito e lacrado nesta branch (`tests/scenarios/holdout_v080.jsonl`, SHA-256 `91aa5158…4f1bac`).
+Versão 1 — 2026-11-04 — escrita pelo Supervisor e **aprovada pelo responsável em 2026-11-04**, com as decisões D12 e D16 a D19 tomadas por ele na revisão. Vale a "Autorização por versão" do AGENTS.md; o ciclo começa depois do merge local da v0.7.0 na `main`. Deriva da [especificação 0.2](evolucao-pos-feedback.md) (RF-86 a RF-93; CA-49 a CA-51; UC-23, UC-24) e do [plano](evolucao-pos-feedback-plano.md) (decisões técnicas 9 a 16, tarefas 69 a 73). História em [orquestracao-avaliacao-v080.md](../historias/orquestracao-avaliacao-v080.md). O holdout de respostas (tarefa 72a) já está escrito e lacrado nesta branch (`tests/scenarios/holdout_v080.jsonl`, SHA-256 `91aa5158…4f1bac`).
 
 Esta spec não repete a 0.2: fixa o que o plano deixou aberto e as pré-condições que a v0.7.0 deixou.
 
@@ -75,7 +75,7 @@ Regressão: 40 casos e 4 conversas sem piora em relação à v0.7.0, salvo difer
 
 ## Requisitos não funcionais
 
-- Teto da campanha `v080-qa`: **US$0,50** no plano, montada uma vez, combinada com o ledger primário. Antes de montar, o QA estima o custo de 3 execuções (40 casos, 4 cenários e o holdout, com agente e juiz) a partir de 5 casos medidos. O responsável disse em 2026-11-04 que há margem ampla e que não é preciso parar para perguntar se a estimativa passar de US$0,50; **o número do teto fica a fixar na aprovação desta spec** (a guarda exige um valor fixo).
+- Teto da campanha `v080-qa`: **US$0,50** no plano, montada uma vez, combinada com o ledger primário. Antes de montar, o QA estima o custo de 3 execuções (40 casos, 4 cenários e o holdout, com agente e juiz) a partir de 5 casos medidos. O responsável disse em 2026-11-04 que há margem ampla e que não é preciso parar para perguntar se a estimativa passar de US$0,50. Padrão proposto pelo Supervisor na aprovação: a campanha monta com US$0,50 e, se a estimativa medida passar disso, monta uma única vez com até **US$1,00**, registrando o motivo; acima disso, para e pergunta.
 - Testes sem chamada paga e sem rede; `replan.v1` e `judge.v3` com modelo programado nos testes.
 - O caminho sem replanejamento ambíguo não chama modelo a mais.
 - Nenhum dado real; o CSV de calibração só com dados sintéticos e respostas mascaradas.

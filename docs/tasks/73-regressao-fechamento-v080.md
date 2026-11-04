@@ -37,5 +37,5 @@ A preencher pelo Developer.
 ## Status
 
 ```text
-pendente (aguarda aprovação da spec v0.8.0)
+pendente (spec aprovada; começa depois do merge da v0.7.0)
 ```
