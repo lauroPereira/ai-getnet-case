@@ -29,15 +29,23 @@ Períodos das 09h09 às 14h43 e das 15h29 às 16h10, horário de São Paulo. O d
 
 | Tarefa | Papel | Candidato ou base | Situação |
 | --- | --- | --- | --- |
-| Extensão controlada do orçamento | Developer e Reviewer | `27add60` | Suíte estrita aprovada. Correção P2 da montagem de campanha em andamento. Procedimento local ensaiado em cópia sintética. |
-| QA técnico | QA independente | Candidato após correção P2 | Mock local conferido. A campanha paga aguarda novo parecer e aplicação da extensão. Campanha sem montagem. |
+| Triagem pós-QA | Supervisor | `f8daab0` | CA-51 reprovado nas três repetições. Separar falhas de resposta, falsos negativos de texto, sinal de roteamento no FU01 e condições de teste do CA-49. |
+
+### Atualização após a campanha pré-holdout
+
+| Estado | Trabalho | Resultado |
+| --- | --- | --- |
+| Done | Extensão e validação de orçamento | `f8daab0` apto na revisão e com 1.034 testes, Ruff e skills aprovados. Teto primário US$1,70 aplicado com backup e histórico idêntico. [Evidência da transição](../evidence/v080-orcamento-transicao.md) |
+| Done | Primeira fase de QA real | 44 casos × 3, 132 julgamentos, 4 conversas e 10 turnos. **Reprovada em CA-51**, com 9/13, 11/13 e 10/13 ante mínimo de 12/13. [Parecer do QA](../evidence/v080-d12-pre-holdout-r3.md) |
+| Doing | Triagem do próximo candidato | Separar divergências da resposta, equivalências semânticas recusadas pelo checklist, sinal de roteamento no FU01 e evidência ausente de CA-49. |
+| To do | Corrigir e revalidar | Reteste dirigido em novo SHA após revisão, com prova de saldo e captura de traces. Juiz repetido, smoke, holdout técnico, CSV e benchmark ficam pendentes. |
 
 O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A amostra foi complementada dentro desse limite. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
 
 ## To do
 
-1. Fixar e revisar o ajuste da CLI, validar a transição local aprovada e confirmar a projeção e o saldo usados no portão de montagem.
-2. Validar a disponibilidade do mock de preços com fixture sintética antes de novas chamadas, reexecutar as jornadas afetadas e concluir a campanha técnica, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
+1. Fixar a triagem e os critérios para as correções. Revalidar as jornadas afetadas no candidato revisto e capturar as traces de replanejamento. Isolar `REPLAN-TOOL-DOWN` com o mock de preços indisponível somente para esse cenário.
+2. Recalcular o custo das repetições e dos blocos restantes dentro do cap já montado. Após o aceite dos blocos anteriores, concluir as repetições do juiz, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
 3. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
 
 ## Recursos e medição
@@ -107,7 +115,7 @@ Preparação, amostra inicial e complemento contabilizaram **US$0,04695654** no 
 
 | Repositório ou worktree | Branch ou estado | HEAD | Situação no preflight |
 | --- | --- | --- | --- |
-| Backend principal | `codex/v0.8.0-replan` | Commit deste relatório, após `26c3bd0` | Só documentação desde o início do QA. O produto continua fixado em `9057aaa`. `Claude outputs/` e `_tmp/` preservados. Consulte o plano de orçamento na branch `codex/v0.8.0-replan` também ao retomar de outro worktree. |
+| Backend principal | `codex/v0.8.0-replan` | Commit de evidências após `f8daab0` | Candidato de produto testado `f8daab03c9c33a204edd7d38a009dd6345a93723`. Campanha montada uma única vez. `Claude outputs/` e `_tmp/` preservados. |
 | Backend estável | `main` | `bd0920a` | v0.7.0 integrada localmente. |
 | `time-b` | `codex/v0.8.0-avaliacao` | `af16869` | Limpo. |
 | `time-b-v070` | `codex/v0.7.0-ticketing` | `2226d4c` | Limpo. |
@@ -141,5 +149,13 @@ O Supervisor validou o mock em `127.0.0.1:18765` com Uvicorn da `.venv` do proje
 O candidato `27add60` passou na suíte estrita, com 1.031 testes em 16 min 57 s de pytest, Ruff e validação de skills. O parecer independente foi retomado após o limite de uso do Luna e encontrou um P2. Um arquivo de teto de campanha preexistente sem o SQLite pode ser adotado na primeira montagem e impedir a reabertura. O ajuste foi devolvido ao Developer. O manifesto r2 e a projeção de US$1,00929931 calculada sobre a amostra anterior ficam como evidência do candidato substituído. [Manifesto r2](../evidence/v080-candidato-r2.json) [Estimativa de preflight](../evidence/v080-custo-estimativa-r3-preflight.json)
 
 O ensaio sintético do procedimento operacional r3 verificou histórico, backup, recusa de segunda montagem, falhas antes e depois do registro preparado e recuperação de interrupção. A revisão aceitou o procedimento sob quiescência conferida antes e depois. Se houver falha após `prepared`, suspender o QA e reconciliar ou recuperar em quiescência, preservando o diretório de auditoria. A tentativa se encerra e qualquer nova execução exige diretório distinto e nova revisão. No último preflight, o ledger real mantinha 1.605 entradas, US$0,55947501 contabilizados, zero reservas, teto US$1,00 e campanha sem montagem.
+
+Às 19h26, o Supervisor aplicou a transição revisada, verificando zero processos e contêineres do projeto antes e depois. O QA corrigiu a dependência de preço iniciando o mock pela venv em foreground gerenciado. Repetir as duas jornadas afetadas custou US$0,00272923. Uma passou e outra falhou apenas no marcador de conteúdo, com o serviço saudável. A projeção recalculada foi US$1,03174096. [Amostra revalidada](../evidence/v080-price-retry-r3.md) [Estimativa](../evidence/v080-custo-estimativa-r3.json)
+
+A fase D12 de respostas durou cerca de 24 min 25 s e consumiu **US$0,38283761**, dos quais US$0,31739322 foram da OpenAI, incluindo embeddings, e US$0,06544439 da DeepSeek. Restaram **US$0,71716239** no cap único e **US$0,75495815** no primário. Ambos encerraram com zero reservas. O cap permanece montado para a mesma campanha. Às 20h02 havia 8,64 GiB livres em disco, RAM disponível de 0,84 GB e zero alertas recentes. [Parecer do QA](../evidence/v080-d12-pre-holdout-r3.md)
+
+O Supervisor liberou a fase com o mock saudável para as jornadas e deixou de separar `REPLAN-TOOL-DOWN`, cuja condição exige indisponibilidade deliberada. Suas três execuções são inválidas para CA-49. O relatório da CLI também não preservou os campos de origem e saltos da trace, impedindo certificar esse critério. Os outros sinais incluem `REPLAN-WEB` afirmando genericamente sobre outros modelos de maquininha sem confirmar o consultado e `FU01` acertando a resolução do caso com rota inicial divergente. Parte dos erros de CA-51 consiste em respostas semanticamente compatíveis com a jornada que falharam na correspondência de texto, como “different conditions” e “conditions were different”. Isso exige cotejo com a evidência em cada caso antes de corrigir comportamento ou rubricar equivalências.
+
+O saldo da campanha comporta estimativa de US$0,43772873 para os blocos pendentes de juiz e holdout, antes de contabilizar retestes e smoke. Uma nova execução integral no mesmo cap não cabe pela estimativa atual. Definir primeiro o conjunto afetado e a estimativa de revalidação, guardar os controles independentes de valores, fontes e afirmações proibidas, usar indisponibilidade só no cenário que a exige e capturar a trace durante a execução. A comparação Luna × Sonnet/Opus aguarda o fechamento do QA e incluirá os retornos por falha.
 
 Após o QA da v0.8.0, incluir na definição de escopo da v0.9.0 um cliente Claude API para Sonnet 5.5 **na aplicação**. A escolha do papel depende da medição de custo por etapa e ferramenta, qualidade e latência. A prova técnica e o teto do piloto ficam para a especificação da v0.9.0.

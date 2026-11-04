@@ -1,0 +1,375 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "dev",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "3",
+   "prompt": "judge@3",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 400,
+    "effort": "none"
+   }
+  },
+  "repeat": 1,
+  "limit": null,
+  "include_replan": false,
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 2
+ },
+ "summary": {
+  "overall": {
+   "n": 2,
+   "passed": 0.5,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 0.5,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 11010,
+   "latency_p95_ms": 15319,
+   "cost_usd": 0.00152,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 2,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 5.0,
+    "factual_correctness": 5.0,
+    "relevance": 5.0,
+    "usefulness": 4.5
+   },
+   "unsupported_claim_rate": 0.0
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.5,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11010,
+    "latency_p95_ms": 15319,
+    "cost_usd": 0.00152,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 4.5
+    },
+    "unsupported_claim_rate": 0.0
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 15319,
+    "latency_p95_ms": 15319,
+    "cost_usd": 0.00099,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.0
+   },
+   "pt": {
+    "n": 1,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6702,
+    "latency_p95_ms": 6702,
+    "cost_usd": 0.00052,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0
+   }
+  },
+  "paths": {
+   "support": {
+    "customer_support": 1,
+    "customer_support → escalation": 1
+   }
+  },
+  "generated_at": "2026-11-04T22:38:42+00:00",
+  "judge_cost_usd": 0.00121
+ },
+ "cases": [
+  {
+   "id": "V030-PRICE-DIVERGENCE",
+   "repetition": 1,
+   "request_id": "req_eval142626712a25",
+   "split": "dev",
+   "language": "en",
+   "message": "Is there a divergence in yesterday's Pix charge?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "The R$ 80,00 Pix sale shows a R$ 0,75 discrepancy. The pricing rule expected a fee of R$ 0,00, but the recorded charge was R$ 0,75, leaving a net amount of R$ 79,25 instead of R$ 80,00. This comparison does not make a correction or refund. I’m escalating the discrepancy for review.\n\nI've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-CBB90C.",
+   "sources": [
+    "Synthetic pricing and independent charge comparison"
+   ],
+   "duration_ms": 15319,
+   "cost_usd": 0.00099217,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Is there a divergence in yesterday's Pix charge?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [
+     "Synthetic pricing and independent charge comparison"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:38:20-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T19:38:20-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"pix\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"charge\": {\"charged_fee_minor\": 75, \"components\": [{\"amount_minor\": 75, \"name\": \"pix_fee_adjustment\"}], \"conditions\": {\"channel\": \"pos\", \"installments\": 1, \"payment_type\": \"pix\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"installments\": [{\"fee_minor\": 75, \"gross_minor\": 8000, \"net_minor\": 7925, \"number\": 1}], \"recorded\": true, \"transaction_id\": \"sale_1988_0003\"}, \"comparison\": {\"charged_fee_display\": \"R$ 0,75\", \"charged_fee_minor\": 75, \"comparison_method\": \"integer_minor_units\", \"currency\": \"BRL\", \"difference_display\": \"R$ 0,75\", \"difference_minor\": 75, \"expected_fee_display\": \"R$ 0,00\", \"expected_fee_minor\": 0, \"result\": \"divergence\"}, \"financial_evidence\": {\"charge\": {\"components\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 0,75\", \"minor\": 75}, \"name\": \"pix_fee_adjustment\"}], \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 0,75\", \"minor\": 75}, \"installments\": [{\"fee_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 0,75\", \"minor\": 75}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 79,25\", \"minor\": 7925}, \"number\": 1}]}, \"pricing\": {\"components\": [], \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 0,00\", \"minor\": 0}, \"installments\": [{\"fee_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 0,00\", \"minor\": 0}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"number\": 1}]}, \"sale\": {\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}}}, \"note\": \"A comparison does not execute a correction, refund, or financial action.\", \"observed_at\": \"2026-11-04T19:38:21-03:00\", \"pricing\": {\"applicable\": true, \"components\": [], \"conditions\": {\"channel\": \"pos\", \"installments\": 1, \"payment_type\": \"pix\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"expected_fee_minor\": 0, \"installments\": [{\"fee_minor\": 0, \"gross_minor\": 8000, \"net_minor\": 8000, \"number\": 1}], \"rule_id\": \"pricing_mock_v1_pix\", \"rule_version\": \"1.0.0\", \"transaction_id\": \"sale_1988_0003\"}, \"sale\": {\"channel\": \"pos\", \"gross_amount_minor\": 8000, \"installments\": 1, \"payment_type\": \"pix\", \"pricing_plan\": \"demo_standard\", \"sale_date\": \"2026-11-03\"}, \"source\": \"independent_synthetic_pricing_and_charge_services\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 2766,
+     "kept_chars": 2766,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "The R$ 80,00 Pix sale shows a R$ 0,75 discrepancy. The pricing rule expected a fee of R$ 0,00, but the recorded charge was R$ 0,75, leaving a net amount of R$ 79,25 instead of R$ 80,00. This comparison does not make a correction or refund. I’m escalating the discrepancy for review.\n\nI've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-CBB90C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 2766,
+    "kept_chars": 2766,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_7bf0306b2a2141ffa04b",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "All amounts, the discrepancy and the handoff align with the tool result; the protocol appears as a handoff reference.",
+     "factual_correctness": "Figures match the tool result: R$80,00 gross, R$0,75 charged, R$0,00 expected, R$79,25 net.",
+     "relevance": "The merchant asked about a Pix charge divergence; the reply confirms the divergence and escalates it.",
+     "usefulness": "Clear, concise and in English with figures and handoff status, though the protocol number is not traceable."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00068038,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 1,
+   "request_id": "req_eval089b55b3b6d8",
+   "split": "dev",
+   "language": "pt",
+   "message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "Encontrei uma venda de crédito em 2 parcelas, em 2026-11-02, no valor bruto de R$ 200,00. Não foi possível comparar as taxas: não há uma taxa esperada registrada na regra de preço nem uma taxa cobrada registrada para essa venda.",
+   "sources": [
+    "Synthetic pricing and independent charge comparison"
+   ],
+   "duration_ms": 6702,
+   "cost_usd": 0.0005245,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Synthetic pricing and independent charge comparison"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:38:36-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T19:38:36-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": 2, \"payment_type\": \"credit\", \"period\": \"latest\", \"sale_date\": null}, \"result\": {\"charge\": {\"charged_fee_minor\": null, \"components\": [], \"conditions\": {\"channel\": \"payment_link\", \"installments\": 2, \"payment_type\": \"credit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"installments\": [], \"recorded\": false, \"transaction_id\": \"sale_1988_0005\"}, \"comparison\": {\"charged_fee_display\": null, \"charged_fee_minor\": null, \"comparison_method\": \"integer_minor_units\", \"currency\": \"BRL\", \"difference_display\": null, \"difference_minor\": null, \"expected_fee_display\": null, \"expected_fee_minor\": null, \"result\": \"insufficient_evidence\"}, \"financial_evidence\": {\"charge\": null, \"pricing\": null, \"sale\": {\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 200,00\", \"minor\": 20000}}}, \"note\": \"A comparison does not execute a correction, refund, or financial action.\", \"observed_at\": \"2026-11-04T19:38:37-03:00\", \"pricing\": {\"applicable\": false, \"components\": [], \"conditions\": {\"channel\": \"payment_link\", \"installments\": 2, \"payment_type\": \"credit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"expected_fee_minor\": null, \"installments\": [], \"rule_id\": \"pricing_mock_v1_unavailable\", \"rule_version\": \"1.0.0\", \"transaction_id\": \"sale_1988_0005\"}, \"sale\": {\"channel\": \"payment_link\", \"gross_amount_minor\": 20000, \"installments\": 2, \"payment_type\": \"credit\", \"pricing_plan\": \"demo_standard\", \"sale_date\": \"2026-11-02\"}, \"source\": \"independent_synthetic_pricing_and_charge_services\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1881,
+     "kept_chars": 1881,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Encontrei uma venda de crédito em 2 parcelas, em 2026-11-02, no valor bruto de R$ 200,00. Não foi possível comparar as taxas: não há uma taxa esperada registrada na regra de preço nem uma taxa cobrada registrada para essa venda."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1881,
+    "kept_chars": 1881,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_2e6effbc760f4b7abcb5",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts come from the simulate_pricing tool result: sale date, R$ 200,00, 2 credit installments, missing expected and charged fees.",
+     "factual_correctness": "Reply matches the insufficient_evidence result and null fee fields, with no contradiction.",
+     "relevance": "Directly answers the merchant's question about whether there is insufficient evidence to compare the two-installment credit fee.",
+     "usefulness": "Clear, concise Portuguese that states plainly which data is missing so the merchant understands why comparison failed."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00053218,
+    "error": null
+   }
+  }
+ ]
+}
