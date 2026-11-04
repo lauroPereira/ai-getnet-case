@@ -148,7 +148,7 @@ Cinco entregas curtas e um fechamento, cada uma com spec complementar curta, tar
 ## Requisitos não funcionais
 
 - **RNF-11** Nenhum teste automatizado faz chamada paga; validação real por campanha com teto fixo, como hoje.
-- **RNF-12** Orçamento total das validações reais: até US$1,00 adicional (acumulado do projeto hoje: US$0,69 de US$5,00).
+- **RNF-12** As validações reais respeitam o teto acumulado de US$5,00, os tetos de campanha e as autorizações por etapa. A reserva aprovada e os limites operacionais estão no [plano de orçamento](evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04).
 - **RNF-13** Migrações reversíveis e aditivas; contrato `/v1` aditivo; a quebra de `POST /messages` (sessão obrigatória) é a única mudança incompatível e vem documentada no CHANGELOG.
 - **RNF-14** Toda nova decisão estrutural (identidade, retomada do grafo, webhooks, híbrido) tem ADR.
 - **RNF-15** O fluxo de execução segue a seção "Eficiência de execução" abaixo, depois de aprovada.

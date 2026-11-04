@@ -152,7 +152,26 @@ Retorno por versão: tag anterior + migração descendente + remoção de `check
 
 ## Orçamento
 
-Acumulado do projeto: US$0,69 de US$5,00. Campanhas: v0.7.0 ≤ US$0,20; v0.8.0 ≤ US$1,00 (uma única montagem acima de US$0,50 se a estimativa medida passar desse valor); v0.9.0 ≤ US$0,10; v0.10.0 ≤ US$0,10; v1.0.0 smoke ≤ US$0,05. Total adicional ≤ US$1,45. Testes automatizados sem chamadas pagas.
+### Decisão aprovada em 2026-11-04
+
+O responsável aprovou a reserva de planejamento de **US$2,50** para concluir o QA e demonstrar as versões até a v1.0.0. Esta é a referência de orçamento para a retomada em qualquer sessão. O teto acumulado do projeto é **US$5,00**. Os saldos informados na decisão eram US$2,66 na OpenAI, US$1,99 na DeepSeek e US$4,99 na TypeSafe. A distribuição proposta da mesma reserva é US$1,85 para OpenAI, US$0,60 para DeepSeek e US$0,05 para TypeSafe. Reconcilie os saldos e o consumo acumulado antes de cada etapa paga.
+
+| Etapa | Reserva | Limite operacional |
+| --- | ---: | --- |
+| Complemento da amostra de desenvolvimento da v0.8.0 | US$0,10 | **Despesa adicional autorizada**, cumulativa para todas as novas chamadas e tentativas da amostra. |
+| Campanha `v080-qa` | US$1,00 | US$0,50 por padrão. Até US$1,00 em montagem única se a estimativa válida justificar e houver saldo no ledger primário. |
+| QA v0.9.0 e v0.10.0 | US$0,40 | US$0,10 para cada rodada prevista e US$0,10 reservado para eventual repetição de cada versão. |
+| Smoke v1.0.0 | US$0,10 | US$0,05 para o smoke previsto e US$0,05 reservado para eventual repetição. |
+| Correções e revalidações | US$0,35 | Priorizar os cenários afetados. Ampliar a rodada quando a alteração atingir o fluxo compartilhado. |
+| Ensaio e gravação da demonstração | US$0,25 | Ensaiar com dados sintéticos e gravar uma execução real no candidato final, com os resultados gravados de QA identificados como tais. |
+| Contingência | US$0,30 | Reserva para variação de custo ou nova rodada mediante decisão do responsável. |
+| **Total** | **US$2,50** | **Reserva de planejamento**, sujeita aos tetos vigentes e à autorização por versão. |
+
+- **Próxima despesa autorizada.** Reaproveitar a amostra da v0.8.0 já medida e complementar apenas rotas sub-representadas do split `dev`. Antes da primeira chamada, registrar no controle do QA o total já comprometido no ledger primário, incluindo gastos liquidados e reservas abertas. O limite efetivo no processo deve ser o menor entre o limite vigente do ledger e esse total mais US$0,10. Reusar esse mesmo valor em todas as tentativas. Se faltar saldo ou a guarda recusar, parar. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
+- **Portões para a campanha.** A estimativa revisada deve caber ao mesmo tempo no teto aprovado da campanha, no saldo do ledger primário, nos saldos por provedor e na margem restante do teto global. Preservar o ledger e o histórico, usar a montagem única de `v080-qa` e manter o holdout da v0.8.0 para o último passo técnico. A autorização desta decisão cobre o complemento da amostra. Alterações dos limites vigentes, rodadas adicionais que os ultrapassem e redução de critérios de aceite dependem de nova decisão do responsável.
+- **Provedores e demonstração.** Usar OpenAI para o assistente, embeddings e busca web, DeepSeek como juiz independente e TypeSafe para demonstrar o Router Jev. Gravar o percurso no candidato final, mostrando o encaminhamento e o retorno humano, o replanejamento e a avaliação, a comparação de retrieval e a retomada após reinício com resumo e métricas. Ensaios programados e testes automatizados têm custo zero de API.
+
+Na sessão de retomada, o ledger primário registrou **US$0,54250491** gastos e **US$0,45749509** disponíveis no limite persistido de US$1,00. A campanha `v080-qa` ficou sem montagem. Esses números são um retrato da parada, a ser conferido antes do complemento. [Evidência do QA](../evidence/v080-qa-r1.md)
 
 ## Plano de implementação
 

@@ -29,9 +29,11 @@ Período das 09h09 às 14h43, horário de São Paulo. O desenvolvimento ficou ap
 | --- | --- | --- | --- |
 | QA técnico | QA independente | `9057aaa` | **Bloqueado pelo orçamento.** Projeção de US$1,37116382 e saldo primário de US$0,45749509. A campanha continua sem cap montado. |
 
+O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A campanha segue aguardando uma projeção válida dentro dos limites vigentes. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
+
 ## To do
 
-1. Resolver a decisão de orçamento e confirmar uma projeção que caiba simultaneamente no teto aprovado e no saldo primário.
+1. Complementar a amostra `dev` dentro dos US$0,10 autorizados e confirmar uma projeção que caiba simultaneamente no teto aprovado e no saldo primário.
 2. Concluir a campanha técnica, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
 3. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
 
@@ -96,7 +98,7 @@ Preparação e amostra reais desta retomada contabilizaram **US$0,02998644** no 
 
 | Repositório ou worktree | Branch ou estado | HEAD | Situação no preflight |
 | --- | --- | --- | --- |
-| Backend principal | `codex/v0.8.0-replan` | Commit deste relatório, após `26c3bd0` | Só evidências e relatório desde o início do QA. O produto continua fixado em `9057aaa`. `Claude outputs/` e `_tmp/` preservados. |
+| Backend principal | `codex/v0.8.0-replan` | Commit deste relatório, após `26c3bd0` | Só documentação desde o início do QA. O produto continua fixado em `9057aaa`. `Claude outputs/` e `_tmp/` preservados. Consulte o plano de orçamento na branch `codex/v0.8.0-replan` também ao retomar de outro worktree. |
 | Backend estável | `main` | `bd0920a` | v0.7.0 integrada localmente. |
 | `time-b` | `codex/v0.8.0-avaliacao` | `af16869` | Limpo. |
 | `time-b-v070` | `codex/v0.7.0-ticketing` | `2226d4c` | Limpo. |
@@ -115,5 +117,5 @@ As tarefas e a ordem estão na seção To do.
 
 ## Depende de você
 
-- Decidir entre revisar a amostragem e o recorte nos limites atuais ou aprovar a revisão dos limites para manter a campanha completa. A decisão tem de considerar o teto da campanha e o saldo do ledger primário.
+- Decidir sobre revisão dos tetos ou recorte apenas se a projeção revisada ultrapassar os limites vigentes.
 - Após o QA técnico, preencher o CSV de calibração antes da integração na `main`.
