@@ -6,7 +6,7 @@ Emitir e validar JWT (RS256, JWKS) no assistente, derivar o lojista do principal
 
 ## Status
 
-**Proposta** (v0.7.0, 2026-11-03; versão 2 no mesmo dia, com a decisão do responsável por JWT com emissor próprio). Passa a aceita depois do QA apto da v0.7.0.
+**Aceita** (v0.7.0, 2026-11-04, depois do QA real apto; proposta em 2026-11-03, versão 2 no mesmo dia com a decisão do responsável por JWT com emissor próprio).
 
 ## Contexto
 

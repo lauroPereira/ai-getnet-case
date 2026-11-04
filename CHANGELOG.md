@@ -2,6 +2,43 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.7.0] — 2026-11-04 (validated: review and real QA apt)
+
+Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md), [story](docs/historias/identidade-hitl-v070.md), [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), tasks 63–68 and 66b).
+
+### Breaking changes
+- **`POST /messages` requires `Authorization: Bearer <token>`.** The merchant comes from the token; `user_id` in the body is optional and, if it differs, the answer is `403 identity_mismatch`. The evaluator's calls become two: `POST /v1/auth/token` (form encoded, `grant_type=password`, demo user `cliente1988` with the fictitious password of `.env.example`, `client_id=merchant-assistant-cli`) and `POST /messages` with the token. `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
+- **`POST /v1/sessions` and `DELETE /v1/sessions/current` were replaced** by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The web client was migrated in the same release.
+- MCP and the `operator` CLI take the token from `MERCHANT_ASSISTANT_TOKEN`; `mcp --customer` was removed. `GET /traces/{id}` and `GET /conversations/{id}` require a token (owner only, operators for conversations with a case, admin everything).
+
+### Added
+- Own JWT issuer (RS256, JWKS, discovery; external OIDC issuer by configuration), synthetic users with PBKDF2 password hashes, `client_credentials` for the ticketing service, revocation, roles and scopes, per-principal rate limit and login attempt limit; every tool call checks scope and merchant and is audited with principal, scope and result.
+- Handoff queue (migration 0009): states, events, idempotent claim and actions (`409 claimed_by_other`, `409 already_resumed`), `GET /v1/handoffs`, `GET /v1/handoffs/{id}`, `POST …/claim`, `POST …/actions`, and `merchant-assistant operator list|show|act`.
+- Graph interruption and resume: a review graph checkpointed in SQLite stops at `human_review` with `interrupt()` when a case opens; `approve`, `reply` and `reject` resume it with `Command(resume)` (reject re-runs Support once with the operator's instruction); the operator turn is marked `via=operator` and reaches the merchant on the next message (route `human_reply`, no model call), in the conversation and by webhook; resume survives an API restart.
+- Ticketing service (separate Compose service and database, `127.0.0.1:8002`) with the ticket cycle `new → open → pending → solved`, operator login through the assistant's JWKS and an outbox of its own; operator Ticketing screen in the web project.
+- Signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction): `handoff.created`, `conversation.replied` (the merchant's copy without `operator_id`) and `handoff.closed` out; `ticket.assigned`, `ticket.action` and `ticket.solved` in, idempotent by event id, with the original `409`/`422` repeated for a repeated refused event.
+- Durable delivery (migration 0010): outgoing events are written to an outbox in the same transaction as the change they report and delivered by a dispatcher with three attempts in total per event and destination, also across restarts; pending deliveries are recovered at startup; a turn interrupted between opening a case and recording its event is completed when the merchant resends the same message.
+- Merchant event receiver in `mocks` (`POST/GET /merchant/events`, signature checked).
+
+### Changed (contracts and data)
+- Handoff protocol `HO-…` instead of `SIM-…`; `simulated` left the payload and the reply no longer says the handoff is simulated. Replies carry `via`.
+- Migration 0009 (widened during the release) and migration 0010 (outbox), both reversible; 0010 refuses to roll back while the outbox holds undelivered events. Schema version 10.
+- `/v1` OpenAPI: `/v1/auth/*` and `/v1/handoffs*` added, `/v1/sessions*` removed; the web snapshot was regenerated from the backend.
+- Compose: `ticketing` service; `api` waits for a healthy `ticketing`; fictitious demo secrets are filled in so `docker compose up` works without editing `.env.example`.
+- The audit table survives the seed that runs on every container start.
+
+### Validation
+- Backend strict script **640 tests passed**, web **92 tests passed**, Ruff and skill checks passed. Independent reviews per task (task 66 in five rounds, task 67 in six, task 68 in two), with mutation runs and real cross-process and crash probes. Real QA (candidate r1) apt on the 18 moments of the story through `curl`, the CLI, the web interface, two abrupt API restarts and Docker (smoke with token, ticket cycle and container restart between handoff and action). Real regression: challenge and core cases 27/27, conversations 4/4, business journeys 6/13. QA campaign cost **US$0.10140195** of its US$0.20 cap; project total about US$0.79 of US$5. See the [result record](docs/evidence/v070-resultado.md).
+
+### Limitations
+- A delivery that exhausts its three attempts or is refused has no resend yet and holds the later events of the same case and destination. After a crash in the middle of the turn that opens a case, recovery depends on the merchant resending the same message. Cross-process locks were exercised on Windows only.
+- The case does not show the ticket id (`ticket_id` stays empty; task 68b). The `reject` resume with a real model can take longer than the ticketing's 3 s wait: the screen shows "envio pendente" and the retry with the same key completes it.
+- Business journeys 6/13 by the literal rubric (7/13 in v0.6.0): the English handoff sentence lost the word "human" that one label requires. Planned for v0.8.0 together with the other journey fixes.
+- Identity uses the assistant's own issuer and synthetic users; no authorization-code flow, refresh token or external provider runs in the demo.
+
+### Return to 0.6.0
+- Stop the stack, make sure the outbox has no undelivered events (or recreate the runtime), run `merchant-assistant migrate --to 8` against the runtime and check out `v0.6.0`; remove `checkpoints.sqlite3`, the lock files and the ticketing database. Databases created during the release while migration 0009 was being widened must be recreated.
+
 ## [0.6.0] — 2026-10-28 (validated: review and real QA apt)
 
 Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md), [plan](docs/specs/fechamento-v060-plano.md), [ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md), tasks 54–58). After acceptance, functional expansion ends.
