@@ -25,6 +25,11 @@ KINDS = {
 }
 
 
+def cell(value) -> str:
+    """Text for a Markdown table cell: a pipe or a line break would split the row."""
+    return " ".join(str(value).replace("|", "\\|").split())
+
+
 def agreement(values: list) -> tuple[int, int, int]:
     """(pairs that are equal, pairs within one point, pairs) over the scores of one case."""
     pairs = list(combinations(values, 2))
@@ -128,8 +133,8 @@ def render(data: dict) -> list[str]:
     ]
     groups = {
         "geral": data["overall"],
-        **{f"rota {k}": v for k, v in data["by_route"].items()},
-        **{f"split {k}": v for k, v in data["by_split"].items()},
+        **{f"rota {cell(k)}": v for k, v in data["by_route"].items()},
+        **{f"split {cell(k)}": v for k, v in data["by_split"].items()},
     }
     for label, block in groups.items():
         cases = f"{block['cases']}{'*' if block['few_cases'] else ''}"

@@ -2,9 +2,10 @@
 
 The judge scores a reply against the evidence the system had (`evidence.py`) on four 1-5 criteria with a short reason
 each, and gives a boolean verdict for a claim the evidence does not support. Provider and model are configured
-(EVALUATOR_PROVIDER, EVALUATOR_MODEL), differ from the agent's and are written into every judgement. A judge equal to
-the agent, without its key or without a price is refused before any call: the paid evaluation never swaps judges on
-its own."""
+(JUDGE_PROVIDER, JUDGE_MODEL), differ from the agent's and are written into every judgement. A judge equal to the
+agent, without its key, without a price or paired with a provider that does not sell the model is refused before any
+call: the paid evaluation never swaps judges on its own. The /v1 on-demand evaluator has its own settings
+(EVALUATOR_*) and is not touched by these."""
 
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from merchant_assistant.guardrails.input import mask_sensitive
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import LLM, CallSpec, Meter, NullMeter
 from merchant_assistant.llm.prompts import Prompt, load_prompt
@@ -26,6 +28,7 @@ RUBRIC = "judge"
 RUBRIC_VERSION = "3"
 MAX_OUTPUT_TOKENS = 400  # four reasons of at most 25 words and the scores take about 220; this is also the reservation
 CAMPAIGN_PRINCIPAL = "cli:eval"
+MAX_ERROR_CHARS = 160  # a provider error is stored as its class and a short masked message, never as the raw body
 AGENT_PROVIDER = "openai"  # the system under evaluation is built with the OpenAI client (main.build_orchestrator)
 JUDGE_PROVIDERS = ("openai", "deepseek")  # providers that can return the structured judgement
 
@@ -51,6 +54,14 @@ class JudgeScoreV3(BaseModel):
         if not 1 <= value <= 5:  # checked here, not in the schema: strict structured outputs reject numeric bounds
             raise ValueError("a score must be between 1 and 5")
         return value
+
+
+def short_error(exc: Exception) -> str:
+    """Class and a short message, masked and on one line: a provider error can echo parts of the request."""
+    message = " ".join(mask_sensitive(str(exc))[0].split())
+    if len(message) > MAX_ERROR_CHARS:
+        message = message[: MAX_ERROR_CHARS - 3] + "..."
+    return f"{type(exc).__name__}: {message}" if message else type(exc).__name__
 
 
 def judge_spec_v3(prompt: Prompt, data: dict) -> CallSpec:
@@ -109,7 +120,7 @@ class Judge:
                 "reasons": {},
                 "unsupported_claim": None,
                 "cost_usd": round(getattr(self.meter, "cost_usd", 0.0) - spent_before, 8),
-                "error": f"{type(exc).__name__}: {exc}",
+                "error": short_error(exc),
             }
         score = result.value
         return record | {
@@ -132,7 +143,7 @@ def check_independence(agent: tuple[str, str], judge: tuple[str, str]) -> str:
     if agent == judge:
         raise JudgeRefused(
             f"The judge {judge[0]}/{judge[1]} is the same model as the agent. A model grading its own replies is not "
-            "an independent evaluation: set EVALUATOR_PROVIDER and EVALUATOR_MODEL to another model. "
+            "an independent evaluation: set JUDGE_PROVIDER and JUDGE_MODEL to another model. "
             "No call was made."
         )
     return "different_provider" if agent[0] != judge[0] else "same_provider_different_model"
@@ -146,18 +157,10 @@ def _has_key(settings, provider: str) -> bool:
 
 
 def default_factory(settings) -> Callable[[str, str], LLM]:
-    """The provider clients the project already has (OpenAI and, for the model profiles, DeepSeek)."""
-    from merchant_assistant.llm.openai_llm import OpenAILLM
-    from merchant_assistant.main import deepseek_client, openai_client
+    """The model clients the project already has (OpenAI and, for the model profiles, DeepSeek)."""
+    from merchant_assistant.main import model_factory
 
-    def factory(provider: str, model: str) -> LLM:
-        if provider == "openai":
-            return OpenAILLM(openai_client(settings), model)
-        if provider == "deepseek":
-            return OpenAILLM(deepseek_client(settings), model)
-        raise RuntimeError(f"provider {provider} is not available")
-
-    return factory
+    return model_factory(settings)
 
 
 def resolve_judge(
@@ -169,26 +172,37 @@ def resolve_judge(
 ) -> Judge:
     """The configured judge, or a refusal. Every check runs before the client is built, so a refusal costs nothing.
     The spending meter can be bound afterwards (`judge.meter = ...`), once the budget guard of the run exists."""
-    provider, model = settings.evaluator_provider, settings.evaluator_model
+    provider, model = settings.judge_provider, settings.judge_model
     if provider not in JUDGE_PROVIDERS:
         raise JudgeRefused(
             f"Provider {provider} cannot be the judge (supported: {', '.join(JUDGE_PROVIDERS)}). "
-            "Check EVALUATOR_PROVIDER. No call was made."
-        )
-    independence = check_independence(agent, (provider, model))
-    if not _has_key(settings, provider):
-        raise JudgeRefused(
-            f"The judge {provider}/{model} needs {provider.upper()}_API_KEY and it is not configured. The paid "
-            "evaluation does not switch to another judge on its own: set the key or choose another EVALUATOR_*. "
-            "No call was made."
+            "Check JUDGE_PROVIDER. No call was made."
         )
     try:
-        pricing.model_price(model)
+        price = pricing.model_price(model)
+        priced_for = price.get("provider")
     except pricing.PriceUnknown:
         raise JudgeRefused(
             f"No price is registered for the judge model {model}, and a call without a price cannot be budgeted. "
             "No call was made."
         ) from None
+    if priced_for != provider:  # the pair must exist: a label cannot make a model independent
+        raise JudgeRefused(
+            f"The model {model} is registered for the provider {priced_for}, not {provider}: JUDGE_PROVIDER and "
+            "JUDGE_MODEL must name a pair that exists. No call was made."
+        )
+    if not price.get("output_per_mtok"):  # an embedding or router model has no output price: it writes no judgement
+        raise JudgeRefused(
+            f"The model {model} has no output price in prices.json: it does not generate text and cannot be the judge. "
+            "No call was made."
+        )
+    independence = check_independence(agent, (provider, model))
+    if not _has_key(settings, provider):
+        raise JudgeRefused(
+            f"The judge {provider}/{model} needs {provider.upper()}_API_KEY and it is not configured. The paid "
+            "evaluation does not switch to another judge on its own: set the key or choose another JUDGE_*. "
+            "No call was made."
+        )
     prompt = load_prompt(settings.prompts_dir, RUBRIC, RUBRIC_VERSION)
     try:
         llm = (factory or default_factory(settings))(provider, model)
@@ -204,15 +218,15 @@ def save_evaluation(conn, *, request_id: str, judge: Judge, record: dict, data: 
     """Writes one judgement into `run_evaluations` (the columns 0011 added hold the queryable parts; `result` holds
     the whole judgement). Campaign judgements belong to the principal `cli:eval`, so no API session ever lists them."""
     completed = record["state"] == "completed"
-    result = (
-        {
+    # `result` carries everything the columns of 0011 hold (scores, verdict, repetition), so a rollback and a new
+    # upgrade rebuild them from it.
+    result = {"repetition": record["repetition"]}
+    if completed:
+        result |= {
             **record["scores"],
             **{f"{criterion}_reason": text for criterion, text in record["reasons"].items()},
             "unsupported_claim": record["unsupported_claim"],
         }
-        if completed
-        else {}
-    )
     evaluator = judge.config() | {"model_used": record["model_used"]}
     conn.execute(
         "INSERT INTO run_evaluations (evaluation_id,request_id,principal_id,method,rubric,rubric_version,evaluator,"

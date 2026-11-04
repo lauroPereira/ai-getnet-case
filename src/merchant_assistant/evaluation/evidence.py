@@ -28,14 +28,14 @@ WEB_NOTE = (
 
 @contextmanager
 def record_tool_results() -> Iterator[list[ToolOutcome]]:
-    """Collects the outcome of every tool call made inside the block (one case, run in sequence)."""
+    """Collects the outcome of every tool call made inside the block, by the code of this run only (the graph copies
+    the context to the threads it uses; another run, in another thread, has its own observers)."""
     outcomes: list[ToolOutcome] = []
-    observer = outcomes.append
-    registry.OUTCOME_OBSERVERS.append(observer)
+    token = registry.OUTCOME_OBSERVERS.set((*registry.OUTCOME_OBSERVERS.get(), outcomes.append))
     try:
         yield outcomes
     finally:
-        registry.OUTCOME_OBSERVERS.remove(observer)
+        registry.OUTCOME_OBSERVERS.reset(token)
 
 
 @lru_cache

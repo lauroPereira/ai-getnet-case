@@ -276,6 +276,16 @@ def _eval_judge(
     return judge
 
 
+def _report_name(args) -> str:
+    """The report name: `--name`, or a default that never overwrites another kind of report (a holdout run is not the
+    development run, a judge-only run is not the run it grades)."""
+    if getattr(args, "name", None):
+        return args.name
+    if getattr(args, "judge_repeat", None) is not None:
+        return "avaliacao-juiz"
+    return "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
+
+
 def _store_judgements(db_path, judge, rows, persist) -> None:
     from merchant_assistant.data.db import connect
 
@@ -347,7 +357,7 @@ def cmd_eval(settings: Settings, args) -> int:
         "repeat": repeat,
         "cases": len(cases),
     }
-    md, js = write_report(rows, summary, Path(args.out), args.name, config)
+    md, js = write_report(rows, summary, Path(args.out), _report_name(args), config)
     print(json.dumps(summary["overall"], indent=1))
     if judge is not None:
         _store_judgements(db_path, judge, rows, persist_judgements)
@@ -388,6 +398,11 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         )
     if args.judge_repeat < 1:
         raise SystemExit("eval: --judge-repeat must be at least 1.")
+    if getattr(args, "split", "all") != "all":
+        print("eval: --split is ignored with --judge-repeat; the cases are the recorded answers.", file=sys.stderr)
+    name = _report_name(args)
+    if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
+        raise SystemExit(f"eval: the report {name}.json would overwrite the answers being graded; use another --name.")
     try:
         rows, source = load_recorded_answers(Path(args.answers_from))
     except (OSError, ValueError, KeyError) as exc:
@@ -416,7 +431,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         "answers_from": Path(args.answers_from).name,
         "cases": len(graded),
     }
-    md, js = write_report(graded, summary, Path(args.out), args.name, config)
+    md, js = write_report(graded, summary, Path(args.out), name, config)
     print(json.dumps(summary["overall"], indent=1))
     _store_judgements(db_path, judge, graded, persist_judgements)
     print(f"report: {md}")
@@ -626,7 +641,9 @@ def main(argv: list[str] | None = None) -> int:
         "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
     )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
-    p_evalx.add_argument("--name", default="avaliacao")
+    p_evalx.add_argument(
+        "--name", default=None, help="Report name (default: avaliacao, avaliacao-holdout-v080 or avaliacao-juiz)."
+    )
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
     p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
     p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")

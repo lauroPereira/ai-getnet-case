@@ -4,6 +4,7 @@ evidence, limited to 6 000 characters with the cut on record. Offline: the judge
 from __future__ import annotations
 
 import json
+import threading
 
 import pytest
 
@@ -187,19 +188,99 @@ def test_a_web_answer_tells_the_judge_its_text_is_not_recorded():
     assert data["evidence_notes"] == [evidence.WEB_NOTE] and data["evidence"] == []
 
 
-def test_tool_results_are_recorded_during_a_case_and_the_observer_is_removed_after(settings):
-    orchestrator, _ = offline_orchestrator(settings)
+def tool_env(settings, orchestrator):
     conn = connect(settings.db_path)
     customer = CustomerContext.for_principal(Principal.merchant("cliente1988"), "cliente1988", True)
-    env = ToolEnv(conn, orchestrator.clock, customer, mock_services=orchestrator.mock_services)
+    return conn, ToolEnv(conn, orchestrator.clock, customer, mock_services=orchestrator.mock_services)
+
+
+def test_tool_results_are_recorded_during_a_case_and_the_observer_is_removed_after(settings):
+    orchestrator, _ = offline_orchestrator(settings)
+    conn, env = tool_env(settings, orchestrator)
     with evidence.record_tool_results() as outcomes:
-        assert registry.OUTCOME_OBSERVERS
+        assert registry.OUTCOME_OBSERVERS.get()
         execute("get_device_status", {}, env)
     assert [o.name for o in outcomes] == ["get_device_status"] and outcomes[0].ok
-    assert registry.OUTCOME_OBSERVERS == []
+    assert registry.OUTCOME_OBSERVERS.get() == ()
     execute("get_device_status", {}, env)
     assert len(outcomes) == 1  # a call outside the block is not recorded
     with pytest.raises(RuntimeError), evidence.record_tool_results():
         raise RuntimeError("the case failed")
-    assert registry.OUTCOME_OBSERVERS == []
+    assert registry.OUTCOME_OBSERVERS.get() == ()
     conn.close()
+
+
+def test_two_runs_at_the_same_time_record_only_their_own_tool_calls(settings):
+    """P3-02: the observers belong to the run that registered them, even when the runs overlap in time."""
+    orchestrator, _ = offline_orchestrator(settings)
+    barrier = threading.Barrier(2)
+    seen: dict[str, list[str]] = {}
+
+    def run(label, tool_name):
+        conn, env = tool_env(settings, orchestrator)
+        try:
+            with evidence.record_tool_results() as outcomes:
+                barrier.wait(timeout=10)  # both recorders are registered before either tool call
+                for _ in range(2):
+                    execute(tool_name, {}, env)
+                    barrier.wait(timeout=10)  # the calls of the two runs interleave
+            seen[label] = [o.name for o in outcomes]
+        finally:
+            conn.close()
+
+    first = threading.Thread(target=run, args=("a", "get_device_status"))
+    second = threading.Thread(target=run, args=("b", "get_contract_snapshot"))
+    first.start()
+    second.start()
+    first.join(20)
+    second.join(20)
+    assert seen == {"a": ["get_device_status"] * 2, "b": ["get_contract_snapshot"] * 2}
+    assert registry.OUTCOME_OBSERVERS.get() == ()
+
+
+def test_a_failing_observer_never_changes_the_result_of_a_tool_call(settings):
+    orchestrator, _ = offline_orchestrator(settings)
+    conn, env = tool_env(settings, orchestrator)
+    seen: list[ToolOutcome] = []
+
+    def broken(outcome):
+        raise RuntimeError("the observer failed")
+
+    token = registry.OUTCOME_OBSERVERS.set((broken, seen.append))
+    try:
+        outcome = execute("get_device_status", {}, env)
+    finally:
+        registry.OUTCOME_OBSERVERS.reset(token)
+    assert outcome.ok and seen == [outcome]  # the call returned, and the next observer still ran
+    conn.close()
+
+
+def test_the_arguments_of_a_tool_call_are_part_of_its_evidence():
+    arguments = {"period": "yesterday", "payment_type": "credit"}
+    (item,) = evidence.tool_items([ToolOutcome("simulate_pricing", arguments, True, data={"expected_minor": 3600})])
+    assert item["kind"] == "tool_result" and item["label"] == "simulate_pricing"
+    assert json.loads(item["text"]) == {"arguments": arguments, "result": {"expected_minor": 3600}}
+
+
+def test_passages_and_the_merchant_message_are_masked_before_the_judge_sees_them():
+    sensitive = "cartão 4111 1111 1111 1111, CPF 123.456.789-09 e e-mail ana@example.com"
+    hits = [{"doc": "doc", "chunk_id": "doc#1-bbb", "excerpt": "excerpt with " + sensitive}]
+    trace = {"steps": [{"step": "knowledge", "detail": {"citations": ["doc#0-aaa", "doc#1-bbb"], "hits": hits}}]}
+    items, _ = evidence.passage_items(trace, {"doc#0-aaa": "corpus text with " + sensitive})
+    assert len(items) == 2 and all("4111" not in i["text"] and "123.456.789-09" not in i["text"] for i in items)
+    assert all("ana@example.com" not in i["text"] and "[card number removed]" in i["text"] for i in items)
+    data = data_for([], message="Meu " + sensitive)
+    assert "4111" not in data["merchant_message"] and "[CPF removed]" in data["merchant_message"]
+
+
+def test_the_judge_prompt_reads_the_evidence_notes_and_the_scripted_judge_follows_it():
+    prompt = " ".join(load_prompt(PROMPTS, "judge", "3").template.split())
+    assert "evidence_notes" in prompt and "text is not available" in prompt
+    assert "only because no passage is there to confirm a statement" in prompt
+    web_trace = {"steps": [{"step": "knowledge", "detail": {"mode": "web"}}]}
+    reply = "A previsão para amanhã é de 25 graus e a taxa é de R$ 99,00."
+    judge = scripted_judge(PROMPTS, NullMeter())
+    web = judge.evaluate(data_for([], reply=reply, trace=web_trace, message="Previsão do tempo amanhã?"))
+    plain = judge.evaluate(data_for([], reply=reply, message="Previsão do tempo amanhã?"))
+    assert web["unsupported_claim"] is False  # no passage to check a web answer against is not a reason to flag it
+    assert plain["unsupported_claim"] is True  # the same reply without any note and without evidence is flagged

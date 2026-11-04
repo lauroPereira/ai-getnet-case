@@ -594,9 +594,11 @@ def _outbox_down_guard(conn: sqlite3.Connection) -> None:
 
 # v0.8.0 (spec D13, task 70). `run_evaluations.rubric_version` and `evaluator` (provider and model of the judge) exist
 # since 0008; this migration adds what `judge.v3` and the repeated campaigns need to be queried without parsing JSON:
-# the four 1-5 scores, the `unsupported_claim` verdict and the repetition number of the judgement. The complete result
-# stays in `result`, so the three columns can be rebuilt. `calibrations` keeps the human scores of the sample the owner
-# rates (task 71): the only data in this schema that nobody can recreate, so its rollback is guarded.
+# the four 1-5 scores, the `unsupported_claim` verdict and the repetition number of the judgement. The judgement
+# writes all three into `result` as well, so a rollback drops the columns without losing them and the next upgrade
+# rebuilds them from `result` (rows of `judge.v3`, `rubric_version` 3; older rows keep the defaults).
+# `calibrations` keeps the human scores of the sample the owner rates (task 71): the only data in this schema that
+# nobody can recreate, so its rollback is guarded.
 EVAL_RUBRIC_UP = """
 ALTER TABLE run_evaluations ADD COLUMN scores TEXT;
 ALTER TABLE run_evaluations ADD COLUMN repetition INTEGER NOT NULL DEFAULT 1;
@@ -621,6 +623,15 @@ CREATE TABLE calibrations (
     UNIQUE (campaign, sample_id, rater)
 );
 CREATE INDEX calibrations_campaign ON calibrations(campaign, case_id);
+UPDATE run_evaluations SET
+    repetition = COALESCE(json_extract(result, '$.repetition'), 1),
+    unsupported_claim = CASE json_extract(result, '$.unsupported_claim') WHEN 1 THEN 1 WHEN 0 THEN 0 END,
+    scores = CASE WHEN json_extract(result, '$.groundedness') IS NOT NULL THEN json_object(
+        'groundedness', json_extract(result, '$.groundedness'),
+        'factual_correctness', json_extract(result, '$.factual_correctness'),
+        'relevance', json_extract(result, '$.relevance'),
+        'usefulness', json_extract(result, '$.usefulness')) END
+WHERE rubric_version = '3' AND json_valid(result);
 """
 
 EVAL_RUBRIC_DOWN = """

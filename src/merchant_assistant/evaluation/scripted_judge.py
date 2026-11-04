@@ -26,11 +26,12 @@ def _words(text: str) -> set[str]:
 def handler(call: ScriptedCall) -> dict:
     """Groundedness and factual correctness drop when the reply states an amount that neither the evidence nor the
     merchant message contains (and the verdict turns on); relevance follows the words the reply shares with the
-    question; usefulness follows the length of the reply."""
+    question; usefulness follows the length of the reply. Like `judge.v3`, it does not hold a missing passage against a
+    reply whose evidence notes say that its source text is not available (a web answer)."""
     data = json.loads(call.spec.input)
     reply = data["reply"]
     support = " ".join([data["merchant_message"], *(item["text"] for item in data["evidence"])])
-    invented = amounts(reply) - amounts(support)
+    invented = set() if data.get("evidence_notes") else amounts(reply) - amounts(support)
     shared = len(_words(data["merchant_message"]) & _words(reply))
     relevance = 5 if shared >= 2 else 4 if shared == 1 else 3
     usefulness = 5 if len(reply) >= 80 else 4 if len(reply) >= 30 else 2

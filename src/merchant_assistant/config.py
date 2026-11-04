@@ -74,10 +74,12 @@ class Settings(BaseSettings):
 
     # v0.6.0 demonstration controls
     demo_session_message_limit: int = Field(default=20, ge=1, le=1000)
-    # v0.8.0 (D11): the evaluator is not the agent. The campaign judge refuses an evaluator equal to AGENT_MODEL or one
-    # without its provider key; the on-demand evaluation of /v1 uses the same settings.
-    evaluator_provider: str = "deepseek"
-    evaluator_model: str = "deepseek-flash"
+    evaluator_provider: str = "openai"
+    evaluator_model: str = "gpt-6-luna"
+    # v0.8.0 (D11): the judge of the evaluation campaign (`eval --judge`) is not the agent. It has its own settings and
+    # is refused before any call when it equals the agent, has no provider key or has no price.
+    judge_provider: str = "deepseek"
+    judge_model: str = "deepseek-flash"
 
     user_id_pattern: str = Field(default=r"^[A-Za-z0-9_\-.]{1,64}$")
 

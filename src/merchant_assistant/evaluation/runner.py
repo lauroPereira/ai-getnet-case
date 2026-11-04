@@ -433,6 +433,14 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         ]
     if o.get("judge_failed"):
         lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
+    recorded = [r["evidence_truncation"] for r in rows if "evidence_truncation" in r]
+    if recorded:
+        cut = sum(1 for t in recorded if t["truncated"])
+        lines += [
+            "",
+            f"Evidência truncada em {cut} de {len(recorded)} respostas (limite de {recorded[0]['limit_chars']} "
+            "caracteres para o juiz; o registro de cada corte está na linha do relatório em JSON).",
+        ]
     flagged = [(r, [rec for rec in _records(r) if rec.get("unsupported_claim")]) for r in rows]
     if any(marks for _, marks in flagged):
         lines += [
@@ -447,8 +455,8 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         for r, marks in flagged:
             if marks:
                 lines.append(
-                    f"| {r['id']} | {r.get('repetition', 1)} | {r['route']} | {len(marks)} de {len(_records(r))} | "
-                    f"{marks[0]['reasons']['groundedness']} |"
+                    f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {aggregate.cell(r['route'])} | "
+                    f"{len(marks)} de {len(_records(r))} | {aggregate.cell(marks[0]['reasons']['groundedness'])} |"
                 )
     lines += [
         "",
@@ -461,7 +469,8 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         "| --- | --- | --- |",
     ]
     for route, counts in summary.get("paths", {}).items():
-        lines += [f"| {route} | {path or '-'} | {count} |" for path, count in counts.items()]
+        for path, count in counts.items():
+            lines.append(f"| {aggregate.cell(route)} | {aggregate.cell(path or '-')} | {count} |")
     if "variation" in summary:
         lines += ["", *aggregate.render(summary["variation"])]
     lines += [
@@ -474,9 +483,9 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
     for r in rows:
         failed = [k.removesuffix("_ok") for k in CHECK_KEYS if not r[k]]
         lines.append(
-            f"| {r['id']} | {r.get('repetition', 1)} | {r['split']} | {r['route']} | {r.get('executed_path') or '-'} | "
-            f"{r['status']} | {'sim' if r['passed'] else 'não'} | {', '.join(failed) or '-'} | {r['duration_ms']} | "
-            f"{r['cost_usd']} |"
+            f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {aggregate.cell(r['split'])} | "
+            f"{aggregate.cell(r['route'])} | {aggregate.cell(r.get('executed_path') or '-')} | {r['status']} | "
+            f"{'sim' if r['passed'] else 'não'} | {', '.join(failed) or '-'} | {r['duration_ms']} | {r['cost_usd']} |"
         )
     md_path = out_dir / f"{name}.md"
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

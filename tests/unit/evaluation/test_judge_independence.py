@@ -12,6 +12,7 @@ from merchant_assistant.config import PROJECT_ROOT, Settings
 from merchant_assistant.data.db import connect
 from merchant_assistant.evaluation import evidence
 from merchant_assistant.evaluation.judge import (
+    MAX_ERROR_CHARS,
     JudgeRefused,
     check_independence,
     resolve_judge,
@@ -22,6 +23,7 @@ from merchant_assistant.llm.base import NullMeter
 from merchant_assistant.llm.scripted import ScriptedLLM
 
 AGENT = ("openai", "gpt-6-luna")
+BODY = {"status": "answered", "route": "support", "answer": "Você recebe R$ 10,00."}
 
 
 class Factory:
@@ -43,10 +45,12 @@ def configured(**update) -> Settings:
     return Settings(**(base | update))
 
 
-def test_the_default_judge_is_deepseek_flash_and_differs_from_the_default_agent():
+def test_the_default_judge_is_deepseek_flash_and_the_on_demand_evaluator_keeps_its_own_default():
     settings = configured()
-    assert (settings.evaluator_provider, settings.evaluator_model) == ("deepseek", "deepseek-flash")
-    assert (AGENT[0], settings.agent_model) != (settings.evaluator_provider, settings.evaluator_model)
+    assert (settings.judge_provider, settings.judge_model) == ("deepseek", "deepseek-flash")
+    assert (AGENT[0], settings.agent_model) != (settings.judge_provider, settings.judge_model)
+    # the /v1 evaluator (v0.6.0) is not the campaign judge: its default and its key requirement did not change
+    assert (settings.evaluator_provider, settings.evaluator_model) == ("openai", "gpt-6-luna")
 
 
 def test_a_configured_independent_judge_is_resolved_without_any_call():
@@ -71,12 +75,12 @@ def test_the_default_judge_uses_the_deepseek_client_the_project_already_has_with
 def test_a_judge_equal_to_the_agent_is_refused_before_any_client_is_built():
     factory = Factory()
     settings = configured(
-        openai_api_key=SecretStr("synthetic-openai-key"), evaluator_provider="openai", evaluator_model="gpt-6-luna"
+        openai_api_key=SecretStr("synthetic-openai-key"), judge_provider="openai", judge_model="gpt-6-luna"
     )
     with pytest.raises(JudgeRefused) as refused:
         resolve_judge(settings, agent=AGENT, meter=NullMeter(), factory=factory)
     message = str(refused.value)
-    assert "openai/gpt-6-luna is the same model as the agent" in message and "EVALUATOR_MODEL" in message
+    assert "openai/gpt-6-luna is the same model as the agent" in message and "JUDGE_MODEL" in message
     assert message.endswith("No call was made.") and factory.built == [] and factory.llm.calls == []
 
 
@@ -88,10 +92,18 @@ def test_a_judge_without_its_provider_key_is_refused_and_never_replaced():
     assert "DEEPSEEK_API_KEY" in message and "does not switch to another judge" in message
     assert "synthetic" not in message and factory.built == [] and factory.llm.calls == []
 
-    other = configured(evaluator_provider="openai", evaluator_model="another-openai-model")
+    other = configured(judge_provider="openai", judge_model="gpt-6-luna")
     with pytest.raises(JudgeRefused, match="OPENAI_API_KEY"):
-        resolve_judge(other, agent=AGENT, meter=NullMeter(), factory=factory)
+        resolve_judge(other, agent=("deepseek", "deepseek-flash"), meter=NullMeter(), factory=factory)
     assert factory.built == []
+
+
+def test_an_installation_with_only_an_openai_key_cannot_use_the_default_judge():
+    factory = Factory()
+    settings = configured(openai_api_key=SecretStr("synthetic-openai-key"))  # no DeepSeek key
+    with pytest.raises(JudgeRefused, match="DEEPSEEK_API_KEY") as refused:
+        resolve_judge(settings, agent=AGENT, meter=NullMeter(), factory=factory)
+    assert str(refused.value).endswith("No call was made.") and factory.built == [] and factory.llm.calls == []
 
 
 def test_an_empty_key_counts_as_missing():
@@ -102,13 +114,34 @@ def test_an_empty_key_counts_as_missing():
 
 def test_a_judge_without_a_price_or_from_an_unsupported_provider_is_refused():
     factory = Factory()
-    unpriced = configured(deepseek_api_key=SecretStr("synthetic-deepseek-key"), evaluator_model="unpriced-model")
+    unpriced = configured(deepseek_api_key=SecretStr("synthetic-deepseek-key"), judge_model="unpriced-model")
     with pytest.raises(JudgeRefused, match="No price is registered for the judge model unpriced-model"):
         resolve_judge(unpriced, agent=AGENT, meter=NullMeter(), factory=factory)
-    router_only = configured(evaluator_provider="typesafe", evaluator_model="jev-1.14.0")
+    router_only = configured(judge_provider="typesafe", judge_model="jev-1.14.0")
     with pytest.raises(JudgeRefused, match="Provider typesafe cannot be the judge"):
         resolve_judge(router_only, agent=AGENT, meter=NullMeter(), factory=factory)
     assert factory.built == []
+
+
+@pytest.mark.parametrize(
+    ("provider", "model", "message"),
+    [
+        ("deepseek", "gpt-6-luna", "registered for the provider openai, not deepseek"),
+        ("openai", "deepseek-flash", "registered for the provider deepseek, not openai"),
+        ("openai", "text-embedding-3-small", "no output price"),
+    ],
+)
+def test_the_provider_and_model_must_be_a_pair_that_exists_and_writes_text(provider, model, message):
+    factory = Factory()
+    settings = configured(
+        judge_provider=provider,
+        judge_model=model,
+        openai_api_key=SecretStr("synthetic-openai-key"),
+        deepseek_api_key=SecretStr("synthetic-deepseek-key"),
+    )
+    with pytest.raises(JudgeRefused, match=message):
+        resolve_judge(settings, agent=AGENT, meter=NullMeter(), factory=factory)
+    assert factory.built == [] and factory.llm.calls == []  # a label cannot make a model independent
 
 
 def test_a_provider_that_cannot_be_built_is_a_refusal_not_a_crash():
@@ -126,6 +159,19 @@ def test_the_independence_basis_is_named_and_only_the_identical_pair_is_forbidde
     )
     with pytest.raises(JudgeRefused):
         check_independence(AGENT, AGENT)
+
+
+def test_a_provider_error_is_recorded_as_its_class_and_a_short_masked_message():
+    prompts = PROJECT_ROOT / "prompts"
+    body = "Bearer sk-abcdefghijklmnopqrstuvwxyz0123456789 echoed " + "x" * 400 + "\nsecond line password: hunter2"
+    judge = scripted_judge(prompts, NullMeter(), ScriptedLLM(lambda call: RuntimeError(body)))
+    data, _ = evidence.judge_input("Quanto vou receber?", BODY, [], [], {}, {})
+    error = judge.evaluate(data)["error"]
+    assert error.startswith("RuntimeError: ") and "\n" not in error
+    assert "sk-abcdefghijklmnopqrstuvwxyz" not in error and "hunter2" not in error
+    assert len(error) <= len("RuntimeError: ") + MAX_ERROR_CHARS and error.endswith("...")
+    silent = scripted_judge(prompts, NullMeter(), ScriptedLLM(lambda call: KeyError()))
+    assert silent.evaluate(data)["error"] == "KeyError"
 
 
 def test_a_judgement_is_stored_with_its_provider_model_and_the_queryable_columns(tmp_path):
@@ -153,11 +199,14 @@ def test_a_judgement_is_stored_with_its_provider_model_and_the_queryable_columns
     assert json.loads(row["scores"]) == done["scores"]
     result = json.loads(row["result"])
     assert result["unsupported_claim"] is True and result["groundedness_reason"] == done["reasons"]["groundedness"]
+    assert (
+        result["repetition"] == 2 and result["relevance"] == done["scores"]["relevance"]
+    )  # no value lives only in a column
     assert json.loads(row["evidence"])["reply"] == "Você recebe R$ 10,00."
     assert json.loads(row["critical_failures"]) == [{"code": "unsupported_claim", "check": "judge"}]
 
     bad = conn.execute("SELECT * FROM run_evaluations WHERE evaluation_id=?", (failed["evaluation_id"],)).fetchone()
     assert (bad["state"], bad["scores"], bad["unsupported_claim"], bad["repetition"]) == ("failed", None, None, 3)
-    assert bad["error"] == "ValueError: bad" and json.loads(bad["result"]) == {}
+    assert bad["error"] == "ValueError: bad" and json.loads(bad["result"]) == {"repetition": 3}
     assert json.loads(bad["critical_failures"]) == []  # a failed judgement says nothing about the reply
     conn.close()

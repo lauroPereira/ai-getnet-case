@@ -40,6 +40,25 @@ def deepseek_client(settings: Settings):
     )
 
 
+def model_factory(settings: Settings):
+    """Builds the model client of a provider and model pair: profiles, on-demand evaluator and campaign judge."""
+    from merchant_assistant.llm.jev import JevRouter
+    from merchant_assistant.llm.openai_llm import OpenAILLM
+
+    def llm_factory(provider: str, model: str) -> LLM:
+        if provider == "openai":
+            return OpenAILLM(openai_client(settings), model)
+        if provider == "deepseek":
+            return OpenAILLM(deepseek_client(settings), model)
+        if provider == "typesafe" and model == "jev-1.14.0":
+            if not settings.typesafe_api_key:
+                raise RuntimeError("TYPESAFE_API_KEY is not configured")
+            return JevRouter(settings.typesafe_api_key.get_secret_value())
+        raise RuntimeError("model provider or identifier is not available")
+
+    return llm_factory
+
+
 def build_orchestrator(
     settings: Settings,
     *,
@@ -49,7 +68,6 @@ def build_orchestrator(
     faults: dict[str, str] | None = None,
     budget: BudgetGuard | CombinedBudgetGuard | None = None,
 ) -> Orchestrator:
-    from merchant_assistant.llm.jev import JevRouter
     from merchant_assistant.llm.openai_llm import OpenAILLM
     from merchant_assistant.mocks.clients import MockServiceClient
     from merchant_assistant.rag.embed import OpenAIEmbedder
@@ -64,17 +82,6 @@ def build_orchestrator(
         open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant"), settings.qdrant_collection, embedder
     )
 
-    def llm_factory(provider: str, model: str) -> LLM:
-        if provider == "openai":
-            return OpenAILLM(openai_client(settings), model)
-        if provider == "deepseek":
-            return OpenAILLM(deepseek_client(settings), model)
-        if provider == "typesafe" and model == "jev-1.14.0":
-            if not settings.typesafe_api_key:
-                raise RuntimeError("TYPESAFE_API_KEY is not configured")
-            return JevRouter(settings.typesafe_api_key.get_secret_value())
-        raise RuntimeError("model provider or identifier is not available")
-
     from merchant_assistant.rag.kb import KnowledgeBase
 
     kb = KnowledgeBase(db_path=settings.db_path, index=index, data_dir=settings.data_dir, budget=budget)
@@ -88,7 +95,7 @@ def build_orchestrator(
         traces=TraceStore(settings.runtime_path / "traces.sqlite3"),
         faults=faults,
         mock_services=MockServiceClient(settings.mocks_url, timeout=2.0),
-        llm_factory=llm_factory,
+        llm_factory=model_factory(settings),
     )
 
 

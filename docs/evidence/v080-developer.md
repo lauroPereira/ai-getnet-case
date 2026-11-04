@@ -319,3 +319,46 @@ O Reviewer faz a revisão final dos casos 15 e 16 e do lacre. Em seguida, o Supe
 - Ação externa: nenhuma (sem push, sem PR, sem rede, sem chamada paga). Commits locais com `lauroPereira <lauro.s.pereira@gmail.com>`, conferida antes de cada um.
 - Próxima ação: Reviewer independente na tarefa 70. Pontos a pedir a ele: as definições de agregação acima; a regra de independência (decisão 4); o hook em `tools/registry.py` (decisão 1); a mudança do avaliador padrão e seu efeito na avaliação sob demanda (decisão 3). Depois, a tarefa 71 usa `calibrations` e as linhas `run_evaluations` do `cli:eval`.
 - Decisão humana pendente: nenhuma bloqueante. Reversíveis para o relatório do Supervisor: avaliador padrão `deepseek-flash`; só o par idêntico é recusado; tabela `calibrations` com o formato acima.
+
+## Tarefa 70, rodada 2
+
+- Papel e responsável: Developer do Time B (subagente), sobre o [parecer da revisão independente, rodada 1](v080-reviewer-t70.md) do candidato `f3872d6` (correções necessárias: 1 P2 e 10 P3; o Supervisor decidiu o P2-01 pela opção (a) e pediu os P3-01 a P3-07).
+- Escopo:
+  - **Alterados:** `config.py`, `.env.example`, `main.py`, `data/migrations.py` (comentário e uma instrução na 0011), `tools/registry.py`, `evaluation/judge.py`, `evidence.py`, `aggregate.py`, `runner.py`, `scripted_judge.py`, `cli.py`, `prompts/judge.v3.md`, a tarefa 70 e esta passagem.
+  - **Testes:** `test_judge_v3.py`, `test_judge_independence.py`, `test_migrations.py`, `test_eval_campaign.py`, `test_v060_api.py` e o arquivo novo `tests/integration/test_evaluator_settings.py`.
+  - **Intocados:** `orchestration/`, `agents/`, `api/`, `scripted_policy.py`, `catalog.json`, `tests/scenarios/` e o holdout (lacre `91aa5158…` conferido), `.env`, o README.
+- Estado: correções implementadas; em andamento até a revisão da rodada 2.
+- Base e versão final: base `0ebcda2`; commit desta rodada citado no retorno ao Supervisor.
+- Independência: não-independente (relato do autor).
+
+### P2-01: avaliador sob demanda e juiz da campanha separados
+
+- `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` voltam ao padrão da v0.6.0 (`openai`/`gpt-6-luna`). A avaliação sob demanda do `/v1` não pede chave da DeepSeek.
+- O juiz da campanha tem `JUDGE_PROVIDER`/`JUDGE_MODEL`, padrão `deepseek`/`deepseek-flash`, com a mesma checagem de independência contra o agente. `resolve_judge` lê só essas variáveis, e as mensagens de recusa citam `JUDGE_*`. O `.env.example` volta ao bloco `EVALUATOR_*` da v0.6.0 e ganha o bloco do juiz, com comentário.
+- **Efeito no `.env` do responsável:** o `.env` antigo (`EVALUATOR_*=openai/gpt-6-luna`) deixa de fazer o `eval --judge` recusar; ele só precisa de `DEEPSEEK_API_KEY`. A decisão 3 da rodada 1 (mudança do padrão do avaliador e aviso para trocar o `.env`) fica substituída por esta.
+- `main.model_factory(settings)` é a fábrica de modelos que estava dentro de `build_orchestrator`, extraída sem mudar o comportamento; o orquestrador e o juiz a usam, e o teste do `/v1` a usa como o servidor real.
+- **Testes** (`test_evaluator_settings.py`, 2): instalação só com `OPENAI_API_KEY`, fábrica real e cliente simulado: a estimativa responde 200, a confirmação 201 com `gpt-6-luna` e uma chamada simulada. O segundo teste põe um avaliador DeepSeek nessa instalação e vê `503 evaluator_unavailable`, a falha que o padrão da rodada 1 causava (prova de que o primeiro teste a pegaria). `eval --judge` numa instalação só com a chave da OpenAI recusa com `DEEPSEEK_API_KEY` na mensagem, antes de qualquer chamada: `build_orchestrator`, `openai_client` e `deepseek_client` trocados por funções que falham o teste se forem chamadas.
+
+### P3
+
+- **P3-01.** O julgamento grava `repetition` também no `result` (e, no julgamento que falhou, só ela). A subida da 0011 reconstrói `repetition`, `unsupported_claim` e `scores` a partir do `result` das linhas `rubric_version = '3'` (`json_extract`); as linhas do `judge.v2` ficam com os padrões. O comentário da migração diz isso. O teste faz subir, descer e subir com linhas v2, v3 (repetições 2 e 3, veredito falso e verdadeiro) e v3 que falhou, e confere os valores reconstruídos duas vezes, a integridade e as chaves estrangeiras.
+- **P3-02.** `OUTCOME_OBSERVERS` é uma `ContextVar` com uma tupla de observadores; `record_tool_results` registra e restaura pelo token. Uma exceção de observador é registrada no log e não atravessa `execute()`, e os demais observadores continuam. Testes: duas threads com chamadas intercaladas por uma barreira, cada gravador só com as suas; observador que falha. O grafo copia o contexto para as threads que usa: os testes de ponta a ponta continuam vendo os resultados das ferramentas do caso de suporte.
+- **P3-03.** `resolve_judge` confere o par na tabela de preços: o modelo precisa existir e ser do provedor configurado (`deepseek`/`gpt-6-luna` e `openai`/`deepseek-flash` são recusados), e precisa ter preço de saída (`openai`/`text-embedding-3-small`, que o parecer citou, é recusado). Tudo antes de construir o cliente.
+- **P3-04.** O erro do provedor vai para `run_evaluations.error` e para o relatório como a classe e uma mensagem de uma linha, mascarada e com no máximo 160 caracteres (`short_error`). Teste com `Bearer sk-…`, `password:`, 400 caracteres e quebra de linha.
+- **P3-05.** Testes novos para os sobreviventes: M11 e M12 (CPF, cartão e e-mail mascarados nas passagens do corpus e do trace e na mensagem do lojista); M28 (custo do agente zerado no relatório do juiz, com custo de origem diferente de zero, que o agente programado nunca tem); M32 (`--repeat` sem juiz seguido de `--judge-repeat`, pela CLI); M34 (os argumentos da ferramenta fazem parte da evidência).
+- **P3-06.** O `judge.v3` ganha o parágrafo das `evidence_notes`: numa resposta de web, em que só os títulos das fontes chegam, não se baixa a fundamentação nem se liga `unsupported_claim` só porque falta um trecho; só se liga se a resposta contradiz as fontes, se contradiz a si mesma ou afirma detalhes da conta do lojista que nenhuma ferramenta mostra, e as justificativas dizem que o texto da web não estava disponível. A regra "sem evidência nenhuma, afirmação específica é sem suporte" passa a valer "e sem `evidence_notes`". O juiz programado segue a mesma regra. Como o prompt é lido por um modelo, o teste só prova que o texto está lá e que o substituto programado o segue. **Efeito esperado, a medir na campanha e na calibração:** menos respostas `general_web` marcadas como afirmação sem suporte; a taxa dessas respostas na campanha real é o indicador, e o responsável confere na amostra de calibração. Editei o `judge.v3` no lugar porque ele ainda não rodou em nenhuma campanha nem foi integrado; se o Supervisor preferir manter a regra de "prompt novo, versão nova", vira `judge.v4`.
+- **P3-07.** Células de tabela passam por `aggregate.cell` (`|` vira `\|`, quebras de linha viram espaço) nos casos, nos caminhos, nas rotas e na justificativa das afirmações sem suporte. O Markdown resume o truncamento ("Evidência truncada em X de N respostas"). O nome padrão do relatório de `--split holdout_v080` é `avaliacao-holdout-v080`, e o de `--judge-repeat` é `avaliacao-juiz`; `--name` explícito vale sempre. `--judge-repeat` recusa, antes de julgar, um nome que sobrescreveria o arquivo `--answers-from`. `--split` diferente de `all` com `--judge-repeat` avisa no erro padrão que é ignorado.
+- **P3-08, P3-09, P3-10.** Sem mudança, como decidido.
+
+### Evidência
+
+- Python do worktree, `-p no:cacheprovider`, `--basetemp .pytest_cache/t70-dev-<data>`, um pytest por vez; a suíte estrita completa não foi rodada.
+- `tests/unit`: **304 aprovados** (84 s). `tests/integration`, os 25 arquivos em quatro execuções: **161** (v0.6.0, `/v1`, runner, fechamento v0.7.0, casos de uso, identidade r2), **21** (campanha 19 e avaliador 2), **88** (conversas, KB, MCP, contrato, ticketing, `doc_effect`) e **144** (handoffs, identidade, retomada, história, ticketing, webhooks): 414. Total **718 aprovados**, sem falha.
+- Novos ou reescritos nesta rodada: 44 testes em `tests/unit/evaluation/` (eram 34), 19 em `test_eval_campaign.py` (eram 14), 2 em `test_evaluator_settings.py`, 22 em `test_migrations.py` (um reescrito).
+- ruff `check src tests` sem achados. Lacre do holdout: `sha256sum tests/scenarios/holdout_v080.jsonl` → `91aa5158…`; `git diff 8f2baa6..HEAD -- tests/scenarios` vazio; `test_holdout_v080.py` verde. Nenhuma chamada paga, nenhuma rede.
+
+### Para o Supervisor
+
+- README: a linha de `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` (`openai`, `gpt-6-luna`) volta a estar correta; falta acrescentar `JUDGE_PROVIDER`/`JUDGE_MODEL` (`deepseek`, `deepseek-flash`) na tabela, no fechamento (73).
+- Reversíveis: separação em duas variáveis (a) em vez de uma; `judge.v3` editado no lugar; modelo sem preço de saída recusado como juiz.
+- Não verificado (chamada paga, do QA): efeito do parágrafo das notas de evidência no juiz real; esquema estruturado do `JudgeScoreV3` na DeepSeek.

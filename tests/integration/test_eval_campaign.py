@@ -201,6 +201,16 @@ def test_judge_repeat_grades_the_recorded_answers_again_without_running_the_agen
     assert once["overall"]["criteria"]["groundedness"]["pairs"] == 0
 
 
+def test_the_judge_report_does_not_carry_the_cost_of_the_agent_run(settings):
+    orchestrator, _ = offline_orchestrator(settings)
+    first = run(orchestrator, selected_cases()[:2], judge=scripted_judge(PROJECT_ROOT / "prompts", NullMeter()))
+    for row in first:
+        row["cost_usd"] = 0.0123  # the agent run was paid
+    graded = rejudge(first, scripted_judge(PROJECT_ROOT / "prompts", NullMeter()), 2)
+    assert all(g["cost_usd"] == 0.0 and g["source_cost_usd"] == 0.0123 for g in graded)
+    assert summarize(graded)["overall"]["cost_usd"] == 0 and summarize(first)["overall"]["cost_usd"] == 0.0246
+
+
 def test_every_judgement_is_stored_with_its_repetition_provider_and_model(settings, tmp_path):
     orchestrator, _ = offline_orchestrator(settings)
     judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
@@ -293,6 +303,69 @@ def test_cli_repeat_then_judge_repeat_report_each_variation_on_its_own(settings,
     ]
 
 
+def test_repeat_without_a_judge_records_the_evidence_for_a_later_judge_repeat(settings, tmp_path, scenario_tree):
+    assert cli.cmd_eval(settings, eval_args(tmp_path, name="agent-only", judge=False, repeat=2)) == 0
+    recorded = read_report(tmp_path, "agent-only")
+    assert len(recorded["cases"]) == 8 and "variation" not in recorded["summary"]
+    assert all("judge_input" in row and "judge" not in row for row in recorded["cases"])
+    answers = str(tmp_path / "out" / "agent-only.json")
+    args = eval_args(tmp_path, name="judged", judge=False, judge_repeat=2, answers_from=answers)
+    assert cli.cmd_eval(settings, args) == 0
+    judged = read_report(tmp_path, "judged")
+    assert len(judged["cases"]) == 4 and all(len(row["judge_runs"]) == 2 for row in judged["cases"])
+    assert [row["request_id"] for row in judged["cases"]] == [
+        row["request_id"] for row in recorded["cases"] if row["repetition"] == 1
+    ]
+
+
+def test_report_names_do_not_overwrite_each_other_and_a_judge_run_never_replaces_its_answers(
+    settings, tmp_path, scenario_tree, capsys
+):
+    assert cli._report_name(argparse.Namespace(name=None, split="all", judge_repeat=None)) == "avaliacao"
+    assert cli._report_name(argparse.Namespace(name=None, split="dev", judge_repeat=None)) == "avaliacao"
+    assert cli._report_name(argparse.Namespace(name=None, split="holdout_v080", judge_repeat=None)) == (
+        "avaliacao-holdout-v080"
+    )
+    assert cli._report_name(argparse.Namespace(name=None, split="all", judge_repeat=3)) == "avaliacao-juiz"
+    assert cli._report_name(argparse.Namespace(name="mine", split="holdout_v080", judge_repeat=None)) == "mine"
+    assert cli.cmd_eval(settings, eval_args(tmp_path, name=None, split="holdout_v080")) == 0
+    assert (tmp_path / "out" / "avaliacao-holdout-v080.json").exists()
+    assert not (tmp_path / "out" / "avaliacao.json").exists()  # the development report keeps its name
+
+    assert cli.cmd_eval(settings, eval_args(tmp_path, name="agent")) == 0
+    answers = tmp_path / "out" / "agent.json"
+    before = answers.read_bytes()
+    args = eval_args(tmp_path, name="agent", judge=False, judge_repeat=2, answers_from=str(answers))
+    with pytest.raises(SystemExit, match="would overwrite the answers being graded"):
+        cli.cmd_eval(settings, args)
+    assert answers.read_bytes() == before
+    capsys.readouterr()
+    args = eval_args(tmp_path, name=None, split="dev", judge=False, judge_repeat=2, answers_from=str(answers))
+    assert cli.cmd_eval(settings, args) == 0
+    assert "--split is ignored with --judge-repeat" in capsys.readouterr().err
+    assert (tmp_path / "out" / "avaliacao-juiz.json").exists()
+
+
+def test_the_markdown_escapes_pipes_and_line_breaks_and_summarises_the_truncation(settings, tmp_path):
+    orchestrator, _ = offline_orchestrator(settings)
+    cases = selected_cases()
+
+    def flags_with_a_pipe(call):
+        return judge_handler(call) | {"unsupported_claim": True, "groundedness_reason": "taxa | prazo\nsegunda linha"}
+
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(flags_with_a_pipe))
+    rows = run(orchestrator, cases, judge=judge)
+    rows[0]["evidence_truncation"] = rows[0]["evidence_truncation"] | {"truncated": True}
+    rows[1]["id"] = "EX|02"
+    md, _ = write_report(rows, summarize(rows), tmp_path, "escaped", {"mode": "scripted"})
+    lines = md.read_text(encoding="utf-8").splitlines()
+    flagged = [line for line in lines if line.startswith(f"| {cases[0].id} | 1 | ") and "de 1 |" in line]
+    assert len(flagged) == 1 and flagged[0].endswith("taxa \\| prazo segunda linha |")
+    assert not any(line.startswith("segunda linha") for line in lines)  # the line break did not leak out of the cell
+    assert any(line.startswith("| EX\\|02 | ") for line in lines)
+    assert "Evidência truncada em 1 de 4 respostas (limite de 6000 caracteres" in "\n".join(lines)
+
+
 def test_the_two_repetition_options_are_not_combined_and_judge_repeat_needs_recorded_answers(settings, tmp_path):
     with pytest.raises(SystemExit, match="not combined"):
         cli.cmd_eval(settings, eval_args(tmp_path, repeat=2, judge_repeat=3, answers_from="x.json"))
@@ -327,13 +400,38 @@ def test_a_judge_equal_to_the_agent_or_without_a_key_is_refused_before_anything_
     same = settings.model_copy(
         update={
             "openai_api_key": SecretStr("synthetic-openai-key"),
-            "evaluator_provider": "openai",
-            "evaluator_model": settings.agent_model,
+            "judge_provider": "openai",
+            "judge_model": settings.agent_model,
         }
     )
     with pytest.raises(SystemExit, match="same model as the agent"):
         cli.cmd_eval(same, real)
     assert not (tmp_path / "out").exists() and not settings.runtime_path.joinpath("budget.sqlite3").exists()
+
+
+def test_an_installation_with_only_an_openai_key_is_refused_by_eval_judge_before_any_call(
+    settings, tmp_path, monkeypatch
+):
+    """P2-01: the campaign judge needs the DeepSeek key; the /v1 evaluator (openai/gpt-6-luna) does not."""
+    from pydantic import SecretStr
+
+    import merchant_assistant.main as main
+
+    def nothing_may_run(*args, **kwargs):
+        raise AssertionError("no system and no model client may be built for a refused judge")
+
+    for name in ("build_orchestrator", "openai_client", "deepseek_client"):
+        monkeypatch.setattr(main, name, nothing_may_run)
+    only_openai = settings.model_copy(
+        update={"openai_api_key": SecretStr("synthetic-openai-key"), "deepseek_api_key": None}
+    )
+    assert (only_openai.evaluator_provider, only_openai.evaluator_model) == ("openai", "gpt-6-luna")
+    with pytest.raises(SystemExit) as refused:
+        cli.cmd_eval(only_openai, eval_args(tmp_path, scripted=False))
+    message = str(refused.value)
+    assert message.startswith("eval: ") and "DEEPSEEK_API_KEY" in message
+    assert "does not switch to another judge" in message and message.endswith("No call was made.")
+    assert not (tmp_path / "out").exists()
 
 
 def test_judge_repeat_in_real_mode_is_refused_without_the_judge_key_before_the_budget_is_touched(

@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from types import SimpleNamespace
 
@@ -414,31 +415,57 @@ def test_0011_adds_the_rubric_columns_and_the_calibrations_table(tmp_path):
     )
 
 
-def test_0011_round_trip_keeps_every_evaluation_and_its_complete_result(tmp_path):
+def v3_result(repetition, claim):
+    return json.dumps(
+        {
+            "repetition": repetition,
+            "groundedness": 5,
+            "factual_correctness": 4,
+            "relevance": 5,
+            "usefulness": 3,
+            "unsupported_claim": claim,
+            "groundedness_reason": "Supported.",
+        }
+    )
+
+
+def test_0011_round_trip_keeps_every_evaluation_and_rebuilds_the_columns_from_result(tmp_path):
     conn = connect(tmp_path / "evaluations.sqlite3")
     assert migrate(conn, 10) == ["down 0011_evaluation_rubric"]
     assert not {"scores", "repetition", "unsupported_claim"} & set(columns(conn, "run_evaluations"))
     add_evaluation(conn, "eval_v2", result='{"answers_question":4,"clarity_and_tone":4,"honesty":5,"comment":"ok"}')
+    add_evaluation(conn, "eval_v3_a", rubric_version="3", result=v3_result(2, False))
+    add_evaluation(conn, "eval_v3_b", rubric_version="3", result=v3_result(3, True))
+    add_evaluation(conn, "eval_v3_failed", rubric_version="3", result='{"repetition": 4}')
 
-    assert migrate(conn) == ["up 0011_evaluation_rubric"]
-    old = conn.execute("SELECT * FROM run_evaluations WHERE evaluation_id='eval_v2'").fetchone()
-    assert (old["scores"], old["repetition"], old["unsupported_claim"]) == (None, 1, None)  # defaults for old rows
-    v3 = '{"groundedness":5,"factual_correctness":4,"relevance":5,"usefulness":4,"unsupported_claim":false}'
-    add_evaluation(conn, "eval_v3", rubric_version="3", result=v3)
-    conn.execute(
-        "UPDATE run_evaluations SET scores=?, repetition=2, unsupported_claim=0 WHERE evaluation_id='eval_v3'",
-        ('{"groundedness":5,"factual_correctness":4,"relevance":5,"usefulness":4}',),
-    )
+    def state():
+        return {
+            r["evaluation_id"]: (r["repetition"], r["unsupported_claim"], r["scores"] and json.loads(r["scores"]))
+            for r in conn.execute("SELECT * FROM run_evaluations")
+        }
 
+    scores = {"groundedness": 5, "factual_correctness": 4, "relevance": 5, "usefulness": 3}
+    expected = {
+        "eval_v2": (1, None, None),  # a judge.v2 row keeps the defaults
+        "eval_v3_a": (2, 0, scores),
+        "eval_v3_b": (3, 1, scores),
+        "eval_v3_failed": (4, None, None),  # a failed judgement has no scores or verdict, only its repetition
+    }
+    assert migrate(conn) == ["up 0011_evaluation_rubric"]  # the upgrade rebuilds the columns from `result`
+    assert state() == expected
+
+    before = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     assert migrate(conn, 10) == ["down 0011_evaluation_rubric"]  # nothing is lost: result keeps the whole judgement
     assert not {"scores", "repetition", "unsupported_claim"} & set(columns(conn, "run_evaluations"))
     rows = {r["evaluation_id"]: r for r in conn.execute("SELECT * FROM run_evaluations")}
-    assert set(rows) == {"eval_v2", "eval_v3"} and rows["eval_v3"]["result"] == v3
-    assert rows["eval_v3"]["rubric_version"] == "3" and rows["eval_v3"]["evaluator"].count("deepseek") == 2
+    assert set(rows) == set(expected) and rows["eval_v3_b"]["result"] == v3_result(3, True)
+    assert rows["eval_v3_b"]["rubric_version"] == "3" and rows["eval_v3_b"]["evaluator"].count("deepseek") == 2
     assert "calibrations" not in tables(conn)
 
     assert migrate(conn) == ["up 0011_evaluation_rubric"] and current_version(conn) == LATEST
-    assert [r[0] for r in conn.execute("SELECT repetition FROM run_evaluations")] == [1, 1]
+    assert state() == expected  # the repetition and the verdict came back with the second upgrade
+    after = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
+    assert {k: v | {"scores": None} for k, v in after.items()} == {k: v | {"scores": None} for k, v in before.items()}
     assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
