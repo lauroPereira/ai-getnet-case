@@ -345,7 +345,8 @@ def _support(call: ScriptedCall) -> ToolPlan:
                             f"{item['scheme']}: {item['status']}, protocolo {item['protocol']}; "
                             f"disponibilidade no equipamento: {item['device_availability']['available']}."
                             if pt
-                            else f"{item['scheme']}: {item['status']}, protocol {item['protocol']}; "
+                            else f"{item['scheme']} enablement request is {item['status']}, "
+                            f"protocol {item['protocol']}; "
                             f"device availability: {item['device_availability']['available']}."
                         )
                         for item in _load(r, 0).get("requests", [])

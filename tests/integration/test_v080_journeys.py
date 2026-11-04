@@ -93,6 +93,18 @@ REAL_CORRECT = {
         "Your Visa enablement request is still pending under protocol SIM-BND-1988-001. The device is reported as "
         "available for Visa, but the account configuration has not yet been activated.",
     ),
+    "enablement cautious completion date": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is still pending. I don't see an estimated completion date.",
+    ),
+    "enablement no Mastercard request": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request remains pending. There is no pending Mastercard request.",
+    ),
+    "enablement uncertain approval": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is currently pending. I cannot confirm whether it will be approved.",
+    ),
     "pt conditions": (
         "V030-PT-PRICE-CONDITIONS",
         "Sim. A venda de crédito de 2026-11-03, em 1 parcela, foi registrada no plano demo_legacy, enquanto a "
@@ -191,31 +203,31 @@ STILL_WRONG = {
         "forbidden_ok",
     ),
     "pt unrelated": ("V030-PT-PRICE-INSUFFICIENT", "A venda de crédito foi de R$ 200,00.", "content_ok"),
-    # round 2 (review P2-1): the status of the request must not be denied, canceled, completed or promised
+    # round 3 (review P2-1): a negative status must not satisfy the positive status anchor; direct promises still fail
     "enablement: could not find it": (
         "V030-ENABLEMENT-PENDING",
         "I could not find any pending Visa enablement request.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: you have none": (
         "V030-ENABLEMENT-PENDING",
         "You have no pending Visa enablement request.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: not in pending status": (
         "V030-ENABLEMENT-PENDING",
         "The Visa enablement request is not in pending status.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: active, none pending": (
         "V030-ENABLEMENT-PENDING",
         "Your Visa enablement is active. There are no pending requests.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: canceled": (
         "V030-ENABLEMENT-PENDING",
         "Your Visa request has been canceled, nothing pending.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: promised": (
         "V030-ENABLEMENT-PENDING",
@@ -225,16 +237,36 @@ STILL_WRONG = {
     "enablement: rejected": (
         "V030-ENABLEMENT-PENDING",
         "Your Visa enablement request was rejected, so it is no more pending.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: cannot see it": (
         "V030-ENABLEMENT-PENDING",
         "I don’t see a pending Visa request on your account.",
-        "forbidden_ok",
+        "content_ok",
     ),
     "enablement: completed": (
         "V030-ENABLEMENT-PENDING",
         "The pending Visa enablement request was completed and is already enabled.",
+        "content_ok",
+    ),
+    "enablement: not currently pending": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is not currently pending.",
+        "forbidden_ok",
+    ),
+    "enablement: not still pending": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is not still pending.",
+        "forbidden_ok",
+    ),
+    "enablement: promised within 24 hours": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is pending and should be approved within 24 hours.",
+        "forbidden_ok",
+    ),
+    "enablement: pending but approved": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is still pending, but it has been approved.",
         "forbidden_ok",
     ),
     # round 2 (P3): the other widened groups
@@ -482,6 +514,29 @@ def test_the_guards_of_round_2_do_not_reject_the_correct_real_answers_of_v030(na
 def test_the_widened_labels_still_reject_the_wrong_answer(name):
     case_id, answer, failing = STILL_WRONG[name]
     assert not label_checks(case_id, answer)[failing]
+
+
+def test_enablement_label_requires_affirmative_status_with_narrow_guards():
+    case = CASES["V030-ENABLEMENT-PENDING"]
+    assert case.must_include_any == [
+        ["pending"],
+        ["visa"],
+        ["still pending", "is pending", "remains pending", "currently pending"],
+    ]
+    assert case.must_not_include == ["not currently pending", "not still pending"]
+    assert case.must_not_assert == [
+        "will be approved",
+        "should be approved",
+        "has been approved",
+        "was approved",
+        "has been enabled",
+        "is now enabled",
+        "is now active",
+        "is already enabled",
+        "was rejected",
+        "was completed",
+        "has been completed",
+    ]
 
 
 def test_the_value_checks_of_the_changed_labels_are_untouched():
