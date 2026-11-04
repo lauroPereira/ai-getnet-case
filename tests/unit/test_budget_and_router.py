@@ -335,13 +335,19 @@ def test_campaign_cap_stays_within_the_fixed_half_dollar(tmp_path, bad):  # R1-0
         FixedBudgetGuard(tmp_path / "campaign.sqlite3", bad, cap_id="v050-qa")
 
 
-def test_one_dollar_campaign_ceiling_is_scoped_to_v080_qa(tmp_path):
+def test_exceptional_campaign_ceiling_is_scoped_to_v080_qa(tmp_path):
+    v080_path = tmp_path / "campaign-v080.sqlite3"
     v080 = FixedBudgetGuard(
-        tmp_path / "campaign-v080.sqlite3", 1.0, cap_id="v080-qa", cap_ceiling_usd=1.0
+        v080_path, 1.1, cap_id="v080-qa", cap_ceiling_usd=1.1
     )
-    assert v080.remaining() == pytest.approx(1.0)
+    assert v080.remaining() == pytest.approx(1.1)
+    with pytest.raises(ValueError):
+        FixedBudgetGuard(v080_path, 1.0, cap_id="v080-qa", cap_ceiling_usd=1.0)
+    assert FixedBudgetGuard(v080_path, 1.1, cap_id="v080-qa", cap_ceiling_usd=1.1).remaining() == pytest.approx(1.1)
     with pytest.raises(ValueError):
         FixedBudgetGuard(tmp_path / "campaign-v070.sqlite3", 1.0, cap_id="v070-qa", cap_ceiling_usd=1.0)
+    with pytest.raises(ValueError):
+        FixedBudgetGuard(tmp_path / "campaign-v070-exception.sqlite3", 1.1, cap_id="v070-qa", cap_ceiling_usd=1.1)
 
 
 def test_campaign_cap_cannot_be_changed_in_either_direction_by_remounting(tmp_path):  # R1-06

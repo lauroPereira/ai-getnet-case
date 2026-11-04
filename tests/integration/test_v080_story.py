@@ -285,6 +285,12 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
     )
     assert guard.remaining() == pytest.approx(1.00)
 
+    with pytest.raises(SystemExit, match="above USD 1.00 and at most USD 1.10"):
+        cli._evaluation_budget_guard(
+            high_cap_settings, "v080-qa", campaign_cap_usd=1.10, estimate_report=high_estimate_path
+        )
+    assert guard.remaining() == pytest.approx(1.00)
+
     minimal_path = tmp_path / "minimal-estimate.json"
     minimal_path.write_text(json.dumps({"estimated_cost_usd": 0.75}), encoding="utf-8")
     minimal_budget = tmp_path / "minimal-budget"
@@ -299,6 +305,13 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
             minimal_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=minimal_path
         )
     assert not minimal_budget.exists()
+    with pytest.raises(SystemExit, match="USD 1.10 v080-qa cap requires --campaign-estimate"):
+        cli._evaluation_budget_guard(minimal_settings, "v080-qa", campaign_cap_usd=1.10)
+    assert not minimal_budget.exists()
+
+    monkeypatch.setattr(cli, "get_settings", lambda: minimal_settings)
+    with pytest.raises(SystemExit, match="USD 1.10 v080-qa cap requires --campaign-estimate"):
+        cli.main(["eval", "--scripted", "--campaign", "v080-qa", "--campaign-cap-usd", "1.10"])
 
     provider_calls = []
     monkeypatch.setattr(cli, "_eval_judge", lambda *args, **kwargs: provider_calls.append(True))
@@ -318,6 +331,21 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
     assert not provider_calls
     assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
 
+    paid_exceptional_args = eval_args(
+        tmp_path,
+        scripted=False,
+        judge=True,
+        split="dev",
+        limit=1,
+        no_conversations=True,
+        campaign="v080-qa",
+        campaign_cap_usd=1.10,
+    )
+    with pytest.raises(SystemExit, match="USD 1.10 v080-qa cap requires --campaign-estimate"):
+        cli.cmd_eval(minimal_settings, paid_exceptional_args)
+    assert not provider_calls
+    assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
+
     tampered = json.loads(json.dumps(verified_estimate))
     tampered["estimated_cost_usd"] = 0.75
     tampered_path = tmp_path / "tampered-estimate.json"
@@ -327,6 +355,142 @@ def test_eval_estimate_requires_positive_real_measurements_and_projects_followup
             minimal_settings, "v080-qa", campaign_cap_usd=1.00, estimate_report=tampered_path
         )
     assert not (minimal_budget / "budget-v080-qa.sqlite3").exists()
+
+    exceptional_sample = json.loads(json.dumps(sample))
+    for row in exceptional_sample["cases"]:
+        row["cost_usd"] = 0.02115386
+        row["judge"]["cost_usd"] = 0.00423076
+    exceptional_sample_path = tmp_path / "real-exceptional-sample.json"
+    exceptional_estimate_path = tmp_path / "verified-exceptional-estimate.json"
+    exceptional_sample_path.write_text(json.dumps(exceptional_sample), encoding="utf-8")
+    assert cli.cmd_eval_estimate(
+        settings,
+        argparse.Namespace(source=str(exceptional_sample_path), out=str(exceptional_estimate_path)),
+    ) == 0
+    capsys.readouterr()
+    exceptional_estimate = json.loads(exceptional_estimate_path.read_text(encoding="utf-8"))
+    assert exceptional_estimate["estimated_cost_usd"] == 1.10
+    assert exceptional_estimate["campaign_cap_usd"] == 1.10
+    assert exceptional_estimate["requires_supervisor_decision"] is False
+
+    primary_dir = tmp_path / "approved-primary"
+    primary_path = primary_dir / "budget.sqlite3"
+    approved_primary = BudgetGuard(primary_path, 1.70)
+    prior_campaign_related = approved_primary.reserve(
+        request_id="prior-approved-spend", agent="router", model="test", amount=0.55947501
+    )
+    approved_primary.settle(prior_campaign_related, 0.55947501)
+    approved_settings = settings.model_copy(
+        update={"budget_runtime_dir": primary_dir, "budget_limit_usd": 1.70}
+    )
+    exceptional_guard = cli._evaluation_budget_guard(
+        approved_settings,
+        "v080-qa",
+        campaign_cap_usd=1.10,
+        estimate_report=exceptional_estimate_path,
+    )
+    assert exceptional_guard.primary.remaining() == pytest.approx(1.14052499)
+    assert exceptional_guard.campaign.remaining() == pytest.approx(1.10)
+    first_phase = exceptional_guard.reserve(
+        request_id="first-v080-qa-phase", agent="judge", model="test", amount=0.04052499
+    )
+    exceptional_guard.settle(first_phase, 0.04052499)
+    reopened_guard = cli._evaluation_budget_guard(
+        approved_settings,
+        "v080-qa",
+        campaign_cap_usd=1.10,
+        estimate_report=exceptional_estimate_path,
+    )
+    assert reopened_guard.primary.remaining() == pytest.approx(1.10)
+    assert reopened_guard.campaign.remaining() == pytest.approx(1.05947501)
+    remaining_campaign = reopened_guard.reserve(
+        request_id="remaining-v080-qa-phases", agent="judge", model="test", amount=1.05947501
+    )
+    reopened_guard.settle(remaining_campaign, 1.05947501)
+    assert reopened_guard.primary.spent() == pytest.approx(1.65947501)
+    assert reopened_guard.campaign.guard.spent() == pytest.approx(1.10)
+
+    insufficient_dir = tmp_path / "insufficient-primary"
+    insufficient_primary = BudgetGuard(insufficient_dir / "budget.sqlite3", 1.70)
+    prior_insufficient = insufficient_primary.reserve(
+        request_id="prior-insufficient-spend", agent="router", model="test", amount=0.6001
+    )
+    insufficient_primary.settle(prior_insufficient, 0.6001)
+    insufficient_settings = settings.model_copy(
+        update={"budget_runtime_dir": insufficient_dir, "budget_limit_usd": 1.70}
+    )
+    with pytest.raises(SystemExit, match="does not fit in the remaining primary budget"):
+        cli._evaluation_budget_guard(
+            insufficient_settings,
+            "v080-qa",
+            campaign_cap_usd=1.10,
+            estimate_report=exceptional_estimate_path,
+        )
+    assert not (insufficient_dir / "budget-v080-qa.sqlite3").exists()
+
+    legacy_dir = tmp_path / "legacy-cap-ledger"
+    legacy_dir.mkdir()
+    legacy_cap_path = legacy_dir / "budget-v080-qa.sqlite3"
+    legacy_cap_path.write_bytes(b"pre-existing-without-matching-sidecar")
+    legacy_primary = BudgetGuard(legacy_dir / "budget.sqlite3", 1.70)
+    legacy_spend = legacy_primary.reserve(
+        request_id="legacy-low-balance", agent="router", model="test", amount=0.6001
+    )
+    legacy_primary.settle(legacy_spend, 0.6001)
+    legacy_settings = settings.model_copy(
+        update={"budget_runtime_dir": legacy_dir, "budget_limit_usd": 1.70}
+    )
+    with pytest.raises(SystemExit, match="does not fit in the remaining primary budget"):
+        cli._evaluation_budget_guard(
+            legacy_settings,
+            "v080-qa",
+            campaign_cap_usd=1.10,
+            estimate_report=exceptional_estimate_path,
+        )
+    assert not (legacy_dir / "budget-v080-qa.sqlite3.limit").exists()
+    assert legacy_cap_path.read_bytes() == b"pre-existing-without-matching-sidecar"
+
+    above_limit_sample = json.loads(json.dumps(exceptional_sample))
+    for row in above_limit_sample["cases"]:
+        row["cost_usd"] = 0.0212
+        row["judge"]["cost_usd"] = 0.00424
+    above_limit_path = tmp_path / "real-above-exceptional-sample.json"
+    above_limit_estimate_path = tmp_path / "above-exceptional-estimate.json"
+    above_limit_path.write_text(json.dumps(above_limit_sample), encoding="utf-8")
+    assert cli.cmd_eval_estimate(
+        settings,
+        argparse.Namespace(source=str(above_limit_path), out=str(above_limit_estimate_path)),
+    ) == 0
+    capsys.readouterr()
+    above_limit_estimate = json.loads(above_limit_estimate_path.read_text(encoding="utf-8"))
+    assert above_limit_estimate["estimated_cost_usd"] > 1.10
+    assert above_limit_estimate["campaign_cap_usd"] is None
+    assert above_limit_estimate["requires_supervisor_decision"] is True
+    above_limit_budget = tmp_path / "above-limit-budget"
+    above_limit_settings = settings.model_copy(
+        update={"budget_runtime_dir": above_limit_budget, "budget_limit_usd": 1.70}
+    )
+    with pytest.raises(SystemExit, match="above USD 1.00 and at most USD 1.10"):
+        cli._evaluation_budget_guard(
+            above_limit_settings,
+            "v080-qa",
+            campaign_cap_usd=1.10,
+            estimate_report=above_limit_estimate_path,
+        )
+    assert not (above_limit_budget / "budget-v080-qa.sqlite3").exists()
+
+    tampered_exceptional = json.loads(json.dumps(exceptional_estimate))
+    tampered_exceptional["estimated_cost_usd"] = 1.01
+    tampered_exceptional_path = tmp_path / "tampered-exceptional-estimate.json"
+    tampered_exceptional_path.write_text(json.dumps(tampered_exceptional), encoding="utf-8")
+    with pytest.raises(SystemExit, match="altered or does not match"):
+        cli._evaluation_budget_guard(
+            above_limit_settings,
+            "v080-qa",
+            campaign_cap_usd=1.10,
+            estimate_report=tampered_exceptional_path,
+        )
+    assert not (above_limit_budget / "budget-v080-qa.sqlite3").exists()
 
     scripted_sample = json.loads(json.dumps(high_sample))
     scripted_sample["config"].update(mode="scripted", agent_provider="scripted")

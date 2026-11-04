@@ -27,6 +27,7 @@ def _budget_guard(settings: Settings):
 V080_QA_CAMPAIGN = "v080-qa"
 V080_QA_CAP_USD = 0.50
 V080_QA_MAX_CAP_USD = 1.00
+V080_QA_EXCEPTIONAL_CAP_USD = 1.10
 V080_HOLDOUT_CASE_COUNT = 25  # sealed 72a metadata; estimate uses the count without opening the holdout JSONL
 
 
@@ -35,6 +36,24 @@ def _evaluation_budget_runtime_path(settings: Settings) -> Path:
         return settings.budget_runtime_path
     except ValueError as exc:
         raise SystemExit(f"eval: {exc}") from None
+
+
+def _has_persisted_v080_cap(path: Path, cap_usd: float) -> bool:
+    """Return true only for the exact cap mounted earlier with its persistent ceiling sidecar."""
+    import sqlite3
+
+    if not path.is_file():
+        return False
+    try:
+        ceiling = float(Path(f"{path}.limit").read_text(encoding="ascii").strip())
+        conn = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)
+        try:
+            rows = conn.execute("SELECT cap_id,limit_usd FROM fixed_budget_cap").fetchall()
+        finally:
+            conn.close()
+    except (OSError, ValueError, sqlite3.Error):
+        return False
+    return ceiling == cap_usd and rows == [(V080_QA_CAMPAIGN, cap_usd)]
 
 
 def _evaluation_budget_guard(
@@ -63,12 +82,28 @@ def _evaluation_budget_guard(
         estimate = _verified_v080_campaign_estimate(Path(estimate_report))
         if isinstance(estimate, bool) or not isinstance(estimate, (int, float)) or not 0.50 < estimate <= 1.00:
             raise SystemExit(
-    "eval: USD 1.00 is allowed only when the measured campaign estimate is "
-    "above USD 0.50 and at most USD 1.00."
-)
+                "eval: USD 1.00 is allowed only when the measured campaign estimate is "
+                "above USD 0.50 and at most USD 1.00."
+            )
         cap_ceiling_usd = V080_QA_MAX_CAP_USD
+    elif campaign_cap_usd == V080_QA_EXCEPTIONAL_CAP_USD:
+        if estimate_report is None:
+            raise SystemExit(
+                "eval: a USD 1.10 v080-qa cap requires --campaign-estimate from the measured cost report."
+            )
+        estimate = _verified_v080_campaign_estimate(Path(estimate_report))
+        if (
+            isinstance(estimate, bool)
+            or not isinstance(estimate, (int, float))
+            or not 1.00 < estimate <= V080_QA_EXCEPTIONAL_CAP_USD
+        ):
+            raise SystemExit(
+                "eval: USD 1.10 is allowed only when the measured campaign estimate is "
+                "above USD 1.00 and at most USD 1.10."
+            )
+        cap_ceiling_usd = V080_QA_EXCEPTIONAL_CAP_USD
     else:
-        raise SystemExit("eval: --campaign-cap-usd must be 0.50 or 1.00.")
+        raise SystemExit("eval: --campaign-cap-usd must be 0.50, 1.00 or 1.10.")
 
     from merchant_assistant.orchestration.budget import (
         CombinedBudgetGuard,
@@ -79,8 +114,21 @@ def _evaluation_budget_guard(
     from merchant_assistant.orchestration.budget import BudgetGuard
 
     primary = BudgetGuard(budget_dir / "budget.sqlite3", settings.budget_limit_usd)
+    campaign_path = budget_dir / f"budget-{V080_QA_CAMPAIGN}.sqlite3"
+    if campaign_cap_usd == V080_QA_EXCEPTIONAL_CAP_USD:
+        persisted_cap_matches = _has_persisted_v080_cap(campaign_path, campaign_cap_usd)
+        if not persisted_cap_matches and campaign_cap_usd > primary.remaining():
+            raise SystemExit(
+                "eval: the USD 1.10 v080-qa cap does not fit in the remaining primary budget; "
+                "the campaign cap was not mounted."
+            )
+        if campaign_path.exists() and not persisted_cap_matches:
+            raise SystemExit(
+                "eval: an existing v080-qa ledger lacks a matching USD 1.10 cap record and sidecar; "
+                "it cannot be remounted."
+            )
     campaign = FixedBudgetGuard(
-        budget_dir / f"budget-{V080_QA_CAMPAIGN}.sqlite3",
+        campaign_path,
         campaign_cap_usd,
         cap_id=V080_QA_CAMPAIGN,
         cap_ceiling_usd=cap_ceiling_usd,
@@ -700,12 +748,20 @@ def _build_v080_campaign_estimate(source_name: str, source_bytes: bytes) -> dict
     if projection["measured_agent_cost_usd"] <= 0 or projection["measured_first_judge_cost_usd"] <= 0:
         raise ValueError("both measured agent and completed judge costs must be positive.")
     estimated_cost = projection["estimated_cost_usd"]
-    recommended_cap = 0.50 if estimated_cost <= 0.50 else 1.00 if estimated_cost <= 1.00 else None
+    recommended_cap = (
+        0.50
+        if estimated_cost <= 0.50
+        else 1.00
+        if estimated_cost <= 1.00
+        else V080_QA_EXCEPTIONAL_CAP_USD
+        if estimated_cost <= V080_QA_EXCEPTIONAL_CAP_USD
+        else None
+    )
     output = {
         "estimate_format_version": 1,
         "campaign": V080_QA_CAMPAIGN,
         "campaign_cap_usd": recommended_cap,
-        "requires_supervisor_decision": estimated_cost > V080_QA_MAX_CAP_USD,
+        "requires_supervisor_decision": estimated_cost > V080_QA_EXCEPTIONAL_CAP_USD,
         "source_report": source_name,
         "agent_model": config.get("model"),
         "judge": config.get("judge_config"),
@@ -1036,12 +1092,15 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--campaign-cap-usd",
         type=float,
-        choices=[V080_QA_CAP_USD, V080_QA_MAX_CAP_USD],
+        choices=[V080_QA_CAP_USD, V080_QA_MAX_CAP_USD, V080_QA_EXCEPTIONAL_CAP_USD],
         default=V080_QA_CAP_USD,
-        help="Fixed cap for v080-qa (USD 1.00 requires a measured estimate above USD 0.50 and --campaign-estimate).",
+        help=(
+            "Fixed cap for v080-qa (USD 1.00 requires a verified estimate above USD 0.50; "
+            "USD 1.10 requires one above USD 1.00; both require --campaign-estimate)."
+        ),
     )
     p_evalx.add_argument(
-        "--campaign-estimate", default=None, help="Measured eval-estimate JSON; required for a USD 1.00 cap."
+        "--campaign-estimate", default=None, help="Measured eval-estimate JSON; required for a USD 1.00 or 1.10 cap."
     )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument(

@@ -16,7 +16,7 @@ from pathlib import Path
 
 ABSOLUTE_BUDGET_LIMIT_USD = 5.0  # project-wide ceiling for every paid call; no setting or ledger may exceed it
 CAMPAIGN_CAP_LIMIT_USD = 0.50  # default ceiling for fixed QA campaigns; v0.8.0 has a measured one-time exception
-V080_CAMPAIGN_CAP_LIMIT_USD = 1.00  # approved one-time ceiling when the measured v080-qa estimate exceeds USD 0.50
+V080_CAMPAIGN_CAP_LIMIT_USD = 1.10  # approved one-time ceiling when the measured v080-qa estimate exceeds USD 1.00
 
 LEDGER_SCHEMA = """
 CREATE TABLE IF NOT EXISTS ledger (
