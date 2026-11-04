@@ -24,7 +24,7 @@ from merchant_assistant.profiles import digest
 CRITERIA = ("groundedness", "factual_correctness", "relevance", "usefulness")
 RUBRIC = "judge"
 RUBRIC_VERSION = "3"
-MAX_OUTPUT_TOKENS = 600
+MAX_OUTPUT_TOKENS = 400  # four reasons of at most 25 words and the scores take about 220; this is also the reservation
 CAMPAIGN_PRINCIPAL = "cli:eval"
 AGENT_PROVIDER = "openai"  # the system under evaluation is built with the OpenAI client (main.build_orchestrator)
 JUDGE_PROVIDERS = ("openai", "deepseek")  # providers that can return the structured judgement
