@@ -362,3 +362,32 @@ O Reviewer faz a revisão final dos casos 15 e 16 e do lacre. Em seguida, o Supe
 - README: a linha de `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` (`openai`, `gpt-6-luna`) volta a estar correta; falta acrescentar `JUDGE_PROVIDER`/`JUDGE_MODEL` (`deepseek`, `deepseek-flash`) na tabela, no fechamento (73).
 - Reversíveis: separação em duas variáveis (a) em vez de uma; `judge.v3` editado no lugar; modelo sem preço de saída recusado como juiz.
 - Não verificado (chamada paga, do QA): efeito do parágrafo das notas de evidência no juiz real; esquema estruturado do `JudgeScoreV3` na DeepSeek.
+
+## Tarefa 70, P3 da rodada 2
+
+- Papel e responsável: Developer do Time B (subagente), sobre os quatro P3 registrados no [parecer da revisão da 70, rodada 2](v080-reviewer-t70.md) (apto para QA; o Supervisor mandou os quatro entrarem antes da calibração, em commit próprio). O README fica para o fechamento (73).
+- Escopo:
+  - **Alterados:** `cli.py` (texto de ajuda do `eval --judge` e `--name`; `_report_name`; a ordem de `cmd_eval_rejudge`), `evaluation/evidence.py`, `evaluation/scripted_judge.py`, `evaluation/runner.py` (`summarize` e `write_report`).
+  - **Testes:** `tests/unit/evaluation/test_judge_v3.py` (7 testes, 4 deles um só parametrizado) e `tests/integration/test_eval_campaign.py` (3).
+  - **Intocados:** `orchestration/`, `agents/`, `api/`, `evaluation/scripted_policy.py`, `catalog.json`, prompts (inclusive `judge.v3`), `tests/scenarios/` e o holdout (lacre `91aa5158…4f1bac` conferido por `sha256sum`, sem abrir o conteúdo).
+- Base e versão final: base `69f2fca`; este commit.
+- Independência: não-independente (relato do autor).
+
+### O que mudou
+
+- **(A) `--help`.** `eval --judge` diz que o juiz é definido por `JUDGE_PROVIDER` e `JUDGE_MODEL` (padrão `deepseek/deepseek-flash`), que isso exige `DEEPSEEK_API_KEY` e que a recusa vem antes de qualquer chamada quando o juiz é igual ao agente ou falta a chave. Nenhuma menção a `EVALUATOR_*` (teste). O `--name` descreve o novo padrão do item B.
+- **(B) Nome do relatório do `--judge-repeat`.** `_report_name(args, answers_split)`: o padrão é `avaliacao-juiz` e, quando as respostas gravadas pertencem a um único split, o split entra no nome (`avaliacao-juiz-dev`, `avaliacao-juiz-holdout`, `avaliacao-juiz-holdout-v080`). Respostas de vários splits (`--split all`) mantêm `avaliacao-juiz`. O split vem das linhas das respostas gravadas, não de `--split` (que o `--judge-repeat` ignora). `--name` explícito vale sempre. Para isso `cmd_eval_rejudge` passou a carregar as respostas antes de calcular o nome; a recusa de sobrescrever o arquivo de origem continua antes de qualquer julgamento.
+- **(C) Juiz programado sob a nota de web.** Sob `evidence_notes`, um valor em R$ da resposta que não tem a ver com a conta do lojista (ex.: tarifa pública) continua sem rebaixar; mas valor dito sobre a conta do lojista ("seu saldo", "sua agenda", "your balance"…) só é aceito se a mensagem ou **um resultado de ferramenta** o mostrar. Um trecho de página não sustenta valor da conta. Sem a nota, a regra é a de antes (mensagem e toda a evidência). É um substituto determinístico da regra do prompt (`_ACCOUNT`, lista curta de palavras em português e inglês), não uma leitura de significado. O relatório ganhou `summary.overall.judge_web_note` (`judged_answers`, `answers` sob a nota, `unsupported` entre elas) e a linha "Respostas julgadas sob a nota de busca web: X de N", com quantas foram marcadas como afirmação sem suporte; aparece sempre que há julgamento (zero incluído) e não aparece sem juiz.
+- **(D) Passo `web`.** `evidence.py` lê os passos `knowledge` e `web`: um passo chamado `web` levanta a nota de web com ou sem `detail.mode`; `detail.mode == "web"` em qualquer passo de leitura continua levantando. A nota sai uma vez só, e as passagens citadas antes do passo `web` continuam na evidência. Passos de outros nomes (`router`, `websearch`) não levantam nada.
+
+### Testes e evidência
+
+- Python do worktree (`merchant_assistant.__file__` → `time-b\src`), `-p no:cacheprovider`, `--basetemp .pytest_cache/t71-dev-<hora>`, um pytest por vez.
+- `tests/unit/evaluation` + `tests/integration/test_eval_campaign.py` + `tests/unit/test_holdout_v080.py`: **81 passed**. `test_evaluation_runner`, `test_evaluator_settings` e `test_cli_index_guard`: **51 passed**. `ruff check src tests/...`: sem achados nos arquivos alterados.
+- Mutação: 10 mutantes (passo `web` fora da tupla, fora da condição; juiz programado sem a regra da conta, aceitando trecho como apoio, ou sinalizando todo valor; nome sem split, com o split do CLI; contagem de web zerada; contagem de marcadas zerada; ajuda ainda citando `EVALUATOR_`): **10 mortos**.
+- O teste de web com conta cobre os quatro casos: valor da conta sem ferramenta (marcado), com resultado de ferramenta (não), dito pelo próprio lojista (não) e apoiado só por trecho (marcado); e o par "valor público sob a nota (não) × sem a nota (sim)".
+
+### Limites
+
+- A regra da conta no substituto programado é lista de palavras; o juiz real decide pelo prompt, que o `judge.v3` já tem. Efeito no juiz real continua para o QA e a calibração.
+- Nada de chamada paga nem de rede.

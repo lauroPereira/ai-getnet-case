@@ -473,3 +473,70 @@ def test_a_report_with_two_splits_keeps_their_summaries_and_variations_apart(set
     assert {k: v["n"] for k, v in summary["by_split"].items()} == {"dev": 4, "holdout_synthetic": 4}
     data = aggregate.variation(rows, "assistant", 2)
     assert {k: v["cases"] for k, v in data["by_split"].items()} == {"dev": 2, "holdout_synthetic": 2}
+
+
+# --- task 71, P3 of the review of task 70 (round 2) ----------
+
+
+def test_the_help_of_eval_judge_names_the_judge_settings_and_the_key_the_default_needs(capsys):
+    with pytest.raises(SystemExit) as leaving:
+        cli.main(["eval", "--help"])
+    assert leaving.value.code == 0
+    text = " ".join(capsys.readouterr().out.split())
+    assert "JUDGE_PROVIDER" in text and "JUDGE_MODEL" in text and "DEEPSEEK_API_KEY" in text
+    assert "deepseek/deepseek-flash" in text and "EVALUATOR_" not in text  # the /v1 evaluator is another setting
+
+
+def test_the_default_name_of_a_judge_repeat_report_follows_the_split_of_the_answers(
+    settings, tmp_path, scenario_tree
+):
+    def name(split, **extra):
+        return cli._report_name(argparse.Namespace(name=extra.get("name"), split="all", judge_repeat=3), split)
+
+    assert name(None) == "avaliacao-juiz" and name("all") == "avaliacao-juiz"
+    assert name("dev") == "avaliacao-juiz-dev" and name("holdout") == "avaliacao-juiz-holdout"
+    assert name("holdout_v080") == "avaliacao-juiz-holdout-v080"
+    assert name("holdout_v080", name="mine") == "mine"
+
+    # end to end: the judge's report on the holdout answers does not replace the one on the development answers
+    assert cli.cmd_eval(settings, eval_args(tmp_path, name="dev-answers", split="dev")) == 0
+    assert cli.cmd_eval(settings, eval_args(tmp_path, name="held-answers", split="holdout_v080")) == 0
+    for source in ("dev-answers", "held-answers"):
+        args = eval_args(
+            tmp_path, name=None, judge=False, judge_repeat=2, answers_from=str(tmp_path / "out" / f"{source}.json")
+        )
+        assert cli.cmd_eval(settings, args) == 0
+    out = tmp_path / "out"
+    assert (out / "avaliacao-juiz-dev.json").exists() and (out / "avaliacao-juiz-holdout-v080.json").exists()
+    assert not (out / "avaliacao-juiz.json").exists()
+    held = json.loads((out / "avaliacao-juiz-holdout-v080.json").read_text(encoding="utf-8"))
+    assert {row["split"] for row in held["cases"]} == {"holdout_v080"} and held["config"]["judge_repeat"] == 2
+    dev = json.loads((out / "avaliacao-juiz-dev.json").read_text(encoding="utf-8"))
+    assert {row["split"] for row in dev["cases"]} == {"dev"}
+
+
+def test_the_report_counts_the_answers_judged_under_the_web_note(settings, tmp_path):
+    orchestrator, _ = offline_orchestrator(settings)
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
+    rows = run(orchestrator, selected_cases(), judge=judge)
+    web_rows = [row for row in rows if evidence_notes(row)]
+    assert [row["id"] for row in web_rows] == ["EX02"]  # the offline web answer, the only one with the note
+    summary = summarize(rows)
+    assert summary["overall"]["judge_web_note"] == {"judged_answers": 4, "answers": 1, "unsupported": 0}
+    md, _ = write_report(rows, summary, tmp_path, "web-note", {"mode": "scripted"})
+    text = md.read_text(encoding="utf-8")
+    assert "Respostas julgadas sob a nota de busca web: 1 de 4." in text
+    assert "0 foram marcadas como afirmação sem suporte" in text
+    # a web answer that states data of the merchant's account without a tool result is counted and flagged
+    web_rows[0]["judge_input"]["reply"] = "Pelo que encontrei, o seu saldo é de R$ 321,00."
+    web_rows[0]["judge"] = judge.evaluate(web_rows[0]["judge_input"])
+    flagged = summarize(rows)["overall"]["judge_web_note"]
+    assert flagged == {"judged_answers": 4, "answers": 1, "unsupported": 1}
+    # no web answer, no judgement: the line says zero, and without a judge there is no line at all
+    assert summarize(rows[:1])["overall"]["judge_web_note"] == {"judged_answers": 1, "answers": 0, "unsupported": 0}
+    plain = run(orchestrator, selected_cases()[:2])
+    assert "judge_web_note" not in summarize(plain)["overall"]
+
+
+def evidence_notes(row) -> list:
+    return row["judge_input"]["evidence_notes"]

@@ -19,7 +19,7 @@ from merchant_assistant.tools.registry import ToolOutcome
 
 EVIDENCE_LIMIT_CHARS = 6000
 CUT_MARK = " [...cut]"
-KNOWLEDGE_STEPS = ("knowledge",)
+KNOWLEDGE_STEPS = ("knowledge", "web")  # the web-search node of the replanning writes its own step, named `web`
 WEB_NOTE = (
     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the "
     "listed sources and say so in the reasons."
@@ -73,7 +73,7 @@ def passage_items(trace: dict, texts: dict[str, str]) -> tuple[list[dict], list[
         cited += [chunk_id for chunk_id in detail.get("citations", []) if chunk_id]
         for hit in detail.get("hits", []):
             hits.setdefault(hit["chunk_id"], hit)
-        if detail.get("mode") == "web" and WEB_NOTE not in notes:
+        if (step["step"] == "web" or detail.get("mode") == "web") and WEB_NOTE not in notes:
             notes.append(WEB_NOTE)
     items = []
     for chunk_id in dict.fromkeys(cited) or list(hits):

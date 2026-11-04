@@ -276,13 +276,14 @@ def _eval_judge(
     return judge
 
 
-def _report_name(args) -> str:
+def _report_name(args, answers_split: str | None = None) -> str:
     """The report name: `--name`, or a default that never overwrites another kind of report (a holdout run is not the
-    development run, a judge-only run is not the run it grades)."""
+    development run, a judge-only run is not the run it grades, and the judge's report on the holdout answers is not
+    the one on the development answers: `answers_split` is the split the recorded answers belong to)."""
     if getattr(args, "name", None):
         return args.name
     if getattr(args, "judge_repeat", None) is not None:
-        return "avaliacao-juiz"
+        return "avaliacao-juiz" + ("" if answers_split in (None, "all") else "-" + answers_split.replace("_", "-"))
     return "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
 
 
@@ -400,13 +401,14 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         raise SystemExit("eval: --judge-repeat must be at least 1.")
     if getattr(args, "split", "all") != "all":
         print("eval: --split is ignored with --judge-repeat; the cases are the recorded answers.", file=sys.stderr)
-    name = _report_name(args)
-    if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
-        raise SystemExit(f"eval: the report {name}.json would overwrite the answers being graded; use another --name.")
     try:
         rows, source = load_recorded_answers(Path(args.answers_from))
     except (OSError, ValueError, KeyError) as exc:
         raise SystemExit(f"eval: {exc}") from None
+    splits = {row["split"] for row in rows}
+    name = _report_name(args, next(iter(splits)) if len(splits) == 1 else None)
+    if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
+        raise SystemExit(f"eval: the report {name}.json would overwrite the answers being graded; use another --name.")
     judge = _eval_judge(
         settings, scripted=args.scripted, agent_model=source.get("model"), agent_provider=source.get("agent_provider")
     )
@@ -624,8 +626,9 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--judge",
         action="store_true",
-        help="Add the model-graded rubric judge.v3 with the independent evaluator (EVALUATOR_*; paid). Refused when "
-        "the judge equals the agent or has no key.",
+        help="Add the model-graded rubric judge.v3 (paid). The judge is set by JUDGE_PROVIDER and JUDGE_MODEL "
+        "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY. Refused, before any call, when the judge "
+        "equals the agent or its key is missing.",
     )
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout", "holdout_v080"], default="all")
     p_evalx.add_argument(
@@ -642,7 +645,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument(
-        "--name", default=None, help="Report name (default: avaliacao, avaliacao-holdout-v080 or avaliacao-juiz)."
+        "--name",
+        default=None,
+        help="Report name (default: avaliacao, avaliacao-holdout-v080 or, with --judge-repeat, avaliacao-juiz with "
+        "the split of the answers appended, for example avaliacao-juiz-holdout-v080).",
     )
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
     p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")

@@ -17,27 +17,50 @@ from merchant_assistant.llm.scripted import ScriptedCall, ScriptedLLM
 
 MODEL = "scripted-judge-v3"
 _WORDS = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
+# The merchant's own account, in the words a reply uses for it ("seu saldo", "your settlement"). The prompt tells the
+# judge to keep flagging such specifics under a web note when no tool result shows them; this is the stand-in for that.
+_ACCOUNT = re.compile(
+    r"\b(?:seu|sua|seus|suas|your)\s+(?:saldo|conta|extrato|agenda|vendas?|recebíveis|recebível|liquidações|liquidação|"
+    r"pagamentos?|balance|account|statement|sales|receivables?|settlements?|payouts?)\b",
+    re.IGNORECASE,
+)
 
 
 def _words(text: str) -> set[str]:
     return {word.casefold() for word in _WORDS.findall(text)}
 
 
+def _invented_amounts(data: dict) -> tuple[set[int], bool]:
+    """The amounts of the reply that nothing supports, and whether they are account data under a web note.
+
+    Plain evidence: an amount the question and the evidence do not contain. Under an evidence note (a web answer whose
+    text is not recorded) a public amount cannot be checked and is left alone, as `judge.v3` says; an amount stated
+    about the merchant's own account (see `_ACCOUNT`) still needs a tool result or the question to show it."""
+    reply, message, items = data["reply"], data["merchant_message"], data["evidence"]
+    if not data.get("evidence_notes"):
+        return amounts(reply) - amounts(" ".join([message, *(item["text"] for item in items)])), False
+    if not _ACCOUNT.search(reply):
+        return set(), False
+    shown = " ".join([message, *(item["text"] for item in items if item["kind"] == "tool_result")])
+    return amounts(reply) - amounts(shown), True
+
+
 def handler(call: ScriptedCall) -> dict:
     """Groundedness and factual correctness drop when the reply states an amount that neither the evidence nor the
     merchant message contains (and the verdict turns on); relevance follows the words the reply shares with the
     question; usefulness follows the length of the reply. Like `judge.v3`, it does not hold a missing passage against a
-    reply whose evidence notes say that its source text is not available (a web answer)."""
+    reply whose evidence notes say that its source text is not available (a web answer), but it keeps flagging data of
+    the merchant's own account that no tool result shows."""
     data = json.loads(call.spec.input)
     reply = data["reply"]
-    support = " ".join([data["merchant_message"], *(item["text"] for item in data["evidence"])])
-    invented = set() if data.get("evidence_notes") else amounts(reply) - amounts(support)
+    invented, account = _invented_amounts(data)
     shared = len(_words(data["merchant_message"]) & _words(reply))
     relevance = 5 if shared >= 2 else 4 if shared == 1 else 3
     usefulness = 5 if len(reply) >= 80 else 4 if len(reply) >= 30 else 2
+    where = "of the merchant's account is not in a tool result" if account else "in the reply is not in the evidence"
     return {
         "groundedness": 2 if invented else 5,
-        "groundedness_reason": "Scripted judge: an amount in the reply is not in the evidence."
+        "groundedness_reason": f"Scripted judge: an amount {where}."
         if invented
         else "Scripted judge: every amount in the reply is in the evidence or in the question.",
         "factual_correctness": 3 if invented else 5,

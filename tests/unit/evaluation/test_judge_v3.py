@@ -284,3 +284,65 @@ def test_the_judge_prompt_reads_the_evidence_notes_and_the_scripted_judge_follow
     plain = judge.evaluate(data_for([], reply=reply, message="Previsão do tempo amanhã?"))
     assert web["unsupported_claim"] is False  # no passage to check a web answer against is not a reason to flag it
     assert plain["unsupported_claim"] is True  # the same reply without any note and without evidence is flagged
+
+
+# --- the web note: what stays unsupported, and which trace steps raise it (task 71, P3 C and D) --------------------
+
+WEB_STEP_TRACE = {"steps": [{"step": "web", "detail": {"mode": "web"}}]}
+
+
+def test_data_of_the_merchant_account_without_a_tool_result_is_still_unsupported_under_the_web_note():
+    judge = scripted_judge(PROMPTS, NullMeter())
+    message = "Quanto tenho de saldo hoje?"
+    account = "Pelo que encontrei, seu saldo disponível hoje é de R$ 1.234,56."
+    flagged = judge.evaluate(data_for([], reply=account, trace=WEB_STEP_TRACE, message=message))
+    assert flagged["unsupported_claim"] is True and flagged["scores"]["groundedness"] < 5
+    assert "account" in flagged["reasons"]["groundedness"] and "tool result" in flagged["reasons"]["groundedness"]
+    balance = tool(data={"balance": {"display": "R$ 1.234,56"}})
+    shown = judge.evaluate(data_for([balance], reply=account, trace=WEB_STEP_TRACE, message=message))
+    assert shown["unsupported_claim"] is False and shown["scores"]["groundedness"] == 5  # a tool result shows it
+    said_by_the_merchant = judge.evaluate(
+        data_for([], reply=account, trace=WEB_STEP_TRACE, message="Meu saldo hoje é de R$ 1.234,56, certo?")
+    )
+    assert said_by_the_merchant["unsupported_claim"] is False  # the merchant's own words count as support
+    # a passage of the corpus is not the merchant's account: it cannot support a figure stated as the account's
+    data = data_for([], reply=account, trace=WEB_STEP_TRACE, message=message)
+    data["evidence"] = [{"kind": "passage", "label": "doc", "text": "O limite é de R$ 1.234,56 por dia."}]
+    assert judge.evaluate(data)["unsupported_claim"] is True
+
+
+def test_a_public_amount_in_a_web_reply_is_left_alone_and_the_same_words_without_the_note_are_flagged():
+    judge = scripted_judge(PROMPTS, NullMeter())
+    public = "Segundo o site oficial, a tarifa de cancelamento é de R$ 45,00 por contrato."
+    message = "Qual a tarifa de cancelamento?"
+    under_note = judge.evaluate(data_for([], reply=public, trace=WEB_STEP_TRACE, message=message))
+    assert under_note["unsupported_claim"] is False  # no way to check a public figure against a web text not recorded
+    assert judge.evaluate(data_for([], reply=public, message=message))["unsupported_claim"] is True
+    english = judge.evaluate(
+        data_for([], reply="Your balance today is R$ 77,00.", trace=WEB_STEP_TRACE, message="What is my balance?")
+    )
+    assert english["unsupported_claim"] is True  # the account words are recognised in English too
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [
+        [{"step": "web", "detail": {"mode": "web"}}],  # what the replanning writes
+        [{"step": "web", "detail": {}}],  # the step alone is enough
+        [{"step": "knowledge", "detail": {"mode": "web"}}],  # the web mode of the Knowledge step
+        [{"step": "knowledge", "detail": {"mode": "rag"}}, {"step": "web", "detail": {"mode": "web"}}],
+    ],
+)
+def test_a_web_step_of_the_trace_raises_the_web_note_once(steps):
+    items, notes = evidence.passage_items({"steps": steps}, {})
+    assert items == [] and notes == [evidence.WEB_NOTE]
+    data, _ = evidence.judge_input("Previsão do tempo?", BODY, [], [], {"steps": steps}, {})
+    assert data["evidence_notes"] == [evidence.WEB_NOTE]
+
+
+def test_a_web_step_does_not_hide_the_passages_cited_before_it_and_other_steps_raise_no_note():
+    knowledge = {"step": "knowledge", "detail": {"citations": ["doc#0-aaa"], "hits": [], "mode": "rag"}}
+    items, notes = evidence.passage_items({"steps": [knowledge, *WEB_STEP_TRACE["steps"]]}, {"doc#0-aaa": "the text"})
+    assert [i["text"] for i in items] == ["the text"] and notes == [evidence.WEB_NOTE]
+    other = {"steps": [{"step": "router", "detail": {"mode": "web"}}, {"step": "websearch", "detail": {}}]}
+    assert evidence.passage_items(other, {}) == ([], [])  # only the steps that read sources count

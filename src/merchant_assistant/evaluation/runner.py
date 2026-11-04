@@ -362,6 +362,13 @@ def summarize(rows: list[dict]) -> dict:
         done = [record for record in records if record.get("state") == "completed"]
         if records:
             out["judge_failed"] = len(records) - len(done)
+            judged = [r for r in selected if _records(r)]
+            web = [r for r in judged if evidence.WEB_NOTE in (r.get("judge_input") or {}).get("evidence_notes", [])]
+            out["judge_web_note"] = {
+                "judged_answers": len(judged),
+                "answers": len(web),
+                "unsupported": sum(1 for r in web if any(rec.get("unsupported_claim") for rec in _records(r))),
+            }
         if done:
             means = {c: statistics.mean(rec["scores"][c] for rec in done) for c in CRITERIA}
             out["judge_means"] = {c: round(float(value), 2) for c, value in means.items()}
@@ -433,6 +440,15 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         ]
     if o.get("judge_failed"):
         lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
+    if "judge_web_note" in o:
+        web = o["judge_web_note"]
+        lines += [
+            "",
+            f"Respostas julgadas sob a nota de busca web: {web['answers']} de {web['judged_answers']}. O texto da "
+            "busca não é gravado e o juiz só vê os títulos das fontes: o `judge.v3` não rebaixa o que não pode "
+            "conferir, mas mantém a afirmação sem suporte sobre dado da conta do lojista sem resultado de "
+            f"ferramenta. Dessas respostas, {web['unsupported']} foram marcadas como afirmação sem suporte.",
+        ]
     recorded = [r["evidence_truncation"] for r in rows if "evidence_truncation" in r]
     if recorded:
         cut = sum(1 for t in recorded if t["truncated"])
