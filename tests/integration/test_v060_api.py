@@ -12,6 +12,7 @@ from pydantic import SecretStr
 
 from merchant_assistant import comparisons
 from merchant_assistant.data.migrations import current_version, migrate
+from merchant_assistant.testing import key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v060"
 ADMIN_KEY = "synthetic-admin-access-key-v060"
@@ -19,15 +20,13 @@ DOMAIN_TABLES = ("conversations", "messages", "case_attempts", "handoff_cases", 
 
 
 def login(client, key=DEMO_KEY) -> dict:
-    response = client.post("/v1/sessions", json={"access_key": key})
-    assert response.status_code == 201
-    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+    return {"Authorization": f"Bearer {key_token(client, key)}"}
 
 
 @pytest.fixture
 def api(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, orchestrator, llm = offline()
     return client, orchestrator, llm
 
@@ -453,8 +452,8 @@ def test_migration_0008_round_trip_on_a_synthetic_database(settings, api):
     conn.row_factory = sqlite3.Row
     snapshots = conn.execute("SELECT * FROM run_snapshots").fetchall()
     sessions = conn.execute("SELECT session_id, principal_id FROM api_sessions").fetchall()
-    assert current_version(conn) == 8
-    assert migrate(conn, 7) == ["down 0008_demo_results"]
+    assert current_version(conn) == 10
+    assert migrate(conn, 7) == ["down 0010_webhook_outbox", "down 0009_identity_hitl", "down 0008_demo_results"]
     tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     assert "run_evaluations" not in tables and "comparisons" not in tables
     columns = [row[1] for row in conn.execute("PRAGMA table_info(api_sessions)")]

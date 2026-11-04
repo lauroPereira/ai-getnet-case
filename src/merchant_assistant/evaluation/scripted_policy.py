@@ -384,6 +384,8 @@ def _personality(call: ScriptedCall) -> dict:
         key = "ack_resolved" if c.get("case_state_after_reply") == "resolved" else "ack"
         return {"answer": policy(key, call.spec.context["language"])}
     parts = []
+    if (c.get("operator") or {}).get("text"):  # a human agent's reply is delivered as given
+        parts.append(c["operator"]["text"])
     if c.get("policy_text"):
         parts.append(c["policy_text"])
     if "knowledge" in c:
@@ -414,7 +416,14 @@ def handler(call: ScriptedCall):
         plan.final = lambda results: {"steps_given": [], "issue_verified_by_tool": False, **original(results)}
         return plan
     if agent == "escalation":
-        return {"summary": "Lojista pediu atendimento humano.", "pending_question": "Retornar ao lojista."}
+        english = call.spec.context.get("language") == "en"
+        return {
+            "summary": "Lojista pediu atendimento humano.",
+            "pending_question": "Retornar ao lojista.",
+            "draft_reply": "Our team reviewed your case and will follow up here."
+            if english
+            else "Nossa equipe analisou o seu caso e vai responder por aqui.",
+        }
     if agent == "personality":
         return _personality(call)
     if agent == "judge":  # deterministic stand-in for the model judge; says nothing about real quality

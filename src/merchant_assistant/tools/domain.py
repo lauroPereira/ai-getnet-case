@@ -16,7 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from merchant_assistant.data.clock import Period, resolve_period
-from merchant_assistant.tools.base import ToolEnv, ToolError, audit, money
+from merchant_assistant.tools.base import ToolEnv, ToolError, money, note_resource
 
 Topic = Literal[
     "receivables", "device", "authorization", "contract", "general", "pricing", "enablement", "cancellation"
@@ -121,7 +121,7 @@ def get_payout_status(env: ToolEnv, args: PayoutArgs) -> dict:
     found = {r["receivable_id"]: r for r in rows}
     for rid in ids:
         if rid in found and found[rid]["customer_id"] != env.customer.customer_id:
-            audit(env, "get_payout_status", rid, "forbidden")
+            note_resource(env, rid)
             raise ToolError("FORBIDDEN_RESOURCE", "One or more receivables do not belong to this merchant.")
     missing = [rid for rid in ids if rid not in found]
     if missing:
@@ -158,7 +158,7 @@ def get_device_status(env: ToolEnv, args: DeviceArgs) -> dict:
         if row is None:
             raise ToolError("NOT_FOUND", "Unknown device id.")
         if row["customer_id"] != env.customer.customer_id:
-            audit(env, "get_device_status", args.device_id, "forbidden")
+            note_resource(env, args.device_id)
             raise ToolError("FORBIDDEN_RESOURCE", "This device does not belong to this merchant.")
         rows = [row]
     else:
@@ -417,7 +417,7 @@ def simulate_pricing(env: ToolEnv, args: PricingArgs) -> dict:
     pricing = _service(env).simulate(request)
     charge = _service(env).charge(row["sale_id"], env.customer.customer_id)
     if pricing["customer_id"] != env.customer.customer_id or charge["customer_id"] != env.customer.customer_id:
-        audit(env, "simulate_pricing", row["sale_id"], "forbidden")
+        note_resource(env, row["sale_id"])
         raise ToolError("FORBIDDEN_RESOURCE", "Pricing or charge evidence does not belong to this merchant.")
     comparison = _compare_pricing(
         pricing,
@@ -439,7 +439,7 @@ def simulate_pricing(env: ToolEnv, args: PricingArgs) -> dict:
     if comparison["result"] != "insufficient_evidence" and row["currency"] == "BRL":
         financial_evidence["pricing"] = _normalized_source_amounts(pricing, "expected_fee_minor")
         financial_evidence["charge"] = _normalized_source_amounts(charge, "charged_fee_minor")
-    audit(env, "simulate_pricing", row["sale_id"], "ok")
+    note_resource(env, row["sale_id"])
     return {
         "sale": {"sale_date": row["captured_at"][:10], "gross_amount_minor": row["gross_minor"], **cond},
         "pricing": pricing,
@@ -456,9 +456,9 @@ def get_fee_breakdown(env: ToolEnv, args: PricingArgs) -> dict:
     row = _select_sale(env, args)
     record = _service(env).charge(row["sale_id"], env.customer.customer_id)
     if record["customer_id"] != env.customer.customer_id:
-        audit(env, "get_fee_breakdown", row["sale_id"], "forbidden")
+        note_resource(env, row["sale_id"])
         raise ToolError("FORBIDDEN_RESOURCE", "Charge evidence does not belong to this merchant.")
-    audit(env, "get_fee_breakdown", row["sale_id"], "ok")
+    note_resource(env, row["sale_id"])
     return {**record, "source": "independent_synthetic_charge_service", "observed_at": _observed(env)}
 
 

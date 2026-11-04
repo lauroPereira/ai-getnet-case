@@ -54,6 +54,17 @@ class Conversation:
         }
 
 
+def _public_turn(row: sqlite3.Row) -> dict:
+    """Turn as shown to clients: assistant turns carry `via`; operator turns also `operator_action` and `protocol`."""
+    turn = {k: row[k] for k in ("role", "text", "route", "status", "created_at")}
+    if row["role"] == "assistant":
+        turn["via"] = row["via"] or "agent"
+        if turn["via"] == "operator":
+            meta = json.loads(row["meta"] or "{}")
+            turn |= {"operator_action": meta.get("action"), "protocol": meta.get("protocol")}
+    return turn
+
+
 class ConversationStore:
     def __init__(self, conn: sqlite3.Connection, clock: Clock) -> None:
         self.conn, self.clock = conn, clock
@@ -102,12 +113,50 @@ class ConversationStore:
         return list(reversed(kept))
 
     def append(
-        self, conversation_id: str, request_id: str, role: str, text: str, route: str | None, status: str | None
+        self,
+        conversation_id: str,
+        request_id: str,
+        role: str,
+        text: str,
+        route: str | None,
+        status: str | None,
+        *,
+        via: str | None = None,
+        meta: dict | None = None,
     ) -> None:
+        """`via` marks assistant turns: `agent` or `operator` (a human agent's reply, with `meta` = action and
+        protocol). Merchant turns have no `via`."""
+        if role == "assistant" and via is None:
+            via = "agent"
         self.conn.execute(
-            "INSERT INTO messages (conversation_id, request_id, role, text, route, status, tokens, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?)",
-            (conversation_id, request_id, role, text, route, status, estimate_tokens(text), self._now()),
+            "INSERT INTO messages (conversation_id, request_id, role, text, route, status, tokens, created_at, via, "
+            "meta) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                conversation_id,
+                request_id,
+                role,
+                text,
+                route,
+                status,
+                estimate_tokens(text),
+                self._now(),
+                via,
+                json.dumps(meta, ensure_ascii=False) if meta else None,
+            ),
+        )
+
+    def pending_operator_turn(self, conversation_id: str) -> dict | None:
+        """Oldest operator reply not yet delivered in a merchant request (D8)."""
+        row = self.conn.execute(
+            "SELECT id, text, meta FROM messages WHERE conversation_id=? AND via='operator' AND delivered_at IS NULL "
+            "ORDER BY id LIMIT 1",
+            (conversation_id,),
+        ).fetchone()
+        return {"id": row["id"], "text": row["text"], "meta": json.loads(row["meta"] or "{}")} if row else None
+
+    def mark_delivered(self, message_id: int) -> None:
+        self.conn.execute(
+            "UPDATE messages SET delivered_at=? WHERE id=? AND delivered_at IS NULL", (self._now(), message_id)
         )
 
     def cached_prefix(self, conv: Conversation, topic: str) -> dict | None:
@@ -174,10 +223,21 @@ class ConversationStore:
         if row is None:
             return None
         messages = self.conn.execute(
-            "SELECT role, text, route, status, created_at FROM messages WHERE conversation_id = ? ORDER BY id",
+            "SELECT role, text, route, status, created_at, via, meta FROM messages WHERE conversation_id = ? "
+            "ORDER BY id",
             (conversation_id,),
         ).fetchall()
         out = {k: row[k] for k in row.keys() if k != "prefix"}  # noqa: SIM118 - sqlite3.Row
-        out["messages"] = [dict(m) for m in messages]
+        out["messages"] = [_public_turn(m) for m in messages]
         out["attempts"] = self.attempts(conversation_id)
+        # Task 66 (D24): webhook deliveries of the operator's reply to the merchant, one row per attempt. They are a
+        # record of their own and never mark a turn as delivered in the conversation.
+        out["webhook_deliveries"] = [
+            dict(d)
+            for d in self.conn.execute(
+                "SELECT event, event_id, attempt, status, response_code, created_at FROM webhook_deliveries "
+                "WHERE conversation_id = ? AND target = 'merchant' ORDER BY created_at, rowid",
+                (conversation_id,),
+            )
+        ]
         return out

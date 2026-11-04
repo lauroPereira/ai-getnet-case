@@ -15,7 +15,7 @@ from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard,
 from merchant_assistant.orchestration.state import RouterDecision
 from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import ToolEnv
-from merchant_assistant.tools.registry import ToolOutcome, execute
+from merchant_assistant.tools.registry import ToolOutcome, execute, record
 
 
 class LimitExceeded(Exception):
@@ -45,6 +45,7 @@ class RunContext:
     knowledge_version_id: str | None = None
     agent_llms: dict[str, LLM] = field(default_factory=dict)
     router_override: RouterDecision | None = None
+    channel: str = "in_process"  # where the merchant talks: api (POST /messages), web (/v1/messages), in_process
     model_calls: int = 0
     tool_calls: int = 0
     cost_usd: float = 0.0
@@ -119,6 +120,8 @@ class RunContext:
     def run_tool(self, name: str, args: dict, *, agent: str | None) -> ToolOutcome:
         if self.tool_calls >= self.settings.max_tool_calls:
             outcome = ToolOutcome(name, args, False, error={"code": "LIMIT_REACHED", "message": "Tool limit reached."})
+            self.tools.resource_id = None
+            record(self.tools, outcome)  # refused by the request limit: audited like any other call
         else:
             self.check_time()
             self.tool_calls += 1

@@ -76,6 +76,7 @@ class SupportResult(SupportDraft):
 class EscalationDraft(BaseModel):
     summary: str = Field(description="Two or three sentences for the human agent.")
     pending_question: str = Field(description="What the human agent must resolve.")
+    draft_reply: str = Field(description="Reply the human agent may approve, in the merchant's language.")
 
 
 class EscalationResult(BaseModel):
@@ -85,6 +86,7 @@ class EscalationResult(BaseModel):
     summary: str
     pending_question: str
     created: bool
+    draft_reply: str | None = None
 
 
 class PersonalityOutput(BaseModel):
@@ -115,3 +117,4 @@ class GraphState(BaseModel):
     errors: list[str] = []
     output_violations: list[str] = []
     case_next: dict = {}
+    operator: dict | None = None  # set when an operator resumes the flow: action, text, operator_id

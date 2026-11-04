@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import MAIN_CUSTOMER, OTHER_CUSTOMER, seed
@@ -17,7 +18,8 @@ def conn(tmp_path):
 
 
 def env(conn, customer=MAIN_CUSTOMER, known=True, faults=None):
-    return ToolEnv(conn, FixedClock("2026-10-26T10:00:00"), CustomerContext(customer, known), faults or {})
+    context = CustomerContext.for_principal(Principal.merchant(customer), customer, known)
+    return ToolEnv(conn, FixedClock("2026-10-26T10:00:00"), context, faults or {})
 
 
 def test_money_display():

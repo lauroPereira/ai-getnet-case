@@ -9,11 +9,15 @@ Multi-Agent Support System* challenge.
 ```bash
 cp .env.example .env          # add your OPENAI_API_KEY
 docker compose up --build
-curl -s localhost:8000/messages -H 'content-type: application/json' \
-  -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?", "user_id": "cliente1988"}'
+TOKEN=$(curl -s localhost:8000/v1/auth/token -d grant_type=password -d username=cliente1988 \
+  -d password=cliente1988-fictitious -d client_id=merchant-assistant-cli | python -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
+curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?"}'
 ```
 
-**Status:** v0.6.0, validated by an independent review and a real-model QA ([result](docs/evidence/v060-resultado.md)). Offline, the strict suites pass (backend **349 tests**, web **42 tests**, Ruff clean). Against real models, the challenge examples and core cases pass **27/27** and the multi-turn conversations **4/4**. The whole project spent **US$0.69** of its US$5 cap.
+Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
+
+**Status:** v0.7.0, validated by independent reviews and a real-model QA ([result](docs/evidence/v070-resultado.md)). Offline, the strict suites pass (backend **640 tests**, web **92 tests**, Ruff clean). Against real models, the challenge examples and core cases pass **27/27**, the multi-turn conversations **4/4**, and the human-in-the-loop story (token, handoff, ticket, operator reply, restart) passes end to end, also in Docker. The whole project spent about **US$0.79** of its US$5 cap.
 
 ### Where each part of the challenge lives
 
@@ -51,30 +55,33 @@ Requirements: Docker with Compose v2 and an OpenAI API key.
 
 ```bash
 cp .env.example .env               # set OPENAI_API_KEY; nothing else is required
-docker compose up --build          # API on http://localhost:8000, plus Qdrant and an internal mocks service
+docker compose up --build          # API on http://localhost:8000, ticketing on http://127.0.0.1:8002, plus Qdrant and mocks
 ```
 
 On first start the container seeds the synthetic data (dates relative to *today*) and builds the vector index from
 the versioned snapshots (about 37k embedding tokens, ≈ US$0.001). Later starts reuse the index. Startup to healthy:
 about 20 s.
 
-Try it:
+Try it (two calls: a token, then the message):
 
 ```bash
-curl -s localhost:8000/messages -H 'content-type: application/json' \
-  -d '{"message": "My card machine won'"'"'t connect to the internet, what should I do?", "user_id": "cliente1988"}'
+TOKEN=$(docker compose exec -T api merchant-assistant auth token --url http://localhost:8000)   # cliente1988, demo password
+curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"message": "My card machine won'"'"'t connect to the internet, what should I do?"}'
 ```
 
 Useful endpoints:
 
 | Endpoint | Purpose |
 | --- | --- |
-| `POST /messages` | The assistant. Body: `{"message": "...", "user_id": "...", "conversation_id": "conv_..." (optional)}` |
+| `POST /v1/auth/token` | OAuth 2.0 token (form encoded): `grant_type=password` for the demo users, `client_credentials` for the ticketing service; returns a JWT (RS256) |
+| `POST /messages` | The assistant. Header `Authorization: Bearer <token>`. Body: `{"message": "...", "conversation_id": "conv_..." (optional), "user_id": "..." (optional; must match the token, otherwise `403 identity_mismatch`)}` |
 | `GET /health`, `GET /ready` | Liveness; readiness reports index size, database and remaining budget |
-| `GET /traces/{request_id}` | Step-by-step trace (demo mode only, on by default in compose) |
+| `GET /traces/{request_id}` | Step-by-step trace with a token: merchants see only their own (demo mode, on by default in compose) |
+| `GET /.well-known/jwks.json` | Public keys that validate the tokens |
 | `GET /docs` | OpenAPI UI with the 10 challenge examples preloaded |
 
-Run the 10 challenge examples against the running API (≈ US$0.03):
+Run the 10 challenge examples against the running API (≈ US$0.03); the command gets the token itself:
 
 ```bash
 docker compose exec api merchant-assistant smoke --url http://localhost:8000
@@ -123,8 +130,14 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
 | `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
 | `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
+| `DEMO_USER_PASSWORDS` | fictitious values in `.env.example` | `user:password` pairs of the synthetic users (`cliente1988`, `cliente_demo_002`, operators `op_ana`, `op_bruno`); stored as PBKDF2 hashes |
+| `API_DEMO_PASSWORD`, `API_ADMIN_PASSWORD` | empty (off) | Passwords of the `demo` and `admin` users of the `/v1` interface |
+| `JWT_ISSUER`, `JWT_PRIVATE_KEY_PATH`, `JWT_JWKS_URL` | own issuer, key generated in the runtime | Token issuer; `JWT_JWKS_URL` switches verification to an external OIDC issuer |
+| `RATE_LIMIT_PER_MINUTE` | `30` | Requests per principal |
+| `TICKETING_WEBHOOK_URL`, `CONVERSATION_WEBHOOK_URL` and their secrets | Compose values | Signed webhooks to the ticketing service and to the merchant receiver; an empty URL turns a destination off; a URL without a secret is warned at startup |
+| `WEBHOOK_MAX_ATTEMPTS`, `WEBHOOK_RETRY_WAITS_S`, `WEBHOOK_TIMEOUT_S` | `3`, `1,2`, `3` | Delivery attempts (total per event and destination, also across restarts) |
 
-`DEEPSEEK_API_KEY` and `TYPESAFE_API_KEY` are optional: DeepSeek runs the Router (Hybrid profile) or the Router and Support (Adjusted profile), and TypeSafe JEV is the alternative Router engine; neither is needed for `POST /messages`. `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` configure the backend `/v1` session bootstrap; keep them private and leave them empty in the repository example. The web app accepts only one of these backend access keys and never accepts a provider key.
+`DEEPSEEK_API_KEY` and `TYPESAFE_API_KEY` are optional: DeepSeek runs the Router (Hybrid profile) or the Router and Support (Adjusted profile), and TypeSafe JEV is the alternative Router engine; neither is needed for `POST /messages`. Every secret in `.env.example` is a fictitious demo value named as such; the API warns at startup when one of them is in use. The web app signs in with a user and password and never receives a provider key.
 
 ## Architecture
 
@@ -157,7 +170,7 @@ the "custom agent" slot filled by the Escalation Agent.
 | Router Agent | LLM, structured output | Picks one of the 8 routes below, the language, the support topic and a safety label |
 | Knowledge Agent | LLM + RAG / web search | Answers from retrieved official passages (with citations) or one web search; gives the official procedure on combined routes |
 | Customer Support Agent | LLM + function calling | Looks up the merchant's data with 9 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation |
-| Escalation Agent | LLM + persistence | Writes the handover summary and stores an idempotent, clearly simulated case with a protocol |
+| Escalation Agent | LLM + persistence | Writes the handover summary, opens an idempotent case with an `HO-` protocol and pauses the graph until an operator acts on the ticket ([human in the loop](#identity-and-human-in-the-loop-v070)) |
 | Personality | LLM | Turns the agents' structured contributions into one reply, in the merchant's language, without changing facts |
 | Input / output guards, case prefix | Deterministic code | Masking and injection blocking; history + healthcheck at case opening; evidence check of values |
 
@@ -211,13 +224,13 @@ Example: *"When will the money from yesterday's sales be deposited?"* (`cliente1
 ```
 
 `status` is one of `answered`, `needs_clarification`, `handoff`, `refused`. `resolution` is separate from the
-request status: answering does not close the case. Handoffs add `{"protocol": "SIM-…", "simulated": true}`.
+request status: answering does not close the case. Handoffs add `{"protocol": "HO-…", "reason": "..."}`; replies also carry `via` (`agent`, or `operator` for a human reply).
 
 ## Conversations and case follow-up
 
 Since v0.2.0 a conversation carries memory and a case state.
 
-- **Ownership.** `conversation_id` belongs to the merchant that started it; another `user_id` gets
+- **Ownership.** `conversation_id` belongs to the merchant that started it; another merchant's token gets
   `404 conversation_not_found`. Without an id, the server creates one and returns it.
 - **History.** The last turns (up to 10 messages / 1,200 tokens, masked) go to the Router, Customer Support and
   Personality as data, so "I already did that" is understood in context.
@@ -231,8 +244,8 @@ Since v0.2.0 a conversation carries memory and a case state.
   topic changes.
 
 ```bash
-curl -s localhost:8000/messages -H 'content-type: application/json' \
-  -d '{"message": "Já fiz isso e continua sem conexão", "user_id": "cliente1988", "conversation_id": "conv_..."}'
+curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"message": "Já fiz isso e continua sem conexão", "conversation_id": "conv_..."}'
 ```
 
 ## RAG pipeline
@@ -405,6 +418,17 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.4.0 | Authenticated `/v1` API, per-agent model profiles (Reference: all `gpt-6-luna`; Hybrid: Router on DeepSeek; Adjusted: Router and Support on DeepSeek), per-request Router engine (LLM or TypeSafe JEV), Streamlit interface | Controlled configuration and comparison; the same validated Router contract for every engine |
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
+| v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
+
+### Identity and human in the loop (v0.7.0)
+
+**Two breaking changes.** `POST /messages` requires `Authorization: Bearer <token>` (the merchant comes from the token; a different `user_id` in the body gets `403 identity_mismatch`), and `POST /v1/sessions` / `DELETE /v1/sessions/current` were replaced by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The evaluator's two calls are in [Run it](#run-it); `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
+
+- **Identity** ([ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md)). The assistant issues RS256 JWTs (own issuer, JWKS and discovery; an external OIDC issuer is a configuration change). Roles `merchant`, `operator`, `service`, `demo` and `admin` carry scopes; every tool call checks scope and merchant and writes an audit row with principal, scope and result. Tokens can be revoked; requests are rate-limited per principal and login attempts are limited.
+- **Pause and resume** ([ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md)). When the Escalation agent opens a case, the end-of-turn state goes to a review graph checkpointed in SQLite that stops at `human_review` with LangGraph `interrupt()`; the attendance path without a handoff reads no checkpoint. An operator's `approve`, `reply` or `reject` resumes it with `Command(resume)`: approve and reply go to Personality, reject re-runs Support once with the operator's instruction. The reply is a turn marked `via=operator`, delivered on the merchant's next message (route `human_reply`, no model call), in `GET /v1/conversations/{id}` and by webhook. It survives an API restart.
+- **Queue.** States `open → claimed → answered | rejected → closed`; claim and actions are idempotent (`idempotency_key`), a second resume gets `409 already_resumed`, another operator's claim `409 claimed_by_other`. API (`GET /v1/handoffs`, `POST /v1/handoffs/{id}/claim`, `POST /v1/handoffs/{id}/actions`), CLI (`merchant-assistant operator list|show|act`) and the ticketing service go through the same service.
+- **Ticketing service.** A separate service in Compose (own database, published on `127.0.0.1:8002`), with the ticket cycle `new → open → pending → solved` and an operator screen in the web project. It talks to the assistant only through signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction) and a `client_credentials` token. Incoming events are idempotent by id and a repeated refused event gets the original `409`/`422` back.
+- **Durable delivery.** Each outgoing event and destination is written to an outbox (migration 0010) in the same transaction as the change it reports; a dispatcher delivers it with up to three attempts in total, recorded and visible in the case, and recovers pending deliveries when the API starts.
 
 ### Demonstration API (v0.6.0)
 
@@ -425,7 +449,7 @@ Migration 0008 (reversible) adds `run_evaluations`, `comparisons` and `api_sessi
 
 ### Streamlit interface
 
-The separate `ai-getnet-case-web` sibling project (see its README) is a Streamlit client of the versioned `/v1` API. It never reads backend files or receives provider keys. Use **Simulado** or **Gravado** for fixture-only behavior, or select **Real (API)** and enter a backend URL plus a demo/admin access key configured on that backend. The client reuses one HTTP client per Streamlit session, closes it at logout, and sends requests only after explicit actions.
+The separate `ai-getnet-case-web` sibling project (see its README) is a Streamlit client of the versioned `/v1` API and, for operators, of the ticketing service. It never reads backend files or receives provider keys. Use **Simulado** or **Gravado** for fixture-only behavior, or select **Real (API)** and sign in with a user and password of that backend: merchants and demo see Attendance and Results, operators see Ticketing, admin also sees Administration. The client reuses one HTTP client per Streamlit session, revokes the token and clears the previous user's state at logout, and sends requests only after explicit actions.
 
 ```powershell
 # In the web project, with its own Python environment:
@@ -439,11 +463,12 @@ For a no-key local HTTP exercise, use the synthetic backend harness with a new r
 ### MCP server
 
 The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
-same domain functions, validation, customer isolation, audit log and structured errors. The merchant is fixed when
-the server starts, never passed as a tool argument.
+same domain functions, validation, customer isolation, audit log and structured errors. The merchant comes from the
+token in `MERCHANT_ASSISTANT_TOKEN`, checked again on every call, never from a tool argument.
 
 ```bash
-merchant-assistant mcp --customer cliente1988     # stdio server (for an MCP client such as Claude Desktop)
+export MERCHANT_ASSISTANT_TOKEN=$(merchant-assistant auth token)   # cliente1988 against a running API
+merchant-assistant mcp                            # stdio server (for an MCP client such as Claude Desktop)
 merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
 ```
 
@@ -451,12 +476,13 @@ The demo lists the support tools, reads yesterday's receivables and recent decli
 another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
 
 ```json
-{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp", "--customer", "cliente1988"]}}}
+{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp"], "env": {"MERCHANT_ASSISTANT_TOKEN": "<token>"}}}}
 ```
 
 ## Limitations and next steps
 
-- The handoff is simulated (local record and protocol); no real ticketing integration.
+- The ticketing service is the project's own (Zendesk/Freshdesk-style contract); a commercial ticketing system would be a mapping and configuration change. A delivery that exhausts its three attempts, or that the receiver refuses, has no automatic or manual resend yet and holds the later events of the same case and destination. If the API dies in the middle of the turn that opens a case, the case is completed when the merchant sends the same message again; otherwise it stays open without a ticket. The case does not show the ticket id yet (task 68b). The cross-process locks were exercised on Windows only.
+- The English handoff sentence lost the word "human" with the end of the "simulated" wording, and one business-journey case that requires it fails its label with real models (fix planned for v0.8.0).
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
@@ -466,8 +492,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 - Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.
 - Sale cancellation is read-only: the assistant reports the status of an existing request; asking it to cancel a
   new sale is not covered.
-- `user_id` is not authentication. Production would bind it to an authenticated session and authorize every tool
-  call against it.
+- Identity uses the assistant's own issuer and synthetic demo users; there is no authorization-code flow, refresh token or external OIDC provider running in the demo.
 
 ## Repository layout
 

@@ -6,6 +6,7 @@ import pytest
 
 from merchant_assistant.api.schemas import CHALLENGE_EXAMPLES
 from merchant_assistant.llm.base import LLMError
+from merchant_assistant.testing import merchant_headers
 
 EXPECTED = [
     ("knowledge", ["router", "knowledge", "personality"]),
@@ -35,7 +36,8 @@ PT_VARIANTS = [
 
 
 def post(client, message, user_id="cliente1988", **extra):
-    response = client.post("/messages", json={"message": message, "user_id": user_id, **extra})
+    body = {"message": message, "user_id": user_id, **extra}
+    response = client.post("/messages", json=body, headers=merchant_headers(client, user_id))
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -89,7 +91,9 @@ def test_other_customer_resource_is_blocked(offline, settings):
     body = post(client, "What is the payout status of receivable rcv_002_0001?")
     assert "954,36" not in body["answer"]
     conn = sqlite3.connect(settings.db_path)
-    rows = conn.execute("SELECT customer_id, resource_id, outcome FROM audit_events").fetchall()
+    rows = conn.execute(  # every call is audited from v0.7.0; the resource rows are the ones that touched a resource
+        "SELECT customer_id, resource_id, outcome FROM audit_events WHERE resource_id IS NOT NULL"
+    ).fetchall()
     assert rows == [("cliente1988", "rcv_002_0001", "forbidden")]
 
 
@@ -120,7 +124,7 @@ def test_handoff_is_idempotent_per_conversation(offline, settings):
     conversation = "conv_test0000handoff"
     first = post(client, "Quero falar com um atendente humano", conversation_id=conversation)
     second = post(client, "Quero falar com um atendente humano", conversation_id=conversation)
-    assert first["status"] == "handoff" and first["handoff"]["protocol"].startswith("SIM-")
+    assert first["status"] == "handoff" and first["handoff"]["protocol"].startswith("HO-")  # D7 (v0.7.0)
     assert first["handoff"]["protocol"] == second["handoff"]["protocol"]
     assert first["handoff"]["protocol"] in first["answer"]
     assert sqlite3.connect(settings.db_path).execute("SELECT COUNT(*) FROM handoff_cases").fetchone()[0] == 1
@@ -200,7 +204,7 @@ def test_output_guard_blocks_invented_amounts(offline):
 def test_trace_endpoint_shows_steps_and_usage(offline):
     client, _, _ = offline()
     body = post(client, CHALLENGE_EXAMPLES[4])
-    trace = client.get(f"/traces/{body['request_id']}").json()
+    trace = client.get(f"/traces/{body['request_id']}", headers=merchant_headers(client)).json()
     steps = [s["step"] for s in trace["steps"]]
     assert steps[:2] == ["input_guard", "router"] and steps[-2:] == ["personality", "output_guard"]
     assert trace["model_calls"] >= 4 and trace["tool_calls"] == 3
@@ -211,7 +215,7 @@ def test_readiness(offline):
     client, _, _ = offline()
     ready = client.get("/ready").json()
     assert ready["ready"] is True and ready["index_chunks"] > 100
-    assert ready["versions"]["schema"] == 8 and ready["versions"]["app"].startswith("0.6.0")
+    assert ready["versions"]["schema"] == 10 and ready["versions"]["app"].startswith("0.7.0")
     assert ready["versions"]["prompts"]["router"]
 
 

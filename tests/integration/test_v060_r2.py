@@ -13,6 +13,7 @@ from pydantic import SecretStr
 
 from merchant_assistant import comparisons
 from merchant_assistant.orchestration.budget import BudgetExceeded
+from merchant_assistant.testing import key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v060-r2"
 ADMIN_KEY = "synthetic-admin-access-key-v060-r2"
@@ -20,13 +21,13 @@ ADMIN_KEY = "synthetic-admin-access-key-v060-r2"
 
 @pytest.fixture
 def api(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     return offline()
 
 
 def login(client, key=DEMO_KEY) -> dict:
-    return {"Authorization": f"Bearer {client.post('/v1/sessions', json={'access_key': key}).json()['access_token']}"}
+    return {"Authorization": f"Bearer {key_token(client, key)}"}
 
 
 def send(client, headers, message="Olá, preciso de ajuda.", **extra):

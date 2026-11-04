@@ -88,6 +88,10 @@ def run(state: GraphState, ctx: RunContext) -> dict:
 
     cycles = int(state.case.get("technical_cycles", 0))
     signal = decision.case_signal if decision else "none"
+    instruction = operator_instruction(state)
+    if instruction:  # D4: one cycle under the operator's principal and the case's merchant; never a new handoff
+        signal = "none"
+        ctx.step_notes["operator_instruction"] = True
     if signal == "still_failing" and state.case.get("state") == "handoff":
         ctx.step_notes.update(already_handed_off=True)
         result = SupportResult(
@@ -123,7 +127,13 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             case_signal=signal,
             attempts=_attempts_summary(state.case.get("attempts", [])),
         ),
-        input=f"Merchant message:\n<<<\n{state.message}\n>>>",
+        input=f"Merchant message:\n<<<\n{state.message}\n>>>"
+        + (
+            "\n\nInstruction from the human support agent who reviewed this case (follow it to answer the "
+            f"merchant):\n<<<\n{instruction}\n>>>"
+            if instruction
+            else ""
+        ),
         effort="low",
         max_output_tokens=1200,
         context={
@@ -133,6 +143,7 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             "today": d0.isoformat(),
             "case_signal": signal,
             "attempts": state.case.get("attempts", []),
+            "operator_instruction": instruction,
         },
     )
     before = len(ctx.outcomes)
@@ -151,13 +162,15 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             points=[],
             needs_selection=False,
             missing=[],
-            escalate=True,
-            escalation_reason=f"support_unavailable: {type(exc).__name__}",
+            escalate=not instruction,
+            escalation_reason=None if instruction else f"support_unavailable: {type(exc).__name__}",
         )
         return {"support": result, "agents": agents, "errors": [*state.errors, f"support: {exc}"]}
     specialist = set(AGENT_TOOLS["customer_support"])
     used = [o for o in ctx.outcomes[before:] if o.name in specialist]
     result = SupportResult(**draft.model_dump(), tools_used=[o.name for o in used])
+    if instruction:
+        result = result.model_copy(update={"escalate": False, "escalation_reason": None})
     ctx.step_notes.update(
         tools=[o.name for o in used],
         failed=[o.name for o in used if not o.ok],
@@ -170,6 +183,13 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         clarify = result.needs_selection or (result.missing and not result.points)
         update["status"] = "needs_clarification" if clarify else "answered"
     return update
+
+
+def operator_instruction(state: GraphState) -> str | None:
+    """The human agent's instruction when the operator rejected the draft (RF-81)."""
+    if state.operator and state.operator.get("action") == "reject":
+        return (state.operator.get("text") or "").strip() or None
+    return None
 
 
 def outcomes_for_case(ctx: RunContext) -> list[dict]:

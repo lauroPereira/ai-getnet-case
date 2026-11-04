@@ -36,13 +36,15 @@ CHALLENGE_EXAMPLES = [
 class MessageRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"examples": [{"message": m, "user_id": "cliente1988"} for m in CHALLENGE_EXAMPLES]},
+        json_schema_extra={"examples": [{"message": m} for m in CHALLENGE_EXAMPLES]},
     )
 
     message: str = Field(min_length=1, max_length=2000, description="Merchant message, in Portuguese or English.")
-    user_id: str = Field(
+    user_id: str | None = Field(
+        default=None,
         pattern=r"^[A-Za-z0-9_\-.]{1,64}$",
-        description="Synthetic merchant identifier for the demo scenario. It does not prove identity.",
+        description="Optional. The merchant comes from the session; when present it must be the session's merchant "
+        "(otherwise 403 identity_mismatch). It never selects the merchant.",
     )
     conversation_id: str | None = Field(default=None, pattern=r"^conv_[A-Za-z0-9]{8,40}$")
 
@@ -60,15 +62,17 @@ class Resolution(BaseModel):
 
 
 class Handoff(BaseModel):
-    protocol: str
-    simulated: bool = True
+    protocol: str = Field(description="Handoff protocol, HO-AAAAMMDD-XXXXXX.")
     reason: str
 
 
 class MessageResponse(BaseModel):
     answer: str
     status: Status
-    route: Route
+    route: Route | Literal["human_reply"]
+    via: Literal["agent", "operator"] = Field(
+        default="agent", description="operator: the reply was written or approved by a human support agent."
+    )
     agents: list[str]
     language: Literal["pt", "en"]
     sources: list[Source] = Field(default_factory=list)

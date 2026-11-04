@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+
+
+class RollbackRefused(RuntimeError):
+    """A rollback step would destroy data the older schema cannot rebuild. Nothing was changed."""
 
 
 @dataclass(frozen=True)
@@ -13,6 +18,8 @@ class Migration:
     name: str
     up: str
     down: str
+    # Runs before any rollback step is applied; raises `RollbackRefused` to stop the whole rollback.
+    guard_down: Callable[[sqlite3.Connection], None] | None = None
 
 
 CORE_UP = """
@@ -376,6 +383,215 @@ DROP TABLE IF EXISTS run_evaluations;
 ALTER TABLE api_sessions DROP COLUMN message_count;
 """
 
+# v0.7.0 (ADR 0017). `api_principals` is rebuilt because SQLite cannot change a CHECK constraint in place: the
+# documented procedure (foreign keys off, new table, copy, drop, rename) keeps the rows that sessions, comparisons and
+# run snapshots reference. Principals now come from verified JWTs, so the access key digest becomes optional, and
+# existing demo/admin principals receive the scopes of their role. Accounts keep only PBKDF2 hashes. The handoff
+# queue (task 64) lives in the same migration: queue state, operator, resume counter, checkpoint thread (D6), ticket
+# id, events with a unique idempotency key (D10), webhook deliveries and `messages.via`. Cases created before 0009
+# enter the queue as `open`. Task 66: one `webhook_deliveries` row per outgoing attempt (event id, error) and
+# `webhook_inbox`, the ids of the ticketing events already answered (a repeated id has no new effect).
+IDENTITY_UP = """
+PRAGMA foreign_keys = OFF;
+BEGIN;
+CREATE TABLE api_principals_v9 (
+    principal_id TEXT PRIMARY KEY,
+    role TEXT NOT NULL CHECK (role IN ('demo', 'admin', 'merchant', 'operator', 'service')),
+    customer_id TEXT,
+    access_key_digest TEXT UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1,
+    scopes TEXT NOT NULL DEFAULT '[]'
+);
+INSERT INTO api_principals_v9 (principal_id, role, customer_id, access_key_digest, active, scopes)
+SELECT principal_id, role, customer_id, access_key_digest, active,
+       CASE role
+           WHEN 'admin' THEN
+               '["kb:admin","profiles:admin","support:read","handoff:create","conversation:read"]'
+           ELSE '["support:read","handoff:create","conversation:read"]'
+       END
+FROM api_principals;
+DROP TABLE api_principals;
+ALTER TABLE api_principals_v9 RENAME TO api_principals;
+CREATE TABLE auth_accounts (
+    account_id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('user', 'client')),
+    principal_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    customer_id TEXT,
+    secret_hash TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE revoked_tokens (
+    jti TEXT PRIMARY KEY,
+    principal_id TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT NOT NULL
+);
+CREATE INDEX revoked_tokens_expiration ON revoked_tokens(expires_at);
+ALTER TABLE audit_events ADD COLUMN principal_id TEXT;
+ALTER TABLE audit_events ADD COLUMN scope TEXT;
+ALTER TABLE audit_events ADD COLUMN on_behalf_of TEXT;
+CREATE INDEX audit_events_principal ON audit_events(principal_id, id);
+CREATE TABLE rate_limit_hits (
+    principal_id TEXT NOT NULL,
+    window_start INTEGER NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (principal_id, window_start)
+);
+ALTER TABLE handoff_cases ADD COLUMN queue_state TEXT NOT NULL DEFAULT 'open'
+    CHECK (queue_state IN ('open', 'claimed', 'answered', 'rejected', 'closed'));
+ALTER TABLE handoff_cases ADD COLUMN claimed_by TEXT;
+ALTER TABLE handoff_cases ADD COLUMN claimed_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN answered_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN closed_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN closed_by TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE handoff_cases ADD COLUMN channel TEXT;
+ALTER TABLE handoff_cases ADD COLUMN thread_id TEXT;
+ALTER TABLE handoff_cases ADD COLUMN ticket_id TEXT;
+CREATE INDEX handoff_queue ON handoff_cases(queue_state, created_at);
+CREATE TABLE handoff_events (
+    event_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL REFERENCES handoff_cases(case_id),
+    action TEXT NOT NULL CHECK (action IN ('claim', 'approve', 'reply', 'reject', 'close')),
+    operator_id TEXT NOT NULL,
+    idempotency_key TEXT UNIQUE,
+    payload TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX handoff_events_case ON handoff_events(case_id, created_at);
+CREATE TABLE webhook_deliveries (
+    delivery_id TEXT PRIMARY KEY,
+    event TEXT NOT NULL,
+    target TEXT NOT NULL,
+    case_id TEXT,
+    conversation_id TEXT,
+    attempt INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    response_code INTEGER,
+    created_at TEXT NOT NULL,
+    event_id TEXT,
+    error TEXT
+);
+CREATE INDEX webhook_deliveries_case ON webhook_deliveries(case_id, created_at);
+CREATE INDEX webhook_deliveries_conversation ON webhook_deliveries(conversation_id, created_at);
+CREATE TABLE webhook_inbox (
+    event_id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    event TEXT NOT NULL,
+    case_id TEXT,
+    status_code INTEGER NOT NULL,
+    response TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
+ALTER TABLE messages ADD COLUMN via TEXT;
+ALTER TABLE messages ADD COLUMN meta TEXT;
+ALTER TABLE messages ADD COLUMN delivered_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_status TEXT
+    CHECK (resume_status IS NULL OR resume_status IN ('pending', 'done', 'failed', 'checkpoint_failed'));
+ALTER TABLE handoff_cases ADD COLUMN resume_error TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_started_at TEXT;
+ALTER TABLE handoff_cases ADD COLUMN resume_request_id TEXT;
+COMMIT;
+PRAGMA foreign_keys = ON;
+"""
+
+# Rolling back removes what only exists from 0009 on: merchant, operator and service principals with their sessions,
+# Router comparisons and run snapshots (the 0008 schema cannot hold them), accounts, revoked tokens, the queue columns,
+# handoff events and webhook deliveries. Cases and messages themselves are kept.
+IDENTITY_DOWN = """
+PRAGMA foreign_keys = OFF;
+BEGIN;
+ALTER TABLE handoff_cases DROP COLUMN resume_request_id;
+ALTER TABLE handoff_cases DROP COLUMN resume_started_at;
+ALTER TABLE handoff_cases DROP COLUMN resume_error;
+ALTER TABLE handoff_cases DROP COLUMN resume_status;
+ALTER TABLE messages DROP COLUMN delivered_at;
+ALTER TABLE messages DROP COLUMN meta;
+ALTER TABLE messages DROP COLUMN via;
+DROP TABLE IF EXISTS webhook_inbox;
+DROP INDEX IF EXISTS webhook_deliveries_conversation;
+DROP INDEX IF EXISTS webhook_deliveries_case;
+DROP TABLE IF EXISTS webhook_deliveries;
+DROP INDEX IF EXISTS handoff_events_case;
+DROP TABLE IF EXISTS handoff_events;
+DROP INDEX IF EXISTS handoff_queue;
+ALTER TABLE handoff_cases DROP COLUMN ticket_id;
+ALTER TABLE handoff_cases DROP COLUMN thread_id;
+ALTER TABLE handoff_cases DROP COLUMN channel;
+ALTER TABLE handoff_cases DROP COLUMN resume_count;
+ALTER TABLE handoff_cases DROP COLUMN closed_by;
+ALTER TABLE handoff_cases DROP COLUMN closed_at;
+ALTER TABLE handoff_cases DROP COLUMN answered_at;
+ALTER TABLE handoff_cases DROP COLUMN claimed_at;
+ALTER TABLE handoff_cases DROP COLUMN claimed_by;
+ALTER TABLE handoff_cases DROP COLUMN queue_state;
+DROP TABLE IF EXISTS rate_limit_hits;
+DROP INDEX IF EXISTS audit_events_principal;
+ALTER TABLE audit_events DROP COLUMN on_behalf_of;
+ALTER TABLE audit_events DROP COLUMN scope;
+ALTER TABLE audit_events DROP COLUMN principal_id;
+DROP INDEX IF EXISTS revoked_tokens_expiration;
+DROP TABLE IF EXISTS revoked_tokens;
+DROP TABLE IF EXISTS auth_accounts;
+DELETE FROM run_snapshots WHERE principal_id IN
+    (SELECT principal_id FROM api_principals WHERE role IN ('merchant', 'operator', 'service'));
+DELETE FROM router_comparisons WHERE principal_id IN
+    (SELECT principal_id FROM api_principals WHERE role IN ('merchant', 'operator', 'service'));
+DELETE FROM api_sessions WHERE principal_id IN
+    (SELECT principal_id FROM api_principals WHERE role IN ('merchant', 'operator', 'service'));
+CREATE TABLE api_principals_v8 (
+    principal_id TEXT PRIMARY KEY,
+    role TEXT NOT NULL CHECK (role IN ('demo', 'admin')),
+    customer_id TEXT,
+    access_key_digest TEXT NOT NULL UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1
+);
+INSERT INTO api_principals_v8 (principal_id, role, customer_id, access_key_digest, active)
+SELECT principal_id, role, customer_id, COALESCE(access_key_digest, 'migrated:' || principal_id), active
+FROM api_principals WHERE role IN ('demo', 'admin');
+DROP TABLE api_principals;
+ALTER TABLE api_principals_v8 RENAME TO api_principals;
+COMMIT;
+PRAGMA foreign_keys = ON;
+"""
+
+OUTBOX_UP = """
+CREATE TABLE IF NOT EXISTS webhook_outbox (
+    event_id TEXT NOT NULL,
+    target TEXT NOT NULL,
+    event TEXT NOT NULL,
+    case_id TEXT,
+    conversation_id TEXT,
+    body TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'delivered', 'rejected', 'failed')),
+    PRIMARY KEY (event_id, target)
+);
+CREATE INDEX IF NOT EXISTS webhook_outbox_pending ON webhook_outbox(status);
+"""
+
+OUTBOX_DOWN = """
+DROP TABLE webhook_outbox;
+"""
+
+
+def _outbox_down_guard(conn: sqlite3.Connection) -> None:
+    """The outbox is the only copy of the body, state and attempts of events not delivered yet: `webhook_deliveries`
+    does not keep them. Dropping it is safe only when every row is delivered. Run it with the API stopped."""
+    rows = conn.execute(
+        "SELECT status, COUNT(*) FROM webhook_outbox WHERE status != 'delivered' GROUP BY status ORDER BY status"
+    ).fetchall()
+    if rows:
+        blocking = ", ".join(f"{status}: {count}" for status, count in rows)
+        raise RollbackRefused(
+            f"cannot roll back 0010_webhook_outbox: webhook_outbox still holds {sum(count for _, count in rows)} "
+            f"event(s) not delivered ({blocking}). Deliver them or resolve them first, then roll back again. "
+            "Nothing was changed."
+        )
+
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -385,6 +601,8 @@ MIGRATIONS: list[Migration] = [
     Migration(6, "profiles_api", PROFILES_API_UP, PROFILES_API_DOWN),
     Migration(7, "kb_versions", KB_VERSIONS_UP, KB_VERSIONS_DOWN),
     Migration(8, "demo_results", DEMO_RESULTS_UP, DEMO_RESULTS_DOWN),
+    Migration(9, "identity_hitl", IDENTITY_UP, IDENTITY_DOWN),
+    Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN, _outbox_down_guard),
 ]
 LATEST = MIGRATIONS[-1].version
 
@@ -409,6 +627,9 @@ def migrate(conn: sqlite3.Connection, target: int | None = None) -> list[str]:
         raise ValueError(f"unknown schema version {target}")
     applied: list[str] = []
     current = current_version(conn)
+    for m in MIGRATIONS:  # every guard runs before the first step, so a refusal leaves the database as it was
+        if target < m.version <= current and m.guard_down is not None:
+            m.guard_down(conn)
     for m in MIGRATIONS:
         if current < m.version <= target:
             conn.executescript(m.up)
