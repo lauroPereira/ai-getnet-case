@@ -251,18 +251,71 @@ def cmd_smoke(settings: Settings, args) -> int:
     return 1 if failures else 0
 
 
+def _eval_judge(
+    settings: Settings, *, scripted: bool, agent_model: str | None = None, agent_provider: str | None = None
+):
+    """The campaign judge (`eval --judge`): the scripted stand-in offline, otherwise the configured independent
+    evaluator, or a refusal that leaves before anything is built or called (spec v0.8.0 D11)."""
+    from merchant_assistant.evaluation import judge as judge_module
+
+    if scripted:
+        from merchant_assistant.evaluation.scripted_judge import scripted_judge
+
+        judge = scripted_judge(settings.prompts_dir, None)
+        agent = ("scripted", agent_model or "scripted-v1")
+    else:
+        agent = (agent_provider or judge_module.AGENT_PROVIDER, agent_model or settings.agent_model)
+        try:
+            return judge_module.resolve_judge(settings, agent=agent)
+        except judge_module.JudgeRefused as exc:
+            raise SystemExit(f"eval: {exc}") from None
+    try:
+        judge_module.check_independence(agent, (judge.provider, judge.model))
+    except judge_module.JudgeRefused as exc:
+        raise SystemExit(f"eval: {exc}") from None
+    return judge
+
+
+def _store_judgements(db_path, judge, rows, persist) -> None:
+    from merchant_assistant.data.db import connect
+
+    conn = connect(db_path)
+    try:
+        print(f"judgements stored in run_evaluations: {persist(conn, judge, rows)}")
+    finally:
+        conn.close()
+
+
 def cmd_eval(settings: Settings, args) -> int:
-    """End-to-end evaluation. --scripted runs offline at zero cost; otherwise the real system is used (paid)."""
+    """End-to-end evaluation. --scripted runs offline at zero cost; otherwise the real system is used (paid).
+    --repeat N runs the agent N times (variation of the assistant); --judge-repeat N grades recorded answers again
+    (variation of the judge, `cmd_eval_rejudge`)."""
     import tempfile
 
-    from merchant_assistant.evaluation.runner import BudgetMeter, load_cases, run, summarize, write_report
+    from merchant_assistant.evaluation import aggregate
+    from merchant_assistant.evaluation.runner import (
+        BudgetMeter,
+        load_cases,
+        persist_judgements,
+        run,
+        summarize,
+        write_report,
+    )
 
+    if getattr(args, "judge_repeat", None) is not None:
+        return cmd_eval_rejudge(settings, args)
+    repeat = getattr(args, "repeat", 1)
+    if repeat < 1:
+        raise SystemExit("eval: --repeat must be at least 1.")
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
     cases = load_cases(
         [scenarios / "challenge_examples.jsonl", scenarios / "core_cases.jsonl", scenarios / "business_journeys.jsonl"]
     )
-    if args.split != "all":
+    if args.split == "holdout_v080":  # reported apart (D14): never part of `all`, and without the dev conversations
+        cases = load_cases([scenarios / "holdout_v080.jsonl"])
+    elif args.split != "all":
         cases = [c for c in cases if c.split == args.split]
+    judge = _eval_judge(settings, scripted=args.scripted) if args.judge else None  # refuses before anything runs
     if args.scripted:
         from merchant_assistant.testing import offline_orchestrator
 
@@ -271,28 +324,34 @@ def cmd_eval(settings: Settings, args) -> int:
             update={"runtime_dir": tmp, "qdrant_url": ":memory:", "retrieval_min_score": 0.05}
         )
         orchestrator, _ = offline_orchestrator(offline)
-        judge_llm, meter, mode = None, None, "scripted"
+        mode, agent_provider, db_path = "scripted", "scripted", offline.db_path
     else:
         from merchant_assistant.main import build_orchestrator
 
         orchestrator = build_orchestrator(settings)
-        judge_llm = orchestrator.llm if args.judge else None
-        meter, mode = BudgetMeter(orchestrator.budget), "real"
-    rows = run(orchestrator, cases, judge_llm=judge_llm, prompts_dir=settings.prompts_dir, judge_meter=meter)
+        mode, agent_provider, db_path = "real", "openai", settings.db_path
+    if judge is not None:
+        judge.meter = BudgetMeter(orchestrator.budget)
+    rows = run(orchestrator, cases, judge=judge, repeat=repeat, keep_evidence=repeat > 1)
     summary = summarize(rows)
-    if meter:
-        summary["judge_cost_usd"] = round(meter.cost_usd, 5)
+    if judge is not None and repeat > 1:
+        summary["variation"] = aggregate.variation(rows, "assistant", repeat)
     config = {
         "mode": mode,
         "model": orchestrator.llm.model,
+        "agent_provider": agent_provider,
         "embedding": settings.embedding_model,
         "split": args.split,
-        "judge": bool(judge_llm),
+        "judge": bool(judge),
+        "judge_config": judge.config() if judge else None,
+        "repeat": repeat,
         "cases": len(cases),
     }
     md, js = write_report(rows, summary, Path(args.out), args.name, config)
     print(json.dumps(summary["overall"], indent=1))
-    if not args.no_conversations:
+    if judge is not None:
+        _store_judgements(db_path, judge, rows, persist_judgements)
+    if not args.no_conversations and args.split != "holdout_v080":
         from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
 
         conversations = run_conversations(orchestrator, scenarios / "followup.jsonl")
@@ -302,6 +361,66 @@ def cmd_eval(settings: Settings, args) -> int:
     print(f"results: {js}")
     if hasattr(orchestrator, "close"):
         orchestrator.close()
+    return 0
+
+
+def cmd_eval_rejudge(settings: Settings, args) -> int:
+    """`eval --judge-repeat N --answers-from <report.json>`: the answers recorded by an earlier campaign (its first
+    execution) graded N times, without running the agent. Variation of the judge alone (spec v0.8.0 D12)."""
+    import tempfile
+
+    from merchant_assistant.evaluation import aggregate
+    from merchant_assistant.evaluation.runner import (
+        BudgetMeter,
+        load_recorded_answers,
+        persist_judgements,
+        rejudge,
+        summarize,
+        write_report,
+    )
+
+    if not args.answers_from:
+        raise SystemExit("eval: --judge-repeat needs --answers-from <report.json> (a campaign that recorded answers).")
+    if getattr(args, "repeat", 1) > 1:
+        raise SystemExit(
+            "eval: --repeat (variation of the assistant) and --judge-repeat (variation of the judge) are not "
+            "combined: run the first, then grade its recorded answers with the second."
+        )
+    if args.judge_repeat < 1:
+        raise SystemExit("eval: --judge-repeat must be at least 1.")
+    try:
+        rows, source = load_recorded_answers(Path(args.answers_from))
+    except (OSError, ValueError, KeyError) as exc:
+        raise SystemExit(f"eval: {exc}") from None
+    judge = _eval_judge(
+        settings, scripted=args.scripted, agent_model=source.get("model"), agent_provider=source.get("agent_provider")
+    )
+    if args.scripted:
+        db_path, mode = Path(tempfile.mkdtemp(prefix="eval-")) / "merchant.sqlite3", "scripted"
+    else:
+        judge.meter = BudgetMeter(_budget_guard(settings), request_id="eval-judge-repeat")
+        db_path, mode = settings.db_path, "real"
+    graded = rejudge(rows, judge, args.judge_repeat)
+    summary = summarize(graded)
+    summary["variation"] = aggregate.variation(graded, "judge", args.judge_repeat)
+    config = {
+        "mode": mode,
+        "model": source.get("model"),
+        "agent_provider": source.get("agent_provider", "openai"),
+        "embedding": source.get("embedding", settings.embedding_model),
+        "split": source.get("split"),
+        "judge": True,
+        "judge_config": judge.config(),
+        "repeat": 1,
+        "judge_repeat": args.judge_repeat,
+        "answers_from": Path(args.answers_from).name,
+        "cases": len(graded),
+    }
+    md, js = write_report(graded, summary, Path(args.out), args.name, config)
+    print(json.dumps(summary["overall"], indent=1))
+    _store_judgements(db_path, judge, graded, persist_judgements)
+    print(f"report: {md}")
+    print(f"results: {js}")
     return 0
 
 
@@ -487,8 +606,25 @@ def main(argv: list[str] | None = None) -> int:
     p_ask.add_argument("--trace", action="store_true")
     p_evalx = sub.add_parser("eval", help="End-to-end evaluation over the labeled scenarios.")
     p_evalx.add_argument("--scripted", action="store_true", help="Offline scripted model (zero cost).")
-    p_evalx.add_argument("--judge", action="store_true", help="Add a model-graded rubric (paid).")
-    p_evalx.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
+    p_evalx.add_argument(
+        "--judge",
+        action="store_true",
+        help="Add the model-graded rubric judge.v3 with the independent evaluator (EVALUATOR_*; paid). Refused when "
+        "the judge equals the agent or has no key.",
+    )
+    p_evalx.add_argument("--split", choices=["all", "dev", "holdout", "holdout_v080"], default="all")
+    p_evalx.add_argument(
+        "--repeat", type=int, default=1, help="Run the agent N times per case; the judge grades each answer once."
+    )
+    p_evalx.add_argument(
+        "--judge-repeat",
+        type=int,
+        default=None,
+        help="Grade the answers recorded by --answers-from N times; the agent does not run.",
+    )
+    p_evalx.add_argument(
+        "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
+    )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument("--name", default="avaliacao")
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")

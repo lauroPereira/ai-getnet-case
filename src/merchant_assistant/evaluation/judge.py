@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field, field_validator
 
 from merchant_assistant.llm import pricing
-from merchant_assistant.llm.base import LLM, CallSpec, Meter
+from merchant_assistant.llm.base import LLM, CallSpec, Meter, NullMeter
 from merchant_assistant.llm.prompts import Prompt, load_prompt
 from merchant_assistant.profiles import digest
 
@@ -164,10 +164,11 @@ def resolve_judge(
     settings,
     *,
     agent: tuple[str, str],
-    meter: Meter,
+    meter: Meter | None = None,
     factory: Callable[[str, str], LLM] | None = None,
 ) -> Judge:
-    """The configured judge, or a refusal. Every check runs before the client is built, so a refusal costs nothing."""
+    """The configured judge, or a refusal. Every check runs before the client is built, so a refusal costs nothing.
+    The spending meter can be bound afterwards (`judge.meter = ...`), once the budget guard of the run exists."""
     provider, model = settings.evaluator_provider, settings.evaluator_model
     if provider not in JUDGE_PROVIDERS:
         raise JudgeRefused(
@@ -193,7 +194,7 @@ def resolve_judge(
         llm = (factory or default_factory(settings))(provider, model)
     except RuntimeError as exc:
         raise JudgeRefused(f"The judge {provider}/{model} is not available: {exc}. No call was made.") from exc
-    return Judge(llm, provider, model, prompt, meter, independence)
+    return Judge(llm, provider, model, prompt, meter or NullMeter(), independence)
 
 
 # --- persistence ----------------------------------------------------------------------------------------------------

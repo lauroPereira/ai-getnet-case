@@ -11,7 +11,7 @@ import re
 
 from merchant_assistant.evaluation.judge import RUBRIC, RUBRIC_VERSION, Judge
 from merchant_assistant.guardrails.output import amounts
-from merchant_assistant.llm.base import LLM, Meter
+from merchant_assistant.llm.base import LLM, Meter, NullMeter
 from merchant_assistant.llm.prompts import load_prompt
 from merchant_assistant.llm.scripted import ScriptedCall, ScriptedLLM
 
@@ -55,12 +55,12 @@ def scripted_llm() -> LLM:
     return ScriptedLLM(handler, model=MODEL)
 
 
-def scripted_judge(prompts_dir, meter: Meter, llm: LLM | None = None) -> Judge:
+def scripted_judge(prompts_dir, meter: Meter | None = None, llm: LLM | None = None) -> Judge:
     return Judge(
         llm or scripted_llm(),
         "scripted",
         MODEL,
         load_prompt(prompts_dir, RUBRIC, RUBRIC_VERSION),
-        meter,
+        meter or NullMeter(),
         "scripted",
     )
