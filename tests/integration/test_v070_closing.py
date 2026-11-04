@@ -18,6 +18,14 @@ from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard,
 CAMPAIGN_ID, CAMPAIGN_USD = "v070-qa", 0.20
 PRIMARY_SPENT_BEFORE = 0.69  # accumulated by the project before v0.7.0 (spec, "Requisitos não funcionais")
 
+# Baseline measured on the tag v0.6.0 with this same command (scripted model): 25 of 40 cases pass `content_ok`. The 15
+# below fail only because the scripted Knowledge policy returns the retrieved passage as the answer instead of writing
+# one; the real model is what the QA campaign measures. The v0.7.0 contract changes two labelled texts (the protocol
+# prefix `HO-` instead of `SIM-`, D7, and the handoff line without "simulated"): they must keep passing.
+V060_CONTENT_FAILURES = frozenset(
+    "EX01 EX02 EX04 EX05 EX06 EX09 EX10 NOEV PT01 PT02 PT04 PT05 PT06 PT09 PT10".split()
+)
+
 
 def test_eval_cli_runs_the_40_cases_and_the_followup_conversations(settings, tmp_path, capsys):
     from merchant_assistant.cli import cmd_eval
@@ -29,9 +37,16 @@ def test_eval_cli_runs_the_40_cases_and_the_followup_conversations(settings, tmp
     assert "conversations: 4/4 passed" in capsys.readouterr().out
     report = json.loads((tmp_path / "v070.json").read_text(encoding="utf-8"))
     assert report["config"]["cases"] == 40 and len(report["cases"]) == 40
+    assert {c["split"] for c in report["cases"]} == {"dev", "holdout"}
     assert report["summary"]["overall"]["cost_usd"] == 0
-    for check in ("route_ok", "status_ok", "language_ok", "tools_ok", "amounts_ok", "forbidden_ok"):
+    checks = ("route_ok", "status_ok", "language_ok", "tools_ok", "amounts_ok", "forbidden_ok")
+    checks += ("sources_ok", "grounded_ok")
+    for check in checks:
         assert all(case[check] for case in report["cases"]), (check, [c["id"] for c in report["cases"] if not c[check]])
+    failing = {case["id"] for case in report["cases"] if not case["content_ok"]}
+    worse = sorted(failing - V060_CONTENT_FAILURES)
+    assert not worse, f"content_ok worse than v0.6.0 in: {worse}"
+    assert report["summary"]["overall"]["content_ok"] >= 0.625
     assert len(report["conversations"]) == 4 and all(c["passed"] for c in report["conversations"])
 
 

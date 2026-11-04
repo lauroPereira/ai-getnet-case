@@ -22,7 +22,7 @@ RECOVERABLE = (LLMError, ValidationError, LimitExceeded, BudgetExceeded)
 
 HANDOFF_LINE = {
     "pt": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: {protocol}.",
-    "en": "I've handed your case to a member of our support team, who will reply here. Protocol: {protocol}.",
+    "en": "I've handed your case to a human agent on our support team, who will reply here. Protocol: {protocol}.",
 }
 
 
