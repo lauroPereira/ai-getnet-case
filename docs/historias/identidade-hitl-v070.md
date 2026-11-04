@@ -48,8 +48,8 @@ Mensagens de erro dizem o que aconteceu e como recuperar (entrar de novo, usar a
 
 ## Resultado da rodada
 
-A preencher pelo QA.
+QA real, rodada r1, 2026-11-04, candidato `v0.7.0-local-r1` (backend `e97d7f0`, web `932aeb6`, fingerprint `12adae52…ad8f`): **apto, com ressalvas**. Os 18 momentos passaram, na ordem, pelas superfícies que a história nomeia (`curl`, interface Streamlit com três sessões, CLI `operator`, reinício da API e Docker). CA-46, CA-47 e CA-48 comprovados; nenhum defeito aberto. Campanha `v070-qa`: US$0,10140195 de US$0,20 (US$0,07543317 pela guarda composta mais US$0,02596878 do ledger do volume Docker). Regressão real: 33/40 contra 34/40 da v0.6.0 (a diferença é o rótulo `V030-CONTRACT-TERMINATION` desatualizado pelo contrato novo e variação em casos de preço e habilitação), 4/4 conversas. Três atritos (`reject` com "Envio pendente" por causa do timeout de 3 s do ticketing, "sem alterações" do `approve`, texto do `reject`), observações e quatro perguntas ao Supervisor estão em [v070-qa.md](../evidence/v070-qa.md); evidência por momento em [v070-qa-historia.md](../evidence/v070-qa-historia.md).
 
 ## Como terminou
 
-A preencher pelo QA.
+A lojista `cliente1988` entrou com usuário e senha, recebeu só os seus dados, pediu um atendente e ganhou um protocolo `HO-…`, sem simulação; ao insistir, o sistema reconheceu o mesmo caso. A operadora `op_ana` recebeu o ticket na recepção, assumiu (o `op_bruno`, ao tentar o mesmo caso, foi barrado com uma mensagem clara), respondeu com texto próprio e resolveu; a lojista viu a resposta marcada como "Atendente humano", sem nova chamada a modelo, e o caso fechou. Em outros casos a operadora aprovou o rascunho (pela tela e pela CLI) e rejeitou com uma instrução, e o assistente refez a resposta sob a identidade dela uma única vez. A API foi derrubada duas vezes e o contêiner reiniciado, e cada caso retomou do ponto salvo; outro lojista não leu nada de `cliente1988`. No Docker, o smoke com token passou e o ticket nasceu, foi respondido e fechou por `curl`.
