@@ -186,7 +186,9 @@ def evaluate(
             conn.execute("ROLLBACK")
             return 429, {"code": "demo_message_limit_reached", "message": DEMO_LIMIT_MESSAGE}
         conn.execute(
-            "INSERT INTO run_evaluations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO run_evaluations (evaluation_id,request_id,principal_id,method,rubric,rubric_version,evaluator,"
+            "config_digest,result,evidence,critical_failures,cost_usd,state,error,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 evaluation_id,
                 request_id,
