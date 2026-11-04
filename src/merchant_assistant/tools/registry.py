@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -12,6 +14,8 @@ from pydantic import BaseModel, ValidationError
 from merchant_assistant.api.identity import SUPPORT_READ
 from merchant_assistant.tools import domain
 from merchant_assistant.tools.base import ToolEnv, ToolError, access_error, write_audit
+
+log = logging.getLogger("merchant_assistant.tools")
 
 
 @dataclass(frozen=True)
@@ -171,6 +175,13 @@ class ToolOutcome:
         return json.dumps(self.data if self.ok else {"error": self.error}, ensure_ascii=False, default=str)
 
 
+# Observers of finished tool calls, empty in production. The evaluation runner registers one to read the data each tool
+# returned (the trace keeps only the call), so the judge can check a reply against its evidence. A context variable,
+# not a global list: the observers of one run (and of the threads it starts) never see the calls of another run.
+Observer = Callable[[ToolOutcome], None]
+OUTCOME_OBSERVERS: ContextVar[tuple[Observer, ...]] = ContextVar("tool_outcome_observers", default=())
+
+
 def audit_outcome(outcome: ToolOutcome) -> str:
     if outcome.ok:
         return "ok"
@@ -218,4 +229,9 @@ def execute(name: str, arguments: dict | str | None, env: ToolEnv, *, agent: str
         write_audit(env, name, TOOLS[name].scope if name in TOOLS else None, "error", env.resource_id)
         raise
     record(env, outcome)
+    for observe in OUTCOME_OBSERVERS.get():
+        try:
+            observe(outcome)
+        except Exception:  # an observer is a reader: its failure never changes the result of a tool call
+            log.exception("tool outcome observer failed", extra={"event": {"tool": name}})
     return outcome

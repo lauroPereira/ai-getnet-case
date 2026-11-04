@@ -7,6 +7,7 @@ import json
 import re
 import statistics
 import uuid
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,10 +15,11 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from merchant_assistant.api.schemas import MessageRequest
+from merchant_assistant.evaluation import aggregate, evidence
+from merchant_assistant.evaluation.judge import CRITERIA, Judge, save_evaluation
 from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm import pricing
-from merchant_assistant.llm.base import CallSpec, NullMeter, Usage
-from merchant_assistant.llm.prompts import load_prompt
+from merchant_assistant.llm.base import CallSpec, Usage
 from merchant_assistant.orchestration.budget import BudgetExceeded
 
 
@@ -231,44 +233,116 @@ def persisted_checks(body: dict | None, trace: dict | None, case: Case | None, *
     }
 
 
+# The router opens every attendance and the personality closes it; the specialists in between are the path (D16).
+FRAMING_AGENTS = ("router", "personality")
+
+
+def executed_path(agents: list[str]) -> str:
+    """The specialists that ran, in order, from the `agents` list of the reply (e.g. `knowledge → customer_support`).
+    It describes what happened after any replanning and never changes `route_ok`, which compares the route the
+    Router chose (the initial plan) with the accepted routes of the case (D16)."""
+    return " → ".join(agent for agent in agents if agent not in FRAMING_AGENTS)
+
+
 def run(
-    orchestrator, cases: list[Case], *, judge_llm=None, prompts_dir: Path | None = None, judge_meter=None
+    orchestrator,
+    cases: list[Case],
+    *,
+    judge: Judge | None = None,
+    repeat: int = 1,
+    keep_evidence: bool = False,
 ) -> list[dict]:
+    """Runs every case `repeat` times through the system. With a `judge`, each answer is graded once, over the
+    evidence it was built from (variation of the assistant, D12). `keep_evidence` records that evidence without a
+    judge, so the answers can be graded later (`rejudge`)."""
+    if repeat < 1:
+        raise ValueError("repeat must be at least 1")
+    needs_evidence = judge is not None or keep_evidence
+    texts = evidence.chunk_texts(orchestrator.settings.data_dir) if needs_evidence else {}
     results = []
-    judge_prompt = load_prompt(prompts_dir, "judge") if judge_llm and prompts_dir else None
-    for case in cases:
-        request_id = f"req_eval{uuid.uuid4().hex[:12]}"
-        response = orchestrator.handle(MessageRequest(message=case.message, user_id=case.user_id), request_id)
-        body = response.model_dump()
-        trace = orchestrator.trace(request_id)
-        checks = _checks(case, body, trace)
-        row = {
-            "id": case.id,
-            "split": case.split,
-            "language": case.language,
-            "message": case.message,
-            "route": body["route"],
-            "status": body["status"],
-            "agents": body["agents"],
-            "answer": body["answer"],
-            "sources": [s["title"] for s in body["sources"]],
-            "duration_ms": trace["duration_ms"],
-            "cost_usd": trace["cost_usd"],
-            "model_calls": trace["model_calls"],
-            "errors": trace["errors"],
-            "violations": trace["detail"].get("output_violations", []),
-            **checks,
-        }
-        row["passed"] = all(row[k] for k in CHECK_KEYS)
-        if judge_prompt is not None:
-            spec = judge_spec(judge_prompt, judge_evidence(case.message, body, row["sources"]))
-            try:
-                score = judge_llm.parse(spec, JudgeScore, judge_meter or NullMeter()).value
-                row["judge"] = score.model_dump()
-            except Exception as exc:  # the judge is optional; never fails the run
-                row["judge"] = {"error": str(exc)}
-        results.append(row)
+    for repetition in range(1, repeat + 1):
+        for case in cases:
+            results.append(_run_case(orchestrator, case, repetition, judge, needs_evidence, texts))
     return results
+
+
+def _run_case(orchestrator, case: Case, repetition: int, judge: Judge | None, needs_evidence: bool, texts) -> dict:
+    request_id = f"req_eval{uuid.uuid4().hex[:12]}"
+    with evidence.record_tool_results() if needs_evidence else nullcontext([]) as outcomes:
+        response = orchestrator.handle(MessageRequest(message=case.message, user_id=case.user_id), request_id)
+    body = response.model_dump()
+    trace = orchestrator.trace(request_id)
+    checks = _checks(case, body, trace)
+    row = {
+        "id": case.id,
+        "repetition": repetition,
+        "request_id": request_id,
+        "split": case.split,
+        "language": case.language,
+        "message": case.message,
+        "route": body["route"],
+        "status": body["status"],
+        "agents": body["agents"],
+        "executed_path": executed_path(body["agents"]),
+        "answer": body["answer"],
+        "sources": [s["title"] for s in body["sources"]],
+        "duration_ms": trace["duration_ms"],
+        "cost_usd": trace["cost_usd"],
+        "model_calls": trace["model_calls"],
+        "errors": trace["errors"],
+        "violations": trace["detail"].get("output_violations", []),
+        **checks,
+    }
+    row["passed"] = all(row[k] for k in CHECK_KEYS)
+    if needs_evidence:
+        row["judge_input"], row["evidence_truncation"] = evidence.judge_input(
+            case.message, body, row["sources"], outcomes, trace, texts
+        )
+    if judge is not None:
+        row["judge"] = judge.evaluate(row["judge_input"])
+    return row
+
+
+def load_recorded_answers(path: Path) -> tuple[list[dict], dict]:
+    """The answers of the first execution of a campaign report, with the evidence they were judged on."""
+    report = json.loads(path.read_text(encoding="utf-8"))
+    rows = [row for row in report["cases"] if row.get("repetition", 1) == 1]
+    if not rows:
+        raise ValueError(f"{path} has no recorded answers")
+    unrecorded = [row["id"] for row in rows if "judge_input" not in row]
+    if unrecorded:
+        raise ValueError(
+            f"{path} did not record the evidence of {len(unrecorded)} answer(s) (for example {unrecorded[0]}): run "
+            "the campaign with --judge or --repeat so the answers can be graded again"
+        )
+    return rows, report["config"]
+
+
+def rejudge(rows: list[dict], judge: Judge, repeat: int) -> list[dict]:
+    """Variation of the judge (D12): the same recorded answers graded `repeat` times; the agent does not run."""
+    if repeat < 1:
+        raise ValueError("repeat must be at least 1")
+    graded = []
+    for row in rows:
+        runs = [judge.evaluate(row["judge_input"], repetition=k) for k in range(1, repeat + 1)]
+        kept = {key: value for key, value in row.items() if key != "judge"}
+        replaced = {"source_cost_usd": row["cost_usd"], "cost_usd": 0.0, "judge": runs[0], "judge_runs": runs}
+        graded.append(kept | replaced)
+    return graded
+
+
+def _records(row: dict) -> list[dict]:
+    return row.get("judge_runs") or ([row["judge"]] if row.get("judge") else [])
+
+
+def persist_judgements(conn, judge: Judge, rows: list[dict]) -> int:
+    """Writes every judgement of the rows into `run_evaluations`; returns how many."""
+    count = 0
+    for row in rows:
+        for record in _records(row):
+            save_evaluation(conn, request_id=row["request_id"], judge=judge, record=record, data=row["judge_input"])
+            count += 1
+    return count
 
 
 def _rate(rows: list[dict], key: str) -> float | None:
@@ -284,20 +358,46 @@ def summarize(rows: list[dict]) -> dict:
             out["latency_p50_ms"] = int(statistics.median(durations))
             out["latency_p95_ms"] = durations[min(len(durations) - 1, int(round(0.95 * (len(durations) - 1))))]
         out["cost_usd"] = round(sum(r["cost_usd"] or 0 for r in selected), 5)
-        judged = [r["judge"] for r in selected if isinstance(r.get("judge"), dict) and "error" not in r["judge"]]
-        if judged:
-            out["judge_means"] = {
-                k: round(statistics.mean(j[k] for j in judged), 2)
-                for k in ("answers_question", "clarity_and_tone", "honesty")
+        records = [record for r in selected for record in _records(r)]
+        done = [record for record in records if record.get("state") == "completed"]
+        if records:
+            out["judge_failed"] = len(records) - len(done)
+            judged = [r for r in selected if _records(r)]
+            web = [r for r in judged if evidence.WEB_NOTE in (r.get("judge_input") or {}).get("evidence_notes", [])]
+            out["judge_web_note"] = {
+                "judged_answers": len(judged),
+                "answers": len(web),
+                "unsupported": sum(1 for r in web if any(rec.get("unsupported_claim") for rec in _records(r))),
             }
+        if done:
+            means = {c: statistics.mean(rec["scores"][c] for rec in done) for c in CRITERIA}
+            out["judge_means"] = {c: round(float(value), 2) for c, value in means.items()}
+            out["unsupported_claim_rate"] = round(sum(bool(rec["unsupported_claim"]) for rec in done) / len(done), 3)
         return out
 
-    return {
+    paths: dict[str, dict[str, int]] = {}
+    for r in rows:
+        counts = paths.setdefault(r["route"], {})
+        counts[r.get("executed_path", "")] = counts.get(r.get("executed_path", ""), 0) + 1
+    summary = {
         "overall": block(rows),
         "by_split": {s: block([r for r in rows if r["split"] == s]) for s in sorted({r["split"] for r in rows})},
         "by_language": {lang: block([r for r in rows if r["language"] == lang]) for lang in ("en", "pt")},
+        "paths": {route: dict(sorted(counts.items())) for route, counts in sorted(paths.items())},
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
+    judged = [record for r in rows for record in _records(r)]
+    if judged:
+        summary["judge_cost_usd"] = round(sum(record.get("cost_usd") or 0 for record in judged), 5)
+    return summary
+
+
+CRITERIA_LABELS = {
+    "groundedness": "fundamentação",
+    "factual_correctness": "correção factual",
+    "relevance": "relevância",
+    "usefulness": "utilidade",
+}
 
 
 def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, config: dict) -> tuple[Path, Path]:
@@ -331,24 +431,77 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
             f"{b.get('latency_p50_ms', '-')} | {b.get('latency_p95_ms', '-')} | {b['cost_usd']} |"
         )
     if "judge_means" in o:
-        j = o["judge_means"]
+        means = ", ".join(f"{CRITERIA_LABELS[c]} {o['judge_means'][c]}" for c in CRITERIA)
         lines += [
             "",
-            f"Rubrica por modelo (média 1-5, não é revisão humana): responde à pergunta {j['answers_question']}, "
-            f"clareza e tom {j['clarity_and_tone']}, honestidade {j['honesty']}.",
+            f"Rubrica por modelo (média 1-5, não é revisão humana): {means}. Afirmações sem suporte: "
+            f"{o['unsupported_claim_rate']} das respostas julgadas. "
+            f"Custo do juiz: US$ {summary.get('judge_cost_usd', 0)}.",
         ]
+    if o.get("judge_failed"):
+        lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
+    if "judge_web_note" in o:
+        web = o["judge_web_note"]
+        lines += [
+            "",
+            f"Respostas julgadas sob a nota de busca web: {web['answers']} de {web['judged_answers']}. O texto da "
+            "busca não é gravado e o juiz só vê os títulos das fontes: o `judge.v3` não rebaixa o que não pode "
+            "conferir, mas mantém a afirmação sem suporte sobre dado da conta do lojista sem resultado de "
+            f"ferramenta. Dessas respostas, {web['unsupported']} foram marcadas como afirmação sem suporte.",
+        ]
+    recorded = [r["evidence_truncation"] for r in rows if "evidence_truncation" in r]
+    if recorded:
+        cut = sum(1 for t in recorded if t["truncated"])
+        lines += [
+            "",
+            f"Evidência truncada em {cut} de {len(recorded)} respostas (limite de {recorded[0]['limit_chars']} "
+            "caracteres para o juiz; o registro de cada corte está na linha do relatório em JSON).",
+        ]
+    flagged = [(r, [rec for rec in _records(r) if rec.get("unsupported_claim")]) for r in rows]
+    if any(marks for _, marks in flagged):
+        lines += [
+            "",
+            "## Afirmações sem suporte (veredito crítico)",
+            "",
+            "Listadas uma a uma, nunca diluídas na média.",
+            "",
+            "| Caso | Rep | Rota | Julgamentos marcados | Fundamentação (primeiro julgamento marcado) |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        for r, marks in flagged:
+            if marks:
+                lines.append(
+                    f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {aggregate.cell(r['route'])} | "
+                    f"{len(marks)} de {len(_records(r))} | {aggregate.cell(marks[0]['reasons']['groundedness'])} |"
+                )
+    lines += [
+        "",
+        "## Rota planejada e caminho executado",
+        "",
+        "A rota avaliada (coluna Rota) é a escolhida pelo Router, o plano inicial. O caminho executado vem da lista "
+        "de agentes da resposta e não entra em `route_ok` (D16).",
+        "",
+        "| Rota | Caminho executado | Respostas |",
+        "| --- | --- | --- |",
+    ]
+    for route, counts in summary.get("paths", {}).items():
+        for path, count in counts.items():
+            lines.append(f"| {aggregate.cell(route)} | {aggregate.cell(path or '-')} | {count} |")
+    if "variation" in summary:
+        lines += ["", *aggregate.render(summary["variation"])]
     lines += [
         "",
         "## Casos",
         "",
-        "| Caso | Split | Rota | Status | Aprovado | Falhas | ms | US$ |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Caso | Rep | Split | Rota | Caminho executado | Status | Aprovado | Falhas | ms | US$ |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for r in rows:
         failed = [k.removesuffix("_ok") for k in CHECK_KEYS if not r[k]]
         lines.append(
-            f"| {r['id']} | {r['split']} | {r['route']} | {r['status']} | {'sim' if r['passed'] else 'não'} | "
-            f"{', '.join(failed) or '-'} | {r['duration_ms']} | {r['cost_usd']} |"
+            f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {aggregate.cell(r['split'])} | "
+            f"{aggregate.cell(r['route'])} | {aggregate.cell(r.get('executed_path') or '-')} | {r['status']} | "
+            f"{'sim' if r['passed'] else 'não'} | {', '.join(failed) or '-'} | {r['duration_ms']} | {r['cost_usd']} |"
         )
     md_path = out_dir / f"{name}.md"
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

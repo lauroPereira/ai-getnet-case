@@ -592,6 +592,70 @@ def _outbox_down_guard(conn: sqlite3.Connection) -> None:
         )
 
 
+# v0.8.0 (spec D13, task 70). `run_evaluations.rubric_version` and `evaluator` (provider and model of the judge) exist
+# since 0008; this migration adds what `judge.v3` and the repeated campaigns need to be queried without parsing JSON:
+# the four 1-5 scores, the `unsupported_claim` verdict and the repetition number of the judgement. The judgement
+# writes all three into `result` as well, so a rollback drops the columns without losing them and the next upgrade
+# rebuilds them from `result` (rows of `judge.v3`, `rubric_version` 3; older rows keep the defaults).
+# `calibrations` keeps the human scores of the sample the owner rates (task 71): the only data in this schema that
+# nobody can recreate, so its rollback is guarded.
+EVAL_RUBRIC_UP = """
+ALTER TABLE run_evaluations ADD COLUMN scores TEXT;
+ALTER TABLE run_evaluations ADD COLUMN repetition INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE run_evaluations ADD COLUMN unsupported_claim INTEGER
+    CHECK (unsupported_claim IS NULL OR unsupported_claim IN (0, 1));
+CREATE INDEX run_evaluations_rubric ON run_evaluations(rubric_version, request_id, repetition);
+CREATE TABLE calibrations (
+    calibration_id TEXT PRIMARY KEY,
+    campaign TEXT NOT NULL,
+    sample_id TEXT NOT NULL,
+    case_id TEXT NOT NULL,
+    request_id TEXT,
+    evaluation_id TEXT,
+    route TEXT,
+    split TEXT,
+    rater TEXT NOT NULL,
+    rubric_version TEXT NOT NULL,
+    scores TEXT NOT NULL,
+    unsupported_claim INTEGER CHECK (unsupported_claim IS NULL OR unsupported_claim IN (0, 1)),
+    note TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE (campaign, sample_id, rater)
+);
+CREATE INDEX calibrations_campaign ON calibrations(campaign, case_id);
+UPDATE run_evaluations SET
+    repetition = COALESCE(json_extract(result, '$.repetition'), 1),
+    unsupported_claim = CASE json_extract(result, '$.unsupported_claim') WHEN 1 THEN 1 WHEN 0 THEN 0 END,
+    scores = CASE WHEN json_extract(result, '$.groundedness') IS NOT NULL THEN json_object(
+        'groundedness', json_extract(result, '$.groundedness'),
+        'factual_correctness', json_extract(result, '$.factual_correctness'),
+        'relevance', json_extract(result, '$.relevance'),
+        'usefulness', json_extract(result, '$.usefulness')) END
+WHERE rubric_version = '3' AND json_valid(result);
+"""
+
+EVAL_RUBRIC_DOWN = """
+DROP INDEX IF EXISTS calibrations_campaign;
+DROP TABLE IF EXISTS calibrations;
+DROP INDEX IF EXISTS run_evaluations_rubric;
+ALTER TABLE run_evaluations DROP COLUMN unsupported_claim;
+ALTER TABLE run_evaluations DROP COLUMN repetition;
+ALTER TABLE run_evaluations DROP COLUMN scores;
+"""
+
+
+def _calibrations_down_guard(conn: sqlite3.Connection) -> None:
+    """The human scores cannot be rebuilt from anything else. Dropping the table is safe only while it is empty.
+    Judgements keep their complete `result`, so their three derived columns can go without loss."""
+    count = conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0]
+    if count:
+        raise RollbackRefused(
+            f"cannot roll back 0011_evaluation_rubric: calibrations still holds {count} human score(s) that no other "
+            "table can rebuild. Export them (the CSV the owner filled in is the source) and empty the table, then "
+            "roll back again. Nothing was changed."
+        )
+
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -603,6 +667,7 @@ MIGRATIONS: list[Migration] = [
     Migration(8, "demo_results", DEMO_RESULTS_UP, DEMO_RESULTS_DOWN),
     Migration(9, "identity_hitl", IDENTITY_UP, IDENTITY_DOWN),
     Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN, _outbox_down_guard),
+    Migration(11, "evaluation_rubric", EVAL_RUBRIC_UP, EVAL_RUBRIC_DOWN, _calibrations_down_guard),
 ]
 LATEST = MIGRATIONS[-1].version
 

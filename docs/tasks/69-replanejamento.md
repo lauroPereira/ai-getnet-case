@@ -66,5 +66,5 @@ Não verificado aqui: modelos reais (os cenários com `gpt-6-luna` e a taxa de `
 ## Status
 
 ```text
-feito pelo Developer em 2026-11-04 (rodada 2 da correção da revisão feita no mesmo dia); aguarda nova revisão e QA
+Revisão independente apta. Segue para a suíte integrada e o QA da v0.8.0.
 ```

@@ -46,5 +46,5 @@ Passagem, com a tabela caso a caso (rótulo ou prompt, antes e depois, justifica
 ## Status
 
 ```text
-correções da rodada 2 da revisão feitas em 2026-11-04 na branch codex/v0.8.0-replan (código e testes em 915ab72); aguarda nova revisão estreita e a campanha real do QA, que mede o efeito dos prompts (critérios de conclusão ainda não marcados)
+Rodada 4 apta na revisão independente de bba6e04. A suíte integrada e a campanha real ainda vão validar o conjunto.
 ```

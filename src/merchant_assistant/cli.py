@@ -251,18 +251,82 @@ def cmd_smoke(settings: Settings, args) -> int:
     return 1 if failures else 0
 
 
+def _eval_judge(
+    settings: Settings, *, scripted: bool, agent_model: str | None = None, agent_provider: str | None = None
+):
+    """The campaign judge (`eval --judge`): the scripted stand-in offline, otherwise the configured independent
+    evaluator, or a refusal that leaves before anything is built or called (spec v0.8.0 D11)."""
+    from merchant_assistant.evaluation import judge as judge_module
+
+    if scripted:
+        from merchant_assistant.evaluation.scripted_judge import scripted_judge
+
+        judge = scripted_judge(settings.prompts_dir, None)
+        agent = ("scripted", agent_model or "scripted-v1")
+    else:
+        agent = (agent_provider or judge_module.AGENT_PROVIDER, agent_model or settings.agent_model)
+        try:
+            return judge_module.resolve_judge(settings, agent=agent)
+        except judge_module.JudgeRefused as exc:
+            raise SystemExit(f"eval: {exc}") from None
+    try:
+        judge_module.check_independence(agent, (judge.provider, judge.model))
+    except judge_module.JudgeRefused as exc:
+        raise SystemExit(f"eval: {exc}") from None
+    return judge
+
+
+def _report_name(args, answers_split: str | None = None) -> str:
+    """The report name: `--name`, or a default that never overwrites another kind of report (a holdout run is not the
+    development run, a judge-only run is not the run it grades, and the judge's report on the holdout answers is not
+    the one on the development answers: `answers_split` is the split the recorded answers belong to)."""
+    if getattr(args, "name", None):
+        return args.name
+    if getattr(args, "judge_repeat", None) is not None:
+        return "avaliacao-juiz" + ("" if answers_split in (None, "all") else "-" + answers_split.replace("_", "-"))
+    return "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
+
+
+def _store_judgements(db_path, judge, rows, persist) -> None:
+    from merchant_assistant.data.db import connect
+
+    conn = connect(db_path)
+    try:
+        print(f"judgements stored in run_evaluations: {persist(conn, judge, rows)}")
+    finally:
+        conn.close()
+
+
 def cmd_eval(settings: Settings, args) -> int:
-    """End-to-end evaluation. --scripted runs offline at zero cost; otherwise the real system is used (paid)."""
+    """End-to-end evaluation. --scripted runs offline at zero cost; otherwise the real system is used (paid).
+    --repeat N runs the agent N times (variation of the assistant); --judge-repeat N grades recorded answers again
+    (variation of the judge, `cmd_eval_rejudge`)."""
     import tempfile
 
-    from merchant_assistant.evaluation.runner import BudgetMeter, load_cases, run, summarize, write_report
+    from merchant_assistant.evaluation import aggregate
+    from merchant_assistant.evaluation.runner import (
+        BudgetMeter,
+        load_cases,
+        persist_judgements,
+        run,
+        summarize,
+        write_report,
+    )
 
+    if getattr(args, "judge_repeat", None) is not None:
+        return cmd_eval_rejudge(settings, args)
+    repeat = getattr(args, "repeat", 1)
+    if repeat < 1:
+        raise SystemExit("eval: --repeat must be at least 1.")
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
     cases = load_cases(
         [scenarios / "challenge_examples.jsonl", scenarios / "core_cases.jsonl", scenarios / "business_journeys.jsonl"]
     )
-    if args.split != "all":
+    if args.split == "holdout_v080":  # reported apart (D14): never part of `all`, and without the dev conversations
+        cases = load_cases([scenarios / "holdout_v080.jsonl"])
+    elif args.split != "all":
         cases = [c for c in cases if c.split == args.split]
+    judge = _eval_judge(settings, scripted=args.scripted) if args.judge else None  # refuses before anything runs
     if args.scripted:
         from merchant_assistant.testing import offline_orchestrator
 
@@ -271,28 +335,34 @@ def cmd_eval(settings: Settings, args) -> int:
             update={"runtime_dir": tmp, "qdrant_url": ":memory:", "retrieval_min_score": 0.05}
         )
         orchestrator, _ = offline_orchestrator(offline)
-        judge_llm, meter, mode = None, None, "scripted"
+        mode, agent_provider, db_path = "scripted", "scripted", offline.db_path
     else:
         from merchant_assistant.main import build_orchestrator
 
         orchestrator = build_orchestrator(settings)
-        judge_llm = orchestrator.llm if args.judge else None
-        meter, mode = BudgetMeter(orchestrator.budget), "real"
-    rows = run(orchestrator, cases, judge_llm=judge_llm, prompts_dir=settings.prompts_dir, judge_meter=meter)
+        mode, agent_provider, db_path = "real", "openai", settings.db_path
+    if judge is not None:
+        judge.meter = BudgetMeter(orchestrator.budget)
+    rows = run(orchestrator, cases, judge=judge, repeat=repeat, keep_evidence=repeat > 1)
     summary = summarize(rows)
-    if meter:
-        summary["judge_cost_usd"] = round(meter.cost_usd, 5)
+    if judge is not None and repeat > 1:
+        summary["variation"] = aggregate.variation(rows, "assistant", repeat)
     config = {
         "mode": mode,
         "model": orchestrator.llm.model,
+        "agent_provider": agent_provider,
         "embedding": settings.embedding_model,
         "split": args.split,
-        "judge": bool(judge_llm),
+        "judge": bool(judge),
+        "judge_config": judge.config() if judge else None,
+        "repeat": repeat,
         "cases": len(cases),
     }
-    md, js = write_report(rows, summary, Path(args.out), args.name, config)
+    md, js = write_report(rows, summary, Path(args.out), _report_name(args), config)
     print(json.dumps(summary["overall"], indent=1))
-    if not args.no_conversations:
+    if judge is not None:
+        _store_judgements(db_path, judge, rows, persist_judgements)
+    if not args.no_conversations and args.split != "holdout_v080":
         from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
 
         conversations = run_conversations(orchestrator, scenarios / "followup.jsonl")
@@ -303,6 +373,142 @@ def cmd_eval(settings: Settings, args) -> int:
     if hasattr(orchestrator, "close"):
         orchestrator.close()
     return 0
+
+
+def cmd_eval_rejudge(settings: Settings, args) -> int:
+    """`eval --judge-repeat N --answers-from <report.json>`: the answers recorded by an earlier campaign (its first
+    execution) graded N times, without running the agent. Variation of the judge alone (spec v0.8.0 D12)."""
+    import tempfile
+
+    from merchant_assistant.evaluation import aggregate
+    from merchant_assistant.evaluation.runner import (
+        BudgetMeter,
+        load_recorded_answers,
+        persist_judgements,
+        rejudge,
+        summarize,
+        write_report,
+    )
+
+    if not args.answers_from:
+        raise SystemExit("eval: --judge-repeat needs --answers-from <report.json> (a campaign that recorded answers).")
+    if getattr(args, "repeat", 1) > 1:
+        raise SystemExit(
+            "eval: --repeat (variation of the assistant) and --judge-repeat (variation of the judge) are not "
+            "combined: run the first, then grade its recorded answers with the second."
+        )
+    if args.judge_repeat < 1:
+        raise SystemExit("eval: --judge-repeat must be at least 1.")
+    if getattr(args, "split", "all") != "all":
+        print("eval: --split is ignored with --judge-repeat; the cases are the recorded answers.", file=sys.stderr)
+    try:
+        rows, source = load_recorded_answers(Path(args.answers_from))
+    except (OSError, ValueError, KeyError) as exc:
+        raise SystemExit(f"eval: {exc}") from None
+    splits = {row["split"] for row in rows}
+    name = _report_name(args, next(iter(splits)) if len(splits) == 1 else None)
+    if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
+        raise SystemExit(f"eval: the report {name}.json would overwrite the answers being graded; use another --name.")
+    judge = _eval_judge(
+        settings, scripted=args.scripted, agent_model=source.get("model"), agent_provider=source.get("agent_provider")
+    )
+    if args.scripted:
+        db_path, mode = Path(tempfile.mkdtemp(prefix="eval-")) / "merchant.sqlite3", "scripted"
+    else:
+        judge.meter = BudgetMeter(_budget_guard(settings), request_id="eval-judge-repeat")
+        db_path, mode = settings.db_path, "real"
+    graded = rejudge(rows, judge, args.judge_repeat)
+    summary = summarize(graded)
+    summary["variation"] = aggregate.variation(graded, "judge", args.judge_repeat)
+    config = {
+        "mode": mode,
+        "model": source.get("model"),
+        "agent_provider": source.get("agent_provider", "openai"),
+        "embedding": source.get("embedding", settings.embedding_model),
+        "split": source.get("split"),
+        "judge": True,
+        "judge_config": judge.config(),
+        "repeat": 1,
+        "judge_repeat": args.judge_repeat,
+        "answers_from": Path(args.answers_from).name,
+        "cases": len(graded),
+    }
+    md, js = write_report(graded, summary, Path(args.out), name, config)
+    print(json.dumps(summary["overall"], indent=1))
+    _store_judgements(db_path, judge, graded, persist_judgements)
+    print(f"report: {md}")
+    print(f"results: {js}")
+    return 0
+
+
+def cmd_eval_calibrate(settings: Settings, args) -> int:
+    """`eval-calibrate`: `--sample` writes the CSV the owner rates, without the judge's scores; `--import` reads it
+    back, stores the ratings in `calibrations` and measures the agreement with the judge (spec v0.8.0 D10, D19). No
+    model is called."""
+    from merchant_assistant.evaluation import calibration
+
+    size, filled = getattr(args, "sample", None), getattr(args, "import_csv", None)
+    if (size is None) == (filled is None):
+        raise SystemExit("eval-calibrate: choose --sample N --from <report.json>, or --import <csv>.")
+    evidence_dir = PROJECT_ROOT / "docs" / "evidence"
+    try:
+        if size is not None:
+            if not args.source:
+                raise SystemExit("eval-calibrate: --sample needs --from <report.json> (a campaign with --judge).")
+            seed = calibration.DEFAULT_SEED if args.seed is None else args.seed
+            split = getattr(args, "split", "development")
+            rows, meta = calibration.make_sample(Path(args.source), size, seed, args.campaign, split)
+            out = Path(args.out) if args.out else evidence_dir / "v080-calibracao-amostra.csv"
+            calibration.write_csv(out, rows, meta, delimiter=args.delimiter)
+            print(
+                f"sample: {len(rows)} answers of {meta['eligible']} eligible, seed {seed}, campaign {meta['campaign']}"
+            )
+            print(f"csv: {out}")
+            if meta["left_out"]:
+                left = ", ".join(f"{name} {count}" for name, count in sorted(meta["left_out"].items()))
+                print(
+                    f"eval-calibrate: judged answers left out of the sample (only {meta['splits']} are drawn; the "
+                    f"holdout_v080 is never sampled, D17): {left}.",
+                    file=sys.stderr,
+                )
+            if len(rows) < calibration.DEFAULT_SAMPLE:
+                print(
+                    f"eval-calibrate: the sample has {len(rows)} answers; RF-91 asks for at least "
+                    f"{calibration.DEFAULT_SAMPLE}.",
+                    file=sys.stderr,
+                )
+            return 0
+        if not settings.db_path.exists():
+            raise SystemExit(f"eval-calibrate: no database at {settings.db_path}: the judgements are stored there.")
+        from merchant_assistant.data.db import connect
+
+        conn = connect(settings.db_path)
+        try:
+            result = calibration.import_filled(conn, Path(filled), rater=args.rater, campaign=args.campaign)
+        finally:
+            conn.close()
+        out = Path(args.out) if args.out else evidence_dir / "v080-calibracao.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result["report"], encoding="utf-8")
+        counts = result["counts"]
+        withdrawn = f", {len(result['removed'])} removed" if result["removed"] else ""
+        print(
+            f"calibrations: {counts['created']} stored, {counts['updated']} updated, {len(result['skipped'])} skipped"
+            f"{withdrawn} (campaign {result['meta']['campaign']}, rater {result['rater']})"
+        )
+        if result["outside"]:
+            print(
+                f"eval-calibrate: {len(result['outside'])} rating(s) of this campaign and rater are in the database "
+                f"but not in this file ({', '.join(result['outside'])}); they stay as they are.",
+                file=sys.stderr,
+            )
+        print(f"report: {out}")
+        return 0
+    except calibration.CalibrationError as exc:
+        shown = exc.messages[: calibration.MAX_REPORTED_ERRORS]
+        more = len(exc.messages) - len(shown)
+        lines = [f"eval-calibrate: {shown[0]}", *shown[1:], *([f"(+{more} more)"] if more else [])]
+        raise SystemExit("\n".join(lines)) from None
 
 
 def cmd_migrate(settings: Settings, args) -> int:
@@ -487,11 +693,63 @@ def main(argv: list[str] | None = None) -> int:
     p_ask.add_argument("--trace", action="store_true")
     p_evalx = sub.add_parser("eval", help="End-to-end evaluation over the labeled scenarios.")
     p_evalx.add_argument("--scripted", action="store_true", help="Offline scripted model (zero cost).")
-    p_evalx.add_argument("--judge", action="store_true", help="Add a model-graded rubric (paid).")
-    p_evalx.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
+    p_evalx.add_argument(
+        "--judge",
+        action="store_true",
+        help="Add the model-graded rubric judge.v3 (paid). The judge is set by JUDGE_PROVIDER and JUDGE_MODEL "
+        "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY. Refused, before any call, when the judge "
+        "equals the agent or its key is missing.",
+    )
+    p_evalx.add_argument("--split", choices=["all", "dev", "holdout", "holdout_v080"], default="all")
+    p_evalx.add_argument(
+        "--repeat", type=int, default=1, help="Run the agent N times per case; the judge grades each answer once."
+    )
+    p_evalx.add_argument(
+        "--judge-repeat",
+        type=int,
+        default=None,
+        help="Grade the answers recorded by --answers-from N times; the agent does not run.",
+    )
+    p_evalx.add_argument(
+        "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
+    )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
-    p_evalx.add_argument("--name", default="avaliacao")
+    p_evalx.add_argument(
+        "--name",
+        default=None,
+        help="Report name (default: avaliacao, avaliacao-holdout-v080 or, with --judge-repeat, avaliacao-juiz with "
+        "the split of the answers appended, for example avaliacao-juiz-holdout-v080).",
+    )
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
+    p_calibrate = sub.add_parser(
+        "eval-calibrate",
+        help="Human calibration of the judge: --sample writes the CSV to rate, --import measures the agreement.",
+    )
+    p_calibrate.add_argument("--sample", type=int, default=None, help="Draw N answers (at least 24) into a CSV.")
+    p_calibrate.add_argument("--from", dest="source", default=None, help="Campaign report JSON (used with --sample).")
+    p_calibrate.add_argument("--import", dest="import_csv", default=None, help="The CSV the owner filled in.")
+    p_calibrate.add_argument("--seed", type=int, default=None, help="Seed of the draw (default 20261104).")
+    p_calibrate.add_argument("--campaign", default=None, help="Campaign name (default: the report name).")
+    p_calibrate.add_argument(
+        "--split",
+        choices=["development", "dev", "holdout"],
+        default="development",
+        help="Splits the sample is drawn from (default development: dev and holdout). The holdout_v080 is never "
+        "sampled.",
+    )
+    p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
+    p_calibrate.add_argument(
+        "--delimiter",
+        choices=[";", ","],
+        default=";",
+        help="CSV separator (default ';', which a pt-BR spreadsheet opens; --import accepts ';', ',' and tab).",
+    )
+    p_calibrate.add_argument(
+        "--out",
+        default=None,
+        help="Output file: the CSV (default docs/evidence/v080-calibracao-amostra.csv) or, with --import, the "
+        "report (default docs/evidence/v080-calibracao.md).",
+    )
     p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
     p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")
     sub.add_parser("mcp", help="Serve the support tools over MCP (stdio) for the merchant of MERCHANT_ASSISTANT_TOKEN.")
@@ -527,6 +785,7 @@ def main(argv: list[str] | None = None) -> int:
         "ask": cmd_ask,
         "smoke": cmd_smoke,
         "eval": cmd_eval,
+        "eval-calibrate": cmd_eval_calibrate,
         "migrate": cmd_migrate,
         "mcp": cmd_mcp,
         "mcp-demo": cmd_mcp_demo,

@@ -49,3 +49,9 @@ Efeito real de `router.v6`, `personality.v5` e `replan.v2` (12/13 ou 13/13 depen
 - **Parecer:** correções necessárias. Os testes de rótulo e as regressões focadas de Router e runtime passaram. A repetição de runtime usou execução aprovada para `os.link` depois de `WinError 5` no sandbox padrão.
 - **P2:** as verificações independentes de `Visa` e de uma âncora positiva aceitam `Your Visa enablement request is active. A separate Mastercard request remains pending.`. O Reviewer reproduziu todos os checks positivos com a rota, ferramenta e estado esperados. A próxima rodada deve vincular o status à solicitação Visa e manter as respostas corretas gravadas.
 - **Escopo:** a leitura inicial do relatório real da v0.7.0 exibiu também entradas antigas fora da jornada. A sonda seguinte usou somente `V030-ENABLEMENT-PENDING` no split `dev`. O `holdout_v080` permaneceu lacrado.
+
+## Rodada 4 — apta
+
+- **Candidato:** `bba6e04d6f0ad40b7d7dae627125c517a20a6d98`, com os mesmos arquivos de código e testes no checkout `de4d1dd`. Contexto independente `gpt-6-luna/xhigh`, HEAD fixo.
+- **Prova:** a resposta com Visa ativa e Mastercard pendente foi rejeitada. A resposta correta gravada para a jornada passou, assim como a regressão programada. Rota, ferramentas, status e fontes do rótulo permaneceram iguais.
+- **Validação:** 24 testes focados passaram. A regressão com runtime precisou de uma nova execução aprovada para o hardlink da guarda e passou, totalizando 25 aprovados. Sem achados reproduzidos. A suíte completa fica para a integração.
