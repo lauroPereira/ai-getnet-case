@@ -29,13 +29,14 @@ Períodos das 09h09 às 14h43 e das 15h29 às 16h10, horário de São Paulo. O d
 
 | Tarefa | Papel | Candidato ou base | Situação |
 | --- | --- | --- | --- |
-| QA técnico | QA independente | `9057aaa` | **Bloqueado pelo orçamento.** Projeção estratificada de US$0,77451472 no caso-base e saldo primário de US$0,44052499. Campanha sem montagem. |
+| Extensão controlada do orçamento | Developer e Reviewer | `9057aaa` + ajuste de guarda | Autorizada e em validação. O ensaio sintético do procedimento local preservou o histórico e recusou uma segunda aplicação. |
+| QA técnico | QA independente | `9057aaa` | A campanha paga aguarda a extensão validada e a prova local do serviço sintético de preços. Campanha sem montagem. |
 
 O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A amostra foi complementada dentro desse limite. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
 
 ## To do
 
-1. Resolver a decisão de orçamento e validar a projeção usada no portão de montagem. Com o recorte atual, o saldo primário não cobre nem a menor projeção analisada.
+1. Fixar e revisar o ajuste da CLI, validar a transição local aprovada e confirmar a projeção e o saldo usados no portão de montagem.
 2. Validar a disponibilidade do mock de preços com fixture sintética antes de novas chamadas, reexecutar as jornadas afetadas e concluir a campanha técnica, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
 3. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
 
@@ -70,6 +71,7 @@ O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com r
 | Após a amostra | 9,55 GiB | — | QA parou pelo orçamento. Runtime e evidências preservados. |
 | 15h28 | 9,52 GiB | 1,19 GiB | Checagem liberou o complemento da amostra. |
 | 16h05 | 9,52 GiB | 1,45 GiB | Sem alertas recentes. |
+| 16h33 | 9,51 GiB | 1,22 GiB | Folga virtual de 12,72 GiB e zero alertas recentes. |
 
 O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de despachar trabalho pesado. Nesta retomada, as primeiras passagens usam testes focados. A estimativa de custo usa entrada sem cache, entrada em cache e saída por subagente, com a tarifa Standard publicada pela OpenAI. Os valores são equivalentes de API. [Tarifas da API](https://developers.openai.com/api/docs/pricing)
 
@@ -122,13 +124,16 @@ As tarefas e a ordem estão na seção To do.
 
 ## Depende de você
 
-- Confirmar os valores e o escopo da revisão controlada dos limites para preservar a campanha completa.
 - Após o QA técnico, preencher o CSV de calibração antes da integração na `main`.
 
 ### Encaminhamento após a amostra complementar
 
-O responsável autorizou em princípio ampliar o orçamento local para concluir o QA completo da v0.8.0. A proposta para confirmação é elevar o limite persistente do ledger primário de **US$1,00 para US$1,70** e permitir um teto excepcional de **US$1,10** na montagem única de `v080-qa`. O gasto registrado de US$0,55947501 deixa US$1,14052499 sob o limite primário proposto, antes de novas chamadas. O teto acumulado do projeto é US$5,00. [Projeção e estado do ledger](../evidence/v080-projecao-estratificada-r3.md)
+O responsável confirmou em 2026-11-04 a ampliação para concluir o QA completo da v0.8.0. Os novos limites aprovados são **US$1,70** no ledger primário e **US$1,10** na montagem única de `v080-qa`, sujeitos à revisão e à prova de estimativa. O gasto registrado de US$0,55947501 deixa US$1,14052499 sob o limite primário aprovado, antes de novas chamadas. O teto acumulado do projeto é US$5,00. [Projeção e estado do ledger](../evidence/v080-projecao-estratificada-r3.md)
 
-A aplicação hoje recusa aumentar o limite persistente por configuração e limita `v080-qa` a US$1,00. A mudança proposta exige revisão da guarda e confirmação dos valores antes de ativar qualquer novo limite. Validar em cópia sintética a preservação das entradas do ledger, a recusa fora da autorização, a montagem única e a prova da estimativa. Conferir backup e histórico antes da transição local. Validar também o serviço de preços e as fixtures antes de retomar chamadas reais.
+A revisão controlada foi iniciada após a confirmação. A aplicação anterior recusa aumentar o limite persistente por configuração e limita `v080-qa` a US$1,00. Validar em cópia sintética a preservação das entradas do ledger, a recusa fora da autorização, a montagem única e a prova da estimativa. Conferir backup e histórico antes da transição local. Validar também o serviço de preços e as fixtures antes de retomar chamadas reais.
+
+Na retomada do ajuste, `acf4b74` correspondia ao commit que registrava a proposta acima de `26c3bd0`. Os HEADs e as branches dos demais worktrees e do web conferiram com a tabela. O web local estava 15 commits à frente da referência local de `origin/main`. A entrada Git órfã e os diretórios não rastreados preexistentes foram preservados.
+
+O Supervisor validou o mock em `127.0.0.1:18765` com Uvicorn da `.venv` do projeto e fixtures de `data/mock-services`. OpenAPI, as duas simulações (aplicável e não aplicável) e uma cobrança responderam HTTP 200, com os campos conferidos contra as fixtures. O processo temporário foi encerrado sem chamadas pagas. Para a avaliação, usar o mesmo executável, `MOCK_SERVICES_DIR` no mock e `MOCKS_URL` somente no processo de QA.
 
 Após o QA da v0.8.0, incluir na definição de escopo da v0.9.0 um cliente Claude API para Sonnet 5.5 **na aplicação**. A escolha do papel depende da medição de custo por etapa e ferramenta, qualidade e latência. A prova técnica e o teto do piloto ficam para a especificação da v0.9.0.

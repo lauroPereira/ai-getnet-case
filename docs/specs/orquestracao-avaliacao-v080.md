@@ -79,6 +79,7 @@ Regressão: 40 casos e 4 conversas sem piora em relação à v0.7.0, salvo difer
 
 - Teto da campanha `v080-qa`: **US$0,50** no plano, montada uma vez, combinada com o ledger primário. Antes de montar, o QA estima o custo de 3 execuções (40 casos, 4 cenários e o holdout, com agente e juiz) a partir de 5 casos medidos. O responsável disse em 2026-11-04 que há margem ampla e que não é preciso parar para perguntar se a estimativa passar de US$0,50. Padrão proposto pelo Supervisor na aprovação: a campanha monta com US$0,50 e, se a estimativa medida passar disso, monta uma única vez com até **US$1,00**, registrando o motivo; acima disso, para e pergunta.
 - **Decisão posterior de 2026-11-04.** A amostra inicial projetou US$1,37116382 e deixou a campanha sem montagem. O responsável autorizou até **US$0,10 adicionais**, somando todas as chamadas e tentativas, para complementar a amostra **somente em `dev`** sob a guarda do ledger primário existente. Reusar as medições disponíveis, cobrir as rotas sub-representadas e explicitar na projeção o peso de buscas web, demais chamadas do agente, conversas e juiz. Montar a campanha apenas se a projeção válida couber nos tetos vigentes e no saldo efetivo. [Decisão compartilhada e limites](evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
+- **Ampliação confirmada em 2026-11-04.** O complemento custou US$0,01697010. O responsável aprovou elevar o teto persistente do ledger primário a **US$1,70**, preservando seu histórico, e o teto excepcional de `v080-qa` a **US$1,10**. Mantêm-se as faixas de US$0,50 e US$1,00 para estimativas que já cabem nelas. Acima de US$1,00, o teto de US$1,10 exige revalidar o artefato da amostra real. Exigir revisão independente, suíte estrita e validação da transição em cópia sintética antes de aplicar a ampliação. Validar o mock de preços e o saldo efetivo antes de retomar chamadas. [Decisão compartilhada e limites](evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
 - Testes sem chamada paga e sem rede; `replan.v1` e `judge.v3` com modelo programado nos testes.
 - O caminho sem replanejamento ambíguo não chama modelo a mais.
 - Nenhum dado real; o CSV de calibração só com dados sintéticos e respostas mascaradas.
@@ -89,7 +90,7 @@ Regressão: 40 casos e 4 conversas sem piora em relação à v0.7.0, salvo difer
 | --- | --- |
 | `replan` cria laço ou gasto | D5, D6, teste de laço forçado, limites atuais |
 | Juiz independente indisponível ou caro | Medir em 5 casos; D11 bloqueia em vez de trocar por inferência |
-| Estimativa acima de US$1,00 ou do saldo efetivo | QA para antes de montar; responsável decide sobre teto ou recorte |
+| Estimativa acima de US$1,10 ou do saldo efetivo | QA para antes de montar. O responsável decide sobre teto ou recorte. |
 | Calibração depende do tempo do responsável | Amostra de 24, CSV com instruções, cerca de 1 h |
 | Ajuste guiado pelo holdout | D14; holdout só na campanha final |
 | Arquivos do grafo compartilhados entre times | D18: dono único (Time A) do grafo, dos agentes, da política programada e do catálogo |

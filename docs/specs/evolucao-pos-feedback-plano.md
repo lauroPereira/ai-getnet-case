@@ -159,7 +159,7 @@ O responsável aprovou a reserva de planejamento de **US$2,50** para concluir o 
 | Etapa | Reserva | Limite operacional |
 | --- | ---: | --- |
 | Complemento da amostra de desenvolvimento da v0.8.0 | US$0,10 | **Despesa adicional autorizada**, cumulativa para todas as novas chamadas e tentativas da amostra. |
-| Campanha `v080-qa` | US$1,00 | US$0,50 por padrão. Até US$1,00 em montagem única se a estimativa válida justificar e houver saldo no ledger primário. |
+| Campanha `v080-qa` | US$1,00 | US$0,50 por padrão. US$1,00 ou, após a revisão abaixo, até US$1,10 em montagem única se a estimativa válida justificar e houver saldo no ledger primário. |
 | QA v0.9.0 e v0.10.0 | US$0,40 | US$0,10 para cada rodada prevista e US$0,10 reservado para eventual repetição de cada versão. |
 | Smoke v1.0.0 | US$0,10 | US$0,05 para o smoke previsto e US$0,05 reservado para eventual repetição. |
 | Correções e revalidações | US$0,35 | Priorizar os cenários afetados. Ampliar a rodada quando a alteração atingir o fluxo compartilhado. |
@@ -172,6 +172,8 @@ O responsável aprovou a reserva de planejamento de **US$2,50** para concluir o 
 - **Provedores e demonstração.** Usar OpenAI para o assistente, embeddings e busca web, DeepSeek como juiz independente e TypeSafe para demonstrar o Router Jev. Gravar o percurso no candidato final, mostrando o encaminhamento e o retorno humano, o replanejamento e a avaliação, a comparação de retrieval e a retomada após reinício com resumo e métricas. Ensaios programados e testes automatizados têm custo zero de API.
 
 Na sessão de retomada, o ledger primário registrou **US$0,54250491** gastos e **US$0,45749509** disponíveis no limite persistido de US$1,00. A campanha `v080-qa` ficou sem montagem. Esses números são um retrato da parada, a ser conferido antes do complemento. [Evidência do QA](../evidence/v080-qa-r1.md)
+
+**Ampliação confirmada pelo responsável em 2026-11-04.** Autoriza a transição local do teto persistido do ledger primário para **US$1,70**, com o histórico preservado, e uma faixa excepcional de **US$1,10** para `v080-qa` somente quando o artefato revalidado comprovar estimativa acima de US$1,00 e até US$1,10. A revisão e a validação precedem a transição. O teto global de US$5,00 e a reserva de planejamento de US$2,50 continuam vigentes. A margem da campanha acima de US$1,00 sai da contingência da mesma reserva. Antes das chamadas, confirmar os saldos, o serviço sintético de preços e a montagem única. [Projeção complementar](../evidence/v080-projecao-estratificada-r3.md)
 
 ## Plano de implementação
 
