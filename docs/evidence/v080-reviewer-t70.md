@@ -34,3 +34,14 @@
 ## Não comprovado
 
 Chamada real à DeepSeek com saída estruturada e teto de 400 tokens; campanha real; cliente web diante do `503`; tratamento real do juiz para respostas de web.
+
+## Rodada 2 — apto para QA
+
+- **Candidato:** `0b64b00df4f84c1b4bcd9fcbc9bff5a35fa160f0`, worktree `review-a`; HEAD e status iguais antes e depois. Diff `0ebcda2..0b64b00` (18 arquivos fora de `docs/`).
+- **Independência:** Reviewer novo em contexto frio (sonnet/xhigh), escopo estreito e congelado; não leu as passagens do Developer; não abriu o holdout (blobs iguais entre as rodadas, lacre verde).
+- **Parecer:** **apto para QA** — nenhum P1 nem P2.
+- **P2-01 resolvido (opção a):** padrões `evaluator = openai/gpt-6-luna` (igual à `main`) e `judge = deepseek/deepseek-flash`. Com a fábrica real e o SDK simulado: `/v1` só com `OPENAI_API_KEY` estima (200) e confirma (201) com `gpt-6-luna`, sem construir cliente DeepSeek; `eval --judge` e `--judge-repeat` sem chave da DeepSeek recusam antes de montar o sistema, sem nenhum SDK construído; `.env` antigo com `EVALUATOR_*` não bloqueia o juiz. A extração para `main.model_factory` deu 0 divergências em 30 combinações contra a fábrica antiga.
+- **P3 da rodada 1 resolvidos:** 0011 sobe, desce e sobe sem perder `repetition`, `scores` e `unsupported_claim` (guarda de `calibrations` mantida); observadores por `ContextVar` sem contaminação entre duas execuções reais em threads e sem exceção atravessando `execute()`; par provedor/modelo conferido na tabela de preços; erro do provedor curto e mascarado; os sobreviventes M11, M12, M28, M32 e M34 agora morrem; escape nas tabelas, nome distinto do relatório do holdout, recusa de sobrescrever `--answers-from`, aviso do `--split` ignorado, linha de truncamento.
+- **Testes:** 141 passed nos arquivos da avaliação e no lacre; 19 mutantes novos, todos mortos (24 de 24 com os da rodada 1). Suíte estrita (Supervisor, neste candidato): **718 passed**, código 0.
+- **P3 (registrados):** (A) o `--help` de `eval --judge` ainda cita `EVALUATOR_*` e o README não cita `JUDGE_*`; (B) o nome padrão do `--judge-repeat` não distingue o split das respostas e pode sobrescrever o relatório do juiz de desenvolvimento ao reavaliar o holdout; (C) a regra das notas de evidência para web vale só para passos com `mode=web`, o juiz programado ignora dado da conta sem ferramenta sob a nota (o prompt manda marcar) e o relatório não conta as respostas julgadas sob a nota; (D) `evidence.py:22` só reconhece passos chamados `knowledge`, e o nó `web` do replanejamento do Time A grava passo `web`: depois do merge, a nota de web não seria emitida nesse caminho.
+- **Decisão do Supervisor:** os quatro P3 entram na rodada da tarefa 71 (Time B), antes da calibração; o README fica para a 73.
