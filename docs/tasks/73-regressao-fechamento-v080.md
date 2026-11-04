@@ -18,10 +18,11 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 
 ## Passos
 
-1. Teste de integração programado dos momentos 1 a 9 da história: quatro cenários de replanejamento, laço evitado, pergunta simples sem chamada a mais, `eval --judge --repeat 3` com juiz programado de "outro provedor", holdout à parte e jornadas.
+1. Teste de integração programado dos momentos 1 a 8 da história: quatro cenários de replanejamento, laço evitado, pergunta simples sem chamada a mais, `eval --judge --repeat 3` e `--judge-repeat 3` com juiz programado de "outro provedor" e jornadas. O relatório separado por split é provado com um split sintético do teste; o `holdout_v080` real nunca roda fora do QA (D17).
 2. Campanha `v080-qa` montável com teto de US$0,50 uma única vez, combinada com o ledger primário (teste sem rede).
-3. Estimador de custo da campanha a partir de N casos medidos (usado pelo QA antes de montar).
-4. Versão `0.8.0`; `docker compose config` válido.
+3. Estimador de custo da campanha a partir de N casos medidos (usado pelo QA antes de montar), com as duas etapas da D12 (agente 3 vezes; juiz 3 vezes sobre a primeira execução).
+4. Roteiro do QA com o holdout como último passo técnico (D17).
+5. Versão `0.8.0`; `docker compose config` válido.
 
 ## Critérios de conclusão
 

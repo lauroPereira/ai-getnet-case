@@ -26,13 +26,13 @@ CA-49, CA-50 e CA-51 (spec 0.2), UC-23 e UC-24; tarefas 69 a 73 e o holdout 72a.
 | 4. Produto que depende da conta | Pergunta de produto cuja resposta depende do plano do lojista | Knowledge → `replan` → Support; resposta com o dado da conta | CA-49 | Trace | Não se aplica |
 | 5. Laço evitado | Pergunta que nenhum especialista resolve | No máximo 3 saltos, nenhum especialista repetido, resposta honesta sobre o que faltou | CA-49 | Trace com `hops` | Não se aplica |
 | 6. Pergunta simples | Pergunta que o Knowledge resolve de primeira | `replan` encerra por regra, sem chamada a modelo a mais | CA-49 | Trace e ledger | Não se aplica |
-| 7. Campanha com juiz independente | QA roda `eval --judge --repeat 3` nos 40 casos, nas 4 conversas e nos cenários | Relatório com quatro critérios, `unsupported_claim`, média, desvio e concordância entre execuções, por rota e split; provedor do juiz diferente do agente | CA-50, UC-24 | `docs/evidence/v080-*.json` e `.md`, delta do ledger | Não se aplica |
-| 8. Holdout à parte | Mesma campanha com `--split holdout_v080` | Resultado do holdout separado do desenvolvimento; lacre conferido antes | CA-50 | Relatório e hash | Não se aplica |
-| 9. Jornadas | Campanha nas 13 jornadas de negócio | ≥ 12/13 pela rubrica | CA-51 | Relatório | Não se aplica |
-| 10. Calibração | `eval-calibrate --sample 24` gera o CSV; o responsável preenche; `--import` | Concordância humano × juiz por critério (exata, ±1, kappa) | CA-50 | `docs/evidence/v080-calibracao.md` | Gerar nova amostra |
-| 11. Docker | `docker compose up` sem editar o `.env.example`; smoke com token; uma pergunta que replaneja | Smoke passa; trace com `replan` | CA-49 | Saídas | `docker compose down` |
+| 7. Campanha com juiz independente | QA roda `eval --judge --repeat 3` nos 40 casos, nas 4 conversas e nos cenários; depois `--judge-repeat 3` sobre as respostas da primeira execução | Relatório com quatro critérios e `unsupported_claim`, com a variação do assistente e a do juiz em blocos separados, por rota e split; rota medida pelo plano inicial e caminho executado à parte; provedor do juiz diferente do agente | CA-50, UC-24 | `docs/evidence/v080-*.json` e `.md`, delta do ledger | Não se aplica |
+| 8. Jornadas | Campanha nas 13 jornadas de negócio | ≥ 12/13 pela rubrica | CA-51 | Relatório | Não se aplica |
+| 9. Docker | `docker compose up` sem editar o `.env.example`; smoke com token; uma pergunta que replaneja | Smoke passa; trace com `replan` | CA-49 | Saídas | `docker compose down` |
+| 10. Holdout, por último | Com os momentos 1 a 9 aptos: lacre conferido e uma única execução com `--split holdout_v080` | Resultado do holdout separado do desenvolvimento; se houver rodada nova depois, marcado "holdout já visto" | CA-50 | Relatório e hash | Não se aplica |
+| 11. Calibração | `eval-calibrate --sample 24` gera o CSV; o responsável preenche; `--import` | Concordância humano × juiz por critério (exata, ±1, kappa), com a ressalva da amostra pequena | CA-50 | `docs/evidence/v080-calibracao.md` | Gerar nova amostra |
 
-Percorra na ordem. O momento 10 depende do responsável e pode fechar depois do QA técnico; o relatório da versão só sai com ele.
+Percorra na ordem. O momento 11 depende do responsável e pode fechar depois do QA técnico; o relatório da versão só sai com ele.
 
 ## Experiência e exceções
 
