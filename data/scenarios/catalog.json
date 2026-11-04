@@ -207,10 +207,14 @@
    "must_include_amounts": [],
    "must_include_any": [
     [
-     "SIM-"
+     "HO-"
     ]
    ],
-   "expect_sources": false
+   "expect_sources": false,
+   "must_not_include": [
+    "SIM-",
+    "simul"
+   ]
   },
   {
    "id": "SC-INJECTION",

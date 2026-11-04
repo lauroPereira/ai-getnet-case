@@ -53,3 +53,20 @@ def test_customers_have_distinct_data(tmp_path):
         "SELECT COUNT(*) FROM authorization_events WHERE status='declined' AND customer_id=?", (MAIN_CUSTOMER,)
     ).fetchone()[0]
     assert declined == 2
+
+
+def test_second_seed_keeps_the_audit(tmp_path):
+    """D27: restarting the container (bootstrap -> seed) recreates the synthetic data but keeps the audit trail."""
+    conn = connect(tmp_path / "db.sqlite3")
+    clock = FixedClock("2026-10-26T10:00:00")
+    seed(conn, clock)
+    conn.execute(
+        "INSERT INTO audit_events (at, customer_id, tool, resource_id, outcome, principal_id, scope) "
+        "VALUES ('2026-10-26T10:00:00', ?, 'get_device_status', NULL, 'ok', 'merchant:cliente1988', 'support:read')",
+        (MAIN_CUSTOMER,),
+    )
+    conn.execute("DELETE FROM devices")
+    counts = seed(conn, clock)
+    assert "audit_events" not in counts
+    assert conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0] > 0  # domain data is recreated

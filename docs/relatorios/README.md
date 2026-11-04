@@ -6,3 +6,4 @@ Cada arquivo se chama `AAAA-MM-DD-<período>.md`, com a data de fim do bloco. O 
 
 | Relatório | Período |
 | --- | --- |
+| [2026-11-03-tarde.md](2026-11-03-tarde.md) | 03/11/2026, 14h19 às 17h35: v0.7.0 até a revisão das tarefas 63 a 67 (interrompida) |

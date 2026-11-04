@@ -25,6 +25,7 @@ class Turn:
     status: str  # answered | needs_clarification | handoff | refused
     case_signal: str  # none | resolved | still_failing | thanks_only
     tool_verified: bool = False
+    via_operator: bool = False  # the reply comes from a human agent's action (approve, reply or reject)
 
 
 def transition(current: str, new: str) -> str:
@@ -34,7 +35,12 @@ def transition(current: str, new: str) -> str:
 
 
 def next_state(current: str, previous_evidence: str | None, turn: Turn) -> tuple[str, str | None]:
-    """Returns (state, evidence) after a turn."""
+    """Returns (state, evidence) after a turn. Only an operator's action takes a case out of `handoff` (D14): it goes
+    to `resolved` with tool evidence, otherwise to `awaiting_customer`, and never back to `handoff`."""
+    if turn.via_operator:
+        if turn.tool_verified:
+            return "resolved", "tool_verified"
+        return "awaiting_customer", None
     if current == "handoff" or turn.status == "handoff":
         return transition(current, "handoff"), previous_evidence
     if turn.case_signal == "resolved" and current in ("in_progress", "awaiting_customer"):

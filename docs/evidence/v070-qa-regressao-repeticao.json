@@ -1,0 +1,99 @@
+{
+ "purpose": "single repetition of the cases that changed against v0.6.0",
+ "cases": [
+  {
+   "id": "V030-PRICE-INSUFFICIENT",
+   "route": "support",
+   "status": "answered",
+   "passed": true,
+   "route_ok": true,
+   "status_ok": true,
+   "tools_ok": true,
+   "content_ok": true,
+   "sources_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "answer": "For the 2-installment credit sale dated November 2, 2026, we couldn’t compare the expected and charged fees because no applicable pricing rule or recorded charge was available. The gross amount was R$ 200,00. No fee or net amount is available to report.",
+   "cost_usd": 0.00050452,
+   "duration_ms": 8051
+  },
+  {
+   "id": "V030-ENABLEMENT-PENDING",
+   "route": "support",
+   "status": "answered",
+   "passed": true,
+   "route_ok": true,
+   "status_ok": true,
+   "tools_ok": true,
+   "content_ok": true,
+   "sources_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_enablement_requests"
+   ],
+   "answer": "Your Visa enablement request is still pending under protocol SIM-BND-1988-001. The device is reported as available for Visa, but the account configuration has not yet been activated.",
+   "cost_usd": 0.00025037,
+   "duration_ms": 6410
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "route": "human_handoff",
+   "status": "handoff",
+   "passed": false,
+   "route_ok": true,
+   "status_ok": true,
+   "tools_ok": true,
+   "content_ok": false,
+   "sources_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck"
+   ],
+   "answer": "Your case has been handed to a member of our support team, who will reply here. Protocol: HO-20261104-5D8649.",
+   "cost_usd": 0.00032026,
+   "duration_ms": 4620
+  },
+  {
+   "id": "V030-PT-PRICE-CONDITIONS",
+   "route": "support",
+   "status": "answered",
+   "passed": false,
+   "route_ok": true,
+   "status_ok": true,
+   "tools_ok": true,
+   "content_ok": false,
+   "sources_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "answer": "Sim. A venda de crédito de 2026-11-03, em 1 parcela, foi registrada no plano demo_legacy, enquanto a condição de preço aplicável indicava demo_standard.\n\nPara o valor bruto de R$ 1.200,00, foram cobrados R$ 37,80, com líquido de R$ 1.162,20. Pela condição aplicável, a taxa seria R$ 36,00, com líquido de R$ 1.164,00.\n\nEssa diferença indica condições distintas, mas não confirma, por si só, um erro na cobrança. A comparação não realiza correção nem reembolso.",
+   "cost_usd": 0.00062501,
+   "duration_ms": 7916
+  },
+  {
+   "id": "V030-PT-PRICE-DIVERGENCE",
+   "route": "support",
+   "status": "handoff",
+   "passed": true,
+   "route_ok": true,
+   "status_ok": true,
+   "tools_ok": true,
+   "content_ok": true,
+   "sources_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "answer": "Na venda Pix de 03/11/2026, de R$ 80,00, a taxa indicada é R$ 0,00, mas foi registrada uma cobrança de R$ 0,75, com valor líquido de R$ 79,25. Encaminhei a divergência para análise. Esta consulta não realiza correção nem reembolso.\n\nSeu caso foi encaminhado para um atendente da nossa equipe, que responderá por aqui. Protocolo: HO-20261104-7829D4.",
+   "cost_usd": 0.00078707,
+   "duration_ms": 11168
+  }
+ ]
+}

@@ -184,20 +184,69 @@ def cmd_ask(settings: Settings, args) -> int:
     return 0
 
 
-def cmd_smoke(settings: Settings, args) -> int:
-    """Sends the 10 challenge examples to a running API and checks status codes and routes."""
+def _demo_password(settings: Settings, username: str) -> str | None:
+    """The configured password of a synthetic demo user (DEMO_USER_PASSWORDS), for local commands."""
+    raw = settings.demo_user_passwords.get_secret_value() if settings.demo_user_passwords else ""
+    for item in raw.split(","):
+        name, _, password = item.strip().partition(":")
+        if name.strip() == username and password.strip():
+            return password.strip()
+    return None
+
+
+def request_token(client, username: str, password: str, client_id: str = "merchant-assistant-cli") -> dict:
+    """OAuth 2.0 password grant against `POST /v1/auth/token` (form encoded)."""
+    data = {"grant_type": "password", "username": username, "password": password, "client_id": client_id}
+    return client.post("/v1/auth/token", data=data)
+
+
+def cmd_auth_token(settings: Settings, args) -> int:
+    """Prints an access token for a demo user (for MERCHANT_ASSISTANT_TOKEN). The password is read from
+    --password, then from DEMO_USER_PASSWORDS, then from the terminal."""
+    import getpass
+
     import httpx
 
+    password = args.password or _demo_password(settings, args.username) or getpass.getpass("password: ")
+    with httpx.Client(base_url=args.url, timeout=30) as client:
+        response = request_token(client, args.username, password)
+    if response.status_code != 200:
+        print(f"token refused: {response.status_code}", file=sys.stderr)
+        return 1
+    print(response.json()["access_token"])
+    return 0
+
+
+def run_smoke(client, username: str, password: str) -> int:
+    """Gets a token for `username`, then sends the 10 challenge examples with it. Returns the number of failures."""
     from merchant_assistant.api.schemas import CHALLENGE_EXAMPLES
 
+    token = request_token(client, username, password)
+    if token.status_code != 200:
+        print(f"{token.status_code} token refused for {username}")
+        return len(CHALLENGE_EXAMPLES)
+    print(f"token for {username} (scope: {token.json().get('scope')})")
+    headers = {"Authorization": f"Bearer {token.json()['access_token']}"}
     failures = 0
+    for message in CHALLENGE_EXAMPLES:
+        r = client.post("/messages", json={"message": message}, headers=headers)
+        ok = r.status_code == 200
+        body = r.json() if ok else {}
+        failures += not ok
+        print(f"{r.status_code} {body.get('route', '-'):22} {body.get('status', '-'):20} {message}")
+    client.post("/v1/auth/revoke", headers=headers)
+    return failures
+
+
+def cmd_smoke(settings: Settings, args) -> int:
+    """Gets a merchant token and sends the 10 challenge examples to a running API."""
+    import httpx
+
+    password = args.password or _demo_password(settings, args.username)
+    if not password:
+        raise SystemExit(f"No password for {args.username}: set DEMO_USER_PASSWORDS or pass --password.")
     with httpx.Client(base_url=args.url, timeout=120) as client:
-        for message in CHALLENGE_EXAMPLES:
-            r = client.post("/messages", json={"message": message, "user_id": "cliente1988"})
-            ok = r.status_code == 200
-            body = r.json() if ok else {}
-            failures += not ok
-            print(f"{r.status_code} {body.get('route', '-'):22} {body.get('status', '-'):20} {message}")
+        failures = run_smoke(client, args.username, password)
     print("smoke ok" if not failures else f"smoke failed: {failures}")
     return 1 if failures else 0
 
@@ -260,7 +309,7 @@ def cmd_migrate(settings: Settings, args) -> int:
     """Moves the database schema to a version (default: latest). Use --to to roll back."""
     import sqlite3
 
-    from merchant_assistant.data.migrations import current_version, migrate
+    from merchant_assistant.data.migrations import RollbackRefused, current_version, migrate
 
     settings.db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(settings.db_path, isolation_level=None)
@@ -269,21 +318,41 @@ def cmd_migrate(settings: Settings, args) -> int:
         for step in steps or ["nothing to apply"]:
             print(step)
         print(f"schema version: {current_version(conn)}")
+    except RollbackRefused as exc:
+        raise SystemExit(f"migrate: {exc}") from None
     finally:
         conn.close()
     return 0
 
 
 def cmd_mcp(settings: Settings, args) -> int:
-    """Serves the support tools over MCP (stdio) for one merchant. Nothing else may write to stdout."""
+    """Serves the support tools over MCP (stdio) for the merchant of MERCHANT_ASSISTANT_TOKEN. Nothing else may write
+    to stdout. With the API in Docker, set JWT_ISSUER and JWT_JWKS_URL to the API's so the token verifies here."""
+    from merchant_assistant.api.identity import Identity
     from merchant_assistant.data.clock import SystemClock
-    from merchant_assistant.mcp_server import build_server, env_factory_for, serve_stdio
+    from merchant_assistant.data.db import connect
+    from merchant_assistant.mcp_server import (
+        AccessRefused,
+        build_server,
+        env_factory_for,
+        principal_for_token,
+        serve_stdio,
+    )
     from merchant_assistant.mocks.clients import MockServiceClient
 
+    token = settings.merchant_assistant_token.get_secret_value() if settings.merchant_assistant_token else None
+    conn = connect(settings.db_path)
+    try:
+        principal = principal_for_token(Identity(settings), conn, token)
+    except AccessRefused as exc:
+        print(f"mcp: {exc} (set MERCHANT_ASSISTANT_TOKEN; see `merchant-assistant auth token`)", file=sys.stderr)
+        return 2
+    finally:
+        conn.close()
     services = MockServiceClient(settings.mocks_url, timeout=2.0)
-    serve_stdio(
-        build_server(env_factory_for(settings.db_path, args.customer, SystemClock(settings.timezone), services))
-    )
+    identity = Identity(settings)
+    factory = env_factory_for(settings.db_path, principal, SystemClock(settings.timezone), services)
+    serve_stdio(build_server(factory, authorize=lambda conn: principal_for_token(identity, conn, token)))
     return 0
 
 
@@ -292,10 +361,16 @@ def cmd_mcp_demo(settings: Settings, args) -> int:
     import anyio
     from mcp import Client, StdioServerParameters
 
-    params = StdioServerParameters(
+    if not settings.merchant_assistant_token:
+        raise SystemExit("Set MERCHANT_ASSISTANT_TOKEN (see `merchant-assistant auth token`).")
+    params = StdioServerParameters(  # the token goes by environment, never on the command line
         command=sys.executable,
-        args=["-m", "merchant_assistant.cli", "mcp", "--customer", args.customer],
-        env={**__import__("os").environ, "PYTHONUTF8": "1"},
+        args=["-m", "merchant_assistant.cli", "mcp"],
+        env={
+            **__import__("os").environ,
+            "PYTHONUTF8": "1",
+            "MERCHANT_ASSISTANT_TOKEN": settings.merchant_assistant_token.get_secret_value(),
+        },
     )
     calls = [
         ("get_receivables_schedule", {"period": "yesterday"}),
@@ -327,6 +402,73 @@ def cmd_mcp_demo(settings: Settings, args) -> int:
     return 0
 
 
+def _operator_principal(settings: Settings, conn):
+    """The operator of MERCHANT_ASSISTANT_TOKEN (spec D12), verified like on the API."""
+    from merchant_assistant.api.identity import HANDOFF_OPERATE, Identity, InvalidToken
+
+    token = settings.merchant_assistant_token.get_secret_value() if settings.merchant_assistant_token else ""
+    try:
+        principal, _ = Identity(settings).verify(token, conn)
+    except InvalidToken:
+        raise SystemExit("operator: MERCHANT_ASSISTANT_TOKEN is missing, invalid or expired.") from None
+    if principal.role != "operator" or not principal.has(HANDOFF_OPERATE):
+        raise SystemExit("operator: the token is not an operator token (handoff:operate).")
+    return principal
+
+
+def operator_orchestrator(settings: Settings):
+    """Orchestrator used by `operator act` to resume the flow (the real system; replaced in tests)."""
+    from merchant_assistant.main import build_orchestrator
+
+    return build_orchestrator(settings)
+
+
+def cmd_operator(settings: Settings, args) -> int:
+    """Operator queue in-process over the same service as the API (`handoffs`)."""
+    import uuid
+
+    from merchant_assistant import handoffs
+    from merchant_assistant.data.db import connect
+
+    conn = connect(settings.db_path)
+    try:
+        principal = _operator_principal(settings, conn)
+        operator_id = principal.principal_id.split(":", 1)[1]
+        if args.operator_command == "list":
+            result = {"cases": handoffs.list_cases(conn, args.state, actor=principal.principal_id)}
+        elif args.operator_command == "show":
+            result = handoffs.get_case(conn, args.case_id, actor=principal.principal_id)
+        else:
+            key = args.idempotency_key or f"cli-{uuid.uuid4().hex[:20]}"
+            from merchant_assistant.api.webhooks import Webhooks
+
+            orchestrator = operator_orchestrator(settings)  # resumes the flow in-process (paid model calls)
+            webhooks = Webhooks(settings)  # conversation.replied to the ticketing and the merchant, as in the API
+            try:
+                result = handoffs.act(
+                    conn,
+                    args.case_id,
+                    operator_id,
+                    args.action,
+                    args.text,
+                    key,
+                    actor=principal.principal_id,
+                    resume=webhooks.resume_point(orchestrator.resume_handoff),
+                )
+            finally:
+                attempts = settings.webhook_max_attempts
+                webhooks.wait(timeout=settings.webhook_timeout_s * attempts + sum(settings.webhook_waits))
+                if hasattr(orchestrator, "close"):
+                    orchestrator.close()
+    except handoffs.HandoffError as exc:
+        print(json.dumps({"error": {"code": exc.code, "message": exc.message}}), file=sys.stderr)
+        return 1
+    finally:
+        conn.close()
+    print(json.dumps(result, indent=1, ensure_ascii=False, default=str))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="merchant-assistant")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -352,12 +494,29 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
     p_migrate = sub.add_parser("migrate", help="Apply or roll back schema migrations.")
     p_migrate.add_argument("--to", type=int, default=None, help="Target schema version (default: latest).")
-    p_mcp = sub.add_parser("mcp", help="Serve the support tools over MCP (stdio) for one merchant.")
-    p_mcp.add_argument("--customer", required=True)
-    p_mcp_demo = sub.add_parser("mcp-demo", help="Run an MCP client against the stdio server.")
-    p_mcp_demo.add_argument("--customer", default="cliente1988")
-    p_smoke = sub.add_parser("smoke", help="Send the 10 challenge examples to a running API.")
+    sub.add_parser("mcp", help="Serve the support tools over MCP (stdio) for the merchant of MERCHANT_ASSISTANT_TOKEN.")
+    sub.add_parser("mcp-demo", help="Run an MCP client against the stdio server (uses MERCHANT_ASSISTANT_TOKEN).")
+    p_smoke = sub.add_parser("smoke", help="Get a merchant token and send the 10 challenge examples to a running API.")
     p_smoke.add_argument("--url", default="http://localhost:8000")
+    p_smoke.add_argument("--username", default="cliente1988")
+    p_smoke.add_argument("--password", default=None, help="Default: DEMO_USER_PASSWORDS.")
+    p_operator = sub.add_parser("operator", help="Operator queue (uses an operator MERCHANT_ASSISTANT_TOKEN).")
+    operator_sub = p_operator.add_subparsers(dest="operator_command", required=True)
+    p_list = operator_sub.add_parser("list", help="List handoff cases.")
+    p_list.add_argument("--state", choices=["open", "claimed", "answered", "rejected", "closed"], default=None)
+    p_show = operator_sub.add_parser("show", help="Show one case.")
+    p_show.add_argument("case_id")
+    p_act = operator_sub.add_parser("act", help="approve, reply or reject a case.")
+    p_act.add_argument("case_id")
+    p_act.add_argument("--action", choices=["approve", "reply", "reject"], required=True)
+    p_act.add_argument("--text", default=None, help="Reply text (reply) or instruction (reject).")
+    p_act.add_argument("--idempotency-key", default=None, help="Reuse it to retry the same action safely.")
+    p_auth = sub.add_parser("auth", help="Identity commands.")
+    auth_sub = p_auth.add_subparsers(dest="auth_command", required=True)
+    p_token = auth_sub.add_parser("token", help="Print an access token for a demo user (password grant).")
+    p_token.add_argument("--username", default="cliente1988")
+    p_token.add_argument("--password", default=None, help="Default: DEMO_USER_PASSWORDS, then the terminal.")
+    p_token.add_argument("--url", default="http://localhost:8000")
     args = parser.parse_args(argv)
     settings = get_settings()
     handlers = {
@@ -371,6 +530,8 @@ def main(argv: list[str] | None = None) -> int:
         "migrate": cmd_migrate,
         "mcp": cmd_mcp,
         "mcp-demo": cmd_mcp_demo,
+        "auth": cmd_auth_token,
+        "operator": cmd_operator,
     }
     return handlers[args.command](settings, args)
 

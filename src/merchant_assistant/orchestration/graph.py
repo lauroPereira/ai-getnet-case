@@ -2,30 +2,53 @@
 
 input_guard -> router -> {knowledge | support_prefix -> [knowledge] -> support | escalation} -> personality
 -> output_guard. Every node is traced; recoverable failures are handled inside the agents.
+
+Human review (ADR 0018, v0.7.0): when Escalation opens a case, the state at the end of the handed-off turn enters the
+review graph, compiled with a SQLite checkpointer, and stops in `human_review` with `interrupt()` under
+thread = the escalating request (D6). An operator's action resumes that thread with `Command(resume=...)`:
+approve/reply -> personality -> output_guard; reject -> support (operator instruction, one cycle) -> personality ->
+output_guard. The attendance graph has no checkpointer, so a turn without a handoff never touches checkpoints.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import sqlite3
+import threading
+import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Command, interrupt
 
 from merchant_assistant.agents import escalation, knowledge, personality, router, support
 from merchant_assistant.agents.common import guess_language, policy
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.schemas import Handoff, MessageRequest, MessageResponse, Resolution, Source
 from merchant_assistant.config import Settings
 from merchant_assistant.conversations import Conversation, ConversationStore
 from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
+from merchant_assistant.data.webhook_outbox import TARGETS, enqueue, webhook_targets
 from merchant_assistant.guardrails.input import check_input
+from merchant_assistant.handoffs import transcript
 from merchant_assistant.llm.base import LLM, OutputTokenLimitLLM
 from merchant_assistant.observability.traces import TraceRecorder, TraceStore
 from merchant_assistant.orchestration.budget import BudgetGuard, CombinedBudgetGuard
 from merchant_assistant.orchestration.run import RunContext
-from merchant_assistant.orchestration.state import GraphState, RouterDecision
+from merchant_assistant.orchestration.state import (
+    Citation,
+    EscalationResult,
+    GraphState,
+    KnowledgeResult,
+    RouterDecision,
+    SupportResult,
+)
 from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
 
@@ -142,6 +165,70 @@ def build_graph():
     return g.compile()
 
 
+# Types stored in checkpoints: registered explicitly (unregistered types will be refused by langgraph).
+CHECKPOINT_TYPES = [
+    (cls.__module__, cls.__name__)
+    for cls in (GraphState, RouterDecision, KnowledgeResult, Citation, SupportResult, EscalationResult)
+]
+
+
+class ResumeError(Exception):
+    """The operator's action was recorded but the flow could not be resumed (the case stays recoverable)."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+def human_review(state: GraphState, config: RunnableConfig) -> dict:
+    """Stops the flow until an operator acts (interrupt); on resume, takes the action as the new contribution."""
+    escalation = state.escalation
+    value = interrupt(
+        {
+            "case_id": escalation.case_id if escalation else None,
+            "protocol": escalation.protocol if escalation else None,
+            "summary": escalation.summary if escalation else None,
+            "pending_question": escalation.pending_question if escalation else None,
+            "draft_reply": escalation.draft_reply if escalation else None,
+        }
+    )
+    ctx: RunContext = config["configurable"]["ctx"]
+    ctx.trace.event("human_review", action=value.get("action"), operator_id=value.get("operator_id"))
+    return {
+        "operator": dict(value),
+        "status": "answered",
+        "case": {**state.case, "state": state.case_next.get("state", "handoff")},
+        "support": None,
+        "policy": None,
+        "draft_answer": None,
+        "answer": None,
+        "agents": ["human_review"],
+        "errors": [],
+        "output_violations": [],
+    }
+
+
+def _after_review(s: GraphState) -> str:
+    return "support" if (s.operator or {}).get("action") == "reject" else "personality"
+
+
+def build_review_graph(checkpointer):
+    g = StateGraph(GraphState)
+    g.add_node("human_review", human_review)  # not wrapped: interrupt() must reach LangGraph
+    for name, fn in [
+        ("support", support.run),
+        ("personality", personality.run),
+        ("output_guard", personality.run_output_guard),
+    ]:
+        g.add_node(name, _traced(name, fn))
+    g.add_edge(START, "human_review")
+    g.add_conditional_edges("human_review", _after_review, ["support", "personality"])
+    g.add_edge("support", "personality")  # never back to escalation in the same cycle (D14)
+    g.add_edge("personality", "output_guard")
+    g.add_edge("output_guard", END)
+    return g.compile(checkpointer=checkpointer)
+
+
 def _sources(state: GraphState, ctx: RunContext) -> list[Source]:
     out: list[Source] = []
     if state.knowledge:
@@ -176,6 +263,46 @@ class Orchestrator:
         self.mock_services = mock_services
         self.llm_factory = llm_factory
         self.graph = build_graph()
+        self._review_graph = None  # opened on the first handoff: turns without one never touch checkpoints
+        self._checkpoint_conn: sqlite3.Connection | None = None
+        self._review_lock = threading.Lock()
+
+    def review_graph(self):
+        with self._review_lock:
+            if self._review_graph is None:
+                path = self.settings.checkpoint_db_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                self._checkpoint_conn = sqlite3.connect(str(path), check_same_thread=False)
+                serde = JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINT_TYPES)
+                self._review_graph = build_review_graph(SqliteSaver(self._checkpoint_conn, serde=serde))
+            return self._review_graph
+
+    def _suspend(self, final: GraphState, ctx: RunContext, thread_id: str | None = None) -> None:
+        """Saves the handed-off flow at `human_review` (interrupt) under thread = request id (D6). `thread_id` is the
+        case's own thread when a later turn completes a flow that the escalating request did not get to save."""
+        thread_id = thread_id or final.request_id
+        step, t0 = ctx.trace.start("human_review")
+        try:
+            self.review_graph().invoke(final, config={"configurable": {"thread_id": thread_id, "ctx": ctx}})
+            ctx.trace.finish(step, t0, "interrupted", thread_id=thread_id)
+        except Exception as exc:  # the reply to the merchant never fails because of the checkpoint
+            log.exception("suspend failed", extra={"event": {"request_id": final.request_id}})
+            ctx.trace.finish(step, t0, "error", error=f"{type(exc).__name__}: {exc}")
+            self._mark_checkpoint_failed(final, exc)
+
+    def _mark_checkpoint_failed(self, final: GraphState, exc: Exception) -> None:
+        """D28: the case shows from the start that its flow was not saved (an action gets `503 checkpoint_missing`)."""
+        try:
+            conn = connect(self.settings.db_path)
+            try:
+                conn.execute(
+                    "UPDATE handoff_cases SET resume_status='checkpoint_failed', resume_error=? WHERE case_id=?",
+                    (f"checkpoint_failed:{type(exc).__name__}", final.escalation.case_id),
+                )
+            finally:
+                conn.close()
+        except Exception:
+            log.exception("checkpoint failure not recorded", extra={"event": {"request_id": final.request_id}})
 
     def handle(
         self,
@@ -188,9 +315,16 @@ class Orchestrator:
         db_path=None,
         knowledge: tuple[KnowledgeIndex | None, str | None] | None = None,
         trace_tags: dict | None = None,
+        principal: Principal | None = None,
+        channel: str = "in_process",
     ) -> MessageResponse:
         """`db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
-        `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace."""
+        `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace.
+        `principal` is the authenticated caller (HTTP routes always pass it); in-process callers (CLI `ask`, offline
+        evaluation) run as the merchant of `request.user_id`."""
+        if request.user_id is None:
+            raise ValueError("the merchant of the request must be set by the server")
+        principal = principal or Principal.merchant(request.user_id)
         if knowledge is not None:
             captured_index, knowledge_version_id = knowledge
         else:
@@ -201,12 +335,15 @@ class Orchestrator:
         try:
             store = ConversationStore(conn, self.clock)
             conv = store.open(request.conversation_id, request.user_id)  # raises ConversationNotFound
+            pending = None if conv.created else store.pending_operator_turn(conv.conversation_id)
+            if pending is not None:  # D8: a human reply waiting for this conversation is delivered first
+                return self._deliver(store, conv, pending, request, request_id, principal, trace_tags)
             history = [] if conv.created else store.history(conv.conversation_id)
             known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (request.user_id,)).fetchone()
             env = ToolEnv(
                 conn,
                 self.clock,
-                CustomerContext(request.user_id, known is not None),
+                CustomerContext.for_principal(principal, request.user_id, known is not None),
                 dict(self.faults),
                 self.mock_services,
             )
@@ -227,6 +364,7 @@ class Orchestrator:
                     for name, config in (agent_models or {}).items()
                 },
                 router_override=router_decision,
+                channel=channel,
             )
             initial = GraphState(
                 request_id=request_id,
@@ -243,10 +381,215 @@ class Orchestrator:
             final = GraphState.model_validate(
                 self.graph.invoke(initial, config={"configurable": {"ctx": ctx}, "recursion_limit": 30})
             )
-            self._persist(store, conv, final)
+            announce = False  # does this turn queue `handoff.created` together with its messages?
+            if final.escalation and db_path is None:  # isolated comparison runs never leave a case to resume
+                if final.escalation.created:
+                    self._suspend(final, ctx)
+                    announce = channel in ("api", "web")
+                else:
+                    announce = self._complete_interrupted_handoff(conn, final, ctx, channel)
+            if announce:
+                conn.execute("BEGIN IMMEDIATE")
+                try:
+                    self._persist(store, conv, final)
+                    case = conn.execute("SELECT * FROM handoff_cases WHERE case_id=?", (final.escalation.case_id,))\
+                        .fetchone()
+                    payload = json.loads(case["payload"] or "{}")
+                    enqueue(conn, "handoff.created", {
+                        "case_id": case["case_id"], "protocol": case["protocol"],
+                        "conversation_id": case["conversation_id"], "customer_id": case["customer_id"],
+                        "language": payload.get("language"), "reason": case["reason"],
+                        "summary": payload.get("summary"), "pending_question": payload.get("pending_question"),
+                        "draft_reply": payload.get("draft_reply"), "transcript": transcript(conn, conv.conversation_id),
+                    }, case["case_id"], webhook_targets(self.settings))
+                    conn.execute("COMMIT")
+                except BaseException:
+                    conn.execute("ROLLBACK")
+                    raise
+            else:
+                self._persist(store, conv, final)
             response = self._response(final, ctx)
             self._record(final, ctx, response, trace_tags)
             return response
+        finally:
+            conn.close()
+
+    def _complete_interrupted_handoff(self, conn, final: GraphState, ctx: RunContext, channel: str) -> bool:
+        """The case found by this turn (`created=False`) may have been opened by a turn that stopped between writing the
+        case and finishing: the flow is not saved, or `handoff.created` was never queued. Saves the flow under the
+        case's own thread when it is missing (or marks the failure, D28) and says whether the intention is still to be
+        queued with this turn's messages. A case already ticketed, worked on or from before v0.7.0 is left alone."""
+        case = conn.execute("SELECT * FROM handoff_cases WHERE case_id=?", (final.escalation.case_id,)).fetchone()
+        if case is None or not case["thread_id"] or case["queue_state"] != "open" or case["ticket_id"]:
+            return False
+        if case["resume_status"] is None and not self._has_checkpoint(case["thread_id"]):
+            self._suspend(final, ctx, thread_id=case["thread_id"])
+        if channel not in ("api", "web"):
+            return False
+        queued = {
+            row[0]
+            for row in conn.execute(
+                "SELECT target FROM webhook_outbox WHERE event='handoff.created' AND case_id=?", (case["case_id"],)
+            )
+        }
+        return bool((webhook_targets(self.settings) & set(TARGETS["handoff.created"])) - queued)
+
+    def _has_checkpoint(self, thread_id: str) -> bool:
+        try:
+            return bool(self.review_graph().get_state({"configurable": {"thread_id": thread_id}}).values)
+        except Exception:  # unknown is not missing: only a checkpoint known to be absent is rebuilt
+            log.exception("checkpoint lookup failed", extra={"event": {"thread_id": thread_id}})
+            return True
+
+    def _deliver(self, store, conv, pending: dict, request, request_id: str, principal, trace_tags) -> MessageResponse:
+        """D8: records the merchant's message and returns the operator's reply (route human_reply), no model call."""
+        meta = pending["meta"]
+        language = meta.get("language") or guess_language(request.message)
+        store.append(
+            conv.conversation_id, request_id, "merchant", check_input(request.message).masked, "human_reply", None
+        )
+        store.mark_delivered(pending["id"])
+        recorder = TraceRecorder(request_id)
+        recorder.event("human_reply", protocol=meta.get("protocol"), action=meta.get("action"))
+        response = MessageResponse(
+            answer=pending["text"],
+            status="answered",
+            route="human_reply",
+            via="operator",
+            agents=["operator"],
+            language=language,
+            request_id=request_id,
+            conversation_id=conv.conversation_id,
+            resolution=Resolution(state=conv.state, evidence=conv.resolution_evidence),
+        )
+        summary = {
+            "user_id": request.user_id,
+            "route": "human_reply",
+            "status": "answered",
+            "language": language,
+            "errors": [],
+            "model_calls": 0,
+            "tool_calls": 0,
+            "cost_usd": 0.0,
+            "detail": {
+                "agents": ["operator"],
+                "conversation_id": conv.conversation_id,
+                "principal_id": principal.principal_id,
+                "protocol": meta.get("protocol"),
+                **(trace_tags or {}),
+            },
+        }
+        try:
+            self.traces.save(recorder, summary)
+        except Exception:  # traces must never break a reply
+            log.exception("trace save failed")
+        return response
+
+    def resume_handoff(self, case: dict, record: dict) -> dict:
+        """Single resume point for an operator's action (called by `handoffs.act` after its commit): resumes the
+        interrupted thread, writes the reply as an operator turn and moves the case (D14). Retrying after a failure is
+        safe: an interrupted thread is resumed, a half-run one continues, and a turn is written only once."""
+        thread_id = case.get("thread_id")
+        if not thread_id:
+            raise ResumeError("not_resumable", "This case has no saved flow to resume.")
+        payload = json.loads(case.get("payload") or "{}")
+        action = record["action"]
+        text = payload.get("draft_reply") if action == "approve" else record.get("text")
+        request_id = f"req_resume_{uuid.uuid4().hex[:16]}"
+        conn = connect(self.settings.db_path)
+        try:
+            store = ConversationStore(conn, self.clock)
+            conv = store.open(case["conversation_id"], case["customer_id"])
+            known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (case["customer_id"],)).fetchone()
+            operator = Principal.operator(record["operator_id"])
+            env = ToolEnv(  # D4: the operator's principal acting for the merchant of the case, read from the case
+                conn,
+                self.clock,
+                CustomerContext.for_principal(
+                    operator, case["customer_id"], known is not None, authorized_customer_id=case["customer_id"]
+                ),
+                dict(self.faults),
+                self.mock_services,
+            )
+            captured_index, knowledge_version_id = (
+                self.knowledge_base.capture_active() if self.knowledge_base else (self.index, None)
+            )
+            ctx = RunContext(
+                request_id=request_id,
+                settings=self.settings,
+                llm=self.llm,
+                index=captured_index,
+                budget=self.budget,
+                trace=TraceRecorder(request_id),
+                tools=env,
+                clock=self.clock,
+                knowledge_version_id=knowledge_version_id,
+                channel=case.get("channel") or "in_process",
+            )
+            graph = self.review_graph()
+            config = {"configurable": {"thread_id": thread_id, "ctx": ctx}, "recursion_limit": 30}
+            snapshot = graph.get_state(config)
+            if not snapshot.values:
+                raise ResumeError("checkpoint_missing", "The saved flow of this case was not found.")
+            value = {"action": action, "text": text, "operator_id": record["operator_id"], "case_id": case["case_id"]}
+            if any(task.interrupts for task in snapshot.tasks):
+                out = graph.invoke(Command(resume=value), config=config)
+            elif snapshot.next:  # a previous attempt stopped half-way: continue from the last checkpoint
+                out = graph.invoke(None, config=config)
+            else:
+                out = snapshot.values
+            final = GraphState.model_validate(out)
+            if not final.answer or not final.operator:
+                raise ResumeError("resume_incomplete", "The resumed flow ended without a reply.")
+            already = conn.execute(
+                "SELECT 1 FROM messages WHERE conversation_id=? AND via='operator' AND meta LIKE ?",
+                (conv.conversation_id, f'%"event_id": "{record["event_id"]}"%'),
+            ).fetchone()
+            case_state = final.case_next.get("state", "awaiting_customer")
+            if already is None:
+                meta = {
+                    "action": action,
+                    "protocol": case["protocol"],
+                    "case_id": case["case_id"],
+                    "event_id": record["event_id"],
+                    "language": final.decision.language if final.decision else None,
+                }
+                conn.execute("BEGIN IMMEDIATE")
+                try:
+                    store.save(
+                        conv, state=case_state, topic=conv.topic, technical_cycles=conv.technical_cycles,
+                        evidence=final.case_next.get("evidence"),
+                    )
+                    store.append(
+                        conv.conversation_id, request_id, "assistant", final.answer, "human_reply", "answered",
+                        via="operator", meta=meta,
+                    )
+                    enqueue(conn, "conversation.replied", {
+                        "case_id": case["case_id"], "protocol": case["protocol"],
+                        "conversation_id": case["conversation_id"], "action": action,
+                        "operator_id": record["operator_id"], "reply_text": final.answer, "via": "operator",
+                        "request_id": request_id,
+                        "delivered_at": datetime.now(UTC).isoformat(timespec="seconds"),
+                    }, record["event_id"], webhook_targets(self.settings))
+                    conn.execute("COMMIT")
+                except BaseException:
+                    conn.execute("ROLLBACK")
+                    raise
+            response = MessageResponse(
+                answer=final.answer,
+                status="answered",
+                route="human_reply",
+                via="operator",
+                agents=final.agents,
+                language=final.decision.language if final.decision else "pt",
+                sources=_sources(final, ctx),
+                request_id=request_id,
+                conversation_id=conv.conversation_id,
+                resolution=Resolution(state=case_state, evidence=final.case_next.get("evidence")),
+            )
+            tags = {"purpose": "operator_resume", "resumes": thread_id, "case_id": case["case_id"], "action": action}
+            self._record(final.model_copy(update={"request_id": request_id}), ctx, response, tags)
+            return {"request_id": request_id, "case_state": case_state, "answer": final.answer}
         finally:
             conn.close()
 
@@ -338,6 +681,7 @@ class Orchestrator:
                 "output_violations": state.output_violations,
                 "tools": [o.name for o in ctx.outcomes],
                 "conversation_id": state.conversation_id,
+                "principal_id": ctx.tools.customer.principal_id,
                 "models_by_agent": ctx.summary()["usage_by_agent"],
                 "effective_parameters_by_agent": ctx.summary()["effective_parameters_by_agent"],
                 "cost_estimate_usd": ctx.summary()["cost_estimate_usd"],
@@ -385,8 +729,34 @@ class Orchestrator:
             "database": db_ok,
             "model": self.llm.model,
             "budget_remaining_usd": round(self.budget.remaining(), 4),
+            "pending_handoffs": self._pending_handoffs(db_ok),
+            "checkpoints": self._checkpoint_threads(),
             "versions": self.versions(),
         }
+
+    def _pending_handoffs(self, db_ok: bool) -> int | None:
+        if not db_ok:
+            return None
+        conn = connect(self.settings.db_path)
+        try:
+            row = conn.execute("SELECT COUNT(*) FROM handoff_cases WHERE queue_state IN ('open','claimed')").fetchone()
+            return int(row[0])
+        finally:
+            conn.close()
+
+    def _checkpoint_threads(self) -> dict:
+        """Saved flows waiting for or after an operator (read only here and on resume, never per message)."""
+        path = self.settings.checkpoint_db_path
+        if not path.exists():
+            return {"store": "sqlite", "threads": 0}
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            row = conn.execute("SELECT COUNT(DISTINCT thread_id) FROM checkpoints").fetchone()
+            return {"store": "sqlite", "threads": int(row[0])}
+        except sqlite3.Error:
+            return {"store": "sqlite", "threads": None}
+        finally:
+            conn.close()
 
     def versions(self) -> dict:
         """Package, schema, index and prompt versions in use (decision 0006)."""
@@ -423,6 +793,8 @@ class Orchestrator:
         return self.traces.get(request_id)
 
     def close(self) -> None:
+        if self._checkpoint_conn is not None:
+            self._checkpoint_conn.close()
         if self.index is not None:
             self.index.client.close()
         if self.mock_services is not None and hasattr(self.mock_services, "close"):

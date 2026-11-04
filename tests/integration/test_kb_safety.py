@@ -13,6 +13,7 @@ from qdrant_client import models
 from merchant_assistant import cli
 from merchant_assistant.rag import kb as kb_module
 from merchant_assistant.rag.index import KnowledgeIndex
+from merchant_assistant.testing import key_token
 
 ADMIN_KEY = "synthetic-admin-access-key-v050"
 
@@ -111,10 +112,10 @@ def test_valid_activation_and_rollback_still_pass_the_integrity_check(settings, 
 
 
 def test_integrity_refusal_is_a_409_and_leaves_the_active_version_alone(settings, offline):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, orchestrator, _ = offline()
     kb = orchestrator.knowledge_base
-    token = client.post("/v1/sessions", json={"access_key": ADMIN_KEY}).json()["access_token"]
+    token = key_token(client, ADMIN_KEY)
     headers = {"Authorization": f"Bearer {token}"}
     version = build_ready(kb)
     before = pointer(kb)
@@ -183,10 +184,10 @@ def test_testing_a_published_version_is_refused_and_keeps_its_state(settings, of
 
 
 def test_testing_a_published_version_over_the_api_is_a_409_and_changes_nothing(settings, offline):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, orchestrator, _ = offline()
     kb = orchestrator.knowledge_base
-    token = client.post("/v1/sessions", json={"access_key": ADMIN_KEY}).json()["access_token"]
+    token = key_token(client, ADMIN_KEY)
     headers = {"Authorization": f"Bearer {token}"}
     active = kb.capture_active()[1]
     response = client.post(

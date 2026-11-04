@@ -80,7 +80,7 @@ Adoções do `ampeli-sdd`, aplicadas uma vez, em uma tarefa de documentação e 
 | `tools/` | `base.py` (principal, escopos); `registry.py` (escopo, auditoria) | — | — | — |
 | `conversations.py`, `cases.py` | turno `via=operator`; transições de `handoff` | — | — | resumo rolante |
 | `mocks/` | `ticketing` | — | — | — |
-| `data/migrations.py` | 0009 | 0010 | — | 0011 |
+| `data/migrations.py` | 0009, 0010 | 0011 | — | 0012 |
 | `rag/` | — | — | `bm25.py`, `rerank.py`, `index.py` | — |
 | `evaluation/` | — | `runner.py`, `calibration.py` | `retrieval.py` | — |
 | `comparisons.py` | — | — | — | retomada |
@@ -97,9 +97,11 @@ Não alterar: regras financeiras das ferramentas, snapshots públicos, ledger de
 
 **Migração 0009 (v0.7.0), reversível.** `api_principals.role` aceita `merchant` e `operator`; `api_principals.scopes` (JSON); `handoff_cases` + `queue_state`, `claimed_by`, `claimed_at`, `answered_at`, `resume_count`, `channel`; `handoff_events(event_id, case_id, action, operator_id, idempotency_key UNIQUE, payload, created_at)`; `webhook_deliveries(delivery_id, event, target, case_id, conversation_id, attempt, status, response_code, created_at)`; `messages.via`; `audit_events.principal_id`, `scope`, `outcome`; `rate_limit_hits(principal_id, window_start, count)`. Checkpoints do LangGraph em `runtime/checkpoints.sqlite3`, fora das migrações do domínio.
 
-**Migração 0010 (v0.8.0).** `run_evaluations.rubric_version`, `scores`, `repetition`, `unsupported_claim`; `calibrations`.
+**Migração 0010 (v0.7.0).** `webhook_outbox`: intenção durável de entrega por evento e destinatário, com corpo mascarado, estado e tentativas (outbox autorizada pelo responsável em 2026-11-03).
 
-**Migração 0011 (v0.10.0).** `comparisons.cells` com estado por célula; `conversations.summary`, `last_summarized_message_id`.
+**Migração 0011 (v0.8.0).** `run_evaluations.rubric_version`, `scores`, `repetition`, `unsupported_claim`; `calibrations`.
+
+**Migração 0012 (v0.10.0).** `comparisons.cells` com estado por célula; `conversations.summary`, `last_summarized_message_id`.
 
 ## APIs ou interfaces
 
@@ -124,7 +126,7 @@ Contrato `/v1` aditivo em tudo, exceto os papéis novos em `/sessions`.
 
 | Nível | v0.7.0 | v0.8.0 | v0.9.0 | v0.10.0 |
 | --- | --- | --- | --- | --- |
-| Unidade | credencial → principal → escopos; verificação de escopo e lojista; auditoria em todo call; rate limit; transições da fila; idempotência e `409` sob `BEGIN IMMEDIATE` concorrente; assinatura HMAC e tentativas; migração 0009 | regras do `replan`; saltos; agregação (média, desvio, concordância, kappa); CSV de calibração; migração 0010 | RRF; BM25 por hash; nDCG; reranker com modelo programado | formato `/metrics`; `promtool check rules`; retomada de células; resumo cacheado; migração 0011 |
+| Unidade | credencial → principal → escopos; verificação de escopo e lojista; auditoria em todo call; rate limit; transições da fila; idempotência e `409` sob `BEGIN IMMEDIATE` concorrente; assinatura HMAC e tentativas; migrações 0009 e 0010 | regras do `replan`; saltos; agregação (média, desvio, concordância, kappa); CSV de calibração; migração 0011 | RRF; BM25 por hash; nDCG; reranker com modelo programado | formato `/metrics`; `promtool check rules`; retomada de células; resumo cacheado; migração 0012 |
 | Contrato | esquemas de handoff, sessão, webhook; `401`/`403`/`429` | `judge` v3 e `replan` | — | — |
 | Integração (programada) | interrupção e retomada nas três ações; retomada após reinício da API (novo processo sobre o mesmo checkpoint); turno `via=operator`; lojista B não lê fila nem conversa de A; webhook entregue ao receptor de ticketing do mocks em processo; MCP com chave; smoke com sessão | quatro cenários de replanejamento; `hops ≤ 3`; trace; campanha programada com `--repeat` | híbrido e reranker no grafo com embeddings falsos | comparação retomada; conversa de 30 turnos |
 | Web (`AppTest`) | aba Operador, três ações, entregas | formulário de calibração | — | — |
@@ -162,6 +164,8 @@ Cada item vira um arquivo em `docs/tasks/` quando a versão for aberta.
 
 **v0.7.0 — Identidade e HITL real**
 
+Revisto pelo responsável em 2026-11-03, na abertura da versão: credencial por **JWT com emissor próprio** (RS256, JWKS) em vez de chave com sessão opaca, e **serviço de ticketing próprio** com tela no projeto web, integrado por webhooks assinados nos dois sentidos, em vez do receptor passivo. Detalhe, contrato entre os times e nova tarefa **66b** (serviço de ticketing, Time B) em [identidade-hitl-v070.md](identidade-hitl-v070.md), versão 2; prevalece sobre as decisões técnicas 1, 2, 3 e 6 deste plano onde divergirem.
+
 Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão do Claude Code aberta em `C:\workspace\ai-getnet-case` (não numa pasta acima) e iniciada depois da etapa 0. Antes do primeiro despacho, confirma que `developer`, `reviewer` e `qa` aparecem na lista de tipos de agente; se não aparecerem, não despacha (o despacho cairia num agente genérico sem os limites do frontmatter) e avisa o responsável.
 
 63. Identidade: papéis e escopos, `identity.py`, chaves sintéticas no `.env.example`, sessão obrigatória em `POST /messages`, `identity_mismatch`, auditoria em todo tool call, rate limit, MCP com chave, smoke e `/docs`.
@@ -174,7 +178,7 @@ Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão d
 **v0.8.0 — Orquestração adaptativa e avaliação semântica**
 
 69. `replan`: nó, regras, `replan.v1`, orçamento de saltos, trace; quatro cenários.
-70. Rubrica `judge` v3 com evidências; juiz independente; `eval --repeat`; agregação; migração 0010 (Time B, paralelo a 69).
+70. Rubrica `judge` v3 com evidências; juiz independente; `eval --repeat`; agregação; migração 0011 (Time B, paralelo a 69).
 71. Calibração humana: `eval-calibrate`, CSV, concordância; formulário na interface.
 72a. Holdout de respostas (≥ 20 casos, metade pt), escrito e lacrado por hash antes de qualquer ajuste de prompt da v0.8.0 (Time B, durante a v0.7.0).
 72b. Correções das jornadas de negócio; `router.v6` (Time A).
@@ -189,7 +193,7 @@ Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão d
 **v0.10.0 — Operação e resiliência** (Time B, em paralelo com a v0.9.0)
 
 77. `/metrics`, OTLP opcional, regras de alerta e painel, `/ready` ampliado.
-78. Comparação retomável (migração 0011) e resumo rolante de conversas.
+78. Comparação retomável (migração 0012) e resumo rolante de conversas.
 79. Regressão, candidato, revisão, QA real, evidência, tag.
 
 **v1.0.0 — Fechamento e ressubmissão**
@@ -208,7 +212,7 @@ Decidido pelo responsável em 2026-11-03: dois times, cada um com um Developer e
 | --- | --- | --- |
 | Etapa 0 | concluída | — |
 | v0.7.0 | 63 → 64 → 65 → 66 no backend; 68 fecha | 67 (aba Operador, repositório web, depois da 64 fixar o contrato de `/v1/handoffs`); em seguida 72a: escrever e lacrar o holdout de respostas (só dados) |
-| v0.8.0 | 69 (`replan` no grafo); depois 72b (correções das jornadas e `router.v6`); 73 fecha | 70 (rubrica `judge` v3, juiz independente, repetições, migração 0010) e 71 (calibração) |
+| v0.8.0 | 69 (`replan` no grafo); depois 72b (correções das jornadas e `router.v6`); 73 fecha | 70 (rubrica `judge` v3, juiz independente, repetições, migração 0011) e 71 (calibração) |
 | v0.9.0 e v0.10.0, em paralelo | v0.9.0 inteira: 74 → 75 → 76 | v0.10.0 inteira: 77 e 78 → 79 |
 | v1.0.0 | 80 → 81 → 82, um time só | — |
 
@@ -222,7 +226,7 @@ Um arquivo compartilhado tem um dono por período; o outro time não o edita. Ar
 | --- | --- | --- | --- |
 | `orchestration/graph.py`, `state.py`, `run.py` | A | A | ninguém (B pede ao Supervisor se precisar) |
 | `api/v1.py`, `api/app.py`, `api/schemas.py` | A | A | B (v0.10.0: `/metrics`, `/ready`) |
-| `data/migrations.py` | A (0009) | B (0010) | B (0011) |
+| `data/migrations.py` | A (0009, 0010) | B (0011) | B (0012) |
 | `agents/` | A | A (`replanner.py`, `support.py`) | A (`knowledge.py`, se o híbrido exigir) |
 | `rag/` | — | — | A |
 | `evaluation/` | — | B (`runner.py`, `calibration.py`) | A (`retrieval.py`) |
@@ -237,7 +241,7 @@ Um arquivo compartilhado tem um dono por período; o outro time não o edita. Ar
 
 ### Migrações reservadas
 
-0009 → v0.7.0 (A); 0010 → v0.8.0 (B); 0011 → v0.10.0 (B). A v0.9.0 não cria migração. Um número reservado não é reutilizado nem antecipado; se uma versão precisar de outra migração, o Supervisor reserva o número seguinte livre e atualiza esta lista.
+0009 e 0010 → v0.7.0 (A); 0011 → v0.8.0 (B); 0012 → v0.10.0 (B). A v0.9.0 não cria migração. Em 2026-11-03 a v0.7.0 precisou da 0010 (outbox durável dos webhooks, autorizada pelo responsável); as reservas seguintes avançaram um número. Um número reservado não é reutilizado nem antecipado; se uma versão precisar de outra migração, o Supervisor reserva o número seguinte livre e atualiza esta lista.
 
 ### Regras de execução
 

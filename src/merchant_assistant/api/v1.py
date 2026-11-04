@@ -2,26 +2,36 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
-import hmac
 import json
-import secrets
 import sqlite3
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import parse_qs, unquote_plus
 
 from fastapi import APIRouter, Depends, Header, Request, Security
 from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field
 
-from merchant_assistant import comparisons
+from merchant_assistant import comparisons, handoffs
 from merchant_assistant import scenarios as scenario_catalog
 from merchant_assistant.agents.common import format_history
 from merchant_assistant.agents.router import enforce
+from merchant_assistant.api.identity import (
+    DEFAULT_PUBLIC_CLIENT,
+    HANDOFF_OPERATE,
+    PUBLIC_CLIENTS,
+    SERVICE_CLIENTS,
+    InvalidToken,
+    Principal,
+    hit_rate_limit,
+    remember_principal,
+)
 from merchant_assistant.api.schemas import ErrorBody, MessageRequest
 from merchant_assistant.config import Settings
 from merchant_assistant.conversations import ConversationNotFound, ConversationStore
@@ -47,13 +57,7 @@ from merchant_assistant.rag.kb import KBBuildFailure
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
 
 router = APIRouter(prefix="/v1", tags=["v1"])
-SESSION_TTL = timedelta(minutes=60)
 COMPARISON_TTL = timedelta(minutes=5)
-
-
-class SessionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    access_key: SecretStr
 
 
 class ProfileCreateRequest(BaseModel):
@@ -193,31 +197,75 @@ def _token_digest(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def _error(status: int, code: str, message: str, request: Request) -> JSONResponse:
+def _error(
+    status: int, code: str, message: str, request: Request, headers: dict[str, str] | None = None
+) -> JSONResponse:
     request_id = getattr(request.state, "request_id", "req_unknown")
     return JSONResponse(
-        status_code=status, content={"error": {"code": code, "message": message, "request_id": request_id}}
+        status_code=status,
+        content={"error": {"code": code, "message": message, "request_id": request_id}},
+        headers=headers,
+    )
+
+
+def rate_limited(request: Request, principal: dict) -> JSONResponse | None:
+    """Per-principal limit (spec v0.7.0, D5), checked before any model call. Returns the 429 response or None."""
+    settings: Settings = request.app.state.settings
+    conn = _db(request)
+    try:
+        retry_after = hit_rate_limit(conn, principal["principal_id"], settings.rate_limit_per_minute)
+    finally:
+        conn.close()
+    if retry_after is None:
+        return None
+    return _error(
+        429,
+        "rate_limited",
+        "Too many requests for this session; retry after the indicated seconds.",
+        request,
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
+def _unauthorized(request: Request, code: str, message: str) -> JSONResponse:
+    error = "" if code == "token_required" else ', error="invalid_token"'
+    return _error(
+        401, code, message, request, headers={"WWW-Authenticate": f'Bearer realm="merchant-assistant"{error}'}
     )
 
 
 def _principal(request: Request, authorization: str | None = Header(default=None)) -> dict | JSONResponse:
+    """Verifies the bearer token (the single verifier of `api.identity`) and returns the principal as the dict the
+    routes use. `session_id` is the token's `jti` (per-token counters such as the demo action limit)."""
     if not authorization or not authorization.startswith("Bearer "):
-        return _error(401, "session_required", "A valid session is required.", request)
+        return _unauthorized(request, "token_required", "A bearer access token is required.")
     token = authorization[7:].strip()
-    if not token or len(token) > 256:
-        return _error(401, "session_invalid", "Session is invalid or expired.", request)
+    if not token or len(token) > 8192:
+        return _unauthorized(request, "invalid_token", "The access token is invalid, expired or revoked.")
     conn = _db(request)
     try:
-        row = conn.execute(
-            "SELECT p.principal_id,p.role,p.customer_id,s.session_id,s.expires_at,s.revoked_at "
-            "FROM api_sessions s JOIN api_principals p USING(principal_id) WHERE s.token_digest=? AND p.active=1",
-            (_token_digest(token),),
-        ).fetchone()
+        principal, claims = request.app.state.identity.verify(token, conn)
+        remember_principal(conn, principal)
+    except InvalidToken:
+        return _unauthorized(request, "invalid_token", "The access token is invalid, expired or revoked.")
     finally:
         conn.close()
-    if row is None or row["revoked_at"] or datetime.fromisoformat(row["expires_at"]) <= _utc():
-        return _error(401, "session_invalid", "Session is invalid or expired.", request)
-    return dict(row)
+    return {
+        "principal_id": principal.principal_id,
+        "role": principal.role,
+        "customer_id": principal.customer_id,
+        "scopes": principal.scopes,
+        "session_id": claims["jti"],
+        "expires_at": datetime.fromtimestamp(claims["exp"], UTC).isoformat(),
+        "client_id": claims.get("client_id"),
+        "_claims": claims,
+    }
+
+
+def insufficient_scope(request: Request, message: str) -> JSONResponse:
+    """`403 insufficient_scope` with the RFC 6750 challenge."""
+    challenge = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
+    return _error(403, "insufficient_scope", message, request, headers={"WWW-Authenticate": challenge})
 
 
 def _require(request: Request, roles: tuple[str, ...] = ("demo", "admin")):
@@ -225,11 +273,16 @@ def _require(request: Request, roles: tuple[str, ...] = ("demo", "admin")):
     if isinstance(principal, JSONResponse):
         return principal
     if principal["role"] not in roles:
-        return _error(403, "forbidden", "This action is not allowed for this session.", request)
+        return insufficient_scope(request, "This action is not allowed for this token.")
     return principal
 
 
-bearer_scheme = HTTPBearer(auto_error=False, scheme_name="SessionBearer")
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="SessionBearer",
+    bearerFormat="JWT",
+    description="Access token from POST /v1/auth/token (RS256, typ at+jwt).",
+)
 bearer_credentials = Security(bearer_scheme)
 
 
@@ -249,8 +302,42 @@ def _admin_dep(
     return _require_header(request, authorization, ("admin",))
 
 
+READER_ROLES = ("merchant", "demo", "admin")
+
+
+def acting_merchant(request: Request, principal: dict) -> dict:
+    """D20 (revised): the admin has no merchant in its token; on the /v1 routes that need one (messages, comparisons,
+    Router comparison, evaluations, conversations) it acts on the demo's synthetic merchant, as in v0.6.0. The
+    principal row itself keeps no merchant."""
+    if principal["role"] == "admin":
+        return principal | {"customer_id": request.app.state.settings.api_demo_customer_id or None}
+    return principal
+
+
+def _reader_dep(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = bearer_credentials,
+):
+    """D21: workbench routes (profiles, KB, catalog, scenarios, runs, comparisons, messages) are for merchant, demo
+    and admin tokens; operators work in the queue and services only integrate."""
+    principal = _auth_dep(request, credentials)
+    if isinstance(principal, JSONResponse):
+        return principal
+    if principal["role"] in READER_ROLES:
+        return acting_merchant(request, principal)
+    challenge = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
+    return _error(
+        403,
+        "insufficient_scope",
+        "This route is for merchant, demo and admin tokens.",
+        request,
+        headers={"WWW-Authenticate": challenge},
+    )
+
+
 AUTH = Depends(_auth_dep)
 ADMIN = Depends(_admin_dep)
+READER = Depends(_reader_dep)
 
 
 def _require_header(request: Request, authorization: str | None, roles: tuple[str, ...]):
@@ -258,7 +345,7 @@ def _require_header(request: Request, authorization: str | None, roles: tuple[st
     if isinstance(principal, JSONResponse):
         return principal
     if principal["role"] not in roles:
-        return _error(403, "forbidden", "This action is not allowed for this session.", request)
+        return insufficient_scope(request, "This action is not allowed for this token.")
     return principal
 
 
@@ -266,66 +353,153 @@ def _ensure_not_error(principal: dict | JSONResponse):
     return isinstance(principal, JSONResponse)
 
 
-@router.post("/sessions", status_code=201)
-def create_session(payload: SessionRequest, request: Request):
+# D18: merchant tokens see the same profiles as the demo and count in the same per-token action limit.
+LIMITED_ROLES = ("demo", "merchant")
+
+
+def profile_role(principal: dict) -> str:
+    """Role used for profile visibility: merchant tokens see what the demo sees."""
+    return "demo" if principal["role"] in LIMITED_ROLES else principal["role"]
+
+
+OPERATOR_FORBIDDEN = "Operators and services act only on the merchant of a handoff case, never on their own."
+
+
+def operator_forbidden(request: Request, principal: dict) -> JSONResponse | None:
+    """Operators and services have no merchant of their own: attendance routes refuse them (spec v0.7.0).
+    Behind `READER` this is redundant (READER_ROLES already refuses both); it stays as a second guard in case
+    that tuple is ever widened (test_v070_review_gaps.py)."""
+    if principal["role"] in ("operator", "service"):
+        return insufficient_scope(request, OPERATOR_FORBIDDEN)
+    return None
+
+
+TOKEN_FORM = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "type": "object",
+                    "required": ["grant_type"],
+                    "properties": {
+                        "grant_type": {"type": "string", "enum": ["password", "client_credentials"]},
+                        "username": {"type": "string"},
+                        "password": {"type": "string", "format": "password"},
+                        "client_id": {"type": "string"},
+                        "client_secret": {"type": "string", "format": "password"},
+                        "scope": {"type": "string"},
+                    },
+                }
+            }
+        },
+    }
+}
+
+
+NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache"}
+
+
+class OAuthError(BaseModel):
+    """RFC 6749 §5.2 error body, used only by the token endpoint."""
+
+    error: Literal["invalid_request", "invalid_client", "invalid_grant", "unsupported_grant_type", "rate_limited"]
+    error_description: str
+
+
+def _token_error(status: int, code: str, description: str, headers: dict[str, str] | None = None) -> JSONResponse:
+    extra = {"WWW-Authenticate": 'Basic realm="merchant-assistant"'} if code == "invalid_client" else {}
+    return JSONResponse(
+        status_code=status,
+        content={"error": code, "error_description": description},
+        headers=NO_STORE | extra | (headers or {}),
+    )
+
+
+def _basic_client(request: Request) -> tuple[str, str] | None:
+    header = request.headers.get("authorization", "")
+    if not header.startswith("Basic "):
+        return None
+    try:
+        decoded = base64.b64decode(header[6:].strip()).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return None
+    client_id, sep, secret = decoded.partition(":")
+    return (unquote_plus(client_id), unquote_plus(secret)) if sep else None
+
+
+@router.post(
+    "/auth/token",
+    openapi_extra=TOKEN_FORM,
+    responses={400: {"model": OAuthError}, 401: {"model": OAuthError}, 429: {"model": OAuthError}},
+    tags=["auth"],
+)
+async def auth_token(request: Request):
+    """OAuth 2.0 token endpoint (RFC 6749, form encoded). `password` for the synthetic demo users and
+    `client_credentials` for services. The response is `{access_token, token_type, expires_in, scope}`; a failure
+    never says which field was wrong."""
+    body = (await request.body()).decode("utf-8", errors="replace")
+    form = {key: values[0] for key, values in parse_qs(body, keep_blank_values=True).items()}
+    grant = form.get("grant_type", "")
+    if grant == "password":
+        client_id = form.get("client_id") or DEFAULT_PUBLIC_CLIENT
+        subject, secret = form.get("username", ""), form.get("password", "")
+        account = f"user:{subject}"
+    elif grant == "client_credentials":
+        client_id, secret = _basic_client(request) or (form.get("client_id", ""), form.get("client_secret", ""))
+        subject, account = client_id, f"client:{client_id}"
+    elif not grant:
+        return _token_error(400, "invalid_request", "The request is missing a required parameter.")
+    else:
+        return _token_error(400, "unsupported_grant_type", "Use password or client_credentials.")
+    if not subject or not secret:
+        return _token_error(400, "invalid_request", "The request is missing a required parameter.")
+    if grant == "password" and client_id not in PUBLIC_CLIENTS:
+        return _token_error(401, "invalid_client", "Client authentication failed.")
     settings: Settings = request.app.state.settings
-    supplied = payload.access_key.get_secret_value()
-    configured = [
-        ("admin", settings.api_admin_access_key),
-        ("demo", settings.api_demo_access_key),
-    ]
-    matches = [
-        (role, secret.get_secret_value())
-        for role, secret in configured
-        if secret and hmac.compare_digest(supplied, secret.get_secret_value())
-    ]
-    if len(matches) != 1:
-        return _error(401, "invalid_access_key", "Access key is invalid or unavailable.", request)
-    role, clear_key = matches[0]
-    principal_id = f"{role}:default"
-    customer_id = settings.api_demo_customer_id
-    stamp = _utc()
-    token, session_id = secrets.token_urlsafe(32), f"ses_{uuid.uuid4().hex}"
-    expires = stamp + SESSION_TTL
+    identity = request.app.state.identity
     conn = _db(request)
     try:
-        conn.execute("BEGIN IMMEDIATE")
-        conn.execute(
-            "INSERT INTO api_principals(principal_id,role,customer_id,access_key_digest,active) VALUES(?,?,?,?,1) "
-            "ON CONFLICT(principal_id) DO UPDATE SET role=excluded.role,customer_id=excluded.customer_id,"
-            "access_key_digest=excluded.access_key_digest,active=1",
-            (principal_id, role, customer_id, _token_digest(clear_key)),
-        )
-        conn.execute(
-            "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at,revoked_at) "
-            "VALUES (?,?,?,?,?,NULL)",
-            (session_id, _token_digest(token), principal_id, stamp.isoformat(), expires.isoformat()),
-        )
-        conn.execute("COMMIT")
-    except Exception:
-        conn.execute("ROLLBACK")
-        raise
+        # D19: attempts per account and client address, counted before any password hashing.
+        address = request.client.host if request.client else "unknown"
+        waits = [
+            hit_rate_limit(conn, f"auth:{account}@{address}", settings.auth_attempts_per_minute),
+            hit_rate_limit(conn, f"auth-ip:{address}", settings.auth_attempts_per_ip_per_minute),  # spraying
+        ]
+        retry_after = max((w for w in waits if w is not None), default=None)
+        if retry_after is not None:
+            return _token_error(
+                429, "rate_limited", "Too many attempts; retry later.", headers={"Retry-After": str(retry_after)}
+            )
+        if grant == "password":
+            principal = identity.authenticate(conn, account, secret)
+            if principal is None:
+                return _token_error(400, "invalid_grant", "Invalid username or password.")
+        else:
+            principal = identity.authenticate(conn, account, secret) if client_id in SERVICE_CLIENTS else None
+            if principal is None:
+                return _token_error(401, "invalid_client", "Client authentication failed.")
+        remember_principal(conn, principal)
     finally:
         conn.close()
-    return {"access_token": token, "token_type": "bearer", "expires_at": expires.isoformat(), "role": role}
+    return JSONResponse(identity.issue(principal, client_id), headers=NO_STORE)
 
 
-@router.delete("/sessions/current", status_code=204)
-def revoke_session(request: Request, principal=AUTH):
+@router.post("/auth/revoke", tags=["auth"], responses={401: {"model": ErrorBody}})
+def auth_revoke(request: Request, principal=AUTH):
+    """Revokes the presented token (its `jti`) until it expires (RFC 7009 style: `200` with an empty body)."""
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
     try:
-        conn.execute(
-            "UPDATE api_sessions SET revoked_at=? WHERE session_id=?", (_utc().isoformat(), principal["session_id"])
-        )
+        request.app.state.identity.revoke(conn, principal["_claims"])
     finally:
         conn.close()
-    return Response(status_code=204)
+    return Response(status_code=200)
 
 
 @router.get("/catalog/models", response_model=ModelCatalogResponse)
-def model_catalog(request: Request, principal=AUTH):
+def model_catalog(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     price_data = json.loads((Path(__file__).parents[1] / "llm" / "prices.json").read_text(encoding="utf-8"))
@@ -360,12 +534,12 @@ def model_catalog(request: Request, principal=AUTH):
 
 
 @router.get("/profiles")
-def profiles(request: Request, principal=AUTH):
+def profiles(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
     try:
-        return {"profiles": list_profiles(conn, role=principal["role"])}
+        return {"profiles": list_profiles(conn, role=profile_role(principal))}
     finally:
         conn.close()
 
@@ -378,7 +552,7 @@ def _kb(request: Request):
 
 
 @router.get("/kb/documents")
-def kb_documents(request: Request, principal=AUTH):
+def kb_documents(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     service = _kb(request)
@@ -390,7 +564,7 @@ def kb_documents(request: Request, principal=AUTH):
 
 
 @router.get("/kb/documents/{document_id}")
-def kb_document(document_id: str, request: Request, principal=AUTH):
+def kb_document(document_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     try:
@@ -464,14 +638,14 @@ def kb_build(payload: KBBuildRequest, request: Request, principal=ADMIN):
 
 
 @router.get("/kb/versions")
-def kb_versions(request: Request, principal=AUTH):
+def kb_versions(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     return _kb(request).versions(admin=principal["role"] == "admin")
 
 
 @router.get("/kb/versions/{version_id}")
-def kb_version(version_id: str, request: Request, principal=AUTH):
+def kb_version(version_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     try:
@@ -644,7 +818,9 @@ def _read_conversation(
     return history, state, digest(state)
 
 
-def _new_context(request: Request, conn: sqlite3.Connection, request_id: str, customer_id: str, models: dict):
+def _new_context(
+    request: Request, conn: sqlite3.Connection, request_id: str, customer_id: str, models: dict, principal: dict
+):
     orchestrator = request.app.state.orchestrator
     clock = SystemClock(request.app.state.settings.timezone)
     known = conn.execute("SELECT 1 FROM customers WHERE customer_id=?", (customer_id,)).fetchone() is not None
@@ -656,7 +832,11 @@ def _new_context(request: Request, conn: sqlite3.Connection, request_id: str, cu
         budget=orchestrator.budget,
         trace=TraceRecorder(request_id),
         tools=ToolEnv(
-            conn, clock, CustomerContext(customer_id, known), dict(orchestrator.faults), orchestrator.mock_services
+            conn,
+            clock,
+            CustomerContext.for_principal(Principal.from_session(principal), customer_id, known),
+            dict(orchestrator.faults),
+            orchestrator.mock_services,
         ),
         clock=clock,
         agent_llms={"router": orchestrator._profile_llm("router", models["router"])},
@@ -687,9 +867,13 @@ def _decision(request: Request, context: RunContext, spec: CallSpec, mechanism: 
 
 
 @router.post("/router/compare", status_code=201, responses={429: {"model": ErrorBody}})
-def compare(payload: CompareRequest, request: Request, principal=AUTH):
+def compare(payload: CompareRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
+    if forbidden := operator_forbidden(request, principal):
+        return forbidden
+    if limited := rate_limited(request, principal):
+        return limited
     conn = _db(request)
     request_id = request.state.request_id
     context, consumed = None, False
@@ -700,7 +884,7 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
 
     try:
         bootstrap_profiles(conn)
-        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=principal["role"])
+        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=profile_role(principal))
         if profile is None:
             return _error(404, "not_found", "Profile not found.", request)
         guarded = check_input(payload.message)
@@ -716,7 +900,9 @@ def compare(payload: CompareRequest, request: Request, principal=AUTH):
         if not consume_demo_messages(conn, principal, 1, request.app.state.settings):
             return _error(429, "demo_message_limit_reached", DEMO_LIMIT_MESSAGE, request)
         consumed = True
-        context, _ = _new_context(request, conn, request_id, principal["customer_id"] or "admin", profile["agents"])
+        context, _ = _new_context(
+            request, conn, request_id, principal["customer_id"] or "admin", profile["agents"], principal
+        )
         started = time.perf_counter()
         llm_result = _decision(request, context, spec, "llm", profile["agents"])
         jev_result = _decision(request, context, spec, "jev", profile["agents"])
@@ -787,10 +973,22 @@ def _execution_mode(orchestrator) -> str:
 
 def consume_demo_messages(conn: sqlite3.Connection, principal: dict, count: int, settings: Settings) -> bool:
     """Atomically count `count` paid actions (messages, new comparison executions, Router comparisons and AI
-    evaluations) against the demo session limit; False when it would be exceeded. Refusals that make no model call
-    are not counted: callers consume only after their validations, and refund when the budget refuses first."""
-    if principal["role"] != "demo":
+    evaluations) against the demo limit of one access token; False when it would be exceeded. Refusals that make no
+    model call are not counted: callers consume only after their validations, and refund when the budget refuses
+    first. From v0.7.0 the counter row (`api_sessions`) is keyed by the token's `jti`."""
+    if principal["role"] not in LIMITED_ROLES:
         return True
+    conn.execute(
+        "INSERT OR IGNORE INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at,revoked_at) "
+        "VALUES (?,?,?,?,?,NULL)",
+        (
+            principal["session_id"],
+            _token_digest(f"jti:{principal['session_id']}"),
+            principal["principal_id"],
+            _utc().isoformat(),
+            principal["expires_at"],
+        ),
+    )
     cursor = conn.execute(
         "UPDATE api_sessions SET message_count=message_count+? WHERE session_id=? AND message_count+?<=?",
         (count, principal["session_id"], count, settings.demo_session_message_limit),
@@ -800,7 +998,7 @@ def consume_demo_messages(conn: sqlite3.Connection, principal: dict, count: int,
 
 def refund_demo_messages(conn: sqlite3.Connection, principal: dict, count: int) -> None:
     """Give back actions counted for a request that ended without any model call (for example a budget refusal)."""
-    if principal["role"] == "demo" and count:
+    if principal["role"] in LIMITED_ROLES and count:
         conn.execute(
             "UPDATE api_sessions SET message_count=MAX(message_count-?,0) WHERE session_id=?",
             (count, principal["session_id"]),
@@ -919,7 +1117,12 @@ def execute_run(
         db_path=domain_db_path,
         knowledge=knowledge,
         trace_tags=tags,
+        principal=Principal.from_session(principal),
+        channel="web",
     )
+    webhooks = getattr(app_state, "webhooks", None)
+    if response.status == "handoff" and domain_db_path is None and webhooks is not None:
+        webhooks.handoff_created_for(request_id)  # isolated comparison runs never open a ticket
     trace_data = orchestrator.trace(request_id)
     if trace_data and any(str(error).startswith("router:") for error in trace_data.get("errors", [])):
         failure = {"code": "router_unavailable", "message": "Router provider failed; no fallback was used."}
@@ -958,7 +1161,7 @@ def execute_run(
 
 
 @router.get("/scenarios")
-def scenarios_list(request: Request, principal=AUTH):
+def scenarios_list(request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     data = scenario_catalog.catalog(request.app.state.settings.data_dir)
@@ -969,15 +1172,19 @@ def scenarios_list(request: Request, principal=AUTH):
 
 
 @router.post("/messages", responses={429: {"model": ErrorBody}})
-def messages_v1(payload: V1MessageRequest, request: Request, principal=AUTH):
+def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
+    if forbidden := operator_forbidden(request, principal):
+        return forbidden
+    if limited := rate_limited(request, principal):
+        return limited
     conn = _db(request)
     request_id = request.state.request_id
     settings: Settings = request.app.state.settings
     try:
         bootstrap_profiles(conn)
-        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=principal["role"])
+        profile = get_profile(conn, payload.profile_id, payload.profile_version, role=profile_role(principal))
         if profile is None:
             return _error(404, "not_found", "Profile not found.", request)
         customer_id = principal["customer_id"]
@@ -1115,7 +1322,7 @@ def list_evaluations(conn: sqlite3.Connection, request_id: str, principal: dict)
 
 
 @router.get("/runs/{request_id}")
-def run(request_id: str, request: Request, principal=AUTH):
+def run(request_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
@@ -1136,7 +1343,7 @@ def run(request_id: str, request: Request, principal=AUTH):
 
 
 @router.post("/runs/{request_id}/evaluations/estimate")
-def evaluation_estimate(request_id: str, request: Request, principal=AUTH):
+def evaluation_estimate(request_id: str, request: Request, principal=READER):
     from merchant_assistant.evaluation import on_demand
     from merchant_assistant.llm.pricing import PriceUnknown
 
@@ -1157,12 +1364,14 @@ def evaluation_estimate(request_id: str, request: Request, principal=AUTH):
 
 
 @router.post("/runs/{request_id}/evaluations", status_code=201, responses={429: {"model": ErrorBody}})
-def evaluation_create(request_id: str, payload: EvaluationRequest, request: Request, principal=AUTH):
+def evaluation_create(request_id: str, payload: EvaluationRequest, request: Request, principal=READER):
     from merchant_assistant.evaluation import on_demand
     from merchant_assistant.llm.pricing import PriceUnknown
 
     if _ensure_not_error(principal):
         return principal
+    if limited := rate_limited(request, principal):
+        return limited
     conn = _db(request)
     try:
         snapshot = _owned_snapshot(conn, request_id, principal)
@@ -1191,7 +1400,7 @@ def evaluation_create(request_id: str, payload: EvaluationRequest, request: Requ
 
 
 @router.post("/comparisons/estimate")
-def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, principal=AUTH):
+def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
@@ -1205,9 +1414,11 @@ def comparison_estimate(payload: ComparisonEstimateRequest, request: Request, pr
 
 
 @router.post("/comparisons", status_code=202, responses={429: {"model": ErrorBody}})
-def comparison_create(payload: ComparisonCreateRequest, request: Request, principal=AUTH):
+def comparison_create(payload: ComparisonCreateRequest, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
+    if limited := rate_limited(request, principal):
+        return limited
     if not principal["customer_id"]:
         return _error(422, "admin_scope_required", "Admin sessions require a configured synthetic customer.", request)
     selection = payload.model_dump(exclude={"confirmed", "max_cost_usd", "expected_estimate_digest"})
@@ -1226,7 +1437,7 @@ def comparison_create(payload: ComparisonCreateRequest, request: Request, princi
 
 
 @router.get("/comparisons/{comparison_id}")
-def comparison_read(comparison_id: str, request: Request, principal=AUTH):
+def comparison_read(comparison_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
         return principal
     conn = _db(request)
@@ -1242,8 +1453,9 @@ def comparison_read(comparison_id: str, request: Request, principal=AUTH):
 def conversation(conversation_id: str, request: Request, principal=AUTH):
     if _ensure_not_error(principal):
         return principal
+    principal = acting_merchant(request, principal)
     if not principal["customer_id"]:
-        return _error(403, "forbidden", "Conversation is outside this session scope.", request)
+        return insufficient_scope(request, "Conversation is outside this token's scope.")
     conn = _db(request)
     try:
         row = conn.execute(
@@ -1253,5 +1465,138 @@ def conversation(conversation_id: str, request: Request, principal=AUTH):
         if row is None:
             return _error(404, "not_found", "Conversation not found.", request)
         return ConversationStore(conn, SystemClock(request.app.state.settings.timezone)).get(conversation_id)
+    finally:
+        conn.close()
+
+
+# --- operator queue (task 64) -------------------------------------------------------------------------------------
+
+
+class HandoffActionRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [{"action": "reply", "text": "Your payout was sent today.", "idempotency_key": "ui-7f3a9c21"}]
+        },
+    )
+    action: Literal["approve", "reply", "reject"]
+    text: str | None = Field(
+        default=None, max_length=4000, description="Reply text (reply) or instruction to the agent (reject)."
+    )
+    idempotency_key: str = Field(pattern=r"^[A-Za-z0-9_-]{8,80}$")
+
+
+def _operator_id(
+    request: Request, principal: dict | JSONResponse, tool: str, case_id: str | None = None
+) -> str | JSONResponse:
+    """Queue routes need an operator token with `handoff:operate`; the operator id comes from the token. A refusal at
+    this gate is audited (D23)."""
+    if isinstance(principal, JSONResponse):
+        return principal
+    if principal["role"] != "operator" or HANDOFF_OPERATE not in principal["scopes"]:
+        conn = _db(request)
+        try:
+            handoffs.audit_access(conn, tool, "insufficient_scope", principal["principal_id"], case_id)
+        finally:
+            conn.close()
+        return insufficient_scope(request, "The operator queue requires the handoff:operate scope.")
+    return principal["principal_id"].split(":", 1)[1]
+
+
+def _handoff_error(request: Request, exc: handoffs.HandoffError) -> JSONResponse:
+    return _error(exc.status, exc.code, exc.message, request)
+
+
+@router.get("/handoffs", tags=["handoffs"], responses={403: {"model": ErrorBody}})
+def handoffs_list(request: Request, state: str | None = None, principal=AUTH):
+    """Operator queue, newest first; `state` = open, claimed, answered, rejected or closed."""
+    operator = _operator_id(request, principal, "handoff.list")
+    if isinstance(operator, JSONResponse):
+        return operator
+    conn = _db(request)
+    try:
+        return {"cases": handoffs.list_cases(conn, state, actor=principal["principal_id"])}
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
+    finally:
+        conn.close()
+
+
+@router.get("/handoffs/{case_id}", tags=["handoffs"], responses={403: {"model": ErrorBody}, 404: {"model": ErrorBody}})
+def handoffs_show(case_id: str, request: Request, principal=AUTH):
+    """Summary, pending question, draft, masked conversation, events and deliveries of one case."""
+    operator = _operator_id(request, principal, "handoff.read", case_id)
+    if isinstance(operator, JSONResponse):
+        return operator
+    conn = _db(request)
+    try:
+        return handoffs.get_case(conn, case_id, actor=principal["principal_id"])
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/handoffs/{case_id}/claim",
+    tags=["handoffs"],
+    responses={
+        403: {"model": ErrorBody},
+        404: {"model": ErrorBody},
+        409: {"model": ErrorBody},
+        429: {"model": ErrorBody},
+    },
+)
+def handoffs_claim(case_id: str, request: Request, principal=AUTH):
+    """Claims the case for the operator of the token (D9). Claiming one's own case again is idempotent."""
+    operator = _operator_id(request, principal, "handoff.claim", case_id)
+    if isinstance(operator, JSONResponse):
+        return operator
+    if limited := rate_limited(request, principal):
+        return limited
+    conn = _db(request)
+    try:
+        return handoffs.claim(conn, case_id, operator, actor=principal["principal_id"])
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/handoffs/{case_id}/actions",
+    tags=["handoffs"],
+    responses={
+        403: {"model": ErrorBody},
+        404: {"model": ErrorBody},
+        409: {"model": ErrorBody},
+        422: {"model": ErrorBody},
+        429: {"model": ErrorBody},
+    },
+)
+def handoffs_act(case_id: str, payload: HandoffActionRequest, request: Request, principal=AUTH):
+    """`approve`, `reply` or `reject` (D9, D10, D14). The same `idempotency_key` returns the stored record with
+    `replayed: true`; a case already resumed by another action is `409 already_resumed`."""
+    operator = _operator_id(request, principal, f"handoff.{payload.action}", case_id)
+    if isinstance(operator, JSONResponse):
+        return operator
+    if limited := rate_limited(request, principal):
+        return limited
+    conn = _db(request)
+    try:
+        return handoffs.act(
+            conn,
+            case_id,
+            operator,
+            payload.action,
+            payload.text,
+            payload.idempotency_key,
+            actor=principal["principal_id"],
+            resume=request.app.state.webhooks.resume_point(
+                getattr(request.app.state.orchestrator, "resume_handoff", None)
+            ),
+        )
+    except handoffs.HandoffError as exc:
+        return _handoff_error(request, exc)
     finally:
         conn.close()

@@ -53,7 +53,7 @@ def _iso(dt: datetime) -> str:
 
 
 def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
-    """Recreates all synthetic rows. Local handoff records are preserved."""
+    """Recreates all synthetic rows. Local handoff records and the audit trail are preserved (D27)."""
     now = clock.now()
     d0 = today(clock)
     tz = clock.tz

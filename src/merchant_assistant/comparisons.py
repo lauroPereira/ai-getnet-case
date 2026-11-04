@@ -85,6 +85,8 @@ def _compatible_runs(conn, principal_id: str, profile: dict, scenario: dict, con
 
 def plan(app_state, conn, principal: dict, selection: dict) -> dict:
     """Estimate without any paid call: cells, reused runs, new executions, fixed factors and cost upper bound."""
+    from merchant_assistant.api import v1
+
     settings, orchestrator = app_state.settings, app_state.orchestrator
     refs = selection["profiles"]
     keys = [(ref["profile_id"], ref["profile_version"]) for ref in refs]
@@ -98,7 +100,7 @@ def plan(app_state, conn, principal: dict, selection: dict) -> dict:
         raise ComparisonError(422, "invalid_selection", "Repetitions must be 1 or 2.")
     profiles = []
     for profile_id, version in keys:
-        profile = get_profile(conn, profile_id, version, role=principal["role"])
+        profile = get_profile(conn, profile_id, version, role=v1.profile_role(principal))
         if profile is None:
             raise ComparisonError(404, "not_found", "Profile not found or not published for this session.")
         profiles.append(profile)
@@ -240,7 +242,7 @@ def start(app, principal: dict, selection: dict, *, confirmed: bool, max_cost_us
         if busy:
             raise ComparisonError(409, "comparison_running", "Another comparison is still running; refresh it first.")
         if (
-            principal["role"] == "demo"
+            principal["role"] in v1.LIMITED_ROLES
             and estimate["new_executions"]
             and not v1.consume_demo_messages(conn, principal, estimate["new_executions"], settings)
         ):

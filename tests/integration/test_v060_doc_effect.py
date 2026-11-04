@@ -15,6 +15,7 @@ from pydantic import SecretStr
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.evaluation.scripted_policy import handler as default_handler
 from merchant_assistant.llm.scripted import ToolPlan
+from merchant_assistant.testing import key_token
 from merchant_assistant.tools.registry import AGENT_TOOLS
 
 ADMIN_KEY = "synthetic-admin-access-key-v060-d"
@@ -60,10 +61,9 @@ def programmed_policy(call):
 
 @pytest.fixture
 def system(settings, offline):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, orchestrator, _ = offline(handler=programmed_policy)
-    response = client.post("/v1/sessions", json={"access_key": ADMIN_KEY})
-    return client, orchestrator, {"Authorization": f"Bearer {response.json()['access_token']}"}
+    return client, orchestrator, {"Authorization": f"Bearer {key_token(client, ADMIN_KEY)}"}
 
 
 def ask(client, headers) -> dict:
@@ -180,7 +180,7 @@ def test_v2_does_not_offer_payment_link_when_the_contract_does_not_list_it(setti
     client, orchestrator, admin = system
     settings.api_demo_customer_id = "cliente_demo_002"
     other = {
-        "Authorization": f"Bearer {client.post('/v1/sessions', json={'access_key': ADMIN_KEY}).json()['access_token']}"
+        "Authorization": f"Bearer {key_token(client, ADMIN_KEY)}"
     }
     assert client.get("/v1/kb/documents", headers=other).status_code == 200  # registers the knowledge base
     saved = client.put(f"/v1/kb/drafts/{DOCUMENT}", headers=admin, json={"content": V2_TEXT, "expected_revision": 0})

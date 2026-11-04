@@ -10,6 +10,8 @@ services:
     entrypoint: ["uvicorn", "merchant_assistant.mocks.service:app", "--host", "0.0.0.0", "--port", "8001"]
     environment:
       MOCK_SERVICES_DIR: /app/data/mock-services
+      # v0.7.0: synthetic merchant receiver of conversation.replied (POST/GET /merchant/events), same value as the api.
+      CONVERSATION_WEBHOOK_SECRET: ${CONVERSATION_WEBHOOK_SECRET:-conversation-webhook-secret-fictitious}
     expose:
       - "8001"
     healthcheck:
@@ -26,6 +28,8 @@ services:
         condition: service_started
       mocks:
         condition: service_healthy
+      ticketing:  # the first handoff.created after `up` finds the receiver listening (the ticketing never waits for the api)
+        condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"  # only the Streamlit interface is exposed outside this host (ADR 0015)
     env_file:
@@ -37,10 +41,45 @@ services:
       MOCKS_URL: http://mocks:8001
       DEMO_MODE: ${DEMO_MODE:-true}
       BUDGET_LIMIT_USD: ${BUDGET_LIMIT_USD:-1.00}
+      # v0.7.0 identity: issuer seen by the other containers; fictitious example credentials (same as .env.example).
+      JWT_ISSUER: ${JWT_ISSUER:-http://api:8000}
+      DEMO_USER_PASSWORDS: ${DEMO_USER_PASSWORDS:-cliente1988:cliente1988-fictitious,cliente_demo_002:cliente-demo-002-fictitious,op_ana:op-ana-fictitious,op_bruno:op-bruno-fictitious}
+      TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
+      # v0.7.0 webhooks (task 66): container addresses, fixed here like MOCKS_URL; one fictitious secret per direction,
+      # the same values as the ticketing and mocks blocks and .env.example.
+      TICKETING_WEBHOOK_URL: http://ticketing:8002/webhooks/assistant
+      CONVERSATION_WEBHOOK_URL: http://mocks:8001/merchant/events
+      TICKETING_WEBHOOK_SECRET: ${TICKETING_WEBHOOK_SECRET:-ticketing-webhook-secret-fictitious}
+      ASSISTANT_WEBHOOK_SECRET: ${ASSISTANT_WEBHOOK_SECRET:-assistant-webhook-secret-fictitious}
+      CONVERSATION_WEBHOOK_SECRET: ${CONVERSATION_WEBHOOK_SECRET:-conversation-webhook-secret-fictitious}
     volumes:
       - runtime:/app/runtime
+    restart: unless-stopped
+
+  ticketing:
+    build: .
+    entrypoint: ["uvicorn", "merchant_assistant.ticketing.service:app", "--host", "0.0.0.0", "--port", "8002"]
+    ports:
+      - "127.0.0.1:8002:8002"  # the web ticketing screen runs on the host
+    environment:
+      TICKETING_DB_PATH: /app/runtime/ticketing.sqlite3
+      ASSISTANT_URL: http://api:8000
+      ASSISTANT_ISSUER: http://api:8000
+      ASSISTANT_JWKS_URL: http://api:8000/.well-known/jwks.json
+      TICKETING_WEBHOOK_SECRET: ${TICKETING_WEBHOOK_SECRET:-ticketing-webhook-secret-fictitious}
+      ASSISTANT_WEBHOOK_SECRET: ${ASSISTANT_WEBHOOK_SECRET:-assistant-webhook-secret-fictitious}
+      TICKETING_CLIENT_ID: ${TICKETING_CLIENT_ID:-ticketing-demo}
+      TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
+    volumes:
+      - ticketing_runtime:/app/runtime  # own database, separate from the assistant's runtime volume
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
     restart: unless-stopped
 
 volumes:
   qdrant_storage:
   runtime:
+  ticketing_runtime:

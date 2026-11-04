@@ -14,13 +14,14 @@ from merchant_assistant import comparisons
 from merchant_assistant.api import v1
 from merchant_assistant.llm.jev import JEV_MODEL, JevRouter
 from merchant_assistant.orchestration.budget import BudgetExceeded
+from merchant_assistant.testing import key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v060-r4"
 
 
 @pytest.fixture
 def system(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, orchestrator, llm = offline()
     jev_payloads: list[dict] = []
 
@@ -45,7 +46,7 @@ def system(settings, offline):
 
     orchestrator.llm_factory = factory
     headers = {
-        "Authorization": f"Bearer {client.post('/v1/sessions', json={'access_key': DEMO_KEY}).json()['access_token']}"
+        "Authorization": f"Bearer {key_token(client, DEMO_KEY)}"
     }
     return client, orchestrator, llm, jev_payloads, headers
 

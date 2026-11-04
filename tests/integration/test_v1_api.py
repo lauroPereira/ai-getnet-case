@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import hashlib
 import sqlite3
+import time
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from merchant_assistant.api.identity import Principal
 from merchant_assistant.data.migrations import current_version, migrate
+from merchant_assistant.testing import key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v040"
 ADMIN_KEY = "synthetic-admin-access-key-v040"
@@ -18,49 +20,50 @@ def test_openapi_declares_bearer_on_protected_routes_and_preserves_legacy():
     from merchant_assistant.config import Settings
 
     schema = create_app(settings=Settings(_env_file=None)).openapi()
-    assert schema["components"]["securitySchemes"]["SessionBearer"] == {"type": "http", "scheme": "bearer"}
+    bearer = schema["components"]["securitySchemes"]["SessionBearer"]
+    assert (bearer["type"], bearer["scheme"], bearer["bearerFormat"]) == ("http", "bearer", "JWT")
     assert schema["paths"]["/v1/profiles"]["get"]["security"] == [{"SessionBearer": []}]
-    assert "security" not in schema["paths"]["/v1/sessions"]["post"]
+    assert "security" not in schema["paths"]["/v1/auth/token"]["post"]
+    assert "/v1/sessions" not in schema["paths"]  # v0.7.0, spec D3
     assert "429" in schema["paths"]["/v1/router/compare"]["post"]["responses"]
     assert "/messages" in schema["paths"]
 
 
 def test_revocation_followed_by_unauthenticated_request_has_a_complete_response(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, _, _ = offline()
     headers = {"Authorization": f"Bearer {login(client)}"}
-    revoked = client.delete("/v1/sessions/current", headers=headers)
-    assert revoked.status_code == 204 and revoked.content == b""
+    revoked = client.post("/v1/auth/revoke", headers=headers)
+    assert revoked.status_code == 200 and revoked.content == b""
+    assert client.get("/v1/profiles", headers=headers).status_code == 401
     response = client.get("/v1/profiles")
     assert response.status_code == 401
     assert len(response.content) == int(response.headers["content-length"])
 
 
 def login(client: TestClient, key: str = DEMO_KEY) -> str:
-    response = client.post("/v1/sessions", json={"access_key": key})
-    assert response.status_code == 201
-    return response.json()["access_token"]
+    return key_token(client, key)
 
 
-def test_v1_authentication_is_closed_by_default_and_legacy_stays_public(settings, offline):
+def test_v1_authentication_is_closed_by_default_and_messages_require_a_session(settings, offline):
     client, _, _ = offline()
-    assert client.post("/v1/sessions", json={"access_key": "anything"}).status_code == 401
+    refused = client.post("/v1/auth/token", data={"grant_type": "password", "username": "demo", "password": "x"})
+    assert refused.status_code == 400 and refused.json()["error"] == "invalid_grant"
     assert client.get("/v1/catalog/models").status_code == 401
-    assert client.post("/messages", json={"message": "oi", "user_id": "cliente1988"}).status_code == 200
+    assert client.post("/messages", json={"message": "oi", "user_id": "cliente1988"}).status_code == 401  # v0.7.0
 
 
 def test_session_digest_expiry_revocation_and_role_boundaries(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, orchestrator, _ = offline()
 
     raw_key = DEMO_KEY
     token = login(client, raw_key)
     assert raw_key not in token
     conn = sqlite3.connect(settings.db_path)
-    session_digest = conn.execute("SELECT token_digest FROM api_sessions").fetchone()[0]
-    assert session_digest == hashlib.sha256(token.encode()).hexdigest()
-    assert token not in session_digest
+    stored = conn.execute("SELECT secret_hash FROM auth_accounts WHERE account_id='user:demo'").fetchone()[0]
+    assert stored.startswith("pbkdf2_sha256$") and raw_key not in stored  # only the hash of the password is kept
     conn.close()
 
     demo_headers = {"Authorization": f"Bearer {token}"}
@@ -70,11 +73,9 @@ def test_session_digest_expiry_revocation_and_role_boundaries(settings, offline)
         == 403
     )
 
-    conn = sqlite3.connect(settings.db_path)
-    conn.execute("UPDATE api_sessions SET expires_at='2000-01-01T00:00:00+00:00'")
-    conn.commit()
-    conn.close()
-    assert client.get("/v1/profiles", headers=demo_headers).status_code == 401
+    demo = Principal.of("demo", "default", "cliente1988")
+    expired = client.app.state.identity.issue(demo, "t", now=time.time() - 7200)
+    assert client.get("/v1/profiles", headers={"Authorization": f"Bearer {expired['access_token']}"}).status_code == 401
 
     admin_token = login(client, ADMIN_KEY)
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
@@ -82,12 +83,12 @@ def test_session_digest_expiry_revocation_and_role_boundaries(settings, offline)
         client.post("/v1/profiles/reference/publish", json={"expected_version": 1}, headers=admin_headers).status_code
         == 409
     )
-    assert client.delete("/v1/sessions/current", headers=admin_headers).status_code == 204
+    assert client.post("/v1/auth/revoke", headers=admin_headers).status_code == 200
     assert client.get("/v1/profiles", headers=admin_headers).status_code == 401
 
 
 def test_profiles_are_versioned_and_published_versions_are_immutable(settings, offline):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, _, _ = offline()
     headers = {"Authorization": f"Bearer {login(client, ADMIN_KEY)}"}
     profile = client.get("/v1/profiles", headers=headers).json()["profiles"]
@@ -111,8 +112,8 @@ def test_profiles_are_versioned_and_published_versions_are_immutable(settings, o
 
 
 def test_output_token_parameter_is_catalogued_published_and_effective_in_snapshot(settings, offline):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, _, llm = offline()
     admin_headers = {"Authorization": f"Bearer {login(client, ADMIN_KEY)}"}
     agents = next(
@@ -187,7 +188,7 @@ def test_output_token_parameter_is_catalogued_published_and_effective_in_snapsho
     ],
 )
 def test_profile_rejects_unknown_or_unsafe_output_token_parameters(settings, offline, agent, parameters, message):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
     client, _, llm = offline()
     headers = {"Authorization": f"Bearer {login(client, ADMIN_KEY)}"}
     agents = next(
@@ -205,7 +206,7 @@ def test_profile_rejects_unknown_or_unsafe_output_token_parameters(settings, off
 
 
 def test_router_comparison_is_router_only_and_consumed_once(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, _, llm = offline()
     headers = {"Authorization": f"Bearer {login(client)}"}
     payload = {
@@ -266,7 +267,7 @@ def test_comparison_and_reused_run_report_only_provider_applied_router_parameter
         def __init__(self):
             self.responses = FakeResponses()
 
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, orchestrator, scripted = offline()
     openai_client = FakeOpenAIClient()
     jev_payloads = []
@@ -348,7 +349,7 @@ def test_router_comparison_budget_rejection_is_explicit_and_preserves_prior_cost
 ):
     from merchant_assistant.llm import pricing
 
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     settings.max_request_cost_usd = request_limit
     settings.budget_limit_usd = installation_limit
     monkeypatch.setattr(pricing, "estimate", lambda *args, **kwargs: 0.04)
@@ -388,7 +389,7 @@ def test_router_comparison_budget_rejection_is_explicit_and_preserves_prior_cost
 
 
 def test_catalog_contains_only_priced_verified_models(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, _, _ = offline()
     headers = {"Authorization": f"Bearer {login(client)}"}
     response = client.get("/v1/catalog/models", headers=headers)
@@ -398,7 +399,7 @@ def test_catalog_contains_only_priced_verified_models(settings, offline):
 
 
 def test_catalog_publishes_only_documented_output_parameter_compatibility(settings, offline):
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, _, _ = offline()
     headers = {"Authorization": f"Bearer {login(client)}"}
     response = client.get("/v1/catalog/models", headers=headers)
@@ -425,7 +426,9 @@ def test_migration_0006_round_trip_preserves_legacy_synthetic_records(settings):
     from merchant_assistant.data.seed import seed
 
     conn = connect(settings.db_path)
-    assert migrate(conn, 6) == ["down 0008_demo_results", "down 0007_kb_versions"]
+    assert migrate(conn, 6) == [
+        "down 0010_webhook_outbox", "down 0009_identity_hitl", "down 0008_demo_results", "down 0007_kb_versions"
+    ]
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT customer_id, display_name FROM customers ORDER BY customer_id").fetchall()
     assert current_version(conn) == 6
@@ -439,8 +442,8 @@ def test_migration_0006_round_trip_preserves_legacy_synthetic_records(settings):
 
 
 def test_kb_draft_build_test_activate_and_rollback_stay_isolated(settings, offline):
-    settings.api_admin_access_key = SecretStr(ADMIN_KEY)
-    settings.api_demo_access_key = SecretStr(DEMO_KEY)
+    settings.api_admin_password = SecretStr(ADMIN_KEY)
+    settings.api_demo_password = SecretStr(DEMO_KEY)
     client, orchestrator, _ = offline()
     admin = {"Authorization": f"Bearer {login(client, ADMIN_KEY)}"}
     demo = {"Authorization": f"Bearer {login(client, DEMO_KEY)}"}

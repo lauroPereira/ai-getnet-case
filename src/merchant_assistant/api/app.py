@@ -1,4 +1,5 @@
-"""FastAPI application: health, readiness, messages and (demo only) traces."""
+"""FastAPI application: health, readiness, messages (session required) and, in demo mode, traces and
+conversations of the session's own merchant."""
 
 from __future__ import annotations
 
@@ -12,16 +13,42 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from merchant_assistant import __version__
+from merchant_assistant.api.identity import Identity, Principal, check_configuration
+from merchant_assistant.api.integrations import router as integrations_router
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
+from merchant_assistant.api.v1 import AUTH, rate_limited
 from merchant_assistant.api.v1 import router as v1_router
+from merchant_assistant.api.webhooks import Webhooks
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
+from merchant_assistant.data.db import connect
+from merchant_assistant.data.webhook_outbox import configuration_warnings
 
 log = logging.getLogger("merchant_assistant.api")
 
 
+MESSAGE_ROLES = ("merchant", "demo")  # the only principals with a merchant of their own (D20)
+MESSAGES_DESCRIPTION = """Sends one merchant message. A bearer access token is required: the merchant comes from the
+token's principal, never from the payload (`user_id` is optional and, when present, must match it, otherwise
+`403 identity_mismatch`). Operator, service and admin tokens receive `403`.
+
+Two calls: get a token (OAuth 2.0 password grant), then send the message with it.
+
+```bash
+TOKEN=$(curl -s localhost:8000/v1/auth/token -d grant_type=password -d username=cliente1988 \
+  -d password=cliente1988-fictitious | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"message": "When will the money from yesterday sales be deposited?"}'
+```
+
+In this page: get the token with `POST /v1/auth/token`, press **Authorize** and paste the `access_token`. The
+passwords of `.env.example` are fictitious examples; replace them before exposing the API."""
+
+
 class Orchestrator(Protocol):
-    def handle(self, request: MessageRequest, request_id: str) -> MessageResponse: ...
+    def handle(
+        self, request: MessageRequest, request_id: str, *, principal: Principal | None = None, channel: str = "api"
+    ) -> MessageResponse: ...
 
     def readiness(self) -> dict[str, bool | str]: ...
 
@@ -31,7 +58,9 @@ class Orchestrator(Protocol):
 class PlaceholderOrchestrator:
     """Used until the agent graph is wired: always asks for clarification."""
 
-    def handle(self, request: MessageRequest, request_id: str) -> MessageResponse:
+    def handle(
+        self, request: MessageRequest, request_id: str, *, principal: Principal | None = None, channel: str = "api"
+    ) -> MessageResponse:
         from merchant_assistant.api.schemas import Resolution
 
         return MessageResponse(
@@ -60,11 +89,52 @@ def _error(status: int, code: str, message: str, request_id: str) -> JSONRespons
     return JSONResponse(status_code=status, content=body.model_dump(), headers={"X-Request-ID": request_id})
 
 
+def _has_handoff_case(settings: Settings, conversation_id: str | None) -> bool:
+    if not conversation_id:
+        return False
+    conn = connect(settings.db_path)
+    try:
+        return (
+            conn.execute("SELECT 1 FROM handoff_cases WHERE conversation_id=? LIMIT 1", (conversation_id,)).fetchone()
+            is not None
+        )
+    finally:
+        conn.close()
+
+
+def can_read(settings: Settings, principal: Principal, customer_id: str | None, conversation_id: str | None) -> bool:
+    """Demo routes (spec v0.7.0, D13): merchant and demo read only their own merchant's data; an operator only
+    conversations that have a handoff case; admin reads everything."""
+    if principal.role == "admin":
+        return True
+    if principal.role == "operator":
+        return _has_handoff_case(settings, conversation_id)
+    return customer_id is not None and customer_id == principal.customer_id
+
+
+def message_refusal(principal: Principal, user_id: str | None) -> tuple[str, str] | None:
+    """`POST /messages` for an authenticated principal: only merchant-bound roles, and a `user_id`, when sent, must
+    be the principal's merchant. Returns (code, message) of the 403 or None."""
+    if principal.role not in MESSAGE_ROLES or not principal.customer_id:
+        return "insufficient_scope", "POST /messages accepts only merchant and demo tokens."
+    if user_id is not None and user_id != principal.customer_id:
+        return "identity_mismatch", "user_id does not match the session's merchant."
+    return None
+
+
 def create_app(orchestrator: Orchestrator | None = None, settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    for warning in check_configuration(settings):  # an invalid credential configuration stops the startup here
+        log.warning(warning)
+    for warning in configuration_warnings(settings):  # a webhook URL without its secret delivers nothing
+        log.warning(warning)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        try:  # a broken outbox never keeps the API from starting: the intentions stay pending
+            app.state.webhooks.recover_pending_intents()
+        except Exception:
+            log.exception("could not recover the pending webhook intentions")
         yield
         close = getattr(app.state.orchestrator, "close", None)
         if close:
@@ -78,7 +148,10 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     )
     app.state.orchestrator = orchestrator or PlaceholderOrchestrator()
     app.state.settings = settings
+    app.state.identity = Identity(settings)
+    app.state.webhooks = Webhooks(settings)  # signed events to the ticketing and the merchant (task 66)
     app.include_router(v1_router)
+    app.include_router(integrations_router)
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -101,6 +174,15 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     def health() -> dict[str, str]:
         return {"status": "ok", "version": __version__}
 
+    @app.get("/.well-known/jwks.json", tags=["auth"])
+    def jwks() -> JSONResponse:
+        """Public signing keys of the assistant's token issuer (RS256, `kid` = RFC 7638 thumbprint)."""
+        return JSONResponse(app.state.identity.jwks(), headers={"Cache-Control": "public, max-age=300"})
+
+    @app.get("/.well-known/openid-configuration", tags=["auth"])
+    def openid_configuration() -> dict:
+        return app.state.identity.openid_configuration()
+
     @app.get("/ready", tags=["ops"])
     def ready() -> JSONResponse:
         info = app.state.orchestrator.readiness()
@@ -109,30 +191,60 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     @app.post(
         "/messages",
         response_model=MessageResponse,
-        responses={404: {"model": ErrorBody}, 422: {"model": ErrorBody}, 500: {"model": ErrorBody}},
+        responses={
+            401: {"model": ErrorBody},
+            403: {"model": ErrorBody},
+            404: {"model": ErrorBody},
+            422: {"model": ErrorBody},
+            429: {"model": ErrorBody},
+            500: {"model": ErrorBody},
+        },
         tags=["assistant"],
+        description=MESSAGES_DESCRIPTION,
     )
-    def messages(payload: MessageRequest, request: Request) -> MessageResponse:
+    def messages(payload: MessageRequest, request: Request, principal=AUTH) -> MessageResponse:
+        if isinstance(principal, JSONResponse):
+            return principal
+        request_id = request.state.request_id
+        caller = Principal.from_session(principal)
+        if refusal := message_refusal(caller, payload.user_id):
+            response = _error(403, *refusal, request_id)
+            if refusal[0] == "insufficient_scope":
+                response.headers["WWW-Authenticate"] = 'Bearer realm="merchant-assistant", error="insufficient_scope"'
+            return response
+        if limited := rate_limited(request, principal):
+            return limited
+        bound = payload.model_copy(update={"user_id": caller.customer_id})
         try:
-            return app.state.orchestrator.handle(payload, request.state.request_id)
+            response = app.state.orchestrator.handle(bound, request_id, principal=caller, channel="api")
         except ConversationNotFound:
             return _error(
                 404, "conversation_not_found", "Conversation not found for this user.", request.state.request_id
             )
+        if response.status == "handoff":  # the case opened by this turn becomes a ticket (handoff.created)
+            app.state.webhooks.handoff_created_for(request_id)
+        return response
 
     if settings.demo_mode:
 
         @app.get("/traces/{request_id}", tags=["demo"])
-        def trace(request_id: str, request: Request):
+        def trace(request_id: str, request: Request, principal=AUTH):
+            if isinstance(principal, JSONResponse):
+                return principal
             data = app.state.orchestrator.trace(request_id)
-            if data is None:
+            conversation_id = (data or {}).get("detail", {}).get("conversation_id")
+            owner = (data or {}).get("user_id")
+            if data is None or not can_read(settings, Principal.from_session(principal), owner, conversation_id):
                 return _error(404, "not_found", "Trace not found.", request.state.request_id)
             return data
 
         @app.get("/conversations/{conversation_id}", tags=["demo"])
-        def conversation(conversation_id: str, request: Request):
+        def conversation(conversation_id: str, request: Request, principal=AUTH):
+            if isinstance(principal, JSONResponse):
+                return principal
             data = app.state.orchestrator.conversation(conversation_id)
-            if data is None:
+            owner = (data or {}).get("customer_id")
+            if data is None or not can_read(settings, Principal.from_session(principal), owner, conversation_id):
                 return _error(404, "not_found", "Conversation not found.", request.state.request_id)
             return data
 
