@@ -14,6 +14,7 @@ import yaml
 from merchant_assistant import __version__
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard, CombinedBudgetGuard, FixedBudgetGuard
+from merchant_assistant.testing import merchant_headers
 
 CAMPAIGN_ID, CAMPAIGN_USD = "v070-qa", 0.20
 PRIMARY_SPENT_BEFORE = 0.69  # accumulated by the project before v0.7.0 (spec, "Requisitos não funcionais")
@@ -57,6 +58,7 @@ def test_v070_campaign_cap_mounts_once_at_twenty_cents_combined_with_the_primary
     cap_path = tmp_path / "campaign-v070-qa.sqlite3"
     campaign = FixedBudgetGuard(cap_path, CAMPAIGN_USD, cap_id=CAMPAIGN_ID)
     guard = CombinedBudgetGuard(primary, campaign)
+    assert guard.remaining() == pytest.approx(CAMPAIGN_USD)  # the campaign cap binds, not the USD 4.31 left in total
     reservation = guard.reserve(request_id="qa-1", agent="router", model="test", amount=0.05)
     guard.settle(reservation, 0.04)
     assert primary.spent() == pytest.approx(PRIMARY_SPENT_BEFORE + 0.04)  # one charge, seen by both ledgers
@@ -71,6 +73,30 @@ def test_v070_campaign_cap_mounts_once_at_twenty_cents_combined_with_the_primary
         FixedBudgetGuard(cap_path, 0.25, cap_id=CAMPAIGN_ID)  # the cap is fixed once
     with pytest.raises(ValueError):
         FixedBudgetGuard(cap_path, CAMPAIGN_USD, cap_id="v060-qa")  # the ledger belongs to this campaign
+
+
+def test_a_request_runs_through_the_campaign_guard_and_both_ledgers_record_it(offline, tmp_path):
+    """The mounted campaign is what the orchestrator's calls reserve against: one request, scripted model, no cost."""
+    client, orchestrator, llm = offline()
+    primary = orchestrator.budget
+
+    def ledger_rows(guard) -> int:
+        conn = guard._conn()
+        try:
+            return conn.execute("SELECT COUNT(*) FROM ledger WHERE status='settled'").fetchone()[0]
+        finally:
+            conn.close()
+
+    before = ledger_rows(primary)
+    campaign = FixedBudgetGuard(tmp_path / "campaign-v070-qa.sqlite3", CAMPAIGN_USD, cap_id=CAMPAIGN_ID)
+    orchestrator.budget = CombinedBudgetGuard(primary, campaign)
+    sent = client.post(
+        "/messages", json={"message": "Quando cai o dinheiro das vendas de ontem?"}, headers=merchant_headers(client)
+    )
+    assert sent.status_code == 200 and llm.calls, sent.text
+    calls = orchestrator.trace(sent.json()["request_id"])["model_calls"]
+    assert calls > 0 and ledger_rows(primary) - before == ledger_rows(campaign.guard) == calls  # seen by both
+    assert primary.spent() == campaign.guard.spent() == 0  # the scripted model is free
 
 
 def test_package_version_is_0_7_0():
@@ -89,6 +115,9 @@ def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contra
     for name in ("TICKETING_WEBHOOK_SECRET", "ASSISTANT_WEBHOOK_SECRET"):  # same fictitious default on both sides
         assert api[name] == ticketing[name] and api[name].endswith("-fictitious}")
     assert api["CONVERSATION_WEBHOOK_SECRET"] == mocks["environment"]["CONVERSATION_WEBHOOK_SECRET"]
+    depends = services["api"]["depends_on"]  # the first handoff.created after `up` finds the receivers listening
+    assert depends["ticketing"]["condition"] == depends["mocks"]["condition"] == "service_healthy"
+    assert "depends_on" not in services["ticketing"]  # no cycle: the ticketing never waits for the api
     assert services["api"]["ports"] == ["127.0.0.1:8000:8000"] and services["ticketing"]["ports"] == [
         "127.0.0.1:8002:8002"
     ]
