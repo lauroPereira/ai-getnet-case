@@ -1,6 +1,6 @@
 # Relatório do Supervisor — retomada da v0.8.0 no Codex em 04/11/2026
 
-Período das 09h09 às 14h43, horário de São Paulo. O desenvolvimento ficou apto para QA. A rodada técnica parou após a amostra por limite de custo.
+Períodos das 09h09 às 14h43 e das 15h29 às 16h10, horário de São Paulo. O desenvolvimento ficou apto para QA. O complemento da amostra confirmou o bloqueio de orçamento da campanha completa.
 
 ## Done
 
@@ -20,6 +20,8 @@ Período das 09h09 às 14h43, horário de São Paulo. O desenvolvimento ficou ap
 - A revisão nova da T73 r3 deu parecer apto para `9057aaa`. Conferiu os 105 hashes do pacote e validou por inspeção a prova para o teto excepcional e a ordem de recusas. [Parecer T73](../evidence/v080-reviewer-t73.md)
 - A suíte estrita de `9057aaa` terminou em código 0, com 1.031 testes aprovados em 16 min 07 s, Ruff e skills válidas. A T73 foi integrada por fast-forward em `codex/v0.8.0-replan`. O manifesto registra 86 hashes, e o lacre foi reconferido. [Candidato v0.8.0-local-r1](../evidence/v080-candidato-r1.json)
 - O QA independente conferiu o candidato e executou a preparação e a amostra real. O primeiro bootstrap ficou incompleto sem diagnóstico recuperável. Uma sonda programada passou e um único retry real sob a guarda primária criou o índice com 145 trechos de 40 documentos. A amostra completou cinco casos e cinco juízos independentes. [Parecer do QA](../evidence/v080-qa-r1.md)
+- O complemento executou seis casos `dev` predefinidos e seis julgamentos completos, sob limite cumulativo de US$0,64250491 no ledger primário. O delta foi de US$0,01697010, dos US$0,10 adicionais autorizados. Duas jornadas de preço ficaram inválidas para aceite por indisponibilidade de `simulate_pricing`. Uma jornada de encerramento de contrato retornou esclarecimento em vez de encaminhamento, sem erro de ferramenta, em uma execução. [Complemento real](../evidence/v080-custo-complemento-r2.md)
+- O estimador padrão com 11 casos medidos projetou US$1,00929931. A projeção estratificada deu US$0,77451472 no caso-base e US$1,00102584 no estresse. A checagem offline do Supervisor deu US$0,63243 no cenário de menor custo analisado. Todos excedem o saldo de US$0,44052499. [Projeção estratificada](../evidence/v080-projecao-estratificada-r3.md)
 - Preflight às 09h09, horário de São Paulo. Disco `C:` com 10,49 GiB livres, RAM física com 0,77 GiB livres, folga virtual de 14,21 GiB incluindo paginação e zero alertas recentes. `checar-memoria.ps1` liberou um agente pesado. A sondagem de hardlink no sandbox padrão retornou `WinError 5`.
 - A medição por agente do Codex foi confirmada nos registros locais. O modelo observado nos dois primeiros despachos é `gpt-6-luna/xhigh`, conforme o ensaio autorizado para esta retomada. A sessão principal usa `gpt-6.1-sol/xhigh` e fica separada dos números dos subagentes.
 
@@ -27,14 +29,14 @@ Período das 09h09 às 14h43, horário de São Paulo. O desenvolvimento ficou ap
 
 | Tarefa | Papel | Candidato ou base | Situação |
 | --- | --- | --- | --- |
-| QA técnico | QA independente | `9057aaa` | **Bloqueado pelo orçamento.** Projeção de US$1,37116382 e saldo primário de US$0,45749509. A campanha continua sem cap montado. |
+| QA técnico | QA independente | `9057aaa` | **Bloqueado pelo orçamento.** Projeção estratificada de US$0,77451472 no caso-base e saldo primário de US$0,44052499. Campanha sem montagem. |
 
-O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A campanha segue aguardando uma projeção válida dentro dos limites vigentes. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
+O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A amostra foi complementada dentro desse limite. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
 
 ## To do
 
-1. Complementar a amostra `dev` dentro dos US$0,10 autorizados e confirmar uma projeção que caiba simultaneamente no teto aprovado e no saldo primário.
-2. Concluir a campanha técnica, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
+1. Resolver a decisão de orçamento e validar a projeção usada no portão de montagem. Com o recorte atual, o saldo primário não cobre nem a menor projeção analisada.
+2. Validar a disponibilidade do mock de preços com fixture sintética antes de novas chamadas, reexecutar as jornadas afetadas e concluir a campanha técnica, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
 3. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
 
 ## Recursos e medição
@@ -66,6 +68,8 @@ O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com r
 | 14h23 | 9,58 GiB | 0,51 GiB | Adiada a carga pesada do QA pelo limiar de RAM. |
 | 14h24 | 9,56 GiB | 1,57 GiB | Nova checagem liberou o QA como única carga pesada. |
 | Após a amostra | 9,55 GiB | — | QA parou pelo orçamento. Runtime e evidências preservados. |
+| 15h28 | 9,52 GiB | 1,19 GiB | Checagem liberou o complemento da amostra. |
+| 16h05 | 9,52 GiB | 1,45 GiB | Sem alertas recentes. |
 
 O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de despachar trabalho pesado. Nesta retomada, as primeiras passagens usam testes focados. A estimativa de custo usa entrada sem cache, entrada em cache e saída por subagente, com a tarifa Standard publicada pela OpenAI. Os valores são equivalentes de API. [Tarifas da API](https://developers.openai.com/api/docs/pricing)
 
@@ -85,14 +89,15 @@ O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de 
 | T73 | Reviewer r3, novo contexto | `gpt-6-luna/xhigh` | 6,31 | 0,03066 | Apta com pacote verificado, sem acesso ao holdout. |
 | QA v0.8.0 | QA, primeira passagem | `gpt-6-luna/xhigh` | 11,82 | 0,06344 | Preflight e bootstrap inicial sem diagnóstico recuperável. |
 | QA v0.8.0 | QA, retomada | `gpt-6-luna/xhigh` | 7,09 | 0,02800 | Diagnóstico, retry, amostra e parada por orçamento. |
+| QA v0.8.0 | QA, complemento `dev` | `gpt-6-luna/xhigh` | 41,47 | 0,19141 | Seis casos novos, diagnóstico de dependência e projeção revisada. |
 
-Subtotal operacional desta retomada de **244,15 minutos de subagente** e **US$0,89122 equivalentes de API**. Inclui a revisão interrompida e as rodadas de correção, além das duas passagens de QA até o bloqueio. Tempo da sessão principal, suíte do Supervisor, campanha e passagem exploratória ficam separados.
+Subtotal operacional desta retomada de **285,62 minutos de subagente** e **US$1,08263 equivalentes de API**. Inclui revisões, correções e passagens de QA até o bloqueio. Tempo da sessão principal, suítes do Supervisor, campanha e passagem exploratória ficam separados.
 
 O Supervisor iniciou cedo uma rodada exploratória isolada sobre T72b r1 (`c861bee`). Consumiu 8,10 min e US$0,02795 equivalentes. A rodada fica fora da comparação do ciclo e seu custo fica separado. Por orientação do responsável, o benchmark será consolidado após o QA. Até lá, a sessão apenas coleta a telemetria das passagens operacionais.
 
 Inicialmente a T73 ficou limitada à preparação enquanto a suíte integrada rodava no checkout principal. O responsável pediu execução paralela. A T73 passou para worktree próprio a partir do mesmo SHA, mantendo o checkout principal fixo para concluir a suíte. Validações pesadas continuam serializadas.
 
-Preparação e amostra reais desta retomada contabilizaram **US$0,02998644** no ledger primário, incluindo a reserva conservadora do primeiro bootstrap. A campanha `v080-qa` permanece sem montagem. O plano permite US$0,50 ou até US$1,00 em uma única montagem se a estimativa justificar. [Evidência de orçamento](../evidence/v080-qa-r1.md)
+Preparação, amostra inicial e complemento contabilizaram **US$0,04695654** no ledger primário, incluindo a reserva conservadora do primeiro bootstrap. O complemento respondeu por US$0,01697010. O saldo primário é US$0,44052499, com zero reservas. A campanha `v080-qa` permanece sem montagem. [Evidência de orçamento](../evidence/v080-projecao-estratificada-r3.md)
 
 ## Estado para retomar
 
@@ -117,5 +122,5 @@ As tarefas e a ordem estão na seção To do.
 
 ## Depende de você
 
-- Decidir sobre revisão dos tetos ou recorte apenas se a projeção revisada ultrapassar os limites vigentes.
+- Decidir entre preservar a campanha completa com revisão controlada dos limites e da prova de estimativa ou aprovar um recorte explícito de QA que caiba no saldo atual.
 - Após o QA técnico, preencher o CSV de calibração antes da integração na `main`.

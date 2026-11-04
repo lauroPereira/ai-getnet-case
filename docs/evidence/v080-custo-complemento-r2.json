@@ -1,0 +1,785 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "dev",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "3",
+   "prompt": "judge@3",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 400,
+    "effort": "none"
+   }
+  },
+  "repeat": 1,
+  "limit": 6,
+  "include_replan": true,
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 6
+ },
+ "summary": {
+  "overall": {
+   "n": 6,
+   "passed": 0.5,
+   "route_ok": 0.833,
+   "status_ok": 0.667,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 0.833,
+   "content_ok": 0.5,
+   "forbidden_ok": 1.0,
+   "sources_ok": 0.667,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 11792,
+   "latency_p95_ms": 14062,
+   "cost_usd": 0.01411,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 6,
+    "answers": 1,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.33,
+    "factual_correctness": 4.5,
+    "relevance": 4.83,
+    "usefulness": 4.83
+   },
+   "unsupported_claim_rate": 0.167
+  },
+  "by_split": {
+   "dev": {
+    "n": 6,
+    "passed": 0.5,
+    "route_ok": 0.833,
+    "status_ok": 0.667,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 0.833,
+    "content_ok": 0.5,
+    "forbidden_ok": 1.0,
+    "sources_ok": 0.667,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11792,
+    "latency_p95_ms": 14062,
+    "cost_usd": 0.01411,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 6,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.33,
+     "factual_correctness": 4.5,
+     "relevance": 4.83,
+     "usefulness": 4.83
+    },
+    "unsupported_claim_rate": 0.167
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 5,
+    "passed": 0.6,
+    "route_ok": 0.8,
+    "status_ok": 0.8,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 0.8,
+    "content_ok": 0.6,
+    "forbidden_ok": 1.0,
+    "sources_ok": 0.8,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11143,
+    "latency_p95_ms": 14062,
+    "cost_usd": 0.01348,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 5,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.4,
+     "factual_correctness": 4.6,
+     "relevance": 4.8,
+     "usefulness": 4.8
+    },
+    "unsupported_claim_rate": 0.2
+   },
+   "pt": {
+    "n": 1,
+    "passed": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 0.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 0.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 12730,
+    "latency_p95_ms": 12730,
+    "cost_usd": 0.00063,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 4.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0
+   }
+  },
+  "paths": {
+   "clarify": {
+    "": 1
+   },
+   "general_web": {
+    "knowledge": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   },
+   "support": {
+    "customer_support": 1,
+    "customer_support → escalation": 2
+   }
+  },
+  "generated_at": "2026-11-04T18:44:14+00:00",
+  "judge_cost_usd": 0.00286
+ },
+ "cases": [
+  {
+   "id": "EX02",
+   "repetition": 1,
+   "request_id": "req_eval67c09a82bb44",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the weather forecast in Porto Alegre tomorrow?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Tomorrow, November 5, Porto Alegre is forecast to have thunderstorms overnight and showers in the morning, with sunnier skies later. Temperatures are expected to range from about 19–27°C.",
+   "sources": [
+    "Web search data provider: oai-weather"
+   ],
+   "duration_ms": 8263,
+   "cost_usd": 0.0110205,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "What's the weather forecast in Porto Alegre tomorrow?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Web search data provider: oai-weather"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Tomorrow, November 5, Porto Alegre is forecast to have thunderstorms overnight and showers in the morning, with sunnier skies later. Temperatures are expected to range from about 19–27°C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_ae192024978640c5aca5",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Web search text unavailable; reply's weather details are consistent with a weather source but unverifiable, and date/figures cannot be checked.",
+     "factual_correctness": "No passage to verify against; content is plausible and internally consistent, but the specific date and temperatures are unconfirmed.",
+     "relevance": "Directly answers the merchant's question about tomorrow's Porto Alegre weather forecast.",
+     "usefulness": "Clear, concise answer in the merchant's language with actionable forecast, though it lacks source attribution."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00031558,
+    "error": null
+   }
+  },
+  {
+   "id": "EX03",
+   "repetition": 1,
+   "request_id": "req_evale4a8b3c51ce9",
+   "split": "dev",
+   "language": "en",
+   "message": "When will the money from yesterday's sales be deposited?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "The Pix sale’s net R$ 80,00 was credited yesterday, November 3, 2026. The debit sale’s net R$ 148,06 is expected today, November 4, 2026, and the credit sale’s net R$ 1.162,20 is expected tomorrow, November 5, 2026. The debit and credit deposits are scheduled, but I can’t yet confirm that they have been credited to your account.",
+   "sources": [
+    "Receivables schedule (your account)",
+    "Payout status (your account)"
+   ],
+   "duration_ms": 11143,
+   "cost_usd": 0.00068469,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_receivables_schedule",
+    "get_payout_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "When will the money from yesterday's sales be deposited?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Receivables schedule (your account)",
+     "Payout status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"status\": \"pending\"}], \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"receivables\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_receivables_schedule",
+      "text": "{\"arguments\": {\"date_field\": \"sale_date\", \"date_from\": null, \"date_to\": null, \"period\": \"yesterday\"}, \"result\": {\"count\": 3, \"date_field\": \"sale_date\", \"date_from\": \"2026-11-03\", \"date_to\": \"2026-11-03\", \"net_total\": {\"currency\": \"BRL\", \"display\": \"R$ 1.390,26\", \"minor\": 139026}, \"note\": \"Expected dates come from the schedule record. Use get_payout_status to know if credit is confirmed.\", \"observed_at\": \"2026-11-04T15:43:15-03:00\", \"receivables\": [{\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-04\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\", \"sale_captured_at\": \"2026-11-03T09:42:00-03:00\", \"sale_id\": \"sale_1988_0001\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-05\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 37,80\", \"minor\": 3780}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.200,00\", \"minor\": 120000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\", \"sale_captured_at\": \"2026-11-03T13:05:00-03:00\", \"sale_id\": \"sale_1988_0002\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-03\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 0,00\", \"minor\": 0}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"normalized_status\": \"settled\", \"payment_type\": \"pix\", \"receivable_id\": \"rcv_1988_0003\", \"sale_captured_at\": \"2026-11-03T17:30:00-03:00\", \"sale_id\": \"sale_1988_0003\", \"source_status\": \"SETTLED\", \"status_meaning\": \"Receivable settled.\"}], \"source\": \"ReceivablesMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_payout_status",
+      "text": "{\"arguments\": {\"receivable_ids\": [\"rcv_1988_0001\", \"rcv_1988_0002\", \"rcv_1988_0003\"]}, \"result\": {\"observed_at\": \"2026-11-04T15:43:17-03:00\", \"payouts\": [{\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": \"2026-11-03T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\", \"stage\": \"PAID\", \"stage_meaning\": \"Credit confirmed in the receiving account.\"}], \"source\": \"PayoutMock\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3693,
+     "kept_chars": 3693,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "The Pix sale’s net R$ 80,00 was credited yesterday, November 3, 2026. The debit sale’s net R$ 148,06 is expected today, November 4, 2026, and the credit sale’s net R$ 1.162,20 is expected tomorrow, November 5, 2026. The debit and credit deposits are scheduled, but I can’t yet confirm that they have been credited to your account."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3693,
+    "kept_chars": 3693,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_acd114e24a804c2bac71",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All amounts, dates and statuses match the receivables schedule and payout status tool results.",
+     "factual_correctness": "Correctly distinguishes the confirmed Pix credit from the two scheduled but unconfirmed deposits.",
+     "relevance": "Directly answers when yesterday's sales will be deposited, covering all three sales.",
+     "usefulness": "Clear, concise, polite and same language, with each sale's amount and expected date plus credit status."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00074038,
+    "error": null
+   }
+  },
+  {
+   "id": "EX05",
+   "repetition": 1,
+   "request_id": "req_eval2b91d6827167",
+   "split": "dev",
+   "language": "en",
+   "message": "My card machine won't connect to the internet, what should I do?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Your Get Smart is currently offline. Its last signal was received at 11:31 today. Wi-Fi is configured, and mobile data is listed as available.\n\nIf you connect by Wi-Fi, select “Wi-Fi” on the home screen, then “Procurar Redes.” Choose your network, enter the password carefully, and confirm. Check that the Wi-Fi is working and the password is correct.\n\nIf you use a SIM, turn off the machine, open the back cover, and insert the SIM into the SIM1 or SIM2 slot with the metal side facing down. Close the cover, turn it on, and wait for a 2G or 3G connection. To test it, press the function button (F, #, or equivalent), press 60, select 2 – manutenção, then 1 – teste de comunicação.\n\nI couldn’t confirm further troubleshooting steps if the connection still fails.",
+   "sources": [
+    "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Card machine status (your account)"
+   ],
+   "duration_ms": 14062,
+   "cost_usd": 0.00103332,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "My card machine won't connect to the internet, what should I do?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Card machine status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-05T10:25:00-03:00\", \"created_at\": \"2026-09-05T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-04T15:43:25-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"checks\": [{\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-04T15:43:25-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-04T15:43:25-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"device\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": null}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-04T11:31:07-03:00\", \"minutes_since_last_seen\": 252, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-04T15:43:32-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+      "text": "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet\nConectar sua maquininha Getnet ao Wi-Fi é um passo essencial para garantir transações rápidas e seguras. A boa notícia é que o processo é simples e pode ser feito em poucos minutos. Siga este guia rápido:\nPasso a passo para configurar o Wi-Fi na maquininha Getnet\n1. Acesse a opção de Wi-Fi na tela inicial.\nNa tela principal da sua maquininha, clique na opção “Wi-Fi”.\n2. Procure pelas redes disponíveis.\nSelecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas.\n3. Escolha sua rede.\nLocalize o nome da sua rede na lista e clique sobre ela.\n4. Insira a [credential removed] Wi-Fi.\nDigite a [credential removed] sua rede com atenção e confirme.\n5. Conexão concluída!\nApós a confirmação, sua maquininha estará conectada à internet.\nBenefícios de conectar ao Wi-Fi\nTransações mais rápidas:\nA conexão Wi-Fi oferece maior estabilidade em comparação a redes móveis.\nFacilidade de uso:\nIdeal para ambientes fixos, como lojas ou escritórios.\nEconomia de dados:\nEvita o uso do plano de dados da maquininha.\nDica:\nCertifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros. Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nComo proceder para que minha bateria da Get Smart se mantenha com uma boa duração?\nDeixe a bateria carregando sempre que possível e, de preferência, por pelo menos 3 horas seguidas. Não espere a bateria descarregar completamente para recarregá-la. O ideal é carregar a bateria quando o nível estiver em 20%.\nA Get Smart aceita pagamento com auxilio emergencial?\nA Get Smart aceita pagamento com auxilio emergencial?\nSim, basta fazer o processo de pagamento com\nQR Code\n, selecionando a opção débito.\nver mais\ndemais\ndúvidas\nAlgar\nComo insiro o Chip na minha máquina?\nComo insiro o Chip na minha máquina?\nSiga os passos a seguir:\n– Com a máquina desligada, abra a tampa na parte de trás\n– Insira o chip no local destinado, sinalizado com SIM1 ou SIM2, com a parte metálica voltada para baixo\n– Feche a tampa, ligue a máquina e aguarde a conexão de rede de dados\n– Com a indicação de rede conectada (2G ou 3G), a máquina está pronta para uso\n– Faça um teste de comunicação para verificar a conectividade do seu chip, seguindo os passos:\n• Pressione o botão função – F, # ou o da sua máquina\n• Pressione 60\n• Selecione a opção 2 – manutenção\n• Selecione a opção 1 – teste de comunicação"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3786,
+     "kept_chars": 3786,
+     "items": 5,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Your Get Smart is currently offline. Its last signal was received at 11:31 today. Wi-Fi is configured, and mobile data is listed as available.\n\nIf you connect by Wi-Fi, select “Wi-Fi” on the home screen, then “Procurar Redes.” Choose your network, enter the password carefully, and confirm. Check that the Wi-Fi is working and the password is correct.\n\nIf you use a SIM, turn off the machine, open the back cover, and insert the SIM into the SIM1 or SIM2 slot with the metal side facing down. Close the cover, turn it on, and wait for a 2G or 3G connection. To test it, press the function button (F, #, or equivalent), press 60, select 2 – manutenção, then 1 – teste de comunicação.\n\nI couldn’t confirm further troubleshooting steps if the connection still fails."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3786,
+    "kept_chars": 3786,
+    "items": 5,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_97f8b644093b42aab261",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts (offline status, 11:31 last signal, Wi-Fi config, steps) trace to tool results and passages.",
+     "factual_correctness": "Consistent with device status and the Getnet Wi-Fi/SIM instructions; no contradictions or wrong details.",
+     "relevance": "Directly answers the connectivity question with troubleshooting steps for the offline Get Smart.",
+     "usefulness": "Clear, step-by-step, polite, and plainly states what couldn't be confirmed further."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00077398,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-PRICE-DIVERGENCE",
+   "repetition": 1,
+   "request_id": "req_evalef84732b3dcb",
+   "split": "dev",
+   "language": "en",
+   "message": "Is there a divergence in yesterday's Pix charge?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "I couldn’t verify whether yesterday’s Pix charge diverged because the pricing service is unavailable. I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-5A6DA2.",
+   "sources": [],
+   "duration_ms": 12441,
+   "cost_usd": 0.00059194,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": false,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": false,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Is there a divergence in yesterday's Pix charge?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T15:43:42-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T15:43:42-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"pix\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"UNAVAILABLE\", \"message\": \"Pricing service is unavailable.\"}}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 501,
+     "kept_chars": 501,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "I couldn’t verify whether yesterday’s Pix charge diverged because the pricing service is unavailable. I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-5A6DA2."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 501,
+    "kept_chars": 501,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_b8f2a73def1a410cbc40",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The pricing service unavailability and handoff are supported, but the protocol number isn't in the evidence.",
+     "factual_correctness": "The reply accurately reflects the UNAVAILABLE error and correctly declines to confirm any divergence.",
+     "relevance": "It directly answers the divergence question by explaining it could not be checked and handing over.",
+     "usefulness": "Clear, concise, polite and in the merchant's language, plainly stating the gap and the handoff."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00036868,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 1,
+   "request_id": "req_evalfdaa1fe081d4",
+   "split": "dev",
+   "language": "en",
+   "message": "I want to close my contract.",
+   "route": "clarify",
+   "status": "needs_clarification",
+   "agents": [
+    "router",
+    "personality"
+   ],
+   "executed_path": "",
+   "answer": "Would you like information about the cancellation process, or are you requesting that Getnet close your contract?",
+   "sources": [],
+   "duration_ms": 3153,
+   "cost_usd": 0.00015007,
+   "model_calls": 2,
+   "errors": [],
+   "violations": [],
+   "route_ok": false,
+   "status_ok": false,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "I want to close my contract.",
+    "status": "needs_clarification",
+    "route": "clarify",
+    "sources": [],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Would you like information about the cancellation process, or are you requesting that Getnet close your contract?"
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_e46ed23700c843f4a027",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The reply only asks a clarifying question and states no unsupported facts.",
+     "factual_correctness": "No factual claims are made, so nothing contradicts the evidence.",
+     "relevance": "It correctly clarifies whether the merchant wants cancellation info or actual contract closure.",
+     "usefulness": "Clear, concise, polite question in the merchant's language that moves the case forward."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00026038,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 1,
+   "request_id": "req_eval1cc22ceee590",
+   "split": "dev",
+   "language": "pt",
+   "message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "Não consegui verificar se há evidência suficiente para comparar a taxa de crédito em 2 parcelas, pois o serviço de análise de preços está indisponível no momento.\n\nEncaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-EA8203.",
+   "sources": [],
+   "duration_ms": 12730,
+   "cost_usd": 0.0006262,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": false,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": false,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T15:44:01-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T15:44:01-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": 2, \"payment_type\": \"credit\", \"period\": \"latest\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"UNAVAILABLE\", \"message\": \"Pricing service is unavailable.\"}}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 498,
+     "kept_chars": 498,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Não consegui verificar se há evidência suficiente para comparar a taxa de crédito em 2 parcelas, pois o serviço de análise de preços está indisponível no momento.\n\nEncaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-EA8203."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 498,
+    "kept_chars": 498,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_675f6549967244b09f4f",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Tool result shows pricing service UNAVAILABLE; handoff and the reply's stated limits are supported, though the protocol number is not in evidence.",
+     "factual_correctness": "Correctly reports the pricing service is unavailable and consistent with the UNAVAILABLE tool result; protocol number is unverifiable but not contradicted.",
+     "relevance": "Directly answers the merchant's question about insufficient evidence and hands off as the status requires.",
+     "usefulness": "Clear, concise, polite Portuguese that explains the gap plainly and informs the merchant of the handoff."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00040408,
+    "error": null
+   }
+  }
+ ]
+}

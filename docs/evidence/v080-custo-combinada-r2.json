@@ -1,0 +1,1345 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "dev",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "3",
+   "prompt": "judge@3",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 400,
+    "effort": "none"
+   }
+  },
+  "repeat": 1,
+  "limit": null,
+  "include_replan": true,
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 11,
+  "conversations_included": false,
+  "combined_source_reports": [
+   "v080-custo-amostra.json",
+   "v080-custo-complemento-r2.json"
+  ],
+  "combination_method": "unchanged real case rows concatenated without duplicate IDs; summary recomputed by evaluation.runner.summarize"
+ },
+ "summary": {
+  "overall": {
+   "n": 11,
+   "passed": 0.636,
+   "route_ok": 0.909,
+   "status_ok": 0.818,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 0.909,
+   "content_ok": 0.636,
+   "forbidden_ok": 1.0,
+   "sources_ok": 0.818,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 12441,
+   "latency_p95_ms": 18582,
+   "cost_usd": 0.03974,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 11,
+    "answers": 3,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.64,
+    "factual_correctness": 4.73,
+    "relevance": 4.73,
+    "usefulness": 4.82
+   },
+   "unsupported_claim_rate": 0.091
+  },
+  "by_split": {
+   "dev": {
+    "n": 11,
+    "passed": 0.636,
+    "route_ok": 0.909,
+    "status_ok": 0.818,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 0.909,
+    "content_ok": 0.636,
+    "forbidden_ok": 1.0,
+    "sources_ok": 0.818,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 12441,
+    "latency_p95_ms": 18582,
+    "cost_usd": 0.03974,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 11,
+     "answers": 3,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.64,
+     "factual_correctness": 4.73,
+     "relevance": 4.73,
+     "usefulness": 4.82
+    },
+    "unsupported_claim_rate": 0.091
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 6,
+    "passed": 0.667,
+    "route_ok": 0.833,
+    "status_ok": 0.833,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 0.833,
+    "content_ok": 0.667,
+    "forbidden_ok": 1.0,
+    "sources_ok": 0.833,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9825,
+    "latency_p95_ms": 14062,
+    "cost_usd": 0.01404,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 6,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.5,
+     "factual_correctness": 4.67,
+     "relevance": 4.67,
+     "usefulness": 4.67
+    },
+    "unsupported_claim_rate": 0.167
+   },
+   "pt": {
+    "n": 5,
+    "passed": 0.6,
+    "route_ok": 1.0,
+    "status_ok": 0.8,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.6,
+    "forbidden_ok": 1.0,
+    "sources_ok": 0.8,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 12730,
+    "latency_p95_ms": 18582,
+    "cost_usd": 0.0257,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 5,
+     "answers": 2,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.8,
+     "factual_correctness": 4.8,
+     "relevance": 4.8,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0
+   }
+  },
+  "paths": {
+   "clarify": {
+    "": 1
+   },
+   "general_web": {
+    "knowledge": 1
+   },
+   "knowledge": {
+    "knowledge": 1,
+    "knowledge → customer_support → web": 1,
+    "knowledge → web": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 2
+   },
+   "support": {
+    "customer_support": 1,
+    "customer_support → escalation": 3
+   }
+  },
+  "generated_at": "2026-11-04T18:55:22+00:00",
+  "judge_cost_usd": 0.00599
+ },
+ "cases": [
+  {
+   "id": "REPLAN-WEB",
+   "repetition": 1,
+   "request_id": "req_eval8b8f2960cd65",
+   "split": "dev",
+   "language": "pt",
+   "message": "A maquininha Get XYZ aceita pagamento por aproximação?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → web",
+   "answer": "Sim. As maquininhas Getnet compatíveis com NFC aceitam pagamentos por aproximação com cartão, celular ou smartwatch. Confira se o aparelho tem o símbolo de aproximação. A disponibilidade pode variar conforme o modelo. Não consegui confirmar se há um modelo chamado Get XYZ.",
+   "sources": [
+    "Como fazer uma venda na maquininha Getnet? - Getnet",
+    "Formas de pagamento"
+   ],
+   "duration_ms": 12317,
+   "cost_usd": 0.0116089,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A maquininha Get XYZ aceita pagamento por aproximação?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como fazer uma venda na maquininha Getnet? - Getnet",
+     "Formas de pagamento"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-maquininha-como-fazer-uma-venda-na-maquininha-getnet",
+      "text": "Como fazer uma venda na maquininha Getnet? - Getnet\nPraticidade:\nProcessamento rápido e sem complicações.\nAceitação variada:\nSuporte para cartões de débito, crédito e tecnologia por aproximação (NFC).\nFlexibilidade:\nOpção de parcelamento para vendas no crédito.\nCom esse passo a passo, você oferece uma experiência de compra ágil e eficiente para seus clientes. Aproveite a praticidade da maquininha Getnet e mantenha o foco no que realmente importa: o sucesso do seu negócio!"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 476,
+     "kept_chars": 476,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Sim. As maquininhas Getnet compatíveis com NFC aceitam pagamentos por aproximação com cartão, celular ou smartwatch. Confira se o aparelho tem o símbolo de aproximação. A disponibilidade pode variar conforme o modelo. Não consegui confirmar se há um modelo chamado Get XYZ."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 476,
+    "kept_chars": 476,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_183212e2e43d45d083bf",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Reply is consistent with the source passage mentioning NFC support and openly notes it could not confirm the 'Get XYZ' model; web text unavailable.",
+     "factual_correctness": "States NFC acceptance and model-dependent availability, matching the passage, without inventing account specifics.",
+     "relevance": "Directly answers the contactless payment question and honestly flags the unclear 'Get XYZ' model name.",
+     "usefulness": "Clear, polite Portuguese answer with actionable tip on checking the contactless symbol and noting the model uncertainty."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.0006447,
+    "error": null
+   }
+  },
+  {
+   "id": "REPLAN-PROCEDURE",
+   "repetition": 1,
+   "request_id": "req_evalbd26cf50805f",
+   "split": "dev",
+   "language": "pt",
+   "message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Seu plano prevê recebimento do débito em D+1 e do crédito em D+2. Para as vendas de ontem (03/11), o débito de R$ 148,06 está previsto para 04/11 e o crédito de R$ 1.162,20, para 05/11. Essas datas são previsões, não confirmação de depósito. O crédito de R$ 80,00 da venda via Pix foi confirmado na conta em 03/11.\n\nPara antecipar vendas de crédito à vista ou parceladas, acesse o app Getnet Brasil e vá a Serviços > Antecipação de Vendas. Escolha a conta cadastrada, aceite os termos, simule e confira valores, bandeiras e taxas. Confirme o valor final, toque em Antecipar e informe sua senha. O mínimo é R$ 50,00; acompanhe o pedido em “Meus Pedidos”.\n\nO procedimento disponível não inclui antecipação de vendas no débito ou via Pix.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Plano de Recebimento Reduzido - Getnet",
+    "Receivables schedule (your account)",
+    "Payout status (your account)",
+    "Contracted products (your account)"
+   ],
+   "duration_ms": 18582,
+   "cost_usd": 0.00130939,
+   "model_calls": 6,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_receivables_schedule",
+    "get_payout_status",
+    "get_contract_snapshot"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Plano de Recebimento Reduzido - Getnet",
+     "Receivables schedule (your account)",
+     "Payout status (your account)",
+     "Contracted products (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T14:39:40-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-04T14:39:40-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-04T14:39:40-03:00\", \"status\": \"pending\"}], \"observed_at\": \"2026-11-04T14:39:40-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"receivables\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_receivables_schedule",
+      "text": "{\"arguments\": {\"date_field\": \"sale_date\", \"date_from\": null, \"date_to\": null, \"period\": \"yesterday\"}, \"result\": {\"count\": 3, \"date_field\": \"sale_date\", \"date_from\": \"2026-11-03\", \"date_to\": \"2026-11-03\", \"net_total\": {\"currency\": \"BRL\", \"display\": \"R$ 1.390,26\", \"minor\": 139026}, \"note\": \"Expected dates come from the schedule record. Use get_payout_status to know if credit is confirmed.\", \"observed_at\": \"2026-11-04T14:39:46-03:00\", \"receivables\": [{\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-04\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\", \"sale_captured_at\": \"2026-11-03T09:42:00-03:00\", \"sale_id\": \"sale_1988_0001\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-05\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 37,80\", \"minor\": 3780}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.200,00\", \"minor\": 120000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\", \"sale_captured_at\": \"2026-11-03T13:05:00-03:00\", \"sale_id\": \"sale_1988_0002\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-03\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 0,00\", \"minor\": 0}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"normalized_status\": \"settled\", \"payment_ty [...cut]",
+      "cut": true
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_payout_status",
+      "text": "{\"arguments\": {\"receivable_ids\": [\"rcv_1988_0001\", \"rcv_1988_0002\", \"rcv_1988_0003\"]}, \"result\": {\"observed_at\": \"2026-11-04T14:39:49-03:00\", \"payouts\": [{\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": \"2026-11-03T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\", \"stage\": \"PAID\", \"stage_meaning\": \"Credit confirmed in the receiving account.\"}], \"source\": \"PayoutMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_contract_snapshot",
+      "text": "{\"arguments\": {}, \"result\": {\"effective_from\": \"2025-09-30\", \"observed_at\": \"2026-11-04T14:39:49-03:00\", \"pricing_context\": {\"plan\": \"demo_standard\", \"source\": \"ContractPricingContextMock\", \"version\": \"pricing_mock_v1\"}, \"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\", \"source\": \"ContractsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-receba-ja-plano-de-recebimento-reduzido",
+      "text": "Plano de Recebimento Reduzido - Getnet\n1. O que é o plano de recebimento reduzido?\nCom o plano de recebimento reduzido você recebe o valor das suas vendas em prazo inferior ao prazo padrão\ncontratado, sem precisar aguardar os prazos padrão conforme parcela. Por exemplo, se você fez uma venda no\ncrédito a vista, não precisará esperar 31 dias para receber essa venda.\n2. Quais planos de recebimento\nreduzidos estão disponíveis?\nA Getnet disponibiliza três opções de prazo para recebimento das vendas:\n• Receba no mesmo dia\n• Receba em 2 dias úteis\n• Receba em 30 dias\nReceba no mesmo dia\n✓\nO valor das vendas no\ncrédito à vista, crédito parcelado e voucher realizadas até às 21h é depositado automaticamente no mesmo\ndia.\n✓\nReceba também aos finais de\nsemana e feriados.\n✓\nDisponível para Transações\nrealizadas em vendas presenciais/físicas.\n✓\nNão se aplica às Transações\nrealizadas por canais digitais, comércio eletrônico (e-commerce), links de pagamento ou quaisquer outros\nmeios não presenciais.\nImportante:\nAlgumas transações poderão ser submetidas a análises de segurança, prevenção à fraude, validação cadastral ou\nprocedimentos operacionais internos. Nesses casos, o prazo para liquidação poderá ser de até 24 horas."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 6215,
+     "kept_chars": 6000,
+     "items": 7,
+     "items_cut": 1,
+     "truncated": true
+    },
+    "evidence_notes": [],
+    "reply": "Seu plano prevê recebimento do débito em D+1 e do crédito em D+2. Para as vendas de ontem (03/11), o débito de R$ 148,06 está previsto para 04/11 e o crédito de R$ 1.162,20, para 05/11. Essas datas são previsões, não confirmação de depósito. O crédito de R$ 80,00 da venda via Pix foi confirmado na conta em 03/11.\n\nPara antecipar vendas de crédito à vista ou parceladas, acesse o app Getnet Brasil e vá a Serviços > Antecipação de Vendas. Escolha a conta cadastrada, aceite os termos, simule e confira valores, bandeiras e taxas. Confirme o valor final, toque em Antecipar e informe sua senha. O mínimo é R$ 50,00; acompanhe o pedido em “Meus Pedidos”.\n\nO procedimento disponível não inclui antecipação de vendas no débito ou via Pix."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 6215,
+    "kept_chars": 6000,
+    "items": 7,
+    "items_cut": 1,
+    "truncated": true
+   },
+   "judge": {
+    "evaluation_id": "eval_b20c10a084eb4facae5f",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All amounts, dates, statuses and app steps trace to the tool results and passages, including the Pix confirmation.",
+     "factual_correctness": "D+1 debit and D+2 credit match the contract plan; scheduled vs confirmed payout distinction is correct.",
+     "relevance": "Answers both when yesterday's money will arrive and how to anticipate it.",
+     "usefulness": "Clear, in Portuguese, gives dates, amounts, step-by-step and the R$ 50 minimum."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00105538,
+    "error": null
+   }
+  },
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 1,
+   "request_id": "req_evala0b437e30f5b",
+   "split": "dev",
+   "language": "pt",
+   "message": "A taxa da venda no débito de ontem está correta?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "Não consegui verificar se a taxa da venda no débito de ontem está correta porque o serviço de análise de tarifas está indisponível no momento. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-D11081.",
+   "sources": [],
+   "duration_ms": 12504,
+   "cost_usd": 0.00061087,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A taxa da venda no débito de ontem está correta?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T14:40:01-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T14:40:01-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"debit\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"UNAVAILABLE\", \"message\": \"Pricing service is unavailable.\"}}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 503,
+     "kept_chars": 503,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Não consegui verificar se a taxa da venda no débito de ontem está correta porque o serviço de análise de tarifas está indisponível no momento. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-D11081."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 503,
+    "kept_chars": 503,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_c3f4145680104b499dfc",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The pricing service error and handoff are supported by the tool result; the protocol is a routine handoff reference.",
+     "factual_correctness": "The reply correctly states the pricing check was unavailable and consistent with the UNAVAILABLE error.",
+     "relevance": "It directly addresses the fee question and explains the check could not be completed, then hands over.",
+     "usefulness": "Clear, polite, in Portuguese, states the gap plainly and informs the merchant of the handoff."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00037978,
+    "error": null
+   }
+  },
+  {
+   "id": "REPLAN-ACCOUNT",
+   "repetition": 1,
+   "request_id": "req_eval389d173d44f5",
+   "split": "dev",
+   "language": "pt",
+   "message": "A antecipação de recebíveis está disponível no meu plano?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support → web",
+   "answer": "Seu plano de liquidação é débito em D+1 e crédito em D+2. Não consigo confirmar se a antecipação está habilitada especificamente no seu plano. Consulte o aplicativo Getnet Brasil para verificar se há vendas disponíveis para antecipar e quais taxas se aplicam.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "FAQs",
+    "Contracted products (your account)"
+   ],
+   "duration_ms": 17478,
+   "cost_usd": 0.01154691,
+   "model_calls": 8,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_contract_snapshot"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A antecipação de recebíveis está disponível no meu plano?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "FAQs",
+     "Contracted products (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_contract_snapshot",
+      "text": "{\"arguments\": {}, \"result\": {\"effective_from\": \"2025-09-30\", \"observed_at\": \"2026-11-04T14:40:22-03:00\", \"pricing_context\": {\"plan\": \"demo_standard\", \"source\": \"ContractPricingContextMock\", \"version\": \"pricing_mock_v1\"}, \"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\", \"source\": \"ContractsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1298,
+     "kept_chars": 1298,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Seu plano de liquidação é débito em D+1 e crédito em D+2. Não consigo confirmar se a antecipação está habilitada especificamente no seu plano. Consulte o aplicativo Getnet Brasil para verificar se há vendas disponíveis para antecipar e quais taxas se aplicam."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1298,
+    "kept_chars": 1298,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_81ee7532a1e8499eac44",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Settlement plan and app advice match the tool result and the passage about antecipating via the app.",
+     "factual_correctness": "Plan detail is accurate and the reply honestly does not confirm if antecipação is enabled.",
+     "relevance": "It addresses the plan question, though it could point more directly to where the plan enables antecipação.",
+     "usefulness": "Clear, polite Portuguese; directs the merchant to the app and states the limitation plainly."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00046228,
+    "error": null
+   }
+  },
+  {
+   "id": "EX01",
+   "repetition": 1,
+   "request_id": "req_eval3f32079bead0",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the difference between the Get Clássica and the Get Smart?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Both Get Clássica and Get Smart accept Pix, QR Code and contactless payments. They include free data plans, lifetime maintenance and batteries lasting up to 12 hours.\n\nGet Clássica has a touchscreen, Wi-Fi and 3G connectivity, plus free automatic receipt-paper replacement. Get Smart includes business-management apps and a sales simulator, with Wi-Fi, 3G and 4G connectivity.",
+   "sources": [
+    "Getnet | Maquininha de cartão: Melhores taxas e opções grátis",
+    "Getnet | Taxas - Getnet"
+   ],
+   "duration_ms": 8507,
+   "cost_usd": 0.00056127,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "What's the difference between the Get Clássica and the Get Smart?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Getnet | Maquininha de cartão: Melhores taxas e opções grátis",
+     "Getnet | Taxas - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\nPrepare seu negócio para vender mais na Black Friday com as maquininhas Getnet\nAceite cartões em moedas estrangeiras\nReceba pagamentos pelo Pix de forma rápida e segura\nConta e cartão grátis\nRecebimento em 2 dias úteis\nFrete Grátis\nESCOLHA SUA MAQUININHA\nAcelere suas vendas na Black Friday: ofertas especiais em maquininhas selecionadas\nSelecione sua faixa de faturamento e encontre as melhores taxas para sua empresa\nAté R$ 10 mil\nNOVO\nAcima de R$ 10 mil\nAcima de R$ 20 mil\nAcima de R$ 40 mil\nAcima de R$ 80 mil\n0,85%\nDébito\n2,69%\nCrédito\n9,07%\nCrédito 6x\nBaseado em seu faturamento, você tem R$ 319,69 de desconto no aluguel das maquininhas\nGet Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis\nALUGAR GET CLÁSSICA\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nBateria com até 12hrs de duração\nTela touchscreen\nManutenção vitalícia\nGet Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90\nGrátis\nALUGAR GET SMART\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nAplicativos para gestão do seu negócio\nSimulador de vendas\nManutenção vitalícia\nRecebeu sua maquininha de outra pessoa?"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-taxas",
+      "text": "Getnet | Taxas - Getnet\nConfira as taxas das nossas soluções\nNavegue no menu ao lado e confira as nossas taxas.\nTaxas sujeitas a alteração de acordo com as condições dos produtos e serviços contratados. Com nossas maquininhas de cartão, Link de Pagamento e Get Tap você recebe na sua Get Conta sem pagar mais por isso!\nDébito\n0,99%\n1x\n2,89%\n2x\n7,80%\n3x\n8,22%\n4x\n8,64%\n5x\n9,06%\n6x\n9,48%\n7x\n9,90%\n8x\n10,32%\n9x\n10,74%\n10x\n11,16%\n11x\n11,58%\n12x\n12,00%\nEscolha a maquininha ideal para o seu negócio aqui\nGet Clássica\nPagamento por aproximação, Pix e QR Code\nComprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática\nConexão Wi-Fi, chip 3G e plano de dados gratuitos\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ\nGet Smart\nPagamento por aproximação, Pix e QR Code\nSem fio com duração de até 12h de bateria\nConexão Wi-Fi, 3G, 4G e plano de dados gratuitos\nComprovante impresso na hora ou via SMS\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 2283,
+     "kept_chars": 2283,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Both Get Clássica and Get Smart accept Pix, QR Code and contactless payments. They include free data plans, lifetime maintenance and batteries lasting up to 12 hours.\n\nGet Clássica has a touchscreen, Wi-Fi and 3G connectivity, plus free automatic receipt-paper replacement. Get Smart includes business-management apps and a sales simulator, with Wi-Fi, 3G and 4G connectivity."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 2283,
+    "kept_chars": 2283,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_7d145d177b1b47a4b5c6",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Every feature listed matches the passages about Get Clássica and Get Smart; nothing invented.",
+     "factual_correctness": "Features and connectivity details agree with the two official source passages and are internally consistent.",
+     "relevance": "It compares the two machines' features clearly, though it omits the rental prices shown in the sources.",
+     "usefulness": "Clear, concise English comparison the merchant can act on; adding prices would make it more complete."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00057988,
+    "error": null
+   }
+  },
+  {
+   "id": "EX02",
+   "repetition": 1,
+   "request_id": "req_eval67c09a82bb44",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the weather forecast in Porto Alegre tomorrow?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Tomorrow, November 5, Porto Alegre is forecast to have thunderstorms overnight and showers in the morning, with sunnier skies later. Temperatures are expected to range from about 19–27°C.",
+   "sources": [
+    "Web search data provider: oai-weather"
+   ],
+   "duration_ms": 8263,
+   "cost_usd": 0.0110205,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "What's the weather forecast in Porto Alegre tomorrow?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Web search data provider: oai-weather"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Tomorrow, November 5, Porto Alegre is forecast to have thunderstorms overnight and showers in the morning, with sunnier skies later. Temperatures are expected to range from about 19–27°C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_ae192024978640c5aca5",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Web search text unavailable; reply's weather details are consistent with a weather source but unverifiable, and date/figures cannot be checked.",
+     "factual_correctness": "No passage to verify against; content is plausible and internally consistent, but the specific date and temperatures are unconfirmed.",
+     "relevance": "Directly answers the merchant's question about tomorrow's Porto Alegre weather forecast.",
+     "usefulness": "Clear, concise answer in the merchant's language with actionable forecast, though it lacks source attribution."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00031558,
+    "error": null
+   }
+  },
+  {
+   "id": "EX03",
+   "repetition": 1,
+   "request_id": "req_evale4a8b3c51ce9",
+   "split": "dev",
+   "language": "en",
+   "message": "When will the money from yesterday's sales be deposited?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "The Pix sale’s net R$ 80,00 was credited yesterday, November 3, 2026. The debit sale’s net R$ 148,06 is expected today, November 4, 2026, and the credit sale’s net R$ 1.162,20 is expected tomorrow, November 5, 2026. The debit and credit deposits are scheduled, but I can’t yet confirm that they have been credited to your account.",
+   "sources": [
+    "Receivables schedule (your account)",
+    "Payout status (your account)"
+   ],
+   "duration_ms": 11143,
+   "cost_usd": 0.00068469,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_receivables_schedule",
+    "get_payout_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "When will the money from yesterday's sales be deposited?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Receivables schedule (your account)",
+     "Payout status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"status\": \"pending\"}], \"observed_at\": \"2026-11-04T15:43:12-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"receivables\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_receivables_schedule",
+      "text": "{\"arguments\": {\"date_field\": \"sale_date\", \"date_from\": null, \"date_to\": null, \"period\": \"yesterday\"}, \"result\": {\"count\": 3, \"date_field\": \"sale_date\", \"date_from\": \"2026-11-03\", \"date_to\": \"2026-11-03\", \"net_total\": {\"currency\": \"BRL\", \"display\": \"R$ 1.390,26\", \"minor\": 139026}, \"note\": \"Expected dates come from the schedule record. Use get_payout_status to know if credit is confirmed.\", \"observed_at\": \"2026-11-04T15:43:15-03:00\", \"receivables\": [{\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-04\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\", \"sale_captured_at\": \"2026-11-03T09:42:00-03:00\", \"sale_id\": \"sale_1988_0001\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-05\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 37,80\", \"minor\": 3780}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.200,00\", \"minor\": 120000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\", \"sale_captured_at\": \"2026-11-03T13:05:00-03:00\", \"sale_id\": \"sale_1988_0002\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-03\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 0,00\", \"minor\": 0}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"normalized_status\": \"settled\", \"payment_type\": \"pix\", \"receivable_id\": \"rcv_1988_0003\", \"sale_captured_at\": \"2026-11-03T17:30:00-03:00\", \"sale_id\": \"sale_1988_0003\", \"source_status\": \"SETTLED\", \"status_meaning\": \"Receivable settled.\"}], \"source\": \"ReceivablesMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_payout_status",
+      "text": "{\"arguments\": {\"receivable_ids\": [\"rcv_1988_0001\", \"rcv_1988_0002\", \"rcv_1988_0003\"]}, \"result\": {\"observed_at\": \"2026-11-04T15:43:17-03:00\", \"payouts\": [{\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": \"2026-11-03T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\", \"stage\": \"PAID\", \"stage_meaning\": \"Credit confirmed in the receiving account.\"}], \"source\": \"PayoutMock\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3693,
+     "kept_chars": 3693,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "The Pix sale’s net R$ 80,00 was credited yesterday, November 3, 2026. The debit sale’s net R$ 148,06 is expected today, November 4, 2026, and the credit sale’s net R$ 1.162,20 is expected tomorrow, November 5, 2026. The debit and credit deposits are scheduled, but I can’t yet confirm that they have been credited to your account."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3693,
+    "kept_chars": 3693,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_acd114e24a804c2bac71",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All amounts, dates and statuses match the receivables schedule and payout status tool results.",
+     "factual_correctness": "Correctly distinguishes the confirmed Pix credit from the two scheduled but unconfirmed deposits.",
+     "relevance": "Directly answers when yesterday's sales will be deposited, covering all three sales.",
+     "usefulness": "Clear, concise, polite and same language, with each sale's amount and expected date plus credit status."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00074038,
+    "error": null
+   }
+  },
+  {
+   "id": "EX05",
+   "repetition": 1,
+   "request_id": "req_eval2b91d6827167",
+   "split": "dev",
+   "language": "en",
+   "message": "My card machine won't connect to the internet, what should I do?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Your Get Smart is currently offline. Its last signal was received at 11:31 today. Wi-Fi is configured, and mobile data is listed as available.\n\nIf you connect by Wi-Fi, select “Wi-Fi” on the home screen, then “Procurar Redes.” Choose your network, enter the password carefully, and confirm. Check that the Wi-Fi is working and the password is correct.\n\nIf you use a SIM, turn off the machine, open the back cover, and insert the SIM into the SIM1 or SIM2 slot with the metal side facing down. Close the cover, turn it on, and wait for a 2G or 3G connection. To test it, press the function button (F, #, or equivalent), press 60, select 2 – manutenção, then 1 – teste de comunicação.\n\nI couldn’t confirm further troubleshooting steps if the connection still fails.",
+   "sources": [
+    "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Card machine status (your account)"
+   ],
+   "duration_ms": 14062,
+   "cost_usd": 0.00103332,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "My card machine won't connect to the internet, what should I do?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Card machine status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-05T10:25:00-03:00\", \"created_at\": \"2026-09-05T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-04T15:43:25-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"checks\": [{\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-04T15:43:25-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-04T15:43:25-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"device\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": null}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-04T11:31:07-03:00\", \"minutes_since_last_seen\": 252, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-04T15:43:32-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+      "text": "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet\nConectar sua maquininha Getnet ao Wi-Fi é um passo essencial para garantir transações rápidas e seguras. A boa notícia é que o processo é simples e pode ser feito em poucos minutos. Siga este guia rápido:\nPasso a passo para configurar o Wi-Fi na maquininha Getnet\n1. Acesse a opção de Wi-Fi na tela inicial.\nNa tela principal da sua maquininha, clique na opção “Wi-Fi”.\n2. Procure pelas redes disponíveis.\nSelecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas.\n3. Escolha sua rede.\nLocalize o nome da sua rede na lista e clique sobre ela.\n4. Insira a [credential removed] Wi-Fi.\nDigite a [credential removed] sua rede com atenção e confirme.\n5. Conexão concluída!\nApós a confirmação, sua maquininha estará conectada à internet.\nBenefícios de conectar ao Wi-Fi\nTransações mais rápidas:\nA conexão Wi-Fi oferece maior estabilidade em comparação a redes móveis.\nFacilidade de uso:\nIdeal para ambientes fixos, como lojas ou escritórios.\nEconomia de dados:\nEvita o uso do plano de dados da maquininha.\nDica:\nCertifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros. Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nComo proceder para que minha bateria da Get Smart se mantenha com uma boa duração?\nDeixe a bateria carregando sempre que possível e, de preferência, por pelo menos 3 horas seguidas. Não espere a bateria descarregar completamente para recarregá-la. O ideal é carregar a bateria quando o nível estiver em 20%.\nA Get Smart aceita pagamento com auxilio emergencial?\nA Get Smart aceita pagamento com auxilio emergencial?\nSim, basta fazer o processo de pagamento com\nQR Code\n, selecionando a opção débito.\nver mais\ndemais\ndúvidas\nAlgar\nComo insiro o Chip na minha máquina?\nComo insiro o Chip na minha máquina?\nSiga os passos a seguir:\n– Com a máquina desligada, abra a tampa na parte de trás\n– Insira o chip no local destinado, sinalizado com SIM1 ou SIM2, com a parte metálica voltada para baixo\n– Feche a tampa, ligue a máquina e aguarde a conexão de rede de dados\n– Com a indicação de rede conectada (2G ou 3G), a máquina está pronta para uso\n– Faça um teste de comunicação para verificar a conectividade do seu chip, seguindo os passos:\n• Pressione o botão função – F, # ou o da sua máquina\n• Pressione 60\n• Selecione a opção 2 – manutenção\n• Selecione a opção 1 – teste de comunicação"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3786,
+     "kept_chars": 3786,
+     "items": 5,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Your Get Smart is currently offline. Its last signal was received at 11:31 today. Wi-Fi is configured, and mobile data is listed as available.\n\nIf you connect by Wi-Fi, select “Wi-Fi” on the home screen, then “Procurar Redes.” Choose your network, enter the password carefully, and confirm. Check that the Wi-Fi is working and the password is correct.\n\nIf you use a SIM, turn off the machine, open the back cover, and insert the SIM into the SIM1 or SIM2 slot with the metal side facing down. Close the cover, turn it on, and wait for a 2G or 3G connection. To test it, press the function button (F, #, or equivalent), press 60, select 2 – manutenção, then 1 – teste de comunicação.\n\nI couldn’t confirm further troubleshooting steps if the connection still fails."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3786,
+    "kept_chars": 3786,
+    "items": 5,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_97f8b644093b42aab261",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts (offline status, 11:31 last signal, Wi-Fi config, steps) trace to tool results and passages.",
+     "factual_correctness": "Consistent with device status and the Getnet Wi-Fi/SIM instructions; no contradictions or wrong details.",
+     "relevance": "Directly answers the connectivity question with troubleshooting steps for the offline Get Smart.",
+     "usefulness": "Clear, step-by-step, polite, and plainly states what couldn't be confirmed further."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00077398,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-PRICE-DIVERGENCE",
+   "repetition": 1,
+   "request_id": "req_evalef84732b3dcb",
+   "split": "dev",
+   "language": "en",
+   "message": "Is there a divergence in yesterday's Pix charge?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "I couldn’t verify whether yesterday’s Pix charge diverged because the pricing service is unavailable. I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-5A6DA2.",
+   "sources": [],
+   "duration_ms": 12441,
+   "cost_usd": 0.00059194,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": false,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": false,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Is there a divergence in yesterday's Pix charge?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T15:43:42-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T15:43:42-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"pix\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"UNAVAILABLE\", \"message\": \"Pricing service is unavailable.\"}}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 501,
+     "kept_chars": 501,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "I couldn’t verify whether yesterday’s Pix charge diverged because the pricing service is unavailable. I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-5A6DA2."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 501,
+    "kept_chars": 501,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_b8f2a73def1a410cbc40",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The pricing service unavailability and handoff are supported, but the protocol number isn't in the evidence.",
+     "factual_correctness": "The reply accurately reflects the UNAVAILABLE error and correctly declines to confirm any divergence.",
+     "relevance": "It directly answers the divergence question by explaining it could not be checked and handing over.",
+     "usefulness": "Clear, concise, polite and in the merchant's language, plainly stating the gap and the handoff."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00036868,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 1,
+   "request_id": "req_evalfdaa1fe081d4",
+   "split": "dev",
+   "language": "en",
+   "message": "I want to close my contract.",
+   "route": "clarify",
+   "status": "needs_clarification",
+   "agents": [
+    "router",
+    "personality"
+   ],
+   "executed_path": "",
+   "answer": "Would you like information about the cancellation process, or are you requesting that Getnet close your contract?",
+   "sources": [],
+   "duration_ms": 3153,
+   "cost_usd": 0.00015007,
+   "model_calls": 2,
+   "errors": [],
+   "violations": [],
+   "route_ok": false,
+   "status_ok": false,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "I want to close my contract.",
+    "status": "needs_clarification",
+    "route": "clarify",
+    "sources": [],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Would you like information about the cancellation process, or are you requesting that Getnet close your contract?"
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_e46ed23700c843f4a027",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The reply only asks a clarifying question and states no unsupported facts.",
+     "factual_correctness": "No factual claims are made, so nothing contradicts the evidence.",
+     "relevance": "It correctly clarifies whether the merchant wants cancellation info or actual contract closure.",
+     "usefulness": "Clear, concise, polite question in the merchant's language that moves the case forward."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00026038,
+    "error": null
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 1,
+   "request_id": "req_eval1cc22ceee590",
+   "split": "dev",
+   "language": "pt",
+   "message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "Não consegui verificar se há evidência suficiente para comparar a taxa de crédito em 2 parcelas, pois o serviço de análise de preços está indisponível no momento.\n\nEncaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-EA8203.",
+   "sources": [],
+   "duration_ms": 12730,
+   "cost_usd": 0.0006262,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": false,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": false,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T15:44:01-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T15:44:01-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": 2, \"payment_type\": \"credit\", \"period\": \"latest\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"UNAVAILABLE\", \"message\": \"Pricing service is unavailable.\"}}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 498,
+     "kept_chars": 498,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Não consegui verificar se há evidência suficiente para comparar a taxa de crédito em 2 parcelas, pois o serviço de análise de preços está indisponível no momento.\n\nEncaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-EA8203."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 498,
+    "kept_chars": 498,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_675f6549967244b09f4f",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Tool result shows pricing service UNAVAILABLE; handoff and the reply's stated limits are supported, though the protocol number is not in evidence.",
+     "factual_correctness": "Correctly reports the pricing service is unavailable and consistent with the UNAVAILABLE tool result; protocol number is unverifiable but not contradicted.",
+     "relevance": "Directly answers the merchant's question about insufficient evidence and hands off as the status requires.",
+     "usefulness": "Clear, concise, polite Portuguese that explains the gap plainly and informs the merchant of the handoff."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00040408,
+    "error": null
+   }
+  }
+ ]
+}

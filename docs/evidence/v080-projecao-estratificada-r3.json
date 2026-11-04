@@ -1,0 +1,115 @@
+{
+  "format_version": 1,
+  "generated_at_utc": "2026-11-04T19:08:37Z",
+  "candidate": {
+    "product_sha": "9057aaac36eddbe309393089115175b6fc98b5bd",
+    "checkout_head": "c6a382407791616a54a4604cbaa2069ad907326f",
+    "checkout_delta": "docs only"
+  },
+  "method": "Offline cost projection from the combined real dev sample and explicit dev metadata. No provider calls were made for this projection.",
+  "source_artifacts": [
+    "docs/evidence/v080-custo-combinada-r2.json",
+    "docs/evidence/v080-custo-estimativa-r2.json",
+    "docs/evidence/v080-custo-complemento-r2.json",
+    "docs/specs/evolucao-pos-feedback-plano.md",
+    "docs/tasks/73-regressao-fechamento-v080.md",
+    "tests/scenarios/replan.jsonl",
+    "tests/scenarios/challenge_examples.jsonl",
+    "tests/scenarios/core_cases.jsonl",
+    "tests/scenarios/business_journeys.jsonl",
+    "src/merchant_assistant/evaluation/campaign.py",
+    "src/merchant_assistant/llm/prices.json"
+  ],
+  "holdout_access": {
+    "opened_or_read": false,
+    "reference": "Published manifest metadata only",
+    "sha256": "91aa51588afdf4afccb1ea8f230a47d3d61686004ec599f4c547e7881b4f1bac",
+    "case_count": 25
+  },
+  "campaign_scope": {
+    "dev_cases": 27,
+    "dev_replan_cases": 4,
+    "legacy_holdout_cases": 17,
+    "holdout_v080_cases_from_manifest_only": 25,
+    "case_total": 69,
+    "followup_conversations": 4,
+    "followup_turns": 10,
+    "agent_runs_per_case": 3,
+    "judge_calls_per_case": 6,
+    "campaign_formula": "3 * measured agent cost + 6 * first judge cost; follow-up turns run once without judges"
+  },
+  "ledger": {
+    "primary": "data/runtime/budget.sqlite3",
+    "last_id": 1605,
+    "spent_usd": 0.55947501,
+    "open_reservations_usd": 0.0,
+    "persisted_limit_usd": 1.0,
+    "remaining_primary_usd": 0.44052499,
+    "fixed_sample_process_limit_usd": 0.64250491,
+    "remaining_under_sample_process_limit_usd": 0.0830299,
+    "campaign_cap_mounted": false,
+    "delta_during_this_projection_usd": 0.0
+  },
+  "measurements": {
+    "combined_real_dev_cases": 11,
+    "agent_model": "gpt-6-luna",
+    "judge_provider_model": "deepseek/deepseek-flash",
+    "agent_cost_usd": 0.03974406,
+    "judge_cost_usd": 0.0059851,
+    "valid_pricing_cases_for_functional_projection": 0,
+    "pricing_cases_with_mock_unavailable": [
+      "V030-PRICE-DIVERGENCE",
+      "V030-PT-PRICE-INSUFFICIENT"
+    ],
+    "contract_termination_case": {
+      "id": "V030-CONTRACT-TERMINATION",
+      "observed_route_status": "clarify/needs_clarification",
+      "expected_route_status": "human_handoff",
+      "classification": "single-run route/status signal; no dependency error observed; not repeated"
+    }
+  },
+  "qa_stratified_projection": {
+    "assumptions": {
+      "unknown_42_cases_use_dev_replan_prevalence": "4/27, yielding 10.2222 expected replan cases across 69 total",
+      "ordinary_dev_route_mix": "2 general_web, 5 knowledge, 3 mixed, 12 support, 1 handoff among 23 non-replan dev cases; ambiguous allowed routes assigned to the higher-cost measured category",
+      "route_unit_costs": "EX02 for general_web, EX01 for knowledge, EX05 for mixed, EX03 for support; the highest valid ordinary judge cost is used as the handoff proxy; four observed replan rows provide the replan mean",
+      "web_search": "One fixed US$0.01 web-search fee per general_web case and 0.5 per replan case, based on the observed replan paths; fee is already included in agent totals",
+      "uncertainty_stress": "1.5x on variable agent-token and judge costs; fixed web-search fee is not multiplied; embedding allowance is based on observed ledger cost"
+    },
+    "base_case_usd": 0.77451472,
+    "stress_case_usd": 1.00102584,
+    "base_components_usd": {
+      "openai_agent_phase_including_web": 0.47475335,
+      "deepseek_judges": 0.27681543,
+      "openai_followup_agent_turns": 0.02293494,
+      "embedding_allowance": 0.000011,
+      "web_fixed_fee_included_in_openai_components": 0.32148148
+    },
+    "base_over_primary_remaining_usd": 0.33398973,
+    "stress_over_primary_remaining_usd": 0.56050085,
+    "stress_over_maximum_campaign_cap_usd": 0.00102584,
+    "decision": "Does not fit the primary available balance; no campaign cap should be mounted."
+  },
+  "independent_supervisor_sensitivity": {
+    "basis": "Supervisor's separate offline lower-bound check; assumes four measured replans, four general_web cases and 61 other cases, and no unobserved web cases in the sealed holdout.",
+    "zero_unobserved_holdout_web_cases_usd": 0.63243,
+    "two_unobserved_holdout_web_cases_usd": 0.68941,
+    "five_unobserved_holdout_web_cases_usd": 0.77487,
+    "all_scenarios_exceed_primary_remaining": true
+  },
+  "mock_preflight": {
+    "service": "merchant_assistant.mocks.service:app",
+    "loopback_port": 18765,
+    "startup_attempt_pid": 22680,
+    "startup_result": "process exited with empty stdout/stderr; GET /openapi.json failed",
+    "fixture_request_verified": false,
+    "paid_retry_started": false,
+    "additional_paid_cost_usd": 0.0
+  },
+  "decision": {
+    "campaign_gate": "blocked by projected cost versus primary balance",
+    "pricing_retry_gate": "stopped before mock restart or paid retry because the full campaign projection already fails the available balance",
+    "holdout_gate": "not opened or executed",
+    "next_condition": "A future run needs an approved higher persisted primary limit and a valid estimate within the campaign ceiling; the pricing cases also require a healthy versioned local mock service."
+  }
+}
