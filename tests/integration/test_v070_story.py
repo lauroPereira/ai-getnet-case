@@ -227,6 +227,11 @@ def test_story_moments_1_to_15_and_17(offline, settings, tmp_path):
     )
     assert insisted.json()["resolution"]["state"] == "handoff" and insisted.json()["route"] != "human_reply"
     assert client.get("/ready").json()["checkpoints"]["threads"] == 1
+    assert db_rows(
+        settings,
+        "SELECT queue_state, resume_status, resume_count, ticket_id FROM handoff_cases WHERE case_id=?",
+        (case_id,),
+    ) == [{"queue_state": "open", "resume_status": None, "resume_count": 0, "ticket_id": None}]  # nobody acted yet
 
     # 9. op_ana takes the ticket; op_bruno gets 409 claimed_by_other.
     assigned = ticketing.post(f"/tickets/{ticket_id}/assign", headers=ana)
@@ -322,6 +327,46 @@ def test_story_moments_1_to_15_and_17(offline, settings, tmp_path):
     assert [r.status_code for r in refusals] == [404, 404, 404, 403, 401, 401]
     assert all("cliente1988" not in r.text and protocol not in r.text for r in refusals)
 
+    # The whole story, at the end. The durable outbox (0010) delivered every intention once, in the order of the
+    # events, and the ticketing has nothing left to send.
+    webhooks.wait()
+    outbox = db_rows(
+        settings,
+        "SELECT event, target, status, attempts, COUNT(*) AS n FROM webhook_outbox "
+        "GROUP BY event, target, status, attempts ORDER BY event, target",
+    )
+    assert [(o["event"], o["target"], o["status"], o["attempts"], o["n"]) for o in outbox] == [
+        ("conversation.replied", "merchant", "delivered", 1, 3),
+        ("conversation.replied", "ticketing", "delivered", 1, 3),
+        ("handoff.closed", "ticketing", "delivered", 1, 1),
+        ("handoff.created", "ticketing", "delivered", 1, 3),
+    ]
+    assert db_rows(settings, "SELECT COUNT(*) AS n FROM webhook_deliveries WHERE status != 'delivered'") == [{"n": 0}]
+    sent = [
+        d
+        for each in ticketing.get("/tickets", headers=ana).json()["tickets"]
+        for d in ticketing.get(f"/tickets/{each['ticket_id']}", headers=ana).json()["deliveries"]["sent"]
+    ]
+    refused = sorted(
+        (d["event_type"], d["operator_id"], d["status"], d["response_status"])
+        for d in sent
+        if d["status"] != "delivered"
+    )
+    assert len(sent) == 7 and refused == [  # the two refusals of the story, both final: moments 9 and 11
+        ("ticket.action", "op_ana", "rejected", 409),
+        ("ticket.assigned", "op_bruno", "rejected", 409),
+    ]
+    [lost] = [d for d in sent if d["idempotency_key"] == reply["idempotency_key"]]  # moment 11: answer lost once
+    assert [a["outcome"] for a in lost["attempts"]] == ["network_error", "delivered"]
+    # CA-46: one audit row per tool call in every request of the story (the operator's reject included).
+    traced = sqlite3.connect(settings.runtime_path / "traces.sqlite3").execute(
+        "SELECT SUM(tool_calls) FROM requests"
+    ).fetchone()[0]
+    audited = db_rows(settings, "SELECT COUNT(*) AS n FROM audit_events WHERE tool NOT LIKE 'handoff%'")[0]["n"]
+    assert traced > 1 and audited == traced
+    versions = client.get("/ready").json()["versions"]
+    assert versions["schema"] == 10 and versions["app"] == "0.7.0"
+
 
 # --- moment 16: restart between handing off and acting (two processes) ------------------------------------------------
 
@@ -405,3 +450,15 @@ def test_story_moment_16_restart_between_handoff_and_action(offline, settings, t
     assert turn["text"] == body["text"] and turn["protocol"] == first["protocol"]
     assert ticketing.get(f"/tickets/{first['ticket_id']}", headers=ana).json()["reply_delivered_at"]
     assert merchant.get("/merchant/events", params={"conversation_id": first["conversation_id"]}).json()["events"]
+    # The same key after the restart: the record, no second resume, still one operator turn (CA-48).
+    again = ticketing.post(f"/tickets/{first['ticket_id']}/actions", headers=ana, json=body)
+    assert again.status_code == 200 and again.json()["delivery"]["replayed"] is True
+    assert len(operator_turns(client, merchant_a, first["conversation_id"])) == 1
+    # The outbox written by the first process (handoff.created) and the second (the reply) is all delivered.
+    outbox = db_rows(settings, "SELECT event, target, status, attempts FROM webhook_outbox ORDER BY rowid")
+    assert [(o["event"], o["target"], o["status"], o["attempts"]) for o in outbox] == [
+        ("handoff.created", "ticketing", "delivered", 1),
+        ("conversation.replied", "ticketing", "delivered", 1),
+        ("conversation.replied", "merchant", "delivered", 1),
+    ]
+    assert client.get("/ready").json()["checkpoints"]["threads"] == 1
