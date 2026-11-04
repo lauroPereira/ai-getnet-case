@@ -33,3 +33,16 @@
 ## Não comprovado
 
 `replan.v1` com modelo real; texto real da lacuna; cenários com modelo real; O-8 no Docker.
+
+## Rodada 2 — apto para QA
+
+- **Candidato:** `5da3de54ea0f0c41a65b27c578cc6848f2fa30d1`, worktree `review-a2`; HEAD e status iguais antes e depois. Diff `046a30d..5da3de5`.
+- **Independência:** Reviewer novo em contexto frio (sonnet/xhigh), escopo estreito e congelado; leu a tarefa até "Validação", a spec, o parecer da rodada 1 e a ADR 0019; não leu a passagem do Developer.
+- **Parecer:** **apto para QA** — nenhum P1 nem P2.
+- **P2-1 corrigido** (`agents/replanner.py:92-96,321,381`, `Observed.done`): a reprodução da rodada 1 passou de 3 buscas web e 4 saltos para 1 busca e 1 salto. Enumeração de ponta a ponta com planejador hostil (6 escolhas por decisão), duas variantes de Support e as quatro rotas: 300 execuções com as regras desligadas e 60 com elas ligadas, nenhum especialista repetido, no máximo 1 busca web, até 2 saltos na `general_web` e 3 nas demais; o controle no candidato anterior dá 52 violações. Enumeração estática: máximo de 3 saltos, nenhuma violação (antes, 4 e 120).
+- **P3-1 da rodada 1:** `finish` do modelo com revisão incompleta declara a razão como lacuna; `complete`, `clarify` e `escalate` não.
+- **P3-2 da rodada 1:** rótulos só ganharam restrições; catálogo e `replan.jsonl` iguais campo a campo. Ablação sem replanejamento: `REPLAN-PROCEDURE`, `REPLAN-TOOL-DOWN` e `REPLAN-ACCOUNT` reprovam; `REPLAN-WEB` ainda passa com a frase padrão de "não encontrei". A decisão de não exigir fonte no `REPLAN-WEB` (produto fictício) se justifica.
+- **Regressão:** eval programado da `main` e do candidato idênticos em 40 casos e 4 conversas (normalizado o sufixo `HO-`); trava da v0.7.0 sem alteração, 94 passed; testes da tarefa 67 passed. Mutação: 17 mutantes, 15 mortos.
+- **P3 (registrados):** (1) `REPLAN-WEB` aceita invenção com "NFC" e rejeita admissões honestas fora da lista ("não consegui encontrar", "não foi possível"); com modelo real, o caminho tem de ser lido no trace ou no `executed_path`; (2) A08/A09 sem teste: só o `finish` declara a razão como lacuna, e razão vazia não pode virar lacuna vazia; (3) `replan.v1` e `state.py` ainda descrevem a `reason` como "para o trace", e o `personality.v4` não usa `unconfirmed` (P3-5 da rodada 1); (4) o fato "o nó `knowledge` da `general_web` é a busca web" está em três lugares; (5) a ADR não cita a borda da razão vazia.
+- **Decisão do Supervisor:** os P3 1 a 3 vão para a tarefa 72b, que já mexe nos rótulos e na Personality; o QA da v0.8.0 confere o caminho do `REPLAN-WEB` pelo trace.
+- **Suíte estrita** (Supervisor, neste candidato): **712 passed**, código 0.
