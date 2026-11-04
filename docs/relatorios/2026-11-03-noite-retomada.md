@@ -1,22 +1,76 @@
-# Relatório do Supervisor — retomada da noite de 03/11/2026 (v0.7.0, em andamento)
+# Relatório do Supervisor — retomada da noite de 03/11 a madrugada de 04/11/2026 (v0.7.0 concluída)
 
-Período: a partir de 19h50, horário local, no Claude Code. Base: backend `41552c6` (produto em `5ebbfa6`) e web `733cc37`, branch `codex/v0.7.0-identidade-hitl` nos dois repositórios.
+Período: 19h50 de 03/11 às 02h00 de 04/11, horário local, no Claude Code. Base: commits deste repositório `fa4f0d4`..`fed905e` (merge na `main`) e do web `40b3797`..`0a8e12f`.
 
-Subagentes desta rodada: `developer`, `reviewer` e `qa` de `.claude/agents/`, despachados com modelo **sonnet** e esforço **xhigh** por decisão do responsável nesta sessão, para comparar com o relatório da tarde (opus/high).
+Subagentes desta rodada: `developer`, `reviewer` e `qa` de `.claude/agents/`, despachados com modelo **sonnet** e esforço **xhigh** por decisão do responsável, para comparar com a tarde (opus/high). O Supervisor (sessão principal) rodou em Opus 5.5.
 
-- **até 19h57 — reconciliação e preparação:** estado conferido com os relatórios da noite (branches, HEADs, worktrees, branch WIP da T68, lacre do holdout da v0.8.0, identidade Git e memória). O diretório de cópias da revisão da T66 saiu da raiz do backend para `C:\workspace\ai-getnet-case-wt\_preservado\` (movido, não apagado: 2.173 arquivos, mesmos bytes), para a suíte estrita não varrer as cópias mutadas. Despertador de 20 minutos ativo.
+- **até 19h57 — reconciliação e preparação:** estado conferido com os relatórios da noite (branches, HEADs, worktrees, branch WIP da T68, lacre do holdout da v0.8.0, identidade e memória); nada divergiu. As cópias mutadas da revisão anterior saíram da raiz do backend para `C:\workspace\ai-getnet-case-wt\_preservado\` (movidas, mesmos 2.173 arquivos). Migrações 0009 e 0010 reservadas para a v0.7.0.
+- **19h57 às 21h29 — integração por webhooks endurecida (T66):** a suíte estrita do candidato pendente rodou pela primeira vez (2 testes antigos esperando o esquema 9). A descida da migração da outbox passou a recusar enquanto houver aviso não entregue. A revisão fria seguinte comprovou por execução os critérios de ponta a ponta e de idempotência — ticketing real, dois processos disputando o mesmo evento, quedas e reinícios, migrações com dados — e pediu que o aviso de caso novo sobrevivesse a uma queda no meio do turno; corrigido, com o destino sem URL deixando de acumular avisos e a API dependendo do ticketing no compose.
+- **20h00 às 22h36 — interface do operador e do lojista no web (T67):** sincronização do contrato confirmada; quatro rodadas fecharam vazamentos de estado entre usuários no mesmo navegador (conversa do lojista anterior, rascunho do operador anterior, escolhas sem chave) e a recuperação da resposta humana na ordem real da conversa. Apta na rodada 6.
+- **22h36 às 00h44 — regressão integrada (T68):** teste da história de ponta a ponta com ticketing real e reinício em dois processos; a queda de `content_ok` do eval programado foi explicada (protocolo novo e uma palavra perdida na frase de encaminhamento) e corrigida; o cenário da bancada que ainda esperava o protocolo antigo foi alinhado. Candidato fixado nos dois repositórios.
+- **00h45 às 01h41 — QA real:** os 18 momentos da história passaram por `curl`, CLI, interface no navegador, duas quedas abruptas da API e Docker (smoke com token, ciclo do ticket, reinício do container entre encaminhar e agir). **Apto com ressalvas, nenhum defeito reproduzido.**
+- **01h41 às 02h00 — fechamento:** evidência de resultado, README e CHANGELOG com as duas quebras e as chamadas do avaliador, ADRs 0017 e 0018 aceitas (a 0018 alinhada aos dois grafos e à outbox), suíte estrita final verde e **merge local da v0.7.0 na `main` dos dois repositórios** (`fed905e` e `0a8e12f`).
+- **Em paralelo (23h–01h) — v0.8.0 preparada a pedido do responsável:** spec complementar, história e tarefas 69 a 73 escritas na branch `codex/v0.8.0-avaliacao`; revisadas e **aprovadas pelo responsável** com as decisões D12 e D16 a D19 e as condições de execução.
 
-- **19h57 às 20h17 — suíte estrita e descida segura da 0010 (T66):** a suíte estrita do candidato da sessão anterior, pendente, rodou pela primeira vez: 558 aprovados e 2 falhas, ambas testes antigos que ainda esperavam a versão 9 do esquema. A descida da migração da outbox passou a recusar, sem alterar nada, enquanto houver notificação não entregue, e desce com a tabela vazia ou só com entregues; os dois testes antigos foram alinhados. Suíte estrita do novo candidato: **568 aprovados, código 0**.
-- **20h00 às 21h09 — revisões frias e correções em paralelo (T66, T67):** a revisão da integração por webhooks comprovou por execução os critérios de ponta a ponta e de idempotência, com o serviço de ticketing real, dois processos disputando o mesmo evento, quedas e reinícios e migrações com dados, mas pediu duas correções: o aviso de caso novo ao ticketing se perde numa queda no meio do turno, e o teto de três tentativas após reinício não tem teste. No web, a sincronização do OpenAPI foi confirmada; a revisão achou que um lojista via a conversa do anterior no mesmo navegador e que a resposta humana não era recuperada na ordem real da conversa. Ambos corrigidos e confirmados; resta o rascunho do operador herdado por outro operador. As duas correções estão com os Developers.
+**Custo e tempo por agente** (de `tools/scripts/medir-agentes.py --desde 2026-11-03`; rodadas retomadas por mensagem contam na mesma passagem):
 
-**Decisões tomadas:**
+| Passagem (tarefa) | Modelo | Rodadas | Min. ativos | US$ equiv. |
+| --- | --- | ---: | ---: | ---: |
+| Developer T66 (r4, r5) | sonnet/xhigh | 2 | 28,7 | 4,42 |
+| Developer T67 (r4, r5, r6) | sonnet/xhigh | 3 | 47,5 | 8,71 |
+| Developer T68 (r1, r2) | sonnet/xhigh | 2 | 60,9 | 13,82 |
+| Reviewers T66 (r4, r5) | sonnet/xhigh | 2 | 108,6 | 8,38 |
+| Reviewers T67 (r3, r4, r5, r6) | sonnet/xhigh | 4 | 121,8 | 11,84 |
+| Reviewers T68 (r1, r2) | sonnet/xhigh | 2 | 47,2 | 5,18 |
+| QA real (T68) | sonnet/xhigh | 1 | 54,6 | 17,30 |
+| **Total da rodada** | | **16** | **469** | **69,65** |
 
-- **Migrações reservadas (responsável, nesta sessão):** 0009 e 0010 → v0.7.0; 0011 → v0.8.0; 0012 → v0.10.0. A 0010 é a outbox durável autorizada na sessão anterior. Plano, tabela de donos de arquivo e referências das tarefas 70 e 78 atualizados em `docs/specs/evolucao-pos-feedback-plano.md`.
-- **Três tentativas (Supervisor, confirmada):** teto total por evento e destinatário, inclusive após reinício; falha esgotada continua visível.
-- **Descida da 0010 (Supervisor):** a recusa vale também para `rejected`, porque o corpo só existe na outbox.
-- **Web, primeiro login (Developer, aceita):** o primeiro login da sessão do navegador sempre limpa a conversa; só o mesmo principal depois de expirar a mantém.
-- **P3 da T66 (Supervisor):** destino sem URL não recebe intenção; `api` depende do `ticketing` no compose; recuperação na subida não derruba a API; sem comando de reenvio nesta versão (limitação documentada no fechamento); colisão de faixas de lock, id finalizado sem comparação de corpo e emissão só pelos canais `api` e `web` ficam como limitações documentadas.
-- **T68:** aproveitar `codex/v0.7.0-wip-68` por cherry-pick (arquivos sem sobreposição com a T66), com os testes ajustados à outbox e ao esquema 10.
-- **T67 sem nova sincronização:** o OpenAPI do backend é idêntico entre `7079920`, `5ebbfa6` e `386025a`; reconferir no candidato final.
+Campanha real da versão: **US$0,10140195** de US$0,20 (nativa 0,07543317 + ledger do volume Docker 0,02596878); acumulado do projeto cerca de US$0,79 de US$5,00. Rodadas de correção pedidas pela revisão nesta rodada: T66 2, T67 3, T68 1; QA: nenhuma.
 
-**Processo:** o worktree `review-a2` foi reposicionado para a revisão da T66 enquanto o Reviewer da T67 ainda o usava para exportar o OpenAPI; ele refez os exports por `git archive`, sem efeito no parecer. Daqui em diante, um worktree por Reviewer até o fim da revisão.
+**Comparação sonnet/xhigh × opus/high (tarde).** As fatias não são iguais: a tarde construiu as tarefas (identidade, fila, retomada, ticketing, interface, holdout); esta noite endureceu e fechou (integração, estado da interface, regressão, QA). Por isso a comparação é por papel e por unidade, não pelo total.
+
+| Medida | opus/high (tarde) | sonnet/xhigh (noite) |
+| --- | ---: | ---: |
+| Developer: US$ por minuto ativo | 0,29 (US$91,77 em 321 min) | 0,20 (US$26,95 em 137 min) |
+| Developer: US$ por rodada | ≈ 4,0 (23 rodadas) | ≈ 3,9 (7 rodadas, maiores) |
+| Reviewer: US$ por minuto ativo | 0,20 (US$45,07 em 230 min) | 0,09 (US$25,40 em 278 min) |
+| Reviewer: US$ por revisão | ≈ 2,4 (19 revisões, o mesmo Reviewer retomado) | ≈ 3,2 (8 revisões, cada uma em contexto frio novo) |
+| Reviewer: minutos por revisão | ≈ 12 | ≈ 35 |
+| QA | — | US$17,30, 55 min |
+| Achados reais por revisão | P1/P2 na maioria das tarefas | P2 reproduzido em 6 de 8 revisões |
+
+Leitura: o sonnet custou de 30% a 55% menos por minuto, mas cada revisão em contexto frio demorou e custou mais, porque refez sondas pesadas (dois processos, quedas, 20 a 46 mutantes) em vez de reaproveitar o contexto da rodada anterior. A qualidade dos achados não caiu: as revisões reproduziram defeitos reais por execução (aviso perdido numa queda, vazamento de estado entre usuários, rótulo da bancada), e o QA não achou nenhum. O custo dessa profundidade foi o número de rodadas na T67 (quatro), em parte porque o escopo só foi congelado a partir da rodada 6. A sessão principal (Supervisor, Opus 5.5) e a sessão do Codex não entram na medição.
+
+**Decisões tomadas por padrão (reversíveis):**
+
+- **Três tentativas:** teto total por evento e destinatário, inclusive após reinício (confirmada).
+- **Descida da 0010:** recusa também com avisos `rejected`, porque o corpo só existe na outbox.
+- **P3 da T66:** destino sem URL não recebe aviso; destino com URL e sem segredo também não, com alerta na subida; `api` depende do `ticketing` no compose; recuperação na subida não derruba a API; sem comando de reenvio nesta versão (limitação documentada).
+- **Lacuna de teste da T66 r5** reclassificada de P2 para P3 (sem defeito de produto) e fechada na T68.
+- **T68:** aproveitar a branch WIP por cherry-pick; manter `personality.v4` (o rótulo "human" vai para a 72b da v0.8.0); catálogo da bancada mantém a versão "1".
+- **Web:** primeiro login da sessão do navegador sempre limpa o estado; escopo da T67 congelado na rodada 6 (P3 registrados para a próxima versão).
+- **QA:** `approve` mantém o ajuste de voz da Personality; "envio pendente" no `reject` aceito (D26); `ticket_id` vazio no caso vira a tarefa 68b, no começo da v0.8.0; contrato OpenAPI sem nova sincronização (só `info.version` difere).
+- **v0.8.0, Time A como dono único do grafo:** a sugestão do responsável era o time com menos tarefas; só a 69 toca o grafo, e passá-la ao Time B deixaria o A parado.
+
+**Processo:** o worktree `review-a2` foi reposicionado enquanto o Reviewer da T67 r3 ainda o usava (refez os exports por `git archive`, sem efeito no parecer); daí em diante, um worktree por Reviewer. O Developer da T68 criou por engano o diretório vazio `C:\c` (caminho do Git Bash passado ao Python) e apagou as pastas de teste que ele mesmo criou em `.pytest_cache`; nada preservado foi tocado. A limpeza com `-Aplicar` foi barrada pelo classificador de permissões e não foi contornada.
+
+**Estado para retomar:**
+
+| Repositório e branch | HEAD | Situação |
+| --- | --- | --- |
+| backend `main` (checkout principal) | `fed905e` | v0.7.0 integrada localmente; sem push |
+| backend `codex/v0.7.0-identidade-hitl` | `cdcbc0b` | integrada na `main` |
+| backend `codex/v0.8.0-avaliacao` (worktree `time-b`) | `190c07f` | holdout lacrado `91aa5158…`; spec, história e tarefas da v0.8.0 aprovadas |
+| backend `codex/v0.7.0-wip-68` | `15909cd` | aproveitada por cherry-pick; preservada |
+| web `main` | `0a8e12f` | v0.7.0 integrada localmente; sem push |
+
+Worktrees `review-a`, `review-a2` e `review-web` destacados (só leitura); `_preservado`, `_tmp/` e `Claude outputs/` intactos. Volumes Docker do QA (`v070qa_*`) e imagens mantidos.
+
+**Falta:** tag `v0.7.0` e push das duas `main` (responsável). Na sequência, autorizada pelo responsável: abrir a v0.8.0 (68b, 69 e 70 em paralelo; depois 71, 72b, 73, QA técnico e CSV de calibração) e parar na calibração.
+
+**Depende de você:**
+
+- Tag `v0.7.0` (backend `fed905e`, web `0a8e12f`) e push das duas `main`.
+- Rodar a limpeza, se quiser recuperar espaço: `tools/scripts/limpar-ambiente.ps1 -Aplicar -SemScratchpad` (runtimes de QA e caches, cerca de 8 MB); os volumes e imagens do Docker do QA ocupam cerca de 1,9 GB.
+- Apagar `C:\c` (vazio, 12 pastas, criado por engano às 22h40).
+- Calibração humana da v0.8.0 quando o CSV estiver pronto.
