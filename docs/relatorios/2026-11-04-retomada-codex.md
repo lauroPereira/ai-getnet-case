@@ -1,5 +1,7 @@
 # Relatório do Supervisor — retomada da v0.8.0 no Codex em 04/11/2026
 
+Período das 09h09 às 14h43, horário de São Paulo. O desenvolvimento ficou apto para QA. A rodada técnica parou após a amostra por limite de custo.
+
 ## Done
 
 - Reconciliação local concluída com o [relatório da manhã](2026-11-04-manha.md). `0c5b13d`, ponto de partida da retomada, acrescenta dois commits documentais ao candidato da T72b r2 (`10171c1`).
@@ -17,6 +19,7 @@
 - Na primeira revisão r3, uma busca ampla exibiu duas linhas do arquivo de holdout da v0.8.0. O Supervisor interrompeu a passagem e descartou-a para aceite. Os conteúdos não foram propagados ao Developer ou usados na correção. A nova revisão recebeu apenas código, testes e fontes normativas de `9057aaa` com hashes, em pacote isolado sem o arquivo de holdout. O incidente fica registrado separadamente da integridade do lacre.
 - A revisão nova da T73 r3 deu parecer apto para `9057aaa`. Conferiu os 105 hashes do pacote e validou por inspeção a prova para o teto excepcional e a ordem de recusas. [Parecer T73](../evidence/v080-reviewer-t73.md)
 - A suíte estrita de `9057aaa` terminou em código 0, com 1.031 testes aprovados em 16 min 07 s, Ruff e skills válidas. A T73 foi integrada por fast-forward em `codex/v0.8.0-replan`. O manifesto registra 86 hashes, e o lacre foi reconferido. [Candidato v0.8.0-local-r1](../evidence/v080-candidato-r1.json)
+- O QA independente conferiu o candidato e executou a preparação e a amostra real. O primeiro bootstrap ficou incompleto sem diagnóstico recuperável. Uma sonda programada passou e um único retry real sob a guarda primária criou o índice com 145 trechos de 40 documentos. A amostra completou cinco casos e cinco juízos independentes. [Parecer do QA](../evidence/v080-qa-r1.md)
 - Preflight às 09h09, horário de São Paulo. Disco `C:` com 10,49 GiB livres, RAM física com 0,77 GiB livres, folga virtual de 14,21 GiB incluindo paginação e zero alertas recentes. `checar-memoria.ps1` liberou um agente pesado. A sondagem de hardlink no sandbox padrão retornou `WinError 5`.
 - A medição por agente do Codex foi confirmada nos registros locais. O modelo observado nos dois primeiros despachos é `gpt-6-luna/xhigh`, conforme o ensaio autorizado para esta retomada. A sessão principal usa `gpt-6.1-sol/xhigh` e fica separada dos números dos subagentes.
 
@@ -24,12 +27,13 @@
 
 | Tarefa | Papel | Candidato ou base | Situação |
 | --- | --- | --- | --- |
-| QA técnico | Supervisor | `9057aaa` | Preparação do ambiente novo. A configuração do juiz DeepSeek passou na validação sem criar cliente. |
+| QA técnico | QA independente | `9057aaa` | **Bloqueado pelo orçamento.** Projeção de US$1,37116382 e saldo primário de US$0,45749509. A campanha continua sem cap montado. |
 
 ## To do
 
-1. Rodar QA em ambiente novo, guardar as evidências e gerar o CSV de calibração.
-2. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
+1. Resolver a decisão de orçamento e confirmar uma projeção que caiba simultaneamente no teto aprovado e no saldo primário.
+2. Concluir a campanha técnica, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
+3. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
 
 ## Recursos e medição
 
@@ -57,6 +61,9 @@
 | 14h03 | 9,64 GiB | 0,82 GiB | Folga virtual de 10,93 GiB, sem alertas. Liberada a suíte estrita r3. |
 | Fim da suíte r3 | 9,20 GiB | — | 1.031 testes aprovados. |
 | Após a suíte r3 | 9,57 GiB | — | Removidos somente os basetemps próprios dos testes focados e da suíte estrita, com 390,54 MiB de arquivos. |
+| 14h23 | 9,58 GiB | 0,51 GiB | Adiada a carga pesada do QA pelo limiar de RAM. |
+| 14h24 | 9,56 GiB | 1,57 GiB | Nova checagem liberou o QA como única carga pesada. |
+| Após a amostra | 9,55 GiB | — | QA parou pelo orçamento. Runtime e evidências preservados. |
 
 O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de despachar trabalho pesado. Nesta retomada, as primeiras passagens usam testes focados. A estimativa de custo usa entrada sem cache, entrada em cache e saída por subagente, com a tarifa Standard publicada pela OpenAI. Os valores são equivalentes de API. [Tarifas da API](https://developers.openai.com/api/docs/pricing)
 
@@ -74,20 +81,22 @@ O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de 
 | T73 | Developer r3 | `gpt-6-luna/xhigh` | 22,91 | 0,06621 | Correção em disco. A passagem terminou pelo limite de uso antes dos testes focados. |
 | T73 | Reviewer r3, primeira passagem | `gpt-6-luna/xhigh` | 5,30 | 0,02143 | Passagem interrompida por exposição acidental de duas linhas do holdout. |
 | T73 | Reviewer r3, novo contexto | `gpt-6-luna/xhigh` | 6,31 | 0,03066 | Apta com pacote verificado, sem acesso ao holdout. |
+| QA v0.8.0 | QA, primeira passagem | `gpt-6-luna/xhigh` | 11,82 | 0,06344 | Preflight e bootstrap inicial sem diagnóstico recuperável. |
+| QA v0.8.0 | QA, retomada | `gpt-6-luna/xhigh` | 7,09 | 0,02800 | Diagnóstico, retry, amostra e parada por orçamento. |
 
-Subtotal operacional até o candidato de QA de **225,24 minutos de subagente** e **US$0,79978 equivalentes de API**. Inclui a revisão interrompida e as rodadas de correção. Tempo da sessão principal, suíte do Supervisor, campanha e passagem exploratória ficam separados.
+Subtotal operacional desta retomada de **244,15 minutos de subagente** e **US$0,89122 equivalentes de API**. Inclui a revisão interrompida e as rodadas de correção, além das duas passagens de QA até o bloqueio. Tempo da sessão principal, suíte do Supervisor, campanha e passagem exploratória ficam separados.
 
 O Supervisor iniciou cedo uma rodada exploratória isolada sobre T72b r1 (`c861bee`). Consumiu 8,10 min e US$0,02795 equivalentes. A rodada fica fora da comparação do ciclo e seu custo fica separado. Por orientação do responsável, o benchmark será consolidado após o QA. Até lá, a sessão apenas coleta a telemetria das passagens operacionais.
 
 Inicialmente a T73 ficou limitada à preparação enquanto a suíte integrada rodava no checkout principal. O responsável pediu execução paralela. A T73 passou para worktree próprio a partir do mesmo SHA, mantendo o checkout principal fixo para concluir a suíte. Validações pesadas continuam serializadas.
 
-Campanha real nesta retomada até o momento **US$0,00**. O plano permite US$0,50 ou até US$1,00 em uma única montagem se a estimativa justificar.
+Preparação e amostra reais desta retomada contabilizaram **US$0,02998644** no ledger primário, incluindo a reserva conservadora do primeiro bootstrap. A campanha `v080-qa` permanece sem montagem. O plano permite US$0,50 ou até US$1,00 em uma única montagem se a estimativa justificar. [Evidência de orçamento](../evidence/v080-qa-r1.md)
 
 ## Estado para retomar
 
 | Repositório ou worktree | Branch ou estado | HEAD | Situação no preflight |
 | --- | --- | --- | --- |
-| Backend principal | `codex/v0.8.0-replan` | `9057aaa` | Candidato técnico integrado. `Claude outputs/` e `_tmp/` locais preservados. |
+| Backend principal | `codex/v0.8.0-replan` | Commit deste relatório, após `26c3bd0` | Só evidências e relatório desde o início do QA. O produto continua fixado em `9057aaa`. `Claude outputs/` e `_tmp/` preservados. |
 | Backend estável | `main` | `bd0920a` | v0.7.0 integrada localmente. |
 | `time-b` | `codex/v0.8.0-avaliacao` | `af16869` | Limpo. |
 | `time-b-v070` | `codex/v0.7.0-ticketing` | `2226d4c` | Limpo. |
@@ -106,4 +115,5 @@ As tarefas e a ordem estão na seção To do.
 
 ## Depende de você
 
+- Decidir entre revisar a amostragem e o recorte nos limites atuais ou aprovar a revisão dos limites para manter a campanha completa. A decisão tem de considerar o teto da campanha e o saldo do ledger primário.
 - Após o QA técnico, preencher o CSV de calibração antes da integração na `main`.
