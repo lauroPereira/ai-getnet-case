@@ -126,6 +126,35 @@ def test_each_answer_is_judged_once_over_the_evidence_it_was_built_from(settings
     assert summary["judge_cost_usd"] == 0
 
 
+def test_unsupported_claims_are_listed_one_by_one_and_never_only_averaged(settings, tmp_path):
+    orchestrator, _ = offline_orchestrator(settings)
+    cases = selected_cases()
+    flagged_message = cases[2].message  # EX03
+
+    def flags_one_case(call):
+        data = json.loads(call.spec.input)
+        return judge_handler(call) | {"unsupported_claim": data["merchant_message"] == flagged_message}
+
+    judge = scripted_judge(
+        PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(flags_one_case, model="scripted-judge-v3")
+    )
+    rows = run(orchestrator, cases, judge=judge, repeat=2)
+    md, _ = write_report(rows, summarize(rows), tmp_path, "flagged", {"mode": "scripted"})
+    text = md.read_text(encoding="utf-8")
+    assert "## Afirmações sem suporte (veredito crítico)" in text and "nunca diluídas na média" in text
+    listed = [line for line in text.splitlines() if line.startswith("| EX03 | ") and "1 de 1" in line]
+    assert len(listed) == 2 and [line.split(" | ")[1] for line in listed] == ["1", "2"]  # one line per repetition
+    assert not any(
+        line.startswith(f"| {case.id} | ") and "de 1" in line for case in cases[:2] for line in text.splitlines()
+    )
+    clean = scripted_judge(
+        PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(lambda c: judge_handler(c) | {"unsupported_claim": False})
+    )
+    quiet = run(orchestrator, cases[:1], judge=clean)
+    md, _ = write_report(quiet, summarize(quiet), tmp_path, "quiet", {"mode": "scripted"})
+    assert "veredito crítico" not in md.read_text(encoding="utf-8")
+
+
 # --- D12: the two variations stay apart ----------
 
 

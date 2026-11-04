@@ -433,6 +433,23 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         ]
     if o.get("judge_failed"):
         lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
+    flagged = [(r, [rec for rec in _records(r) if rec.get("unsupported_claim")]) for r in rows]
+    if any(marks for _, marks in flagged):
+        lines += [
+            "",
+            "## Afirmações sem suporte (veredito crítico)",
+            "",
+            "Listadas uma a uma, nunca diluídas na média.",
+            "",
+            "| Caso | Rep | Rota | Julgamentos marcados | Fundamentação (primeiro julgamento marcado) |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        for r, marks in flagged:
+            if marks:
+                lines.append(
+                    f"| {r['id']} | {r.get('repetition', 1)} | {r['route']} | {len(marks)} de {len(_records(r))} | "
+                    f"{marks[0]['reasons']['groundedness']} |"
+                )
     lines += [
         "",
         "## Rota planejada e caminho executado",

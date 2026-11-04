@@ -58,6 +58,16 @@ def test_a_configured_independent_judge_is_resolved_without_any_call():
     assert factory.built == [("deepseek", "deepseek-flash")] and factory.llm.calls == []
 
 
+def test_the_default_judge_uses_the_deepseek_client_the_project_already_has_without_calling_it():
+    from merchant_assistant.llm.openai_llm import OpenAILLM
+
+    settings = configured(deepseek_api_key=SecretStr("synthetic-deepseek-key"))
+    judge = resolve_judge(settings, agent=AGENT)  # the real factory builds the client object; nothing is sent
+    assert isinstance(judge.llm, OpenAILLM) and judge.llm.model == "deepseek-flash"
+    assert str(judge.llm.client.base_url).startswith("https://api.deepseek.com")
+    assert isinstance(judge.meter, NullMeter)  # the run binds the budget meter before the first call
+
+
 def test_a_judge_equal_to_the_agent_is_refused_before_any_client_is_built():
     factory = Factory()
     settings = configured(
@@ -144,8 +154,10 @@ def test_a_judgement_is_stored_with_its_provider_model_and_the_queryable_columns
     result = json.loads(row["result"])
     assert result["unsupported_claim"] is True and result["groundedness_reason"] == done["reasons"]["groundedness"]
     assert json.loads(row["evidence"])["reply"] == "Você recebe R$ 10,00."
+    assert json.loads(row["critical_failures"]) == [{"code": "unsupported_claim", "check": "judge"}]
 
     bad = conn.execute("SELECT * FROM run_evaluations WHERE evaluation_id=?", (failed["evaluation_id"],)).fetchone()
     assert (bad["state"], bad["scores"], bad["unsupported_claim"], bad["repetition"]) == ("failed", None, None, 3)
     assert bad["error"] == "ValueError: bad" and json.loads(bad["result"]) == {}
+    assert json.loads(bad["critical_failures"]) == []  # a failed judgement says nothing about the reply
     conn.close()

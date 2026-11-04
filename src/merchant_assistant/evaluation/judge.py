@@ -236,7 +236,9 @@ def save_evaluation(conn, *, request_id: str, judge: Judge, record: dict, data: 
             ),
             json.dumps(result, sort_keys=True, ensure_ascii=False),
             json.dumps(data, sort_keys=True, ensure_ascii=False),
-            "[]",
+            json.dumps(
+                [{"code": "unsupported_claim", "check": "judge"}] if record["unsupported_claim"] else [], sort_keys=True
+            ),
             record["cost_usd"],
             record["state"],
             record["error"],
