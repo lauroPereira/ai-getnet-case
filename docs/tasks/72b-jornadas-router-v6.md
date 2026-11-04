@@ -14,7 +14,7 @@ Spec v0.8.0 aprovada; tarefa 69 integrada na branch `codex/v0.8.0-replan` (o rep
 
 ## Arquivos prováveis
 
-`prompts/router.v6.md` (novo), `prompts/support.v8.md` (novo, só se a redação vier do Support), `tests/scenarios/business_journeys.jsonl`, `data/scenarios/catalog.json` (rótulos irmãos, mantidos em acordo), `llm/scripted.py`, testes.
+`prompts/router.v6.md` (novo), `prompts/support.v8.md` (novo, só se a redação vier do Support), `tests/scenarios/business_journeys.jsonl`, `data/scenarios/catalog.json` (rótulos irmãos, mantidos em acordo), `evaluation/scripted_policy.py`, testes.
 
 ## Passos
 
