@@ -122,5 +122,13 @@ As tarefas e a ordem estão na seção To do.
 
 ## Depende de você
 
-- Decidir entre preservar a campanha completa com revisão controlada dos limites e da prova de estimativa ou aprovar um recorte explícito de QA que caiba no saldo atual.
+- Confirmar os valores e o escopo da revisão controlada dos limites para preservar a campanha completa.
 - Após o QA técnico, preencher o CSV de calibração antes da integração na `main`.
+
+### Encaminhamento após a amostra complementar
+
+O responsável autorizou em princípio ampliar o orçamento local para concluir o QA completo da v0.8.0. A proposta para confirmação é elevar o limite persistente do ledger primário de **US$1,00 para US$1,70** e permitir um teto excepcional de **US$1,10** na montagem única de `v080-qa`. O gasto registrado de US$0,55947501 deixa US$1,14052499 sob o limite primário proposto, antes de novas chamadas. O teto acumulado do projeto é US$5,00. [Projeção e estado do ledger](../evidence/v080-projecao-estratificada-r3.md)
+
+A aplicação hoje recusa aumentar o limite persistente por configuração e limita `v080-qa` a US$1,00. A mudança proposta exige revisão da guarda e confirmação dos valores antes de ativar qualquer novo limite. Validar em cópia sintética a preservação das entradas do ledger, a recusa fora da autorização, a montagem única e a prova da estimativa. Conferir backup e histórico antes da transição local. Validar também o serviço de preços e as fixtures antes de retomar chamadas reais.
+
+Após o QA da v0.8.0, incluir na definição de escopo da v0.9.0 um cliente Claude API para Sonnet 5.5 **na aplicação**. A escolha do papel depende da medição de custo por etapa e ferramenta, qualidade e latência. A prova técnica e o teto do piloto ficam para a especificação da v0.9.0.
