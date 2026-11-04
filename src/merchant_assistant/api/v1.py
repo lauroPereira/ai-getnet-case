@@ -366,7 +366,9 @@ OPERATOR_FORBIDDEN = "Operators and services act only on the merchant of a hando
 
 
 def operator_forbidden(request: Request, principal: dict) -> JSONResponse | None:
-    """Operators and services have no merchant of their own: attendance routes refuse them (spec v0.7.0)."""
+    """Operators and services have no merchant of their own: attendance routes refuse them (spec v0.7.0).
+    Behind `READER` this is redundant (READER_ROLES already refuses both); it stays as a second guard in case
+    that tuple is ever widened (test_v070_review_gaps.py)."""
     if principal["role"] in ("operator", "service"):
         return insufficient_scope(request, OPERATOR_FORBIDDEN)
     return None
