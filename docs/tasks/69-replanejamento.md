@@ -37,10 +37,32 @@ Spec v0.8.0 aprovada pelo responsável; v0.7.0 na `main`; branch `codex/v0.8.0-r
 
 ## Validação
 
-A preencher pelo Developer.
+Developer (Time A), 2026-11-04, branch `codex/v0.8.0-replan`, base `5134eff` (68b em `c1dd2d5`; código em `686d545`; testes e cenários em `1ba296f`). Scripted, sem chamada paga e sem rede. Passagem completa em [v080-developer.md](../evidence/v080-developer.md).
+
+| Critério | Prova |
+| --- | --- |
+| Cada regra tem teste; o modelo só é chamado na ambiguidade (conta as chamadas) | `tests/unit/test_replanner_rules.py` (31): uma regra por caso (`complete`, `plan_pending`, `evidence_insufficient_web`, `account_dependent_question`, `procedure_gap`, `tool_failure_no_alternative`, `support_asked_for_human`, `selection_pending`, `specialist_failed`, `gap_declared`), contradições, nenhuma regra, guardas. `test_v080_replan.py::test_no_clear_case_of_the_forty_or_the_four_scenarios_asks_the_model`: os 40 casos, 0 chamadas ao agente `replan` (os 4 cenários afirmam o mesmo); `test_the_model_is_called_only_when_rules_disagree_or_none_applies`: 2 chamadas (ledger e `llm.calls`), `max_output_tokens <= 80`, esforço `none`; `test_simple_question_is_closed_by_rule_without_an_extra_call`: ledger `[router, knowledge, personality]` |
+| Laço forçado termina em ≤ 3 saltos sem repetir especialista | `test_forced_loop_specialists_that_never_resolve...` (Support vazio, Knowledge insuficiente, web fora: `support → knowledge → web → finish`, 2 saltos), `test_forced_loop_a_planner_that_always_wants_more...` (modelo pede `web`, `support`, `escalate`: 3 saltos, 3 especialistas distintos), `test_a_specialist_the_planner_asks_for_twice_is_refused[knowledge\|web\|support]`, `test_the_budget_of_changes_of_plan_is_a_setting...[0\|1]`, `test_the_requests_call_limit_still_holds`, `test_a_failing_node_never_loops_the_replanner` |
+| Os quatro cenários passam com modelo programado; o trace mostra `next`, `reason`, `review`, `hops`, `origin` | `test_the_four_scenarios_of_rf88_pass...[REPLAN-WEB\|PROCEDURE\|TOOL-DOWN\|ACCOUNT]` (11 checagens do runner por cenário, `agents` na ordem executada, decisões com origem), `test_the_run_endpoint_shows_each_decision_with_its_origin` (`GET /v1/runs/{id}`, cenário do catálogo `SC-REPLAN-WEB` 11/11, campos novos só no passo `replan`), `test_catalog_scenarios_carry_the_message_and_labels_of_replan_jsonl` |
+| Pergunta simples não ganha chamada a mais | ledger e `trace["model_calls"] == 3` na pergunta simples; nos 40 casos, total de chamadas 123 na `main` e 123 na branch |
+| 40 casos e 4 conversas sem piora contra a `main` | `eval` programado dos mesmos 40 casos + `followup.jsonl` numa cópia por `git archive main` (`bee6ab5`) e na branch (roteiro fora do repositório, sem `.env`): **25/40 e 4/4 nas duas**; os 40 casos e as 4 conversas são **idênticos campo a campo** (rota, status, `agents`, resposta, fontes, ferramentas, checagens, chamadas), depois de normalizar o sufixo aleatório do protocolo `HO-AAAAMMDD-XXXXXX`. Nenhuma diferença a justificar. `route_ok` usa a rota inicial (D16); `agents` traz o caminho executado |
+| Trava da v0.7.0 (D18) sem alteração | `test_v070_story`, `test_v070_webhooks`, `test_v070_resume`, `test_v070_resume_r2`, `test_v070_ticketing_integration`, `test_v070_closing`: **94 passed**, arquivos sem alteração (`git diff` vazio). `test_the_review_graph_that_resumes_a_handed_off_case_has_no_replanning`: o grafo de retomada não tem `replan`, `web`, `knowledge` nem `escalation`; `escalation.py` e `build_review_graph` intocados |
+| Mutações | numa cópia fora do repositório, 9 mutantes do nó (sem D5, sem orçamento, sem `plan_pending`, modelo sempre, sem limites da requisição, `escalate` sem contar, `complete` ignorando o Support, sem lacuna declarada, web com índice fora) morrem nos testes novos |
+
+```text
+pytest tests/unit tests/integration/test_v080_replan.py tests/integration/test_v080_ticket_id.py tests/integration/test_use_cases.py tests/integration/test_evaluation_runner.py tests/integration/test_v060_api.py   (grupo novo e diretamente afetado)  -> 164 passed
+pytest 6 arquivos da trava v0.7.0                                                                                                                                         -> 94 passed
+pytest tests/unit                                                                                                                                                         -> 278 passed (inclui os 31 novos)
+pytest os 14 demais arquivos de tests/integration                                                                                                                         -> 199 passed
+ruff check src tests                                                                                                                                                      -> All checks passed
+```
+
+Todos os arquivos de `tests/unit` e `tests/integration` rodaram, em grupos, um pytest por vez, cada um com basetemp novo (`.pytest_cache/t69-dev-final-*`). **Não rodei `tools/scripts/lint_and_tests.py --strict`** (fica com o Supervisor). Um teste existente mudou: `test_v060_api.py::test_scenario_catalog_requires_a_session...` esperava 10 cenários no catálogo e agora espera 14 (os 4 `SC-REPLAN-*`, exigidos pela tarefa).
+
+Não verificado aqui: modelos reais (os cenários com `gpt-6-luna` e a taxa de `origin=model` são da campanha `v080-qa`); o cenário `REPLAN-TOOL-DOWN` precisa do serviço de preços fora do ar (parar o `mocks`).
 
 ## Status
 
 ```text
-pendente (spec aprovada; começa depois do merge da v0.7.0)
+feito pelo Developer em 2026-11-04; aguarda revisão e QA
 ```
