@@ -57,10 +57,13 @@ def test_scenario_catalog_requires_a_session_and_lists_labeled_scenarios(api):
     assert client.get("/v1/scenarios").status_code == 401
     body = client.get("/v1/scenarios", headers=login(client)).json()
     ids = [item["scenario_id"] for item in body["scenarios"]]
-    assert body["version"] == "1" and len(ids) == 10 and len(set(ids)) == len(ids)
+    assert body["version"] == "1" and len(ids) == 14 and len(set(ids)) == len(ids)  # 10 + 4 of v0.8.0 (replan)
     journeys = {item["journey"] for item in body["scenarios"]}
     assert journeys >= {"knowledge", "receivables", "device", "authorization", "pricing", "enablement"}
-    assert journeys >= {"cancellation", "handoff", "safety", "doc_effect"}  # P3-08: every essential journey
+    assert journeys >= {"cancellation", "handoff", "safety", "doc_effect", "replan"}  # P3-08: every essential journey
+    assert sorted(i for i in ids if i.startswith("SC-REPLAN-")) == [
+        "SC-REPLAN-ACCOUNT", "SC-REPLAN-PROCEDURE", "SC-REPLAN-TOOL-DOWN", "SC-REPLAN-WEB"
+    ]
     assert "SC-DOC-EFFECT" in ids and "SC-HANDOFF" in ids and "SC-INJECTION" in ids
     assert all("route_ok" in item["checks"] and item["message"] for item in body["scenarios"])
 

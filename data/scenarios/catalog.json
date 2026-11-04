@@ -1,6 +1,6 @@
 {
  "version": "1",
- "description": "Short catalog of labeled synthetic scenarios for the v0.6.0 demonstration: one per essential journey (knowledge, receivables, device, authorization, pricing, card-scheme enablement, sale cancellation, handoff, safety) plus the documentation-effect question. Labels are copied from the evaluation cases named in source_case; the doc-effect scenario has version-independent labels.",
+ "description": "Short catalog of labeled synthetic scenarios for the v0.6.0 demonstration: one per essential journey (knowledge, receivables, device, authorization, pricing, card-scheme enablement, sale cancellation, handoff, safety) plus the documentation-effect question, and from v0.8.0 the four replanning scenarios (SC-REPLAN-*, journey replan; their labels live in tests/scenarios/replan.jsonl). Labels are copied from the evaluation cases named in source_case; the doc-effect scenario has version-independent labels.",
  "scenarios": [
   {
    "id": "SC-KNOWLEDGE-PRODUCTS",
@@ -245,6 +245,100 @@
    "expected_status": "answered",
    "expected_tools": [
     "get_device_status"
+   ],
+   "must_include_amounts": [],
+   "must_include_any": [],
+   "expect_sources": true
+  },
+  {
+   "id": "SC-REPLAN-WEB",
+   "title": "Produto sem evidência nas páginas oficiais: busca na web (replanejamento)",
+   "journey": "replan",
+   "source_case": null,
+   "message": "A maquininha Get XYZ aceita pagamento por aproximação?",
+   "language": "pt",
+   "accepted_routes": [
+    "knowledge"
+   ],
+   "expected_status": "answered",
+   "expected_tools": [],
+   "must_include_amounts": [],
+   "must_include_any": [],
+   "expect_sources": false
+  },
+  {
+   "id": "SC-REPLAN-PROCEDURE",
+   "title": "Dado da conta e pedido de procedimento: Support, depois Knowledge (replanejamento)",
+   "journey": "replan",
+   "source_case": null,
+   "message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+   "language": "pt",
+   "accepted_routes": [
+    "support",
+    "knowledge_and_support"
+   ],
+   "expected_status": "answered",
+   "expected_tools": [
+    "get_receivables_schedule",
+    "get_payout_status"
+   ],
+   "must_include_amounts": [
+    14806,
+    116220
+   ],
+   "must_include_any": [
+    [
+     "não confirmado",
+     "ainda não",
+     "não foi confirmado",
+     "pendente",
+     "não teve",
+     "sem confirmação",
+     "nenhum",
+     "nenhuma"
+    ]
+   ],
+   "expect_sources": true
+  },
+  {
+   "id": "SC-REPLAN-TOOL-DOWN",
+   "title": "Serviço de preços fora do ar: escalada com protocolo (replanejamento)",
+   "journey": "replan",
+   "source_case": null,
+   "message": "A taxa da venda no débito de ontem está correta?",
+   "language": "pt",
+   "accepted_routes": [
+    "support"
+   ],
+   "expected_status": "handoff",
+   "expected_tools": [],
+   "must_include_amounts": [],
+   "must_include_any": [
+    [
+     "HO-"
+    ]
+   ],
+   "expect_sources": false,
+   "must_not_include": [
+    "SIM-",
+    "simul"
+   ],
+   "precondition": "pricing service unavailable (stop the mocks service, or fault simulate_pricing in a test)"
+  },
+  {
+   "id": "SC-REPLAN-ACCOUNT",
+   "title": "Pergunta de produto que depende do plano do lojista: Knowledge, depois Support (replanejamento)",
+   "journey": "replan",
+   "source_case": null,
+   "message": "A antecipação de recebíveis está disponível no meu plano?",
+   "language": "pt",
+   "accepted_routes": [
+    "knowledge",
+    "knowledge_and_support"
+   ],
+   "expected_status": "answered",
+   "expected_tools": [
+    "get_contract_snapshot"
    ],
    "must_include_amounts": [],
    "must_include_any": [],
