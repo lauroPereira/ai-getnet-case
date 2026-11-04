@@ -41,8 +41,18 @@ Developer (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, bas
 - **Contagens:** `tests/unit` 368 aprovados em 117 s (eram 304 na rodada 2 da tarefa 70; mais 7 dos P3 e 57 desta tarefa); integração, um pytest por vez: `test_eval_campaign` (22), `test_calibration_flow` (5), `test_evaluation_runner`, `test_evaluator_settings`, `test_v060_api` e `test_v060_r2` em um só grupo de 88 aprovados em 135 s. ruff `check src tests` sem achados. Lacre do holdout `91aa5158…4f1bac` inalterado (`sha256sum` e `test_holdout_v080.py` verdes; o conteúdo não foi aberto). A suíte estrita completa fica com o Supervisor.
 - **Não verificado:** o fluxo com o responsável numa planilha real (Excel pt-BR, LibreOffice); uma amostra de campanha real; o juiz real. Uma campanha `--scripted` grava os julgamentos num banco temporário que se perde, então só a campanha real do QA, no banco do runtime, pode ser importada.
 
+Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080-reviewer-t71.md) (candidato `31aac33`, apto para QA; base `d11c503`). Passagem: seção "Tarefa 71, rodada 2" de [v080-developer.md](../evidence/v080-developer.md).
+
+- **P3-1:** a amostra sai só de `dev` + `holdout`; linhas `holdout_v080` do relatório de origem são excluídas com aviso (e a amostra recusada se só restarem elas); `--split {development,dev,holdout}` só estreita, e o `holdout_v080` não é opção. A linha `# amostra:` registra `splits=`.
+- **P3-2:** reimportar um `sample_id` já gravado com outra `request_id` é recusado antes de qualquer escrita, com a saída `--campaign <outro nome>`.
+- **P3-3:** linha esvaziada na reimportação retira a nota gravada da mesma requisição (o arquivo é a fonte), na mesma transação; a CLI e o relatório dizem o que foi retirado e o que ficou no banco fora do arquivo.
+- **P3-4:** `request_id` repetido no arquivo é erro de validação, com a linha.
+- **P3-5:** sem intervalo do kappa quando mais de 10% das reamostras não têm kappa ou quando todas dão o mesmo valor; o relatório diz "sem intervalo" e por quê.
+- **P3-6 e P3-8:** testes do embaralhamento final, do CSV igual quando mudam os campos do juiz (inclui a coluna `status` e a ordenação), da atualização de todos os campos, do `ROLLBACK` e dos rótulos "95%"; o relatório diz que a amostra é balanceada por estrato e não ponderada.
+- **Contagens:** `tests/unit/evaluation` + `test_holdout_v080` + `test_migrations` 153 aprovados (`test_calibration` 72, eram 57); `test_calibration_flow` + `test_eval_campaign` + `test_evaluation_runner` 58 aprovados (o fluxo, 7, eram 5); ruff `check src tests` sem achados; lacre `91aa5158…4f1bac` inalterado. Mutação: 35 mutantes novos (29 no módulo e 6 na CLI), todos mortos. A suíte estrita completa fica com o Supervisor.
+
 ## Status
 
 ```text
-implementada pelo Developer (2026-11-04); aguardando a revisão independente. Critérios de conclusão não marcados: a marcação é do Supervisor depois da revisão e do QA. O CSV real e a calibração do responsável dependem da campanha `v080-qa`.
+rodada 2 implementada pelo Developer (2026-11-04), sobre os P3 1 a 6 e 8 do parecer; aguardando a revisão. Critérios de conclusão não marcados: a marcação é do Supervisor depois da revisão e do QA. O CSV real e a calibração do responsável dependem da campanha `v080-qa`.
 ```

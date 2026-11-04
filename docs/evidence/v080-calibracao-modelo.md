@@ -3,7 +3,7 @@
 > **MODELO com dados sintéticos de teste.** Nenhum número abaixo é a calibração do responsável: as respostas, o juiz e o avaliador são inventados (48 respostas fictícias, 24 sorteadas, notas sorteadas com semente fixa) só para mostrar o formato do relatório que `eval-calibrate --import` grava em `docs/evidence/v080-calibracao.md`. O relatório real vem da campanha `v080-qa` e das notas do responsável.
 
 Gerado em 2026-11-04T12:00:00+00:00. Campanha `avaliacao`, avaliador humano `avaliador-ficticio`, rubrica `judge.v3`, juiz `scripted/scripted-judge-v3`.
-Amostra de `avaliacao.json` com a semente 20261104 (24 sorteadas de 48 respostas elegíveis, estratificadas por rota e split). Avaliadas: 24. Sem avaliação (linhas puladas): 0.
+Amostra de `avaliacao.json` com a semente 20261104 (24 sorteadas de 48 respostas elegíveis, balanceadas por estrato de rota e split, sem ponderar pelo tamanho de cada um). Avaliadas: 24. Sem avaliação (linhas puladas): 0.
 
 > Ressalva de amostra pequena (D19): 24 respostas avaliadas por uma pessoa. A concordância e o kappa têm margem grande com tão poucas linhas (os intervalos abaixo mostram o tamanho dela) e cada recorte por rota ou split tem poucos casos. Leia como indicação de quanto confiar no juiz, não como prova.
 
@@ -47,4 +47,5 @@ Rotas: general_web 4, human_handoff 4, knowledge 4, knowledge_and_support 4, out
 - Exata: parte das respostas em que humano e juiz deram a mesma nota. ±1: parte em que a diferença é de até um ponto. Os intervalos de ambas são de Wilson (95%).
 - Kappa quadrático ponderado: 1 é concordância perfeita; 0 é o que o acaso daria com as mesmas distribuições de notas; negativo é pior que o acaso. Diferenças maiores pesam mais (peso = quadrado da diferença). O intervalo é por reamostragem (bootstrap) das respostas, com a semente da amostra. Quando quase todas as notas são 4 ou 5, o kappa fica baixo mesmo com concordância exata alta; por isso as três medidas aparecem juntas.
 - Viés: média das notas do juiz menos a média das notas humanas; positivo é um juiz mais generoso.
+- Amostra: balanceada por estrato (rota e split), não ponderada. Cada estrato entra com quantidades parecidas, mesmo quando é raro na campanha; as médias e as concordâncias valem para estas respostas e não estimam as da campanha inteira.
 - Dados: respostas do sistema sobre a conta sintética, mascaradas; o arquivo da amostra não traz nenhuma nota do juiz.

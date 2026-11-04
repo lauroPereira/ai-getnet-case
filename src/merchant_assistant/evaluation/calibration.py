@@ -22,6 +22,7 @@ import sqlite3
 import statistics
 import unicodedata
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -54,10 +55,14 @@ REQUIRED = ("sample_id", "request_id", *CRITERIA, VERDICT)
 RATING_COLUMNS = (*CRITERIA, VERDICT)
 DELIMITERS = (";", ",", "\t")
 BOOTSTRAP_RESAMPLES = 2000
-MIN_VALID_RESAMPLES = 100
+MAX_UNDEFINED_SHARE = 0.10  # more resamples than this with no kappa: the series is too lopsided for an interval
 Z95 = 1.959964
 BIG_GAP = 2  # a difference of this many points or more is listed in the report
 MAX_REPORTED_ERRORS = 25
+# The calibration sample comes from the campaign of development only: the holdout_v080 is run once, last, by the QA
+# (D17), and what the owner sees of it would be seen before that. `--split` narrows the choice, never widens it.
+DEVELOPMENT_SPLITS = ("dev", "holdout")
+SPLIT_CHOICES = {"development": DEVELOPMENT_SPLITS, "dev": ("dev",), "holdout": ("holdout",)}
 
 INSTRUCTIONS = (
     "Calibração humana do juiz (v0.8.0). Avalie cada resposta com a mesma rubrica do juiz; as notas dele não estão "
@@ -108,27 +113,39 @@ class CalibrationError(Exception):
 # --- the sample -----------------------------------------------------------------------------------------------------
 
 
-def load_source(path: Path) -> tuple[list[dict], str]:
-    """The answers of the first execution of a campaign report that were judged and can be shown with their evidence.
-    Returns them with the report's name (the campaign name unless one is given)."""
+def load_source(path: Path, splits: tuple[str, ...] = DEVELOPMENT_SPLITS) -> tuple[list[dict], str, dict[str, int]]:
+    """The answers of the first execution of a campaign report that were judged, can be shown with their evidence and
+    belong to one of `splits`. Returns them with the report's name (the campaign name unless one is given) and how many
+    judged answers of other splits were left out, by split."""
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
         cases = report["cases"]
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise CalibrationError(f"não consegui ler o relatório {path}: {type(exc).__name__}") from None
-    rows = [
+    judged = [
         row
         for row in cases
         if row.get("repetition", 1) == 1
         and "judge_input" in row
         and (row.get("judge") or {}).get("state") == "completed"
     ]
-    if not rows:
+    if not judged:
         raise CalibrationError(
             f"o relatório {path.name} não tem respostas julgadas com a evidência gravada: rode a campanha com --judge "
             "(ou --repeat) antes de sortear a amostra."
         )
-    return rows, path.stem
+    rows = [row for row in judged if row["split"] in splits]
+    left_out: dict[str, int] = {}
+    for row in judged:
+        if row["split"] not in splits:
+            left_out[row["split"]] = left_out.get(row["split"], 0) + 1
+    if not rows:
+        raise CalibrationError(
+            f"o relatório {path.name} só tem respostas dos splits {', '.join(sorted(left_out))}, e a amostra de "
+            f"calibração sai de {', '.join(splits)}. O holdout_v080 não entra na calibração (ele é visto uma vez, "
+            "no fim, pelo QA)."
+        )
+    return rows, path.stem, left_out
 
 
 def _rank(seed: int, label: str, key: str) -> str:
@@ -209,7 +226,7 @@ def write_csv(path: Path, rows: list[dict], meta: dict, *, delimiter: str = ";")
     stamp = (
         f"amostra: campanha={meta['campaign']}; semente={meta['seed']}; origem={meta['source']}; "
         f"sorteadas={len(rows)}; pedidas={meta['requested']}; elegiveis={meta['eligible']}; "
-        f"rubrica={RUBRIC}.v{RUBRIC_VERSION}"
+        f"splits={meta['splits']}; rubrica={RUBRIC}.v{RUBRIC_VERSION}"
     )
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle, delimiter=delimiter, lineterminator="\r\n")
@@ -240,7 +257,11 @@ class Rating:
 class Filled:
     meta: dict[str, str]
     ratings: list[Rating]
-    skipped: list[str]  # sample ids with no rating at all
+    blank: dict[str, str]  # sample id -> request id of the rows with no rating at all
+
+    @property
+    def skipped(self) -> list[str]:
+        return list(self.blank)
 
 
 _HEADER = re.compile(r'^"?sample_id"?([;,\t])')
@@ -253,6 +274,7 @@ META_KEYS = {
     "sorteadas": "drawn",
     "pedidas": "requested",
     "elegiveis": "eligible",
+    "splits": "splits",
     "rubrica": "rubric",
 }
 _YES = {"sim", "s", "true", "verdadeiro", "yes", "y", "1"}
@@ -265,19 +287,19 @@ def _plain(text: str) -> str:
 
 def read_filled(text: str) -> Filled:
     """Parses and validates the filled CSV. Every problem is collected with its line, so one pass shows them all."""
-    lines = text.lstrip("﻿").splitlines()
+    lines = text.lstrip("\ufeff").splitlines()
     found = next((_HEADER.match(line) for line in lines if _HEADER.match(line)), None)
     if found is None:
         raise CalibrationError(
             "não encontrei o cabeçalho com a coluna sample_id: use o arquivo gerado por eval-calibrate --sample."
         )
-    reader = csv.reader(io.StringIO(text.lstrip("﻿"), newline=""), delimiter=found.group(1))
+    reader = csv.reader(io.StringIO(text.lstrip("\ufeff"), newline=""), delimiter=found.group(1))
     meta: dict[str, str] = {}
     header: list[str] | None = None
     errors: list[str] = []
     ratings: list[Rating] = []
-    skipped: list[str] = []
-    seen: dict[str, int] = {}
+    blank: dict[str, str] = {}
+    seen: dict[str, dict[str, int]] = {"sample_id": {}, "request_id": {}}
     last = 0
     for cells in reader:
         start, last = last + 1, reader.line_num
@@ -301,12 +323,12 @@ def read_filled(text: str) -> Filled:
                 "tem o separador sem aspas?)."
             )
             continue
-        _rate_row(values, start, ratings, skipped, errors, seen)
+        _rate_row(values, start, ratings, blank, errors, seen)
     if header is None:
         raise CalibrationError("não encontrei o cabeçalho com a coluna sample_id: use o arquivo gerado por --sample.")
     if errors:
         raise CalibrationError(errors)
-    return Filled(meta, ratings, skipped)
+    return Filled(meta, ratings, blank)
 
 
 def _parse_rating(values: dict[str, str]) -> tuple[dict[str, int], bool, list[str]]:
@@ -332,20 +354,25 @@ def _parse_rating(values: dict[str, str]) -> tuple[dict[str, int], bool, list[st
 
 
 def _rate_row(
-    values: dict[str, str], line: int, ratings: list[Rating], skipped: list[str], errors: list[str], seen: dict
+    values: dict[str, str],
+    line: int,
+    ratings: list[Rating],
+    blank_rows: dict[str, str],
+    errors: list[str],
+    seen: dict[str, dict[str, int]],
 ) -> None:
     """One data row: skipped when no rating was filled in, an error line (one per row, all its problems) when the row
-    is wrong or half filled, a `Rating` otherwise."""
+    is wrong or half filled, a `Rating` otherwise. A sample id or a request id may appear in one row only."""
     sample_id = values.get("sample_id", "")
     problems = []
-    if not sample_id:
-        problems.append("sample_id vazio")
-    elif sample_id in seen:
-        problems.append(f"sample_id repetido (já aparece na linha {seen[sample_id]})")
-    else:
-        seen[sample_id] = line
-    if not values.get("request_id"):
-        problems.append("request_id vazio (não apague essa coluna)")
+    for key in ("sample_id", "request_id"):
+        value = values.get(key, "")
+        if not value:
+            problems.append(f"{key} vazio" + (" (não apague essa coluna)" if key == "request_id" else ""))
+        elif value in seen[key]:
+            problems.append(f"{key} repetido (já aparece na linha {seen[key][value]})")
+        else:
+            seen[key][value] = line
     blank = not any(values.get(column) for column in RATING_COLUMNS)
     scores, claim = {}, False
     if not blank:
@@ -359,7 +386,7 @@ def _rate_row(
         )
         errors.append(f"linha {line} ({sample_id or 'sem sample_id'}): {'; '.join(problems)}.{hint}")
     elif blank:
-        skipped.append(sample_id)
+        blank_rows[sample_id] = values["request_id"]
     else:
         ratings.append(
             Rating(
@@ -421,13 +448,58 @@ def link(conn: sqlite3.Connection, filled: Filled) -> list[Pair]:
     return pairs
 
 
-def store(conn: sqlite3.Connection, campaign: str, rater: str, pairs: list[Pair]) -> dict[str, int]:
-    """Writes the ratings in one transaction. Importing the same file again (a corrected rating) updates the rows of
-    the same campaign, sample and rater instead of adding new ones."""
+def check_same_sample(conn: sqlite3.Connection, campaign: str, rater: str, pairs: list[Pair]) -> None:
+    """A sample id of a campaign and rater that already has a rating belongs to one request. A file that brings the
+    same id for another request is another sample under the same campaign name, and importing it would replace the
+    first sample's human ratings without a word."""
+    known = {
+        row["sample_id"]: row["request_id"]
+        for row in conn.execute(
+            "SELECT sample_id, request_id FROM calibrations WHERE campaign=? AND rater=?", (campaign, rater)
+        )
+    }
+    errors = [
+        f"linha {pair.rating.line} ({pair.rating.sample_id}): a campanha {campaign!r} já tem a nota de {rater!r} para "
+        f"{pair.rating.sample_id} sobre a requisição {known[pair.rating.sample_id]}, e este arquivo traz "
+        f"{pair.rating.request_id}: parece outra amostra com o mesmo nome de campanha. Importe-a com "
+        "--campaign <outro nome> (ou gere a amostra com --campaign) para guardá-la separada; nada foi alterado."
+        for pair in pairs
+        if known.get(pair.rating.sample_id, pair.rating.request_id) != pair.rating.request_id
+    ]
+    if errors:
+        raise CalibrationError(errors)
+
+
+@dataclass
+class Stored:
+    created: int
+    updated: int
+    removed: list[str]  # sample ids whose rating was withdrawn because the row came back empty
+    outside: list[str]  # sample ids stored for this campaign and rater that are not in the file
+
+    def counts(self) -> dict[str, int]:
+        return {"created": self.created, "updated": self.updated}
+
+
+def store(
+    conn: sqlite3.Connection, campaign: str, rater: str, pairs: list[Pair], blank: dict[str, str] | None = None
+) -> Stored:
+    """Writes the ratings in one transaction. The file is the rater's statement for its sample: importing it again
+    updates the rows of the same campaign, sample and rater, and a row that came back empty withdraws the rating it
+    had (only when the stored rating is for the same request), so the database never keeps a note the report does not
+    count."""
     created = updated = 0
+    removed: list[str] = []
     now = datetime.now(UTC).isoformat(timespec="seconds")
     conn.execute("BEGIN")
     try:
+        for sample_id, request_id in (blank or {}).items():
+            gone = conn.execute(
+                "DELETE FROM calibrations WHERE campaign=? AND sample_id=? AND rater=? AND request_id=?",
+                (campaign, sample_id, rater, request_id),
+            )
+            if gone.rowcount:
+                removed.append(sample_id)
         for pair in pairs:
             rating, judgement = pair.rating, pair.judgement
             exists = conn.execute(
@@ -465,7 +537,15 @@ def store(conn: sqlite3.Connection, campaign: str, rater: str, pairs: list[Pair]
     except Exception:
         conn.execute("ROLLBACK")
         raise
-    return {"created": created, "updated": updated}
+    in_file = {pair.rating.sample_id for pair in pairs}
+    outside = [
+        row["sample_id"]
+        for row in conn.execute(
+            "SELECT sample_id FROM calibrations WHERE campaign=? AND rater=? ORDER BY sample_id", (campaign, rater)
+        )
+        if row["sample_id"] not in in_file
+    ]
+    return Stored(created, updated, removed, outside)
 
 
 # --- agreement ------------------------------------------------------------------------------------------------------
@@ -521,7 +601,9 @@ def kappa_interval(
     human: list[int], judge: list[int], categories: tuple[int, ...], seed: int
 ) -> tuple[float, float] | None:
     """95% percentile interval of the kappa by bootstrap: the pairs are resampled with replacement, seeded so the
-    report repeats. None when too few resamples have a defined kappa (a constant rating, a handful of lines)."""
+    report repeats. None when more than MAX_UNDEFINED_SHARE of the resamples have no kappa (a constant rating, a
+    series so lopsided that a resample often has one value on both sides), and when every resample gives the same
+    kappa (a perfect agreement stays perfect in any resample: the interval would be a point, not a measure of doubt)."""
     n = len(human)
     if n < 2:
         return None
@@ -532,16 +614,24 @@ def kappa_interval(
         value = quadratic_kappa([human[i] for i in picks], [judge[i] for i in picks], categories)
         if value is not None:
             values.append(value)
-    if len(values) < MIN_VALID_RESAMPLES:
+    if BOOTSTRAP_RESAMPLES - len(values) > MAX_UNDEFINED_SHARE * BOOTSTRAP_RESAMPLES:
         return None
     values.sort()
-    return values[round(0.025 * (len(values) - 1))], values[round(0.975 * (len(values) - 1))]
+    low, high = values[round(0.025 * (len(values) - 1))], values[round(0.975 * (len(values) - 1))]
+    return None if high - low < 1e-9 else (low, high)
+
+
+INTERVAL_NOTE = (
+    "sem intervalo do kappa: reamostras demais sem kappa definido, ou todas com o mesmo valor (série degenerada); "
+    "leia a concordância exata"
+)
 
 
 def _measure(human: list[int], judge: list[int], categories: tuple[int, ...], seed: int, *, close: bool) -> dict:
     n = len(human)
     kappa = quadratic_kappa(human, judge, categories)
     note = kappa_note(human, judge, kappa)
+    interval = kappa_interval(human, judge, categories, seed) if kappa is not None and note is None else None
     exact = sum(a == b for a, b in zip(human, judge, strict=True))
     near = sum(abs(a - b) <= 1 for a, b in zip(human, judge, strict=True))
     return {
@@ -552,8 +642,9 @@ def _measure(human: list[int], judge: list[int], categories: tuple[int, ...], se
         "within_one_ci": wilson(near, n) if close else None,
         "kappa": kappa,
         # A kappa that is 0 because one rater never varies has no interval worth showing: every resample gives 0.
-        "kappa_ci": kappa_interval(human, judge, categories, seed) if kappa is not None and note is None else None,
+        "kappa_ci": interval,
         "kappa_note": note,
+        "interval_note": INTERVAL_NOTE if kappa is not None and note is None and interval is None else None,
         "human_mean": statistics.mean(human) if human else None,
         "judge_mean": statistics.mean(judge) if judge else None,
     }
@@ -623,7 +714,15 @@ def caveat(n: int) -> str:
 
 
 def render_report(
-    meta: dict, rater: str, pairs: list[Pair], analysis: dict, *, skipped: list[str], now: datetime | None = None
+    meta: dict,
+    rater: str,
+    pairs: list[Pair],
+    analysis: dict,
+    *,
+    skipped: list[str],
+    removed: Sequence[str] = (),
+    outside: Sequence[str] = (),
+    now: datetime | None = None,
 ) -> str:
     stamp = (now or datetime.now(UTC)).isoformat(timespec="seconds")
     n = analysis["n"]
@@ -636,7 +735,9 @@ def render_report(
         f"`judge.v{', '.join(rubrics)}`, juiz {', '.join(f'`{_cell(j)}`' for j in judges)}.",
         f"Amostra de `{_cell(meta.get('source', '-'))}` com a semente {_cell(meta.get('seed', '-'))} "
         f"({_cell(meta.get('drawn', '-'))} sorteadas de {_cell(meta.get('eligible', '-'))} respostas elegíveis, "
-        f"estratificadas por rota e split). Avaliadas: {n}. Sem avaliação (linhas puladas): {len(skipped)}.",
+        "balanceadas por estrato de rota e split, sem ponderar pelo tamanho de cada um). "
+        f"Avaliadas: {n}. Sem avaliação (linhas puladas): {len(skipped)}.",
+        *_import_notes(removed, outside),
         "",
         f"> {caveat(n)}",
         "",
@@ -669,9 +770,10 @@ def render_report(
     ]
     notes = sorted(
         {
-            f"{name}: {measure['kappa_note']}"
+            f"{name}: {measure[key]}"
             for name, measure in [*analysis["criteria"].items(), (VERDICT, verdict)]
-            if measure["kappa_note"]
+            for key in ("kappa_note", "interval_note")
+            if measure[key]
         }
     )
     if notes:
@@ -710,6 +812,9 @@ def render_report(
         "notas são 4 ou 5, o kappa fica baixo mesmo com concordância exata alta; por isso as três medidas aparecem "
         "juntas.",
         "- Viés: média das notas do juiz menos a média das notas humanas; positivo é um juiz mais generoso.",
+        "- Amostra: balanceada por estrato (rota e split), não ponderada. Cada estrato entra com quantidades "
+        "parecidas, mesmo quando é raro na campanha; as médias e as concordâncias valem para estas respostas e não "
+        "estimam as da campanha inteira.",
         "- Dados: respostas do sistema sobre a conta sintética, mascaradas; o arquivo da amostra não traz nenhuma "
         "nota do juiz.",
     ]
@@ -720,6 +825,21 @@ def _fmt(value: float | None) -> str:
     return "-" if value is None else f"{value:.2f}"
 
 
+def _import_notes(removed: list[str], outside: list[str]) -> list[str]:
+    """What this import did to ratings stored before, so that the database and the report say the same thing."""
+    notes = []
+    if removed:
+        notes.append(
+            f"Notas retiradas do banco por linha esvaziada neste arquivo (o arquivo é a fonte): {', '.join(removed)}."
+        )
+    if outside:
+        notes.append(
+            f"Notas já gravadas para esta campanha e avaliador que não estão neste arquivo (continuam no banco e não "
+            f"entram nestes números): {', '.join(outside)}."
+        )
+    return notes
+
+
 # --- the two commands -----------------------------------------------------------------------------------------------
 
 
@@ -728,15 +848,23 @@ def _token(text: str) -> str:
     return re.sub(r"[^\w.\-]+", "-", text).strip("-") or "campanha"
 
 
-def make_sample(report: Path, size: int, seed: int, campaign: str | None = None) -> tuple[list[dict], dict]:
-    """`eval-calibrate --sample`: the CSV rows and the sample line for `size` answers of the report."""
-    rows, stem = load_source(report)
+def make_sample(
+    report: Path, size: int, seed: int, campaign: str | None = None, split: str = "development"
+) -> tuple[list[dict], dict]:
+    """`eval-calibrate --sample`: the CSV rows and the sample line for `size` answers of the report, drawn from the
+    development splits (`split` can narrow that to `dev` or `holdout`; the holdout_v080 is never sampled)."""
+    if split not in SPLIT_CHOICES:
+        raise CalibrationError(f"split inválido para a amostra: {split!r} (use {', '.join(SPLIT_CHOICES)}).")
+    splits = SPLIT_CHOICES[split]
+    rows, stem, left_out = load_source(report, splits)
     meta = {
         "campaign": _token(campaign or stem),
         "seed": seed,
         "source": _token(report.name),
         "requested": size,
         "eligible": len(rows),
+        "splits": "+".join(splits),
+        "left_out": left_out,
     }
     return sample_rows(draw_sample(rows, size, seed)), meta
 
@@ -771,14 +899,26 @@ def import_filled(
     if not rater:
         raise CalibrationError("o avaliador (--rater) não pode ficar vazio.")
     pairs = link(conn, filled)
-    counts = store(conn, meta["campaign"], rater, pairs)
+    check_same_sample(conn, meta["campaign"], rater, pairs)
+    stored = store(conn, meta["campaign"], rater, pairs, filled.blank)
     seed = int(meta["seed"]) if str(meta.get("seed", "")).lstrip("-").isdigit() else DEFAULT_SEED
     analysis = analyze(pairs, seed)
     return {
         "meta": meta,
         "rater": rater,
-        "counts": counts,
+        "counts": stored.counts(),
         "skipped": filled.skipped,
+        "removed": stored.removed,
+        "outside": stored.outside,
         "analysis": analysis,
-        "report": render_report(meta, rater, pairs, analysis, skipped=filled.skipped, now=now),
+        "report": render_report(
+            meta,
+            rater,
+            pairs,
+            analysis,
+            skipped=filled.skipped,
+            removed=stored.removed,
+            outside=stored.outside,
+            now=now,
+        ),
     }

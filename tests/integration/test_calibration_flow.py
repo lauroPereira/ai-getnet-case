@@ -163,6 +163,38 @@ def test_sample_fill_import_and_report_end_to_end(settings, tmp_path, campaign, 
     assert conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 23
     conn.close()
 
+    # a row emptied in the file withdraws its rating: the database and the report keep to the file
+    fill(out, lambda r: dict.fromkeys((*CRITERIA, "unsupported_claim"), "") if r["sample_id"] == off_by_two else {})
+    assert cli.cmd_eval_calibrate(settings, args(import_csv=str(out), out=str(final), rater="lauro")) == 0
+    printed = capsys.readouterr().out
+    assert "calibrations: 0 stored, 22 updated, 2 skipped, 1 removed (campaign avaliacao, rater lauro)" in printed
+    conn = sqlite3.connect(settings.db_path)
+    assert conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 22
+    assert conn.execute("SELECT COUNT(*) FROM calibrations WHERE sample_id=?", (off_by_two,)).fetchone()[0] == 0
+    conn.close()
+    markdown = final.read_text(encoding="utf-8")
+    assert f"(o arquivo é a fonte): {off_by_two}." in markdown and "Avaliadas: 22." in markdown
+    assert f"| {off_by_two} |" not in markdown  # the withdrawn rating is not in the gaps either
+
+    # ratings stored earlier and missing from the file stay in the database, and the message and the report say so
+    dropped = sample_ids[-2:]
+    kept = [row for row in table(out) if row[:1] not in [[sample_id] for sample_id in dropped]]
+    with out.open("w", encoding="utf-8-sig", newline="") as handle:
+        csv.writer(handle, delimiter=";", lineterminator="\r\n").writerows(kept)
+    capsys.readouterr()
+    assert cli.cmd_eval_calibrate(settings, args(import_csv=str(out), out=str(final), rater="lauro")) == 0
+    captured = capsys.readouterr()
+    assert (
+        f"2 rating(s) of this campaign and rater are in the database but not in this file ({', '.join(dropped)})"
+        in (captured.err)
+    )
+    assert f"continuam no banco e não entram nestes números): {', '.join(dropped)}." in final.read_text(
+        encoding="utf-8"
+    )
+    conn = sqlite3.connect(settings.db_path)
+    assert conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 22  # nothing of theirs was touched
+    conn.close()
+
 
 def test_a_wrong_line_stops_the_import_and_the_message_names_it(settings, tmp_path, campaign, monkeypatch):
     report, _ = campaign
@@ -260,5 +292,75 @@ def test_the_command_is_reachable_from_the_parser(settings, tmp_path, campaign, 
     out = tmp_path / "pelo-parser.csv"
     assert cli.main(["eval-calibrate", "--sample", "5", "--from", str(report), "--out", str(out)]) == 0
     assert out.exists() and len([r for r in table(out) if r and r[0].startswith("S")]) == 5
+    assert "splits=dev+holdout" in out.read_bytes().decode("utf-8-sig")  # the parser default is the development set
     with pytest.raises(SystemExit):
         cli.main(["eval-calibrate", "--delimiter", "|", "--sample", "5"])
+
+
+def test_the_holdout_v080_is_never_sampled_and_the_warning_says_what_was_left_out(settings, tmp_path, campaign, capsys):
+    report, _ = campaign
+    data = json.loads(report.read_text(encoding="utf-8"))
+    sealed = set()
+    for row in data["cases"][:6]:  # six answers of the campaign relabelled as the sealed split
+        row["split"] = "holdout_v080"
+        sealed.add(row["request_id"])
+    with_v080 = tmp_path / "com-v080.json"
+    with_v080.write_text(json.dumps(data), encoding="utf-8")
+    out = tmp_path / "amostra.csv"
+    assert cli.cmd_eval_calibrate(settings, args(sample=24, source=str(with_v080), out=str(out))) == 0
+    captured = capsys.readouterr()
+    assert "judged answers left out of the sample" in captured.err and "holdout_v080 6" in captured.err
+    assert "never sampled, D17" in captured.err
+    rows = [dict(zip(cal.COLUMNS, row, strict=True)) for row in table(out) if row and row[0].startswith("S")]
+    assert len(rows) == 24 and not {r["request_id"] for r in rows} & sealed
+    assert {r["split"] for r in rows} <= {"dev", "holdout"}
+    assert "splits=dev+holdout" in out.read_bytes().decode("utf-8-sig")
+
+    narrow = tmp_path / "so-dev.csv"  # --split narrows it
+    cli.cmd_eval_calibrate(settings, args(sample=24, source=str(with_v080), out=str(narrow), split="dev"))
+    narrow_rows = [dict(zip(cal.COLUMNS, row, strict=True)) for row in table(narrow) if row and row[0].startswith("S")]
+    assert narrow_rows and {r["split"] for r in narrow_rows} == {"dev"}
+    assert "splits=dev;" in narrow.read_bytes().decode("utf-8-sig")
+    assert "holdout_v080" in capsys.readouterr().err
+
+    # and it never widens: the sealed split is not a choice
+    with pytest.raises(SystemExit) as refused:
+        cli.main(["eval-calibrate", "--sample", "5", "--from", str(with_v080), "--split", "holdout_v080"])
+    assert refused.value.code == 2
+    assert "invalid choice: 'holdout_v080'" in capsys.readouterr().err
+
+
+def test_a_second_sample_under_the_same_campaign_name_is_refused_with_the_way_out(settings, tmp_path, campaign):
+    report, _ = campaign
+
+    def rated_sample(seed: int, name: str) -> Path:
+        path = tmp_path / name
+        cli.cmd_eval_calibrate(settings, args(sample=24, source=str(report), seed=seed, out=str(path)))
+        fill(
+            path,
+            lambda r: {
+                "groundedness": "4",
+                "factual_correctness": "4",
+                "relevance": "4",
+                "usefulness": "4",
+                "unsupported_claim": "nao",
+            },
+        )
+        return path
+
+    first, second = rated_sample(1, "primeira.csv"), rated_sample(2, "segunda.csv")
+    assert cli.cmd_eval_calibrate(settings, args(import_csv=str(first), out=str(tmp_path / "um.md"))) == 0
+    with pytest.raises(SystemExit) as refused:
+        cli.cmd_eval_calibrate(settings, args(import_csv=str(second), out=str(tmp_path / "dois.md")))
+    message = str(refused.value)
+    assert message.startswith("eval-calibrate: linha ") and "outra amostra com o mesmo nome de campanha" in message
+    assert "--campaign <outro nome>" in message and "nada foi alterado" in message
+    assert not (tmp_path / "dois.md").exists()
+    conn = sqlite3.connect(settings.db_path)
+    assert conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 24
+    conn.close()
+    third = str(tmp_path / "tres.md")
+    assert cli.cmd_eval_calibrate(settings, args(import_csv=str(second), campaign="avaliacao-2", out=third)) == 0
+    conn = sqlite3.connect(settings.db_path)
+    assert conn.execute("SELECT COUNT(DISTINCT campaign) FROM calibrations").fetchone()[0] == 2
+    conn.close()

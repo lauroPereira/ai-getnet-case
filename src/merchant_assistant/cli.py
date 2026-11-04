@@ -456,13 +456,21 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
             if not args.source:
                 raise SystemExit("eval-calibrate: --sample needs --from <report.json> (a campaign with --judge).")
             seed = calibration.DEFAULT_SEED if args.seed is None else args.seed
-            rows, meta = calibration.make_sample(Path(args.source), size, seed, args.campaign)
+            split = getattr(args, "split", "development")
+            rows, meta = calibration.make_sample(Path(args.source), size, seed, args.campaign, split)
             out = Path(args.out) if args.out else evidence_dir / "v080-calibracao-amostra.csv"
             calibration.write_csv(out, rows, meta, delimiter=args.delimiter)
             print(
                 f"sample: {len(rows)} answers of {meta['eligible']} eligible, seed {seed}, campaign {meta['campaign']}"
             )
             print(f"csv: {out}")
+            if meta["left_out"]:
+                left = ", ".join(f"{name} {count}" for name, count in sorted(meta["left_out"].items()))
+                print(
+                    f"eval-calibrate: judged answers left out of the sample (only {meta['splits']} are drawn; the "
+                    f"holdout_v080 is never sampled, D17): {left}.",
+                    file=sys.stderr,
+                )
             if len(rows) < calibration.DEFAULT_SAMPLE:
                 print(
                     f"eval-calibrate: the sample has {len(rows)} answers; RF-91 asks for at least "
@@ -483,10 +491,17 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(result["report"], encoding="utf-8")
         counts = result["counts"]
+        withdrawn = f", {len(result['removed'])} removed" if result["removed"] else ""
         print(
-            f"calibrations: {counts['created']} stored, {counts['updated']} updated, {len(result['skipped'])} skipped "
-            f"(campaign {result['meta']['campaign']}, rater {result['rater']})"
+            f"calibrations: {counts['created']} stored, {counts['updated']} updated, {len(result['skipped'])} skipped"
+            f"{withdrawn} (campaign {result['meta']['campaign']}, rater {result['rater']})"
         )
+        if result["outside"]:
+            print(
+                f"eval-calibrate: {len(result['outside'])} rating(s) of this campaign and rater are in the database "
+                f"but not in this file ({', '.join(result['outside'])}); they stay as they are.",
+                file=sys.stderr,
+            )
         print(f"report: {out}")
         return 0
     except calibration.CalibrationError as exc:
@@ -715,6 +730,13 @@ def main(argv: list[str] | None = None) -> int:
     p_calibrate.add_argument("--import", dest="import_csv", default=None, help="The CSV the owner filled in.")
     p_calibrate.add_argument("--seed", type=int, default=None, help="Seed of the draw (default 20261104).")
     p_calibrate.add_argument("--campaign", default=None, help="Campaign name (default: the report name).")
+    p_calibrate.add_argument(
+        "--split",
+        choices=["development", "dev", "holdout"],
+        default="development",
+        help="Splits the sample is drawn from (default development: dev and holdout). The holdout_v080 is never "
+        "sampled.",
+    )
     p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
     p_calibrate.add_argument(
         "--delimiter",

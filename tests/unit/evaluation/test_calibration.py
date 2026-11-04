@@ -4,11 +4,13 @@ fixed by hand. Synthetic data only; no model is called."""
 
 from __future__ import annotations
 
+import copy
 import csv
 import io
 import json
 import random
 import re
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -101,10 +103,12 @@ def write_source(path: Path, rows: list[dict]) -> Path:
     return path
 
 
-def make_csv(tmp_path, rows=None, *, size=24, seed=cal.DEFAULT_SEED, delimiter=";", name="avaliacao.json") -> Path:
+def make_csv(
+    tmp_path, rows=None, *, size=24, seed=cal.DEFAULT_SEED, delimiter=";", name="avaliacao.json", file="amostra.csv"
+) -> Path:
     report = write_source(tmp_path / name, rows if rows is not None else fake_rows())
     sample, meta = cal.make_sample(report, size, seed)
-    path = tmp_path / "amostra.csv"
+    path = tmp_path / file
     cal.write_csv(path, sample, meta, delimiter=delimiter)
     return path
 
@@ -193,8 +197,10 @@ def test_only_first_executions_with_a_completed_judgement_and_their_evidence_are
     del unrecorded["judge_input"]
     unjudged = fake_row(93, "knowledge", "dev")
     del unjudged["judge"]
-    eligible, stem = cal.load_source(write_source(tmp_path / "campanha-x.json", [*rows, failed, unrecorded, unjudged]))
+    report = write_source(tmp_path / "campanha-x.json", [*rows, failed, unrecorded, unjudged])
+    eligible, stem, left_out = cal.load_source(report)
     assert len(eligible) == 4 and stem == "campanha-x" and all(r["repetition"] == 1 for r in eligible)
+    assert left_out == {}
     with pytest.raises(cal.CalibrationError, match="não tem respostas julgadas"):
         cal.load_source(write_source(tmp_path / "vazio.json", [failed, unrecorded]))
     broken = tmp_path / "quebrado.json"
@@ -473,9 +479,9 @@ def varied_rows() -> list[dict]:
     return rows
 
 
-def human_like_judge(tmp_path, rows):
+def human_like_judge(tmp_path, rows, **sample):
     """A filled CSV whose ratings equal the judge's, row by row (every request id is mapped back to its judgement)."""
-    path = make_csv(tmp_path, rows)
+    path = make_csv(tmp_path, rows, **sample)
     by_request = {r["request_id"]: r["judge"] for r in rows}
     table = read_table(path)
     at = next(i for i, row in enumerate(table) if row and row[0] == "sample_id")
@@ -825,3 +831,289 @@ def test_the_report_for_one_line_and_for_identical_ratings_says_what_cannot_be_c
     report = cal.render_report({"campaign": "c"}, "owner", same, cal.analyze(same, 1), skipped=[])
     assert "iguais e sem variação dos dois lados" in report and "1.000 (IC 95%: 0.44 a 1.00)" in report
     assert "Nenhuma." in report  # no gap
+
+
+# --- round 2 (review of 31aac33) ------------------------------------------------------------------------------------
+
+
+def v080_rows() -> tuple[list[dict], set[str]]:
+    rows = fake_rows({("knowledge", "dev"): 6, ("support", "holdout"): 6})
+    sealed = [fake_row(200 + n, "knowledge", "holdout_v080") for n in range(5)]
+    return rows + sealed, {r["request_id"] for r in sealed}
+
+
+def test_the_sample_comes_from_the_development_splits_only(tmp_path):
+    rows, sealed = v080_rows()
+    report = write_source(tmp_path / "campanha.json", rows)
+    drawn, _, left_out = cal.load_source(report)
+    assert len(drawn) == 12 and left_out == {"holdout_v080": 5} and not sealed & {r["request_id"] for r in drawn}
+    sample, meta = cal.make_sample(report, 24, 1)
+    assert len(sample) == 12 and not sealed & {row["request_id"] for row in sample}
+    assert meta["splits"] == "dev+holdout" and meta["left_out"] == {"holdout_v080": 5} and meta["eligible"] == 12
+    path = tmp_path / "amostra.csv"
+    cal.write_csv(path, sample, meta)
+    text = path.read_bytes().decode("utf-8-sig")
+    assert "splits=dev+holdout" in text and "holdout_v080" not in text
+    assert cal.read_filled(text).meta["splits"] == "dev+holdout"
+
+
+def test_the_split_option_narrows_the_sample_and_never_reaches_the_sealed_split(tmp_path):
+    rows, _ = v080_rows()
+    report = write_source(tmp_path / "campanha.json", rows)
+    only_dev, meta = cal.make_sample(report, 24, 1, split="dev")
+    assert {r["split"] for r in only_dev} == {"dev"} and len(only_dev) == 6 and meta["splits"] == "dev"
+    assert meta["left_out"] == {"holdout": 6, "holdout_v080": 5}
+    only_holdout, meta = cal.make_sample(report, 24, 1, split="holdout")
+    assert {r["split"] for r in only_holdout} == {"holdout"} and len(only_holdout) == 6
+    for name in ("holdout_v080", "all", "tudo"):
+        with pytest.raises(cal.CalibrationError, match="split inválido"):
+            cal.make_sample(report, 24, 1, split=name)
+    assert set(cal.SPLIT_CHOICES) == {"development", "dev", "holdout"}
+    assert all("holdout_v080" not in splits for splits in cal.SPLIT_CHOICES.values())
+
+
+def test_a_report_with_only_the_sealed_split_gives_nothing_to_sample(tmp_path):
+    only = write_source(tmp_path / "so-v080.json", [fake_row(n, "knowledge", "holdout_v080") for n in range(1, 4)])
+    with pytest.raises(cal.CalibrationError, match="só tem respostas dos splits holdout_v080") as caught:
+        cal.make_sample(only, 24, 1)
+    assert "não entra na calibração" in str(caught.value)
+    narrower = write_source(tmp_path / "so-holdout.json", [fake_row(n, "knowledge", "holdout") for n in range(1, 4)])
+    with pytest.raises(cal.CalibrationError, match="só tem respostas dos splits holdout"):
+        cal.make_sample(narrower, 24, 1, split="dev")
+
+
+def test_the_draw_is_shuffled_by_the_seed_after_the_rounds():
+    sample = cal.draw_sample(fake_rows(), 24, cal.DEFAULT_SEED)
+    keys = [(r["route"], r["split"]) for r in sample]
+    runs = [keys[at : at + 8] for at in range(0, 24, 8)]
+    # taken round by round, the 24 would be three runs of the eight strata, each stratum once per run
+    assert not all(len(set(run)) == 8 for run in runs) and not runs[0] == runs[1] == runs[2]
+    assert [r["request_id"] for r in sample] == [
+        r["request_id"] for r in cal.draw_sample(fake_rows(), 24, cal.DEFAULT_SEED)
+    ]
+
+
+def vary_the_judge(rows: list[dict]) -> list[dict]:
+    """The same answers with every field of the judge changed: scores, verdict, reasons, ids, model, repetitions."""
+    changed = copy.deepcopy(rows)
+    for index, row in enumerate(changed):
+        row["judge"] |= {
+            "scores": {c: 1 + (index * 7 + k) % 5 for k, c in enumerate(CRITERIA)},
+            "unsupported_claim": index % 2 == 0,
+            "evaluation_id": f"eval_other{index}",
+            "model": "other-model",
+            "provider": "other-provider",
+            "model_used": "other-model",
+            "reasons": {c: f"OTHER-REASON {c} {index}" for c in CRITERIA},
+        }
+        row["judge_runs"] = [row["judge"], row["judge"]]
+    return changed
+
+
+def test_the_csv_does_not_change_when_every_field_of_the_judge_changes(tmp_path):
+    rows = fake_rows()
+    for index, row in enumerate(rows):  # the reply status takes several values, none of them the judge's
+        row["judge_input"]["status"] = ("answered", "handoff", "refused")[index % 3]
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    first = make_csv(tmp_path / "a", rows).read_bytes()
+    assert make_csv(tmp_path / "b", vary_the_judge(rows)).read_bytes() == first  # neither the rows nor their order move
+    assert make_csv(tmp_path / "b", vary_the_judge(vary_the_judge(rows)), seed=cal.DEFAULT_SEED).read_bytes() == first
+    table = read_table(make_csv(tmp_path / "a", rows))
+    at = next(i for i, row in enumerate(table) if row and row[0] == "sample_id")
+    by_request = {r["request_id"]: r["judge_input"]["status"] for r in rows}
+    for row in table[at + 1 :]:
+        record = dict(zip(table[at], row, strict=True))
+        assert record["status"] == by_request[record["request_id"]]  # the outcome of the reply, not the verdict
+
+
+def test_a_corrected_file_updates_every_field_of_the_rating(tmp_path):
+    rows = varied_rows()
+    conn = judged_database(tmp_path, rows)
+    path = human_like_judge(tmp_path, rows)
+    cal.import_filled(conn, path)
+    old = conn.execute("SELECT * FROM calibrations WHERE sample_id='S03'").fetchone()
+    scores = json.loads(old["scores"])
+    flipped = "nao" if old["unsupported_claim"] else "sim"
+    fill(
+        path,
+        {
+            "S03": {
+                "unsupported_claim": flipped,
+                "note": "mudei de ideia",
+                "groundedness": str(1 if scores["groundedness"] != 1 else 2),
+            }
+        },
+    )
+    cal.import_filled(conn, path)
+    new = conn.execute("SELECT * FROM calibrations WHERE sample_id='S03'").fetchone()
+    changed = json.loads(new["scores"])
+    assert new["calibration_id"] == old["calibration_id"] and new["evaluation_id"] == old["evaluation_id"]
+    assert new["unsupported_claim"] == 1 - old["unsupported_claim"] and new["note"] == "mudei de ideia"
+    assert changed["groundedness"] != scores["groundedness"]
+    assert {k: v for k, v in changed.items() if k != "groundedness"} == {
+        k: v for k, v in scores.items() if k != "groundedness"
+    }
+    fill(path, {"S03": {"note": ""}})  # a note can be taken back too
+    cal.import_filled(conn, path)
+    assert conn.execute("SELECT note FROM calibrations WHERE sample_id='S03'").fetchone()[0] is None
+
+
+def test_a_failure_in_the_middle_of_the_writes_rolls_everything_back(tmp_path):
+    rows = varied_rows()
+    conn = judged_database(tmp_path, rows)
+    text = human_like_judge(tmp_path, rows).read_bytes().decode("utf-8-sig")
+    pairs = cal.link(conn, cal.read_filled(text))
+
+    class Failing:
+        """A connection that breaks on the fifth rating it is asked to write."""
+
+        def __init__(self, inner, fail_on):
+            self.inner, self.fail_on, self.writes = inner, fail_on, 0
+
+        def execute(self, sql, params=()):
+            if sql.lstrip().startswith("INSERT INTO calibrations"):
+                self.writes += 1
+                if self.writes == self.fail_on:
+                    raise sqlite3.OperationalError("disk I/O error (injected)")
+            return self.inner.execute(sql, params)
+
+    broken = Failing(conn, 5)
+    with pytest.raises(sqlite3.OperationalError, match="injected"):
+        cal.store(broken, "avaliacao", "owner", pairs)
+    assert broken.writes == 5 and conn.in_transaction is False  # the transaction was closed, not left open
+    assert conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 0  # the four before it were undone
+    assert cal.store(conn, "avaliacao", "owner", pairs).created == 24  # and the same writes work afterwards
+
+
+def test_a_second_sample_under_the_same_campaign_name_cannot_overwrite_the_first(tmp_path):
+    rows = varied_rows()
+    conn = judged_database(tmp_path, rows)
+    cal.import_filled(conn, human_like_judge(tmp_path, rows))
+    query = "SELECT sample_id, request_id, scores, unsupported_claim, note FROM calibrations ORDER BY sample_id"
+    before = [tuple(r) for r in conn.execute(query)]
+    second = human_like_judge(
+        tmp_path, rows, seed=77, file="segunda.csv"
+    )  # the same 24 answers, drawn in another order
+    with pytest.raises(cal.CalibrationError) as caught:
+        cal.import_filled(conn, second)
+    first_message = caught.value.messages[0]
+    assert "outra amostra com o mesmo nome de campanha" in first_message and "--campaign <outro nome>" in first_message
+    assert "linha " in first_message and "'avaliacao'" in first_message and "'owner'" in first_message
+    assert [tuple(r) for r in conn.execute(query)] == before  # not a single rating of the first sample was touched
+    kept = cal.import_filled(conn, second, campaign="avaliacao-2")  # told apart by the campaign name
+    assert kept["counts"] == {"created": 24, "updated": 0}
+    assert conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 48
+    assert [
+        tuple(r)
+        for r in conn.execute(query.replace("FROM calibrations", "FROM calibrations WHERE campaign='avaliacao'"))
+    ] == before
+
+
+def test_an_emptied_row_withdraws_its_rating_so_the_database_and_the_report_agree(tmp_path):
+    rows = varied_rows()
+    conn = judged_database(tmp_path, rows)
+    path = human_like_judge(tmp_path, rows)
+    cal.import_filled(conn, path)
+    fill(path, {"S05": {**dict.fromkeys(GOOD, ""), "note": "deixei em branco"}})
+    result = cal.import_filled(conn, path)
+    assert result["removed"] == ["S05"] and result["skipped"] == ["S05"]
+    assert result["counts"] == {"created": 0, "updated": 23} and result["outside"] == []
+    assert result["analysis"]["n"] == 23
+    stored = {r[0] for r in conn.execute("SELECT sample_id FROM calibrations")}
+    assert len(stored) == 23 and "S05" not in stored  # what the report counts is what the database holds
+    assert "Avaliadas: 23" in result["report"]
+    assert "Notas retiradas do banco por linha esvaziada neste arquivo (o arquivo é a fonte): S05." in result["report"]
+    again = cal.import_filled(conn, path)  # nothing left to withdraw the second time
+    assert again["removed"] == [] and "retiradas" not in again["report"]
+    # an empty row never withdraws the rating stored for another request
+    other = cal.store(conn, "avaliacao", "owner", [], {"S06": "req_of_another_sample"})
+    assert other.removed == [] and conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 23
+
+
+def test_ratings_stored_earlier_and_missing_from_the_file_are_named_in_the_report(tmp_path):
+    rows = varied_rows()
+    conn = judged_database(tmp_path, rows)
+    path = human_like_judge(tmp_path, rows)
+    cal.import_filled(conn, path)
+    table = read_table(path)
+    trimmed = [row for row in table if row[:1] not in (["S23"], ["S24"])]
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        csv.writer(handle, delimiter=";", lineterminator="\r\n").writerows(trimmed)
+    result = cal.import_filled(conn, path)
+    assert result["outside"] == ["S23", "S24"] and result["removed"] == []
+    assert result["analysis"]["n"] == 22 and conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0] == 24
+    assert "Notas já gravadas para esta campanha e avaliador que não estão neste arquivo" in result["report"]
+    assert "continuam no banco e não entram nestes números): S23, S24." in result["report"]
+
+
+def test_two_sample_ids_with_the_same_request_id_are_refused(tmp_path):
+    path = make_csv(tmp_path, size=4)
+    fill(path, {}, everyone=GOOD)
+    table = read_table(path)
+    at = next(i for i, row in enumerate(table) if row and row[0] == "sample_id")
+    column = table[at].index("request_id")
+    table[at + 3][column] = table[at + 1][column]  # S03 now names the request of S01
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        csv.writer(handle, delimiter=";", lineterminator="\r\n").writerows(table)
+    with pytest.raises(cal.CalibrationError) as caught:
+        cal.read_filled(path.read_bytes().decode("utf-8-sig"))
+    first, third = physical_line(path, "S01"), physical_line(path, "S03")
+    assert caught.value.messages == [f"linha {third} (S03): request_id repetido (já aparece na linha {first})."]
+
+
+def test_the_kappa_has_no_interval_when_the_series_is_too_lopsided_or_degenerate():
+    lopsided = [5] * 23 + [4]  # a third of the resamples never draw the odd row: one value on both sides
+    assert cal.quadratic_kappa(lopsided, lopsided) == pytest.approx(1.0)
+    assert cal.kappa_interval(lopsided, lopsided, cal.SCALE, 7) is None
+    spread = [1, 2, 3, 4, 5] * 4 + [1, 2, 3, 4]  # perfect in every resample: a point, not a measure of doubt
+    assert cal.quadratic_kappa(spread, spread) == pytest.approx(1.0)
+    assert cal.kappa_interval(spread, spread, cal.SCALE, 7) is None
+    # the cut is at 10% of the resamples without a kappa: 12% (two odd rows of 24) is out, 4% (three) is in
+    human = [5] * 22 + [4, 4]
+    assert cal.kappa_interval(human, [5] * 22 + [4, 5], cal.SCALE, 7) is None
+    human = [5] * 21 + [4, 4, 4]
+    low, high = cal.kappa_interval(human, [5] * 21 + [4, 4, 5], cal.SCALE, 7)
+    assert low < cal.quadratic_kappa(human, [5] * 21 + [4, 4, 5]) < high
+
+
+def test_the_report_says_no_interval_instead_of_a_misleading_one():
+    lopsided = [5] * 23 + [4]
+    pairs = [
+        pair(f"S{n:02d}", dict.fromkeys(CRITERIA, v), dict.fromkeys(CRITERIA, v)) for n, v in enumerate(lopsided, 1)
+    ]
+    analysis = cal.analyze(pairs, 7)
+    grounded = analysis["criteria"]["groundedness"]
+    assert grounded["kappa"] == pytest.approx(1.0) and grounded["kappa_ci"] is None
+    assert grounded["interval_note"] == cal.INTERVAL_NOTE and grounded["kappa_note"] is None
+    report = cal.render_report({"campaign": "c", "seed": "7"}, "owner", pairs, analysis, skipped=[])
+    line = next(r for r in report.splitlines() if r.startswith("| groundedness (fundamentação) | 24 |"))
+    assert "| 1.000 (sem intervalo) |" in line and "1.00 a 1.00" not in report
+    assert "- groundedness: sem intervalo do kappa: reamostras demais sem kappa definido" in report
+    ordinary = cal.analyze(fixed_pairs(), 7)["criteria"]["groundedness"]  # an ordinary series keeps its interval
+    assert ordinary["kappa_ci"] is not None and ordinary["interval_note"] is None
+
+
+def test_the_intervals_are_labelled_95_percent_everywhere_they_appear():
+    pairs = fixed_pairs()
+    report = cal.render_report({"campaign": "c", "seed": "7"}, "owner", pairs, cal.analyze(pairs, 7), skipped=[])
+    lines = report.splitlines()
+    for criterion in (
+        "groundedness (fundamentação)",
+        "factual_correctness (correção factual)",
+        "relevance (relevância)",
+    ):
+        line = next(r for r in lines if r.startswith(f"| {criterion} | 12 |"))
+        assert line.count("IC 95%") == 3  # exact, within one point, kappa
+    verdict = next(r for r in lines if r.startswith("Concordância exata:"))
+    assert verdict.count("IC 95%") == 2
+    assert "são de Wilson (95%)" in report and "reamostragem (bootstrap)" in report
+    assert abs(cal.Z95 - 1.96) < 1e-3
+
+
+def test_the_report_says_the_sample_is_balanced_by_stratum_and_not_weighted():
+    pairs = fixed_pairs()
+    report = cal.render_report({"campaign": "c", "seed": "7"}, "owner", pairs, cal.analyze(pairs, 7), skipped=[])
+    assert "balanceadas por estrato de rota e split, sem ponderar pelo tamanho de cada um" in report
+    assert "- Amostra: balanceada por estrato (rota e split), não ponderada." in report
+    assert "não estimam as da campanha inteira" in report
