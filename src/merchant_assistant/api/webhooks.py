@@ -25,10 +25,9 @@ import httpx
 
 from merchant_assistant.config import Settings
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.webhook_outbox import enqueue, webhook_targets
+from merchant_assistant.data.webhook_outbox import enqueue, target_config, webhook_targets
 
 SIGNATURE_TOLERANCE_S = 300
-TICKETING, MERCHANT = "ticketing", "merchant"
 log = logging.getLogger("merchant_assistant.webhooks")
 
 
@@ -60,10 +59,6 @@ def verify_signature(
     return any(hmac.compare_digest(expected, candidate) for candidate in candidates)
 
 
-def _secret(value) -> str:
-    return value.get_secret_value().strip() if value else ""
-
-
 class Webhooks:
     """Builds, signs and delivers the assistant's outgoing events. `transport` replaces the network in tests."""
 
@@ -83,10 +78,7 @@ class Webhooks:
     # --- targets ------------------------------------------------------------------------------------------------
 
     def _target(self, name: str) -> tuple[str | None, str]:
-        s = self.settings
-        if name == TICKETING:
-            return s.ticketing_webhook_url, _secret(s.ticketing_webhook_secret)
-        return s.conversation_webhook_url, _secret(s.conversation_webhook_secret)
+        return target_config(self.settings, name)
 
     # --- events -------------------------------------------------------------------------------------------------
 

@@ -15,10 +15,20 @@ TARGETS = {
 }
 
 
+def target_config(settings, name: str) -> tuple[str | None, str]:
+    """(URL, secret) of a destination, `name` being `ticketing` or `merchant`. The one reading shared by the intention
+    (`webhook_targets`) and the delivery (`Webhooks`), so that they never disagree about what can be delivered."""
+    if name == "ticketing":
+        url, secret = settings.ticketing_webhook_url, settings.ticketing_webhook_secret
+    else:
+        url, secret = settings.conversation_webhook_url, settings.conversation_webhook_secret
+    return url, secret.get_secret_value().strip() if secret else ""
+
+
 def webhook_targets(settings) -> set[str]:
-    """Destinations with a URL configured now. Only they receive an intention: an empty URL queues nothing."""
-    urls = {"ticketing": settings.ticketing_webhook_url, "merchant": settings.conversation_webhook_url}
-    return {name for name, url in urls.items() if url}
+    """Destinations that can be delivered to now: URL **and** secret configured, as the delivery requires. Only they
+    receive an intention: a destination missing either one queues nothing (it would stay pending for good)."""
+    return {name for name in ("ticketing", "merchant") if all(target_config(settings, name))}
 
 
 def enqueue(conn, event_type: str, data: dict, key: str, targets: set[str] | None = None) -> str:

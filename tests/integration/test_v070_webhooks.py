@@ -21,6 +21,7 @@ from pydantic import SecretStr
 from merchant_assistant import handoffs
 from merchant_assistant.api import integrations
 from merchant_assistant.api.identity import Principal
+from merchant_assistant.api.schemas import MessageRequest
 from merchant_assistant.api.webhooks import Webhooks, signature, verify_signature
 from merchant_assistant.mocks.service import create_mocks_app
 from merchant_assistant.orchestration import graph
@@ -569,7 +570,7 @@ def test_closed_delivery_retries_with_same_id_after_ack_is_lost(wired, monkeypat
 
 
 def _child_settings_script() -> str:
-    # both receivers configured: a destination without a URL gets no intention
+    # both receivers configured, URL and secret: a destination missing either gets no intention (review P3-2)
     return (
         "import os, sys; from pathlib import Path; from pydantic import SecretStr; "
         "from merchant_assistant.config import Settings; "
@@ -579,6 +580,8 @@ def _child_settings_script() -> str:
         "demo_mode=True,budget_limit_usd=1.0,qdrant_url=':memory:',retrieval_min_score=0.05,"
         "ticketing_webhook_url='http://ticketing.test/webhooks/assistant',"
         "conversation_webhook_url='http://merchant.test/merchant/events',"
+        f"ticketing_webhook_secret=SecretStr('{TICKETING_SECRET}'),"
+        f"conversation_webhook_secret=SecretStr('{CONVERSATION_SECRET}'),"
         "demo_user_passwords=SecretStr(passwords_setting(TEST_USER_PASSWORDS)),"
         "ticketing_client_secret=SecretStr(TEST_TICKETING_SECRET),password_hash_iterations=1000); "
         "orchestrator,_=offline_orchestrator(settings); "
@@ -1104,3 +1107,204 @@ def test_delivery_waits_for_another_process_delivering_the_same_event(wired, set
             other.kill()
     assert [event["type"] for event in receivers.events()] == ["handoff.created"]
     assert rows(client, "SELECT status,attempts FROM webhook_outbox") == [{"status": "delivered", "attempts": 1}]
+
+
+# --- task 68: the guards of the late completion, the channel rule and the destinations -------------------------------
+# Review of task 66, round 5: the guards of `Orchestrator._complete_interrupted_handoff` / `_has_checkpoint`, the filter
+# of destinations in `recover_pending_intents` and the rule of channel on creation had no test (mutants N09, N14-N20).
+
+
+def checkpoint_rows(settings, thread_id: str | None = None) -> tuple[int, int]:
+    """(checkpoints, writes) stored for one thread, or for every thread."""
+    where, args = ("WHERE thread_id=?", (thread_id,)) if thread_id else ("", ())
+    conn = sqlite3.connect(settings.checkpoint_db_path)
+    try:
+        checkpoints, writes = (
+            conn.execute(f"SELECT COUNT(*) FROM {table} {where}", args).fetchone()[0]
+            for table in ("checkpoints", "writes")
+        )
+    finally:
+        conn.close()
+    return checkpoints, writes
+
+
+def drop_flow(settings, thread_id: str) -> None:
+    """The turn that stopped before it saved the flow: nothing is stored for the thread."""
+    conn = sqlite3.connect(settings.checkpoint_db_path)
+    try:
+        for table in ("writes", "checkpoints"):
+            conn.execute(f"DELETE FROM {table} WHERE thread_id=?", (thread_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def change(client, sql: str, args=()) -> None:
+    conn = sqlite3.connect(client.app.state.settings.db_path)
+    try:
+        conn.execute(sql, args)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def thread_of(client, case_id: str) -> str:
+    return rows(client, "SELECT thread_id FROM handoff_cases WHERE case_id=?", (case_id,))[0]["thread_id"]
+
+
+def case_without_announcement(client, settings) -> dict:
+    """A handoff with its flow saved but its `handoff.created` never queued: the ticketing URL was not configured when
+    it opened. The URL is configured again afterwards, so that a late announcement would be possible."""
+    settings.ticketing_webhook_url = None
+    opened = hand_off(client)
+    settings.ticketing_webhook_url = TICKETING_URL
+    assert announcements(client, opened["case_id"]) == []
+    return opened
+
+
+def send_again(client, opened) -> None:
+    body = {"message": HUMAN, "conversation_id": opened["message"]["conversation_id"]}
+    again = client.post("/messages", json=body, headers=merchant_headers(client))
+    assert again.status_code == 200 and again.json()["status"] == "handoff", again.text
+    assert client.app.state.webhooks.wait()
+
+
+def announcements(client, case_id: str) -> list[tuple[str, str, str]]:
+    found = rows(client, "SELECT event,target,status FROM webhook_outbox WHERE case_id=? ORDER BY rowid", (case_id,))
+    return [(r["event"], r["target"], r["status"]) for r in found]
+
+
+@pytest.mark.parametrize("flow", ["kept", "lost"])
+def test_sending_the_message_again_saves_the_flow_at_most_once(wired, settings, flow):
+    client, _, _, _ = wired()
+    control = hand_off(client)  # a normal turn: the rows a saved flow has
+    expected = checkpoint_rows(settings, thread_of(client, control["case_id"]))
+    assert expected[0] > 0
+    opened = case_without_announcement(client, settings)
+    thread = thread_of(client, opened["case_id"])
+    assert checkpoint_rows(settings, thread) == expected
+    if flow == "lost":
+        drop_flow(settings, thread)
+        assert checkpoint_rows(settings, thread) == (0, 0)
+    for resend in range(1, 4):
+        send_again(client, opened)
+        assert checkpoint_rows(settings, thread) == expected, f"after resend {resend}"
+        assert announcements(client, opened["case_id"]) == [("handoff.created", "ticketing", "delivered")]
+    assert rows(client, "SELECT resume_status FROM handoff_cases WHERE case_id=?", (opened["case_id"],)) == [
+        {"resume_status": None}
+    ]
+
+
+@pytest.mark.parametrize("saving_fails_too", [False, True])
+def test_unreadable_checkpoint_is_taken_as_present_not_as_missing(wired, settings, monkeypatch, saving_fails_too):
+    client, orchestrator, _, _ = wired()
+    opened = case_without_announcement(client, settings)
+    thread = thread_of(client, opened["case_id"])
+    saved = checkpoint_rows(settings, thread)
+
+    def unreadable(*_args, **_kwargs):
+        raise sqlite3.OperationalError("database is locked")
+
+    review_graph = orchestrator.review_graph()
+    monkeypatch.setattr(review_graph, "get_state", unreadable)
+    if saving_fails_too:  # a saving attempt would fail: it would mark the healthy case `checkpoint_failed`
+        monkeypatch.setattr(review_graph, "invoke", unreadable)
+    send_again(client, opened)
+    found = rows(client, "SELECT resume_status, resume_error FROM handoff_cases WHERE case_id=?", (opened["case_id"],))
+    assert found == [{"resume_status": None, "resume_error": None}]
+    assert checkpoint_rows(settings, thread) == saved  # nothing saved again
+    # the announcement itself does not depend on the checkpoint
+    assert announcements(client, opened["case_id"]) == [("handoff.created", "ticketing", "delivered")]
+
+
+@pytest.mark.parametrize(
+    "state,late_announcements",
+    [("open", 1), ("answered", 0), ("ticketed", 0), ("before_0_7_0", 0)],
+)
+def test_only_an_open_case_of_this_version_without_a_ticket_is_announced_late(
+    wired, settings, state, late_announcements
+):
+    client, _, _, _ = wired()
+    opened = case_without_announcement(client, settings)
+    saved = checkpoint_rows(settings)  # every thread: nothing may be saved again, under any thread
+    change_to = {
+        "open": None,
+        "answered": "UPDATE handoff_cases SET queue_state='answered'",
+        "ticketed": "UPDATE handoff_cases SET ticket_id='tkt_000000000001'",
+        "before_0_7_0": "UPDATE handoff_cases SET thread_id=NULL",  # a case of an older version has no saved flow
+    }[state]
+    if change_to:
+        change(client, change_to)
+    send_again(client, opened)
+    assert len(announcements(client, opened["case_id"])) == late_announcements
+    assert checkpoint_rows(settings) == saved
+
+
+def test_a_turn_over_the_in_process_channel_completes_the_flow_but_queues_nothing(wired, settings):
+    client, orchestrator, _, _ = wired()
+    control = hand_off(client)
+    expected = checkpoint_rows(settings, thread_of(client, control["case_id"]))
+    opened = case_without_announcement(client, settings)
+    thread = thread_of(client, opened["case_id"])
+    drop_flow(settings, thread)
+    request = MessageRequest(message=HUMAN, user_id="cliente1988", conversation_id=opened["message"]["conversation_id"])
+    answer = orchestrator.handle(
+        request, "req_in_process_again", principal=Principal.merchant("cliente1988"), channel="in_process"
+    )
+    assert answer.status == "handoff" and answer.handoff.protocol == opened["protocol"]
+    assert checkpoint_rows(settings, thread) == expected  # the flow is saved (the operator can act) ...
+    assert announcements(client, opened["case_id"]) == []  # ... and nothing is queued by a turn that is not an API turn
+    send_again(client, opened)  # the same message over the API is announced late, once (documented, review P3-4)
+    assert announcements(client, opened["case_id"]) == [("handoff.created", "ticketing", "delivered")]
+
+
+@pytest.mark.parametrize("channel,queued", [("api", 1), ("web", 1), ("in_process", 0)])
+def test_a_new_case_is_announced_only_over_the_api_and_web_channels(wired, channel, queued):
+    client, orchestrator, _, _ = wired()
+    answer = orchestrator.handle(
+        MessageRequest(message=HUMAN, user_id="cliente1988"),
+        f"req_channel_{channel}",
+        principal=Principal.merchant("cliente1988"),
+        channel=channel,
+    )
+    assert answer.status == "handoff"
+    case = only_case(client)
+    assert case["channel"] == channel and case["resume_status"] is None and has_flow(orchestrator, case)
+    assert announcements(client, case["case_id"]) == [("handoff.created", "ticketing", "pending")] * queued
+
+
+@pytest.mark.parametrize("url_configured", [False, True])
+def test_recovery_of_a_closed_case_queues_nothing_for_a_destination_without_a_url(wired, settings, url_configured):
+    client, _, receivers, _ = wired()
+    case_id = hand_off(client)["case_id"]
+    assert post_event(client, "ticket.assigned", ticket(case_id)).status_code == 200
+    assert post_event(client, "ticket.solved", ticket(case_id)).status_code == 200
+    assert client.app.state.webhooks.wait()
+    assert ("handoff.closed", "ticketing", "delivered") in announcements(client, case_id)
+    # the closing intention is gone (a case closed before the outbox existed, or one that was never queued)
+    change(client, "DELETE FROM webhook_outbox WHERE event='handoff.closed'")
+    change(client, "DELETE FROM webhook_deliveries WHERE event='handoff.closed'")
+    settings.ticketing_webhook_url = TICKETING_URL if url_configured else None
+    receivers.requests.clear()
+    client.app.state.webhooks.recover_pending_intents()
+    assert client.app.state.webhooks.wait()
+    closing = [a for a in announcements(client, case_id) if a[0] == "handoff.closed"]
+    if url_configured:
+        assert closing == [("handoff.closed", "ticketing", "delivered")]
+        assert [event["type"] for event in receivers.events()] == ["handoff.closed"]
+    else:
+        assert closing == [] and receivers.requests == []  # nothing waits for a receiver that is not configured
+
+
+def test_destination_with_a_url_but_no_secret_receives_no_intention(wired, settings):
+    client, _, receivers, _ = wired()
+    settings.ticketing_webhook_secret = None  # the URL alone cannot deliver: the delivery needs the secret to sign
+    case_id = hand_off(client)["case_id"]
+    assert announcements(client, case_id) == []
+    assert post_event(client, "ticket.assigned", ticket(case_id)).status_code == 200
+    data = ticket(case_id, action="approve", text="", idempotency_key="no-ticketing-secret")
+    assert post_event(client, "ticket.action", data).status_code == 200
+    assert post_event(client, "ticket.solved", ticket(case_id)).status_code == 200
+    assert client.app.state.webhooks.wait()
+    assert announcements(client, case_id) == [("conversation.replied", "merchant", "delivered")]  # the merchant's copy
+    assert {request.url.host for request in receivers.requests} == {"merchant.test"}
