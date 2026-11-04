@@ -105,6 +105,10 @@ REAL_CORRECT = {
         "V030-ENABLEMENT-PENDING",
         "Your Visa enablement request is currently pending. I cannot confirm whether it will be approved.",
     ),
+    "enablement Visa pending, Mastercard active": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is still pending. The separate Mastercard request is active.",
+    ),
     "pt conditions": (
         "V030-PT-PRICE-CONDITIONS",
         "Sim. A venda de crédito de 2026-11-03, em 1 parcela, foi registrada no plano demo_legacy, enquanto a "
@@ -268,6 +272,11 @@ STILL_WRONG = {
         "V030-ENABLEMENT-PENDING",
         "Your Visa enablement request is still pending, but it has been approved.",
         "forbidden_ok",
+    ),
+    "enablement: Mastercard pending, Visa active": (
+        "V030-ENABLEMENT-PENDING",
+        "Your Visa enablement request is active. A separate Mastercard request remains pending.",
+        "content_ok",
     ),
     # round 2 (P3): the other widened groups
     "pt conditions: denied": (
@@ -519,9 +528,12 @@ def test_the_widened_labels_still_reject_the_wrong_answer(name):
 def test_enablement_label_requires_affirmative_status_with_narrow_guards():
     case = CASES["V030-ENABLEMENT-PENDING"]
     assert case.must_include_any == [
-        ["pending"],
-        ["visa"],
-        ["still pending", "is pending", "remains pending", "currently pending"],
+        [
+            "visa enablement request is still pending",
+            "visa enablement request is pending",
+            "visa enablement request remains pending",
+            "visa enablement request is currently pending",
+        ]
     ]
     assert case.must_not_include == ["not currently pending", "not still pending"]
     assert case.must_not_assert == [
