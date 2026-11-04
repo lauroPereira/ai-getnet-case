@@ -122,3 +122,52 @@ def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contra
         "127.0.0.1:8002:8002"
     ]
     assert "ports" not in services["mocks"] and "ports" not in services["qdrant"]
+
+
+def test_catalog_scenarios_carry_the_message_and_labels_of_their_source_cases():
+    """The bench catalog copies its labels from the evaluation cases named in `source_case` (round 1 of the review
+    of task 68: SC-HANDOFF kept `SIM-` after UC14 moved to `HO-`). A label changed in one place must change in
+    the other."""
+    from merchant_assistant.evaluation.runner import load_cases
+    from merchant_assistant.scenarios import LABEL_FIELDS, as_case, catalog
+
+    scenarios = PROJECT_ROOT / "tests" / "scenarios"
+    files = ("challenge_examples", "core_cases", "business_journeys")
+    cases = {case.id: case for case in load_cases([scenarios / f"{name}.jsonl" for name in files])}
+    sourced = {
+        sid: item for sid, item in catalog(PROJECT_ROOT / "data")["scenarios"].items() if item.get("source_case")
+    }
+    assert "SC-HANDOFF" in sourced and len(sourced) >= 9
+    for scenario_id, item in sourced.items():
+        case = cases[item["source_case"]]  # a missing source case is a failure too
+        effective = as_case(item, "cliente1988")  # what the bench actually checks, defaults included
+        assert effective.message == case.message and effective.language == case.language, scenario_id
+        for field in LABEL_FIELDS:
+            assert getattr(effective, field) == getattr(case, field), (scenario_id, field)
+    handoff = sourced["SC-HANDOFF"]
+    assert handoff["must_include_any"] == [["HO-"]] and handoff["must_not_include"] == ["SIM-", "simul"]
+
+
+def test_handoff_scenario_passes_every_check_through_the_api_with_the_scripted_model(offline):
+    """Review P2-1 of task 68: a correct handoff run from the bench scenario is 11 of 11, as it was in v0.6.0."""
+    client, _, _ = offline()
+    headers = merchant_headers(client)
+    listed = client.get("/v1/scenarios", headers=headers).json()["scenarios"]
+    item = next(s for s in listed if s["scenario_id"] == "SC-HANDOFF")
+    sent = client.post(
+        "/v1/messages",
+        headers=headers,
+        json={
+            "message": item["message"],
+            "profile_id": "reference",
+            "profile_version": 1,
+            "router_mechanism": "llm",
+            "scenario_id": "SC-HANDOFF",
+        },
+    )
+    assert sent.status_code == 200, sent.text
+    assert sent.json()["message"]["status"] == "handoff" and "HO-" in sent.json()["message"]["answer"]
+    checks = client.get(f"/v1/runs/{sent.json()['message']['request_id']}", headers=headers).json()["checks"]
+    assert checks["origin"] == "scenario:SC-HANDOFF" and checks["critical_failures"] == []
+    assert checks["results"]["content_ok"] is True and checks["results"]["forbidden_ok"] is True
+    assert checks["passed"] == checks["total"] == 11 and all(checks["results"].values())

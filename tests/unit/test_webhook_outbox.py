@@ -9,7 +9,7 @@ from pydantic import SecretStr
 from merchant_assistant.api.webhooks import Webhooks
 from merchant_assistant.config import Settings
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.webhook_outbox import enqueue, webhook_targets
+from merchant_assistant.data.webhook_outbox import configuration_warnings, enqueue, webhook_targets
 
 
 def test_outbox_delivers_in_case_order_with_stable_ids(tmp_path):
@@ -142,3 +142,33 @@ def test_destination_is_a_target_only_with_a_url_and_a_secret_like_the_delivery(
     queued = {row[0] for row in conn.execute("SELECT target FROM webhook_outbox")}
     conn.close()
     assert queued == ({name} if deliverable else set())
+
+
+@pytest.mark.parametrize(
+    "ticketing_secret,conversation_secret,missing",
+    [
+        (None, "secret-two-value", ["TICKETING_WEBHOOK_SECRET"]),
+        ("secret-one-value", None, ["CONVERSATION_WEBHOOK_SECRET"]),
+        ("   ", "", ["TICKETING_WEBHOOK_SECRET", "CONVERSATION_WEBHOOK_SECRET"]),
+        ("secret-one-value", "secret-two-value", []),
+    ],
+)
+def test_startup_warns_about_a_webhook_url_without_its_secret(tmp_path, ticketing_secret, conversation_secret, missing):
+    """Review P3-2 of task 68: a destination with a URL and no secret receives no intention, so say so at startup."""
+    settings = Settings(
+        _env_file=None, runtime_dir=tmp_path,
+        ticketing_webhook_url="http://ticketing.test/e", conversation_webhook_url="http://merchant.test/e",
+        ticketing_webhook_secret=None if ticketing_secret is None else SecretStr(ticketing_secret),
+        conversation_webhook_secret=None if conversation_secret is None else SecretStr(conversation_secret),
+    )
+    warnings = configuration_warnings(settings)
+    assert len(warnings) == len(missing) and all(name in text for name, text in zip(missing, warnings, strict=True))
+    for text in warnings:  # variable names only, never values
+        assert "ticketing.test" not in text and "merchant.test" not in text and "-value" not in text
+
+
+def test_no_startup_warning_for_a_destination_without_a_url(tmp_path):
+    nowhere = Settings(_env_file=None, runtime_dir=tmp_path)  # no URL, no secret: the webhooks are simply off
+    assert configuration_warnings(nowhere) == []
+    secret_only = Settings(_env_file=None, runtime_dir=tmp_path, ticketing_webhook_secret=SecretStr("secret-one-value"))
+    assert configuration_warnings(secret_only) == []

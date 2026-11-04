@@ -1308,3 +1308,21 @@ def test_destination_with_a_url_but_no_secret_receives_no_intention(wired, setti
     assert client.app.state.webhooks.wait()
     assert announcements(client, case_id) == [("conversation.replied", "merchant", "delivered")]  # the merchant's copy
     assert {request.url.host for request in receivers.requests} == {"merchant.test"}
+
+
+def test_api_startup_warns_when_a_webhook_url_has_no_secret(offline, settings, caplog):
+    """Review P3-2 of task 68: the warning is logged by `create_app`, and only for the destination that lacks it."""
+    settings.ticketing_webhook_url = TICKETING_URL
+    settings.ticketing_webhook_secret = None
+    settings.conversation_webhook_url = MERCHANT_URL
+    settings.conversation_webhook_secret = SecretStr(CONVERSATION_SECRET)
+    with caplog.at_level("WARNING", logger="merchant_assistant.api"):
+        offline()
+    warned = [r.getMessage() for r in caplog.records if "WEBHOOK_SECRET" in r.getMessage()]
+    assert len(warned) == 1 and "TICKETING_WEBHOOK_SECRET" in warned[0]
+    assert TICKETING_URL not in caplog.text and CONVERSATION_SECRET not in caplog.text
+    caplog.clear()
+    settings.ticketing_webhook_secret = SecretStr(TICKETING_SECRET)
+    with caplog.at_level("WARNING", logger="merchant_assistant.api"):
+        offline()
+    assert not [r for r in caplog.records if "WEBHOOK_SECRET" in r.getMessage()]

@@ -22,6 +22,7 @@ from merchant_assistant.api.webhooks import Webhooks
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
 from merchant_assistant.data.db import connect
+from merchant_assistant.data.webhook_outbox import configuration_warnings
 
 log = logging.getLogger("merchant_assistant.api")
 
@@ -124,6 +125,8 @@ def message_refusal(principal: Principal, user_id: str | None) -> tuple[str, str
 def create_app(orchestrator: Orchestrator | None = None, settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     for warning in check_configuration(settings):  # an invalid credential configuration stops the startup here
+        log.warning(warning)
+    for warning in configuration_warnings(settings):  # a webhook URL without its secret delivers nothing
         log.warning(warning)
 
     @asynccontextmanager

@@ -25,6 +25,24 @@ def target_config(settings, name: str) -> tuple[str | None, str]:
     return url, secret.get_secret_value().strip() if secret else ""
 
 
+def configuration_warnings(settings) -> list[str]:
+    """Startup warnings for a destination that has a URL but no secret: it cannot sign, so it receives no intention
+    (`webhook_targets`) and its events are neither queued nor sent. Names the variables, never their values."""
+    variables = {
+        "ticketing": ("TICKETING_WEBHOOK_URL", "TICKETING_WEBHOOK_SECRET"),
+        "merchant": ("CONVERSATION_WEBHOOK_URL", "CONVERSATION_WEBHOOK_SECRET"),
+    }
+    warnings = []
+    for name, (url_variable, secret_variable) in variables.items():
+        url, secret = target_config(settings, name)
+        if url and not secret:
+            warnings.append(
+                f"{url_variable} is set but {secret_variable} is empty: webhook events for the {name} are not "
+                f"queued or sent until the secret is configured"
+            )
+    return warnings
+
+
 def webhook_targets(settings) -> set[str]:
     """Destinations that can be delivered to now: URL **and** secret configured, as the delivery requires. Only they
     receive an intention: a destination missing either one queues nothing (it would stay pending for good)."""
