@@ -45,7 +45,7 @@ Acumulado do projeto: cerca de US$0,79 de US$5,00. O custo da ferramenta de dese
 - **`approve` com ajuste de voz:** a Personality pode mexer na forma do rascunho aprovado (ex.: tirar a saudação), conforme o prompt; a tela diz "sem alterações". Mantido; o texto da tela fica como P3 do web.
 - **"Envio pendente" no `reject`:** a retomada com modelo real levou 6,2 s, acima dos 3 s de espera do ticketing; a nova tentativa com a mesma chave completou com uma única retomada (D26). Aceito; aumentar a espera fica para depois.
 - **Premissa do momento 9:** na tela, "Assumir" só aparece para ticket `new`; o conflito entre operadores aparece na ação. Registrado na história.
-- **`ticket_id` vazio no caso (O-8):** defeito pequeno, sem critério de aceite afetado; corrigido no começo da v0.8.0 ([tarefa 68b](../tasks/68b-ticket-id-no-caso.md)).
+- **`ticket_id` no caso (O-8):** investigado no começo da v0.8.0 ([tarefa 68b](../tasks/68b-ticket-id-no-caso.md)); não é defeito: o campo é gravado no primeiro evento do operador e fica vazio antes disso (recepção), por desenho da tarefa 66. No banco do QA, 4 de 5 casos tinham o `ticket_id`; o quinto foi trabalhado só pela CLI, sem evento do ticketing. Ganhou teste de regressão.
 
 ## Limitações
 

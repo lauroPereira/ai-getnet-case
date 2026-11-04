@@ -32,7 +32,7 @@ Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md),
 
 ### Limitations
 - A delivery that exhausts its three attempts or is refused has no resend yet and holds the later events of the same case and destination. After a crash in the middle of the turn that opens a case, recovery depends on the merchant resending the same message. Cross-process locks were exercised on Windows only.
-- The case does not show the ticket id (`ticket_id` stays empty; task 68b). The `reject` resume with a real model can take longer than the ticketing's 3 s wait: the screen shows "envio pendente" and the retry with the same key completes it.
+- The case shows `ticket_id` only after the first operator event from the ticketing (empty while the ticket is in reception). The `reject` resume with a real model can take longer than the ticketing's 3 s wait: the screen shows "envio pendente" and the retry with the same key completes it.
 - Business journeys 6/13 by the literal rubric (7/13 in v0.6.0): the English handoff sentence lost the word "human" that one label requires. Planned for v0.8.0 together with the other journey fixes.
 - Identity uses the assistant's own issuer and synthetic users; no authorization-code flow, refresh token or external provider runs in the demo.
 
