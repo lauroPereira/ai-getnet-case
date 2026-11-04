@@ -51,6 +51,8 @@ def _attempts_summary(attempts: list[dict]) -> str:
 
 
 def _prefix_summary(prefix: dict) -> str:
+    if not prefix:  # support reached through the replanner: no case opening ran, so nothing was checked
+        return ""
     history = prefix.get("history", {})
     health = prefix.get("healthcheck", {})
     lines = []

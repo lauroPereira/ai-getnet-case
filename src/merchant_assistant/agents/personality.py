@@ -76,6 +76,8 @@ def contributions(state: GraphState, language: str) -> dict:
             "protocol": state.escalation.protocol,
             "message": HANDOFF_LINE[language].format(protocol=state.escalation.protocol),
         }
+    if gap := state.plan.get("gap"):  # the replanner ran out of ways to confirm this: say so, without guessing
+        data["unconfirmed"] = gap
     return data
 
 

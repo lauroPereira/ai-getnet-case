@@ -1270,6 +1270,7 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
 
 
 STEP_DETAIL_FIELDS = ("prompt", "mode", "hits", "citations", "agent", "arguments", "topic", "tools", "failed", "reused")
+REPLAN_STEP_FIELDS = ("next", "reason", "review", "hops", "origin", "observed")  # only the `replan` step (task 69, D7)
 
 
 def _steps(trace: dict | None) -> list[dict]:
@@ -1278,13 +1279,14 @@ def _steps(trace: dict | None) -> list[dict]:
     steps = []
     for step in trace.get("steps", []):
         detail = step.get("detail") or {}
+        fields = (*STEP_DETAIL_FIELDS, *REPLAN_STEP_FIELDS) if step["step"] == "replan" else STEP_DETAIL_FIELDS
         steps.append(
             {
                 "seq": step["seq"],
                 "step": step["step"],
                 "status": step["status"],
                 "duration_ms": step["duration_ms"],
-                **{key: detail[key] for key in STEP_DETAIL_FIELDS if key in detail},
+                **{key: detail[key] for key in fields if key in detail},
             }
         )
     return steps

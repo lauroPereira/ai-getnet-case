@@ -76,6 +76,31 @@ def _web(state: GraphState, ctx: RunContext, language: str) -> KnowledgeResult:
     )
 
 
+def _with_web(previous: KnowledgeResult | None, web: KnowledgeResult) -> KnowledgeResult:
+    """The web search after the official pages fell short (task 69): what the pages did support stays, the web answer
+    is added. A search that found nothing leaves the earlier result as it was, plus the reason."""
+    if previous is None:
+        return web
+    if not web.evidence_sufficient:
+        return previous.model_copy(update={"missing": [*previous.missing, *web.missing]})
+    return KnowledgeResult(
+        mode="web",
+        points=[*previous.points, *web.points],
+        citations=[*previous.citations, *web.citations],
+        evidence_sufficient=True,
+        procedure_id=previous.procedure_id,
+        evidence_texts=[*previous.evidence_texts, *web.evidence_texts],
+    )
+
+
+def run_web(state: GraphState, ctx: RunContext) -> dict:
+    """The `web` step the replanner can choose: the same masked web search as the `general_web` route, joined to what
+    Knowledge already collected. It never carries the merchant's identity or account data."""
+    language = state.decision.language if state.decision else "en"
+    ctx.step_notes["mode"] = "web"
+    return {"knowledge": _with_web(state.knowledge, _web(state, ctx, language)), "agents": [*state.agents, "web"]}
+
+
 def run(state: GraphState, ctx: RunContext) -> dict:
     decision = state.decision
     language = decision.language if decision else "en"

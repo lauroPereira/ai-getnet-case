@@ -378,6 +378,41 @@ def _support(call: ScriptedCall) -> ToolPlan:
     )
 
 
+def _web(call: ScriptedCall) -> dict | Exception:
+    """The scripted web search. A product the pages do not know ("Get XYZ", the `_knowledge` trigger below) has a
+    third-party page about it; everything else keeps the exchange-rate answer the general web cases have always had."""
+    text = call.spec.input
+    if "unavailable" in text.lower():
+        return LLMError("web search unavailable (scripted)")
+    if "get xyz" in text.lower():
+        english = guess_language(text) == "en"
+        return {
+            "text": "A third-party page says the Get XYZ accepts contactless (NFC) payments."
+            if english
+            else "Uma página pública de terceiros informa que a Get XYZ aceita pagamento por aproximação (NFC).",
+            "citations": [{"url": "https://example.com/get-xyz", "title": "Third-party review of the Get XYZ"}],
+        }
+    return {
+        "text": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00).",
+        "citations": [{"url": "https://example.com/fx", "title": "Example FX"}],
+    }
+
+
+# What the scripted planner prefers when `replan.v1` is asked (the rules disagree): a human, then the merchant's
+# account, then the official pages, then the web, then a question.
+REPLAN_PREFERENCE = ("escalate", "support", "knowledge", "web", "clarify")
+
+
+def _replan(call: ScriptedCall) -> dict:
+    ctx = call.spec.context
+    choice = next((n for n in REPLAN_PREFERENCE if n in ctx["candidates"] and n in ctx["allowed"]), "finish")
+    return {
+        "next": choice,
+        "review": "complete" if choice == "finish" else "incomplete",
+        "reason": f"scripted planner: {choice}",
+    }
+
+
 def _personality(call: ScriptedCall) -> dict:
     c = call.spec.context["contributions"]
     if c.get("route") == "acknowledgement":
@@ -402,12 +437,9 @@ def handler(call: ScriptedCall):
     if agent == "router":
         return _router(call)
     if agent == "knowledge" and call.kind == "web":
-        if "unavailable" in call.spec.input.lower():
-            return LLMError("web search unavailable (scripted)")
-        return {
-            "text": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00).",
-            "citations": [{"url": "https://example.com/fx", "title": "Example FX"}],
-        }
+        return _web(call)
+    if agent == "replan":
+        return _replan(call)
     if agent == "knowledge":
         return _knowledge(call)
     if agent == "customer_support":

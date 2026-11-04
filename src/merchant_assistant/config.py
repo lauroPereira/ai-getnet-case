@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     max_tool_calls: int = 8
     max_request_seconds: float = 90.0
     web_search_max_calls: int = 1
+    # v0.8.0 replanning (task 69, spec D6): decisions that send the flow away from the Router's initial plan
+    max_plan_hops: int = Field(default=3, ge=0, le=6)
 
     # v0.6.0 demonstration controls
     demo_session_message_limit: int = Field(default=20, ge=1, le=1000)
