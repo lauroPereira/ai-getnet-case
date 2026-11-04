@@ -43,10 +43,11 @@ Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evi
 | Versão 0.7.0 e compose | `test_package_version_is_0_7_0`; `test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contract`; `docker compose config --quiet` numa cópia sem `.env`: código 0, serviços `api`, `mocks`, `qdrant`, `ticketing` |
 | Lacunas da revisão da T66 (rodada 5) e P3-2 | `tests/integration/test_v070_webhooks.py` (15 testes novos: guardas de `_complete_interrupted_handoff` e `_has_checkpoint`, filtro de destino da recuperação, regra de canal) e `tests/unit/test_webhook_outbox.py` (`webhook_targets` exige URL e segredo); nove mutantes mortos |
 | P3-A, P3-B e P3-C do Time A | `tests/integration/test_v070_review_gaps.py` (7 testes); três mutantes mortos |
-| Suíte | Estrita não rodada pelo Developer (fica com o Supervisor). Conjuntos focados: 242 (unit) + 78 + 81 + 231 (integração) = **632 passed**, os 579 da T66 mais 53 novos; `ruff check src tests` ok; nenhuma chamada paga; `WinError 5` não ocorreu |
+| Rodada 2 (parecer da revisão): `SC-HANDOFF` e P3 | Catálogo `SC-HANDOFF` com `HO-` e `must_not_include` `SIM-`/`simul` (também em `UC14`); `test_catalog_scenarios_carry_the_message_and_labels_of_their_source_cases` e `test_handoff_scenario_passes_every_check_through_the_api_with_the_scripted_model` (11 de 11) em `test_v070_closing.py`; aviso na subida de URL de webhook sem segredo (`configuration_warnings`, testes em `test_webhook_outbox.py` e `test_v070_webhooks.py`). Versão do catálogo continua `"1"` (justificativa na passagem) |
+| Suíte | Estrita não rodada pelo Developer (fica com o Supervisor). Rodada 1: 242 (unit) + 78 + 81 + 231 (integração) = 632 passed, os 579 da T66 mais 53 novos. Rodada 2: 178 + 89 passed nos conjuntos focados e `--collect-only` com **640 testes** (632 + 8 novos); `ruff check src tests` ok; nenhuma chamada paga; `WinError 5` não ocorreu |
 
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+pronta para revisão (Developer, rodada 2: SC-HANDOFF do catálogo e P3 da revisão)
 ```

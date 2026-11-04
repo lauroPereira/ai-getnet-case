@@ -539,3 +539,45 @@ Todos com `.venv/Scripts/python.exe -m pytest -p no:cacheprovider --basetemp .py
 ### Próximo responsável
 
 Supervisor roda a suíte estrita no candidato desta rodada (esperado: 632 testes) e despacha a revisão independente da T68 (diff `6876adc..f536d9d` mais esta passagem), com atenção a: rótulo de `UC14`, linha de reserva em inglês, `target_config`/P3-2 e a história. Depois o QA monta a campanha `v070-qa` (US$0,20) e cumpre o momento 18. Sem aprovação própria, push ou ação externa.
+
+## Tarefa 68, rodada 2
+
+- **Papel e base:** Developer (Time A), branch `codex/v0.7.0-identidade-hitl`, base `9583d6c` (parecer da rodada 1 da revisão, `v070-reviewer-t68.md`). Um commit de código e teste, `a7fb6b0`, mais o commit desta passagem; identidade conferida (`lauroPereira`, `lauro.s.pereira@gmail.com`). Sem push, sem Docker, sem `.env`, sem chamada paga nem rede externa. Caminhos passados ao Python em formato Windows (`cygpath -m`); nenhum diretório fora do repositório e do scratchpad foi criado. Nenhum diretório de `.pytest_cache` foi apagado: os que criei nesta rodada ficaram (`.pytest_cache/t68-r2-dev-*`, quatro).
+- **Arquivos alterados** (`a7fb6b0`): `data/scenarios/catalog.json`, `tests/scenarios/core_cases.jsonl`, `src/merchant_assistant/data/webhook_outbox.py`, `src/merchant_assistant/api/app.py`, `tests/integration/test_v070_closing.py`, `tests/integration/test_v070_webhooks.py`, `tests/unit/test_webhook_outbox.py`.
+
+### P2-1: `SC-HANDOFF` do catálogo exigia `SIM-`
+
+- **Causa:** o cenário irmão de `UC14` (`source_case: "UC14"`) ficou com `must_include_any: [["SIM-"]]` quando a rodada anterior do Developer trocou o rótulo de `UC14` para `HO-` (D7). Não conferi, na época, os outros lugares que copiam esse rótulo; o catálogo da bancada (`scenarios.as_case` → `evaluation.runner`) é um deles. Toda execução da bancada com `scenario_id=SC-HANDOFF` dava `content_ok=false` e 10/11 para um handoff correto.
+- **Antes e depois, `SC-HANDOFF`:** `must_include_any: [["SIM-"]]` → `[["HO-"]]`, e `must_not_include: ["SIM-", "simul"]` acrescentado (P3-1). O mesmo `must_not_include` entrou em `UC14` de `core_cases.jsonl`. Nada foi afrouxado: o rótulo continua exigindo um prefixo de protocolo e agora também proíbe texto de simulação (comparação sem distinção de maiúsculas, como todo o `runner`).
+- **Outros cenários do catálogo:** conferi todos. Os dez do catálogo, nove com `source_case`, e os nove têm mensagem, idioma e todos os campos de rótulo idênticos aos do caso de origem depois da correção (script de comparação e o teste novo). O único "simul" nos rótulos é o nome da ferramenta `simulate_pricing`, que não é texto de resposta. Nenhum outro foi afetado pela D7.
+- **Execução do catálogo inteiro pelo runner**, nas cópias `git archive` da tag `v0.6.0` e do `a7fb6b0` (modelo programado): resultados iguais, cenário por cenário; `SC-HANDOFF` 11/11 nas duas; `SC-KNOWLEDGE-PRODUCTS` e `SC-DEVICE` 10/11 por `content_ok` nas duas (limite da política programada de Knowledge, o mesmo dos 15 casos do eval).
+- **Versão do catálogo:** **fica `"1"`**, sem subir. O número só é gravado em `fixed_factors.scenario_catalog_version` da estimativa de comparação (e devolvido por `GET /v1/scenarios`); nada o usa para distinguir execuções antigas. O reaproveitamento de execuções gravadas (`comparisons._compatible_runs`) já é separado pelo `prompt_set`, que mudou na v0.7.0 (`escalation.v2`, `personality.v4`). As verificações de uma execução são refeitas na leitura (`run_checks`) com o rótulo atual, então subir o número não mudaria o julgamento de execuções gravadas na v0.6.0. Os testes da v0.6.0 afirmam `version == "1"` e continuam passando sem alteração. Limitação: uma execução de `SC-HANDOFF` gravada na v0.6.0 (com `SIM-`) seria julgada contra `HO-` se relida, mas a v0.7.0 exige runtime novo (0009 ampliada), então não há execução antiga a reler.
+- **Testes novos** (`test_v070_closing.py`, 2):
+  - `test_catalog_scenarios_carry_the_message_and_labels_of_their_source_cases`: para todo cenário do catálogo com `source_case`, a mensagem, o idioma e cada campo de `LABEL_FIELDS` do que a bancada realmente confere (`as_case`, com os padrões) são iguais aos do caso de `challenge_examples`, `core_cases` ou `business_journeys`; caso de origem ausente também falha; e `SC-HANDOFF` tem `HO-` e `["SIM-", "simul"]`.
+  - `test_handoff_scenario_passes_every_check_through_the_api_with_the_scripted_model`: `POST /v1/messages` com `scenario_id=SC-HANDOFF` e `GET /v1/runs/{id}` → `checks.origin = scenario:SC-HANDOFF`, sem falhas críticas, `content_ok` e `forbidden_ok` verdadeiros, **11 de 11**.
+- **Mutação** (cópia da árvore no scratchpad, arquivo restaurado depois de cada uma): catálogo de volta a `SIM-` (morto pelos dois testes), `UC14` de volta a `SIM-` (morto pelo teste do eval e pela igualdade com o catálogo), `SC-HANDOFF` sem `must_not_include` (morto pela igualdade), linha de encaminhamento em português com "(simulação)" (morto pelo eval, `forbidden_ok` de `UC14`, e pelo teste do cenário). Quatro de quatro.
+
+### P3-1 e P3-2
+
+- **P3-1:** feito junto do P2-1 (acima), em `UC14` e `SC-HANDOFF`. O eval programado já conferia `forbidden_ok` em todos os casos, então o `must_not_include` de `UC14` passa a valer ali.
+- **P3-2:** `data/webhook_outbox.configuration_warnings(settings)` devolve um aviso por destino que tem URL e não tem segredo, citando as variáveis (`TICKETING_WEBHOOK_URL`/`TICKETING_WEBHOOK_SECRET`, `CONVERSATION_WEBHOOK_URL`/`CONVERSATION_WEBHOOK_SECRET`), nunca os valores. `create_app` os registra com `log.warning` logo depois do `check_configuration`. Escolhi uma função própria em vez de ampliar `check_configuration`, que é de credenciais e tem testes de "nenhum aviso" e de "um aviso" sobre o `.env.example`. Testes: `test_startup_warns_about_a_webhook_url_without_its_secret` (4 parâmetros: falta um, falta o outro, os dois com espaços ou vazio, nenhum), `test_no_startup_warning_for_a_destination_without_a_url` e, pela API, `test_api_startup_warns_when_a_webhook_url_has_no_secret` (um aviso só do destino sem segredo; nenhum com o segredo configurado; sem URL nem valor de segredo no log). Mutante (chamada de `configuration_warnings` removida de `create_app`) morto.
+- **P3-3 (README) e P3-4:** sem mudança, como pedido.
+
+### Comandos e números
+
+Todos com `.venv/Scripts/python.exe -m pytest -p no:cacheprovider --basetemp .pytest_cache/t68-r2-dev-<etiqueta>-<data> ...`, um pytest por vez, sem rede nem chamada paga:
+
+| Conjunto | Resultado |
+| --- | --- |
+| `test_v070_closing`, `test_v070_story`, `test_use_cases`, `test_v070_review_gaps`, `tests/unit/test_webhook_outbox`, `tests/unit/test_v060_stabilization`, `test_v070_webhooks` | **178 passed** (191 s) |
+| `test_v060_api`, `test_v060_r2`, `test_v060_r4`, `test_v1_api`, `test_evaluation_runner` (os que afirmam o catálogo e a bancada) | **89 passed** (65 s) |
+| `pytest --collect-only tests` | **640 tests collected** = 632 da rodada 1 + 8 novos (2 do fechamento, 5 do unitário parametrizado, 1 de integração) |
+
+- `ruff check src tests` → ok.
+- `eval --scripted` dos 40 casos e do `followup` na cópia `git archive` de `a7fb6b0` (`merchant_assistant.__file__` conferido, 0.7.0): n 40, `passed` 0,625, `content_ok` 0,625, os demais checks 1,0, custo 0, conversas 4/4. Comparado à v0.6.0 caso a caso: **nenhuma diferença** em rota, status, agentes, ferramentas e nos nove checks; as quatro respostas que diferem são as mesmas da rodada 1, só na linha de encaminhamento. Nada mudou em relação à rodada 1.
+- Não rodei a suíte estrita (fica com o Supervisor); esperado: 640 testes. `WinError 5` não ocorreu.
+- Nada ficou em segundo plano.
+
+### Próximo responsável
+
+Supervisor roda a suíte estrita no candidato `a7fb6b0` (esperado 640 testes), faz o README (P3-3) e despacha a revalidação do Reviewer da T68 (diff `861a80f..a7fb6b0`: catálogo, `core_cases.jsonl`, `configuration_warnings` e os testes). Depois, o QA. Sem aprovação própria, push ou ação externa.
