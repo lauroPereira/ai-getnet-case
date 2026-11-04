@@ -263,7 +263,16 @@
    "expected_status": "answered",
    "expected_tools": [],
    "must_include_amounts": [],
-   "must_include_any": [],
+   "must_include_any": [
+    [
+     "NFC",
+     "não encontrei",
+     "não consegui confirmar",
+     "não localizei",
+     "não tenho",
+     "não há"
+    ]
+   ],
    "expect_sources": false
   },
   {
@@ -296,6 +305,10 @@
      "sem confirmação",
      "nenhum",
      "nenhuma"
+    ],
+    [
+     "app",
+     "aplicativo"
     ]
    ],
    "expect_sources": true
@@ -311,7 +324,9 @@
     "support"
    ],
    "expected_status": "handoff",
-   "expected_tools": [],
+   "expected_tools": [
+    "simulate_pricing"
+   ],
    "must_include_amounts": [],
    "must_include_any": [
     [

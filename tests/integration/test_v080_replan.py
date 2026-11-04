@@ -298,6 +298,77 @@ def test_a_specialist_the_planner_asks_for_twice_is_refused(offline, monkeypatch
     assert refused and refused[0]["next"] == "finish" and refused[0]["refused"] in ("knowledge", "web", "support")
 
 
+EURO = "What's the euro exchange rate today?"
+ASKS_FOR_THE_PAGES_AGAIN = [
+    (["knowledge", "knowledge", "knowledge"], ["router", "knowledge", "personality"],
+     [("finish", "rule:no_repeat", 0, "incomplete")]),
+    (["web", "knowledge"], ["router", "knowledge", "personality"], [("finish", "rule:no_repeat", 0, "incomplete")]),
+    (["support", "knowledge", "knowledge", "escalate"], ["router", "knowledge", "customer_support", "personality"],
+     [("support", "model", 1, "incomplete"), ("finish", "rule:no_repeat", 1, "incomplete")]),
+    (["support", "escalate"], ["router", "knowledge", "customer_support", "escalation", "personality"],
+     [("support", "model", 1, "incomplete"), ("escalate", "model", 2, "incomplete")]),
+]
+
+
+@pytest.mark.parametrize(("script", "agents", "expected"), ASKS_FOR_THE_PAGES_AGAIN)
+def test_on_the_general_web_route_the_search_runs_once_whatever_the_planner_asks(
+    offline, monkeypatch, script, agents, expected
+):
+    """Review P2-1: there the `knowledge` node is the web search, so `knowledge` is not a new specialist."""
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    asks = iter([*script, "finish"])
+    answer = lambda call: {"next": next(asks), "review": "incomplete", "reason": "again"}  # noqa: E731
+    client, orchestrator, llm = offline(handler=with_handlers(replan=answer))
+    body, trace = handle(orchestrator, EURO)
+    assert body["route"] == "general_web" and body["agents"] == agents
+    assert len([c for c in llm.calls if c.kind == "web"]) == 1  # one search, never overwritten
+    assert decisions(trace) == expected
+    assert trace["detail"]["plan_hops"] <= 3
+
+
+def test_a_finish_the_model_calls_incomplete_declares_its_reason_as_the_gap(offline, monkeypatch):
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    reason = "the fee for 12 installments could not be confirmed"
+    incomplete = {"next": "finish", "review": "incomplete", "reason": reason}
+    client, orchestrator, llm = offline(handler=with_handlers(replan=lambda call: incomplete))
+    body, trace = handle(orchestrator, SIMPLE)
+    assert decisions(trace) == [("finish", "model", 0, "incomplete")]
+    contributions = [c.spec.context["contributions"] for c in llm.calls if c.spec.agent == "personality"][0]
+    assert contributions["unconfirmed"] == [reason]
+
+
+def test_a_finish_the_model_calls_complete_declares_no_gap(offline, monkeypatch):
+    monkeypatch.setattr(replanner, "apply_rules", lambda o: [])
+    complete = {"next": "finish", "review": "complete", "reason": "the pages answer it"}
+    client, orchestrator, llm = offline(handler=with_handlers(replan=lambda call: complete))
+    body, trace = handle(orchestrator, SIMPLE)
+    contributions = [c.spec.context["contributions"] for c in llm.calls if c.spec.agent == "personality"][0]
+    assert "unconfirmed" not in contributions
+
+
+def test_the_labels_need_what_each_replanned_step_brings(offline):
+    """The web scenario needs the page the search found (or the plain admission), the procedure one needs the official
+    how-to next to the account figures, and the tool scenario needs the tool to have been tried and to have failed."""
+    web = REPLAN_CASES["REPLAN-WEB"]
+    client, orchestrator, llm = offline()
+    body, trace = handle(orchestrator, web.message)
+    assert "NFC" in body["answer"] and {"web"} <= {s["type"] for s in body["sources"]}
+    assert _checks(web, body, trace)["content_ok"]
+    assert not _checks(web, body | {"answer": "A Get XYZ é ótima, aceita tudo."}, trace)["content_ok"]  # invented
+
+    procedure = REPLAN_CASES["REPLAN-PROCEDURE"]
+    body, trace = handle(orchestrator, procedure.message)
+    assert {"official", "tool"} <= {s["type"] for s in body["sources"]}
+    assert "aplicativo" in body["answer"].lower()
+    support_only = body | {"answer": "O crédito de 14806 e 116220 ainda não foi confirmado."}
+    assert not _checks(procedure, support_only, trace)["content_ok"]  # the account part alone does not satisfy it
+
+    tool_down = REPLAN_CASES["REPLAN-TOOL-DOWN"]
+    assert tool_down.expected_tools == ["simulate_pricing"]
+    asked_for_a_person = _checks(tool_down, body | {"status": "handoff"}, {"steps": [], "detail": {}})
+    assert not asked_for_a_person["tools_ok"]  # a handoff without the attempted lookup is another scenario
+
+
 BUDGETS = [(0, ["router", "knowledge", "personality"]), (1, ["router", "knowledge", "web", "personality"])]
 
 

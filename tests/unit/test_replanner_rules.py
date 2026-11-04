@@ -183,3 +183,17 @@ def test_the_gap_marker_needs_the_merchants_own_data_not_any_mention_of_an_accou
     others = ("not in passages", "bank account requirements", "contract terms of the Get Smart", "plano Get Smart")
     for text in others:
         assert not replanner.ACCOUNT_GAP.search(text), text
+
+
+def test_on_the_general_web_route_knowledge_is_the_web_search_and_cannot_run_again():
+    web_route = seen(route="general_web", just_ran="web", ran=("web",), knowledge_mode="web")
+    assert "knowledge" not in allowed_next(web_route) and "web" not in allowed_next(web_route)
+    assert allowed_next(web_route) == ["support", "escalate", "clarify", "finish"]
+    for step in ("knowledge", "web"):
+        refused = replanner._guard(wants(step), web_route, ctx())
+        assert (refused.next, refused.origin) == ("finish", "rule:no_repeat")
+    # on the other routes the official pages and the web are still different specialists
+    assert allowed_next(seen(route="support", just_ran="support", ran=("support",))) == [
+        "knowledge", "web", "escalate", "clarify", "finish"
+    ]
+    assert replanner._guard(wants("web"), seen(route="knowledge"), ctx()).next == "web"

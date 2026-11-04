@@ -61,8 +61,10 @@ Todos os arquivos de `tests/unit` e `tests/integration` rodaram, em grupos, um p
 
 Não verificado aqui: modelos reais (os cenários com `gpt-6-luna` e a taxa de `origin=model` são da campanha `v080-qa`); o cenário `REPLAN-TOOL-DOWN` precisa do serviço de preços fora do ar (parar o `mocks`).
 
+**Rodada 2 (correção da revisão `v080-reviewer-t69.md`).** P2-1: na rota `general_web` o nó `knowledge` é a busca web; `Observed.done` o trata como já executado e o pedido de `knowledge` ou `web` ali vira `rule:no_repeat`. Enumeração exaustiva das escolhas do planejador nas quatro rotas: nenhuma repete especialista, no máximo 1 busca web, no máximo 3 saltos (2 na `general_web`); antes da correção, 26 das 37 execuções da `general_web` repetiam especialista (até 3 buscas). P3-1: `finish` do modelo com `review=incomplete` grava a `reason` como lacuna. P3-2: rótulos de `REPLAN-PROCEDURE` (marcador do procedimento oficial), `REPLAN-TOOL-DOWN` (`simulate_pricing` tentado) e `REPLAN-WEB` (trecho da busca ou admissão clara) apertados; a escalada do replanejamento só se distingue da do Support pelo trace. Testes: novos e afetados 172 passed, trava da v0.7.0 94 passed, ruff ok; regressão contra a `main` idêntica. Detalhes na seção "Tarefa 69, rodada 2" da passagem.
+
 ## Status
 
 ```text
-feito pelo Developer em 2026-11-04; aguarda revisão e QA
+feito pelo Developer em 2026-11-04 (rodada 2 da correção da revisão feita no mesmo dia); aguarda nova revisão e QA
 ```

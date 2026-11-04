@@ -89,6 +89,12 @@ class Observed:
         """Support answered the account part; the "how do I" part still needs the official procedure."""
         return self.how_to and "support" in self.ran and "knowledge" not in self.ran and "web" not in self.ran
 
+    @property
+    def done(self) -> tuple[str, ...]:
+        """Specialists that cannot run again (D5). On the `general_web` route the `knowledge` node is the web search and
+        has no other mode there, so a second `knowledge` would repeat the search and overwrite its result."""
+        return (*self.ran, "knowledge") if self.route == "general_web" else self.ran
+
     def as_dict(self) -> dict:
         return {
             key: list(value) if isinstance(value, tuple) else value for key, value in self.__dict__.items()
@@ -312,7 +318,7 @@ def apply_rules(o: Observed) -> list[Match]:
 def allowed_next(o: Observed) -> list[str]:
     """finish, escalate and clarify always; a specialist only if it has not run (D5), and support only for a known
     merchant."""
-    options = [s for s in SPECIALISTS if s not in o.ran and (s != "support" or o.customer_known)]
+    options = [s for s in SPECIALISTS if s not in o.done and (s != "support" or o.customer_known)]
     return [*options, "escalate", "clarify", "finish"]
 
 
@@ -345,9 +351,11 @@ def _ask_model(state: GraphState, ctx: RunContext, o: Observed, matches: list[Ma
             "finish", "incomplete", "the planner was unavailable; finishing with what was collected",
             "rule:planner_unavailable", ("the check could not be completed",),
         )
-    return Chosen(
-        decision.next, decision.review, decision.reason.strip()[:300], "model", notes={"candidates": candidates}
-    )
+    reason = decision.reason.strip()[:300]
+    # concluding with an incomplete review is not a clean finish: the reason is what could not be confirmed (as in the
+    # rules, so the Personality says it plainly)
+    gap = (reason,) if decision.next == "finish" and decision.review == "incomplete" and reason else ()
+    return Chosen(decision.next, decision.review, reason, "model", gap, notes={"candidates": candidates})
 
 
 def _pretty(observed: dict) -> str:
@@ -370,7 +378,7 @@ def _within_limits(ctx: RunContext) -> bool:
 def _guard(chosen: Chosen, o: Observed, ctx: RunContext) -> Chosen:
     """Last word, for rules and model alike. A refusal becomes `finish` with the gap declared."""
     refusal = None
-    if chosen.next in SPECIALISTS and chosen.next in o.ran:
+    if chosen.next in SPECIALISTS and chosen.next in o.done:
         refusal = ("no_repeat", f"{chosen.next} already ran in this request")
     elif chosen.next in SPECIALISTS and not chosen.planned:
         if chosen.next == "support" and not o.customer_known:

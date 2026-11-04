@@ -84,3 +84,43 @@ Supervisor: aceitar o fechamento sem correção (ou pedir a gravação na criaç
 ### Próxima ação
 
 Supervisor: revisar (Reviewer independente) as duas tarefas e rodar a suíte estrita; QA real depois do merge com o Time B (migração 0011 e a linha do `test_v070_story.py` se resolvem na integração).
+
+## Tarefa 69, rodada 2
+
+- **Papel e responsável:** Developer (Time A), mesma tarefa, correção pedida pela revisão independente ([v080-reviewer-t69.md](v080-reviewer-t69.md), candidato `e1cbffb`, parecer em `046a30d`).
+- **Branch e base:** `codex/v0.8.0-replan`, base da rodada `046a30d`. Commit da rodada: o que contém esta seção (o SHA vai no retorno ao Supervisor). Identidade conferida antes do commit: `lauroPereira <lauro.s.pereira@gmail.com>`.
+- **Achados atendidos:** P2-1 (obrigatório), P3-1 e P3-2 (parcial, com o motivo abaixo). P3-8 e os demais P3 ficam como registrados, sem mudança.
+
+### P2-1: `knowledge` na rota `general_web` era um apelido da busca web
+
+- **Causa:** nessa rota o nó `knowledge` é a busca web e grava `ran = "web"`; `allowed_next` e `_guard` só olhavam `ran`, então o modelo podia pedir `knowledge` de novo, o que refazia a busca e sobrescrevia o resultado.
+- **Correção (`agents/replanner.py`):** `Observed.done` = `ran` mais `knowledge` quando a rota é `general_web` (ali o nó não tem outro modo). `allowed_next` e `_guard` passam a usar `done`: pedir `knowledge` ou `web` nessa rota vira `finish` com `rule:no_repeat`. As regras não são afetadas (nenhuma regra escolhe `knowledge` nessa rota, e `ran` continua verdadeiro no trace). Nenhuma mudança em `graph.py`: separar o nó mudaria o rótulo `knowledge` em `agents` e o nome do passo, que os testes da v0.6.0 fixam.
+- **Outro apelido com o mesmo efeito?** Revisto: `support` e `web` têm um rótulo cada; `knowledge` mapeia para `web` só em `general_web`; nas demais rotas o modo do nó (rag ou procedimento) vem da rota e o rótulo é `knowledge`. `escalate`, `clarify` e `finish` encerram o fluxo. Não há outro.
+- **Prova:** enumeração exaustiva das escolhas do planejador (regras desligadas, todas as decisões do modelo, `knowledge`/`web`/`support`/`escalate`/`clarify`/`finish` em cada decisão) no grafo real, quatro rotas (script fora do repositório). Antes (`046a30d`): `general_web` 37 execuções, 26 com especialista repetido e até 3 buscas web. Depois: `knowledge` 31 execuções, `general_web` 13, `support` 31, `knowledge_and_support` 31; **nenhuma repete especialista, no máximo 1 busca web, no máximo 3 saltos (2 na `general_web`)**. Testes novos: `test_on_the_general_web_route_the_search_runs_once_whatever_the_planner_asks` (4 roteiros, inclusive um planejador que só pede `knowledge`; 1 busca, `plan_hops` ≤ 3) e `test_on_the_general_web_route_knowledge_is_the_web_search_and_cannot_run_again` (unitário). Sem a correção os dois falham numa cópia fora do repositório.
+- **ADR 0019:** o máximo de saltos que ela cita (3) continua valendo; acrescentei o apelido da `general_web`, a enumeração e a lacuna do modelo (P3-1).
+
+### P3-1: `finish` do modelo com `review=incomplete`
+
+`_ask_model` grava a `reason` como lacuna (`plan.gap` → `unconfirmed`), como as regras. Testes: `test_a_finish_the_model_calls_incomplete_declares_its_reason_as_the_gap` e o par `..._complete_declares_no_gap`. Mutante que remove a gravação morre no teste.
+
+### P3-2: rótulos (catálogo e `replan.jsonl` iguais; teste de acordo mantido)
+
+- **`REPLAN-PROCEDURE`:** ganhou o grupo `["app", "aplicativo"]` (o mesmo marcador do caso PT06 de antecipação, que o Knowledge dá pelas páginas oficiais); o Support sozinho não o satisfaz. O teste novo `test_the_labels_need_what_each_replanned_step_brings` mostra a resposta só com os valores da conta reprovando `content_ok`.
+- **`REPLAN-TOOL-DOWN`:** ganhou `expected_tools: ["simulate_pricing"]` (a escalada vem depois de uma consulta que falhou; um pedido de atendente ou uma escalada sem tentativa passa a reprovar `tools_ok`). **Distinguir a escalada do replanejamento da escalada que o Support já faz sozinho não é possível pelos rótulos:** as duas dão `status=handoff`, protocolo `HO-` e a mesma `reason` (`tool_error:UNAVAILABLE`), e os rótulos não enxergam o trace; só o passo `replan` (`origin=rule:tool_failure_no_alternative`) mostra a diferença, o que `test_the_four_scenarios...` já afirma. Na campanha real, a prova é ler o trace.
+- **`REPLAN-WEB`:** o conteúdo vazio virou `[["NFC", "não encontrei", "não consegui confirmar", "não localizei", "não tenho", "não há"]]`: reprova resposta inventada ou fora do assunto e aceita o trecho da busca (`NFC`, no texto programado) ou a admissão clara que o `NOEV` já usa. **Não pus `expect_sources` nem exigi só o trecho:** o produto do cenário (Get XYZ) é fictício, então com busca real o resultado correto é a lacuna declarada, normalmente sem fonte; exigir fonte e conteúdo reprovaria o comportamento certo (a spec da história aceita "a fonte web ou a lacuna declarada"). A exigência estrita (resposta com o texto da busca e a fonte web) está no teste programado `test_the_labels_need_what_each_replanned_step_brings`. Se o Supervisor preferir um rótulo estrito para a campanha real, precisa de uma pergunta sobre um produto Getnet que exista na web e esteja fora dos 40 documentos do índice, que eu não consigo conferir sem rede.
+
+### Evidência
+
+- `ruff check src tests`: ok.
+- Pytest, um por vez, basetemp novo (`.pytest_cache/t69-r2-dev-*`): novos e afetados (unit do replanner 32, `test_v080_replan` 35, `test_v080_ticket_id` 5, `test_use_cases`, `test_evaluation_runner`, `test_v060_api`) **172 passed**; trava da v0.7.0 (story, webhooks, resume, resume_r2, ticketing_integration, closing) **94 passed**, arquivos sem alteração.
+- Regressão programada de novo (40 casos e 4 conversas contra a `main`): idêntica campo a campo, 25/40 e 4/4, 123 chamadas nas duas. Quatro cenários programados: passam com os rótulos novos.
+- Mutações da rodada (cópia fora do repositório): sem `Observed.done` e sem a lacuna do modelo, ambos mortos.
+- Não rodei a suíte estrita. Nenhuma chamada paga, rede ou `.env`.
+
+### Arquivos da rodada
+
+`src/merchant_assistant/agents/replanner.py`, `tests/unit/test_replanner_rules.py`, `tests/integration/test_v080_replan.py`, `tests/scenarios/replan.jsonl`, `data/scenarios/catalog.json`, `docs/architecture/decisions/0019-replanejamento.md`, `docs/tasks/69-replanejamento.md`, esta passagem.
+
+### Próxima ação
+
+Supervisor: segunda revisão do candidato desta rodada e suíte estrita.
