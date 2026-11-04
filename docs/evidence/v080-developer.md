@@ -206,3 +206,65 @@ Fonte: respostas reais gravadas em `docs/evidence/v070-qa-regressao-real.json` e
 ### Próxima ação
 
 Supervisor: revisar (Reviewer independente) as três mudanças de prompt e a nota de julgamento do `V030-ENABLEMENT-PENDING`; rodar a suíte estrita; QA real depois do merge com o Time B.
+
+
+## Tarefa 72b, rodada 2
+
+- **Papel e responsável:** Developer (Time A), mesma tarefa, correção pedida pela revisão independente ([v080-reviewer-t72b.md](v080-reviewer-t72b.md), candidato `c861bee`, parecer em `ae7d8b9`).
+- **Branch e base:** `codex/v0.8.0-replan`, base da rodada `ae7d8b9`. Commit de código e testes: `915ab72`; esta passagem e a Validação da tarefa no commit seguinte. Identidade conferida antes de cada commit: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push, sem troca de branch.
+- **Achados atendidos:** P2-1 (obrigatório) e P3-1 a P3-6. P3-7 e P3-8 ficam como registrados, sem mudança.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos da rodada
+
+`tests/scenarios/business_journeys.jsonl` (4 rótulos de jornada, só `must_not_include`: `V030-ENABLEMENT-PENDING`, `V030-PT-PRICE-CONDITIONS`, `V030-PRICE-CONSISTENT`, `V030-PRICE-DIVERGENCE`), `tests/scenarios/replan.jsonl` e `data/scenarios/catalog.json` (`REPLAN-WEB`, em acordo; o teste de acordo passa), `prompts/router.v6.md` (editado no lugar: a v6 ainda não rodou em nenhuma campanha), `src/merchant_assistant/evaluation/scripted_policy.py` (quarta parte da regra de condições), `tests/integration/test_v080_journeys.py` (41 → 86 testes) e `tests/integration/test_v080_replan.py` (63 → 79). Nenhum arquivo de `src/` além da política programada; `router.v5`, `personality.v4`, `replan.v1`, `runner.py`, migrações, `judge*` e `holdout_v080*` não foram tocados.
+
+### P2-1: `V030-ENABLEMENT-PENDING` (inglês) não aceita mais a negação do status
+
+- **Antes:** `[["pending"],["visa"]]`, proibições só para "no longer pending", "is not pending", "isn't pending" e aprovação (9 frases).
+- **Depois:** as 9 e mais 23: `no pending`, `not pending`, `nothing pending`, `nothing is pending`, `no more pending`, `not in pending`, `not in the pending`, `isn't in the pending`, `will be approved`, `is already enabled`, `no visa`, `could not find`, `couldn't find`, `can't find`, `don't see`, `was rejected`, `was completed`, `canceled`, `cancelled` e as variantes com apóstrofo curvo (o modelo real escreve `’`). **Não usei** `is active`: a resposta real certa diz "does not mean account enablement is active".
+- **Prova:** as seis frases do parecer ("I could not find any pending Visa enablement request.", "You have no pending Visa enablement request.", "The Visa enablement request is not in pending status.", "Your Visa enablement is active. There are no pending requests.", "Your Visa request has been canceled, nothing pending.", "…is pending, and it will be approved tomorrow.") e mais três ("was rejected, so it is no more pending", "I don’t see a pending Visa request…", "was completed and is already enabled") entraram no `STILL_WRONG`: todas têm "pending" e "visa" (passariam no conteúdo) e reprovam em `forbidden_ok`. As quatro respostas reais certas (as duas da v0.7.0 e as duas da v0.3.0) continuam passando.
+
+### P3, caso a caso
+
+| Item | Caso | Antes → depois | Observação |
+| --- | --- | --- | --- |
+| P3-1 | `V030-PT-PRICE-CONDITIONS` | proibições `condições são iguais`, `mesmas condições`, `mesmo plano`, `não houve condições`, `não há condições diferentes/distintas` → soma `não foram usadas`, `não foram aplicadas`, `não encontrei condições`, `não identifiquei condições`, `não há indícios de condições`, `não foi possível verificar se havia condições`, `foram as mesmas`, `foram iguais` | As quatro negações do parecer reprovam. Escolhi frases que carregam a palavra "condições" ("não encontrei condições", não "não encontrei"), para não reprovar uma resposta correta que diga, por exemplo, "não encontrei indício de erro". A resposta real certa da repetição da v0.7.0 e as duas da v0.3.0 passam. |
+| P3-2 | `V030-PRICE-CONSISTENT` | soma `mismatches`, `mismatched`, `there is a mismatch`, `there was a mismatch` | **Não usei "mismatch" sozinho:** "there is no mismatch" é uma forma legítima de dizer que a taxa confere. O que cria o furo é "mismatches the applicable pricing" conter "matches the applicable pricing"; é isso que as frases fecham. |
+| P3-3 | `V030-PRICE-DIVERGENCE` | soma `did not find a fee discrepancy`, `didn't`/`didn’t` find a (fee) discrepancy, `did not find any discrepancy`, `found no (fee) discrepancy`, `was/were not detected`, `not detected`, `no fee difference` | `no fee discrepancy` e `no discrepancy` já estavam. As respostas reais certas gravadas (v0.7.0 e v0.3.0) passam. |
+| P3-4 | `REPLAN-WEB` (jsonl e catálogo) | admissões: soma `não consegui verificar`, `não consigo verificar/confirmar/encontrar`, `não identifiquei`, `não foi possível identificar/verificar`, `não achei`, `não sei`, `não posso afirmar`, `não tenho como confirmar`, `não existe informa…`; proibições: soma `mas a get xyz aceita`, `porém (,) a get xyz aceita`, `no entanto (,) a get xyz aceita`, `contudo (,) a get xyz aceita`, `mas aceita`, `mas ela aceita`, `mas a get xyz tem/possui/suporta`, `porém a get xyz tem/possui` | **Achado meu, na rodada anterior:** as quatro frases de NFC (`a get xyz aceita/suporta/tem/possui nfc`) estavam em `must_not_include`, o que reprovava a admissão honesta "Não foi possível confirmar se a Get XYZ aceita NFC." Passaram para `must_not_assert`, que aceita a forma com dúvida ("não foi possível confirmar se", "não sei se", "não posso dizer") e continua reprovando a afirmação direta. "mas sim" ficou de fora: reprovaria "…mas sim uma página de terceiros diz…", que é atribuída. O texto programado da busca ("página pública de terceiros informa que…") continua passando pela atribuição. Testes: 16 admissões honestas passam (dez delas novas), 13 invenções (cinco com ressalva) reprovam. |
+| P3-5 | `router.v6` | sem exemplos contrastivos → "Contrast: a general question that does not point at a charge the merchant already had stays `knowledge` ("What are the fees for credit sales?", "Can I change my plan?", "Do the conditions change for sales above R$ 1.000?"); a question about the merchant's own recorded charge (…) is support with topic `pricing`" | Editado no lugar. A regra programada ganhou a quarta parte (um período que aponte para uma cobrança que o lojista já teve: yesterday, today, last, latest, ontem, hoje, passado, último); sem ela, "Do the conditions change for sales above R$ 1.000?" ia para `pricing` na política programada, contra o que o prompt ensina. Teste: as quatro perguntas gerais (três em inglês, uma em português) não viram `pricing`. |
+| P3-6 | sobreviventes | cinco mutantes sem teste | Ver abaixo. |
+| P3-7, P3-8 | — | sem mudança | — |
+
+### P3-6: testes dos sobreviventes
+
+- **Tipo de pagamento no Support programado:** débito responde "consistent values"/"valores coerentes", Pix vira `handoff` com "divergence"/"divergência", crédito "conditions differ" (antes o teste só olhava rota e ferramenta).
+- **Regra de condições:** cada uma das quatro partes tem um caso que a regra deixa passar quando a parte falta (sem palavra de diferença, sem condições ou plano, sem cobrança ou venda, sem período) e cada alternativa de palavra de diferença (`differ`, `change`, `mudou`, `mudaram`, `distintas`, `diferentes`) e de período (`today`, `latest`, `hoje`) tem um caso que casa.
+- **`personality.v5`:** "Say that it is a human agent (in Portuguese, "um atendente"), not only "a member of the team"" e "Keep the wording of the `handoff.message` contribution" são afirmados.
+- **Texto de reserva com o Support presente:** o texto traz os pontos da conta (receivables, em português) antes da frase fixa, uma vez só.
+
+### Evidência
+
+- **Sondas de rótulo com as respostas reais gravadas** (v0.7.0 real e repetição, v0.3.0 `real-r1` e `real-http-r2`; 44 respostas dos casos de jornada, das quais 38 passam e 6 são as erradas de verdade, com `tools_called`, fontes e status gravados): os veredictos com os rótulos de agora são **idênticos aos da rodada 1** em todas as respostas; nenhuma resposta real certa passou a ser reprovada. A re-pontuação da campanha segue 6/13 → **10/13**.
+- `ruff check src tests`: ok. Pytest, um por vez, basetemp novo (`.pytest_cache/t72b-dev-20261104s` a `v`, apagados depois de cada execução), `-p no:cacheprovider`, caminhos Windows, no `HEAD` `915ab72`: novos e afetados **317 passed**; trava da v0.7.0 **94 passed**, arquivos sem alteração; `tests/unit` **279 passed**; os outros 14 arquivos de `tests/integration` **199 passed**.
+- **Regressão programada** (40 casos e 4 conversas, `Settings(_env_file=None)`): `main` (`bd0920a`, por `git archive`) e a árvore atual idênticas campo a campo, 25/40 e 4/4, 123 chamadas. Nada a justificar.
+- **Mutações** (cópia fora do repositório, 19 sondas novas: tipo de pagamento ×3, cada parte e cada palavra da regra de condições ×11, as duas frases do `personality.v5`, o contraste do `router.v6`, o texto de reserva ×2): **19 de 19 mortas**. Uma primeira tentativa não valeu (o diretório pai do basetemp não existia e todos os mutantes "morreram" no `setup`); foi descartada e refeita.
+- Nenhuma chamada paga, nenhuma rede, `.env` não lido, `holdout_v080*` não aberto.
+
+### Decisões tomadas além do texto do pedido (reversíveis)
+
+1. `mismatches`/`mismatched`/`there is(was) a mismatch` no lugar de `mismatch` (P3-2), pelo motivo acima.
+2. NFC de `REPLAN-WEB` em `must_not_assert` (P3-4), por um falso positivo que eu mesmo tinha criado.
+3. Frases de P3-1 com a palavra "condições", para não reprovar resposta correta com outra negação.
+4. Período como quarta parte da regra programada de condições (P3-5).
+
+### Achados e limitações
+
+- **Disco cheio no ambiente:** durante a rodada o volume `C:` ficou com 0 MB livres ("Disk full" na ferramenta; um `eval` programado falhou com `database or disk is full`; foi repetido depois de liberar espaço e o resultado é o da tabela). Liberei só o que eu tinha criado (cópias de `git archive`, cópias de mutação e basetemps `t72b-dev-*` em `.pytest_cache`); o volume segue em 100% (cerca de 1,5 GB livres), então vale avisar o responsável. Não toquei nos diretórios que já existiam em `.pytest_cache` nem em arquivos de outros agentes no scratchpad.
+- Continua valendo tudo o que a campanha real mede (rota dos dois casos de condições, frase de encaminhamento, perguntas gerais de taxa não irem para `support`, lacuna dita pelo modelo).
+- Cobertura de frases proibidas: alguns termos são variantes de outros (apóstrofo curvo, "not in the pending"), e uma análise de remoção termo a termo mostra que nem todos têm uma resposta de teste que dependa só deles. O que protege o lojista são as frases do parecer, e todas têm resposta de teste; as demais são redundância deliberada.
+
+### Próxima ação
+
+Supervisor: nova revisão estreita dos rótulos (`V030-ENABLEMENT-PENDING`, `REPLAN-WEB`) e do contraste do `router.v6`; suíte estrita; QA real depois do merge com o Time B.

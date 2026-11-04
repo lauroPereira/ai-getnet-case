@@ -41,8 +41,10 @@ Passagem, com a tabela caso a caso (rótulo ou prompt, antes e depois, justifica
 - Mutações (cópia fora do repositório): 9 sondas, 8 mortas; a que sobrou remove uma frase de prompt sem efeito sobre o que o teste afirma (equivalente).
 - Não rodei a suíte estrita, nenhuma chamada paga, nenhuma rede, `.env` não lido, `holdout_v080*` não aberto.
 
+**Rodada 2** (revisão independente do candidato `c861bee`; passagem "Tarefa 72b, rodada 2"; código e testes em `915ab72`): P2-1 e P3-1 a P3-6 atendidos. `V030-ENABLEMENT-PENDING` (inglês) reprova negação, cancelamento, conclusão e promessa do status; mais guardas em `V030-PT-PRICE-CONDITIONS`, `V030-PRICE-CONSISTENT`, `V030-PRICE-DIVERGENCE` e `REPLAN-WEB` (admissões honestas aceitas, invenção com ressalva reprovada); exemplos contrastivos no `router.v6` (editado no lugar, ainda sem campanha); testes dos sobreviventes. As 44 respostas reais gravadas dos casos de jornada têm o mesmo veredito da rodada 1 (a re-pontuação segue 6/13 → 10/13). Novos e afetados **317 passed**; trava da v0.7.0 **94 passed**; `tests/unit` **279 passed**; os outros 14 arquivos de integração **199 passed**; `ruff check src tests`: ok; regressão programada idêntica à `main` (25/40, 4/4, 123 chamadas); 19 de 19 mutantes novos mortos.
+
 ## Status
 
 ```text
-implementada em 2026-11-04 na branch codex/v0.8.0-replan (candidato 046cb73); aguarda revisão e a campanha real do QA, que mede o efeito dos prompts (critérios de conclusão ainda não marcados)
+correções da rodada 2 da revisão feitas em 2026-11-04 na branch codex/v0.8.0-replan (código e testes em 915ab72); aguarda nova revisão estreita e a campanha real do QA, que mede o efeito dos prompts (critérios de conclusão ainda não marcados)
 ```
