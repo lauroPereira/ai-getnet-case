@@ -58,6 +58,9 @@ def experiment(settings, tmp_path):
     _, report = write_report(rows, summarize(rows), tmp_path / "out", "original", {"mode": "scripted"})
     conn = connect(settings.db_path)
     persist_judgements(conn, judge, rows)
+    # the v0.8.0 campaign was graded days before the experiment; `created_at` has a one-second resolution, and a
+    # probe in the same second would tie with it in the v0.8.0 lookup (`judgement_for` without a judge)
+    conn.execute("UPDATE run_evaluations SET created_at='2026-11-04T12:00:00+00:00'")
     sample_rows, meta = cal.make_sample(report, 24, cal.DEFAULT_SEED)
     sample, filled = tmp_path / "amostra.csv", tmp_path / "amostra-preenchida.csv"
     cal.write_csv(sample, sample_rows, meta)
@@ -143,6 +146,27 @@ def test_moments_1_and_2_the_probe_and_the_72_judgements_of_the_sample(experimen
     rows = stored(settings, "anthropic")
     assert len(rows) == 75 and sum(1 for r in rows if r["repetition"] == 3) == 24
     assert all(json.loads(r["evaluator"])["model"] == "claude-opus-5-5" for r in rows)
+    # each judgement knows its execution (P2-2) and keeps its tokens (P2-3)
+    runs = [json.loads(r["evaluator"])["run"] for r in rows]
+    assert runs == ["v090-juiz-opus-sonda"] * 3 + ["v090-juiz-opus-r3"] * 72
+    tokens = {"input_tokens": 3000, "cache_read_tokens": 0, "cache_creation_tokens": 0, "output_tokens": 500}
+    assert all(json.loads(r["result"])["usage"] == tokens for r in rows)
+    assert all(rec["usage"] == tokens for row in report["cases"] for rec in row["judge_runs"])
+    assert report["summary"]["judge_usage"] == {
+        "judgements": 72,
+        "total": {"input_tokens": 216000, "cache_read_tokens": 0, "cache_creation_tokens": 0, "output_tokens": 36000},
+        "mean": {
+            "input_tokens": 3000.0,
+            "cache_read_tokens": 0.0,
+            "cache_creation_tokens": 0.0,
+            "output_tokens": 500.0,
+        },
+    }
+    assert (
+        "Tokens do juiz (72 julgamentos com uso registrado; total / média por julgamento): entrada 216000 / 3000.0, "
+        "da qual cache lido 0 / 0.0 e cache criado 0 / 0.0; saída (com o pensamento) 36000 / 500.0. "
+        f"Custo do juiz: US$ {round(72 * PER_JUDGEMENT, 5)}." in text
+    )
     # D5: every reservation went to the Anthropic ledger, none to the project's
     ledger = sqlite3.connect(tmp_path / "anthropic" / "budget.sqlite3")
     entries = ledger.execute("SELECT model, status, actual_usd FROM ledger").fetchall()
@@ -159,10 +183,10 @@ def test_a_refusal_or_a_cut_judgement_is_counted_as_a_failure(experiment, opus, 
 
     def handler(body):  # the calls follow the CSV's order: the first is refused, the second is cut
         calls = len(provider.requests)
-        if calls == 1:
-            return message("", stop_reason="refusal")
+        if calls == 1:  # a valid judgement in the text does not make a refusal a score (P2-1)
+            return message(json.dumps(FIXED_JUDGEMENT), stop_reason="refusal")
         if calls == 2:
-            return message('{"groundedness": 4', stop_reason="max_tokens")
+            return message(json.dumps(FIXED_JUDGEMENT), stop_reason="max_tokens")
         return message(json.dumps(FIXED_JUDGEMENT))
 
     provider.handler = handler
@@ -175,6 +199,8 @@ def test_a_refusal_or_a_cut_judgement_is_counted_as_a_failure(experiment, opus, 
     assert states == ["failed", "failed", "completed", "completed"]
     assert "refusal" in graded["cases"][0]["judge"]["error"] and "max_tokens" in graded["cases"][1]["judge"]["error"]
     assert graded["summary"]["overall"]["judge_failed"] == 2
+    assert all(row["judge"]["unsupported_claim"] is None for row in graded["cases"][:2])
+    assert graded["summary"]["judge_usage"]["judgements"] == 4  # the two failures were billed and keep their tokens
     assert "2 julgamentos falharam" in (tmp_path / "out" / "v090-juiz-opus-r3.md").read_text(encoding="utf-8")
     rows = stored(settings, "anthropic")
     assert [r["state"] for r in rows] == states and rows[0]["scores"] is None and rows[0]["unsupported_claim"] is None
@@ -191,34 +217,91 @@ def test_only_sample_refuses_a_csv_whose_ids_are_not_in_the_answers(experiment, 
     assert provider.requests == [] and stored(settings, "anthropic") == []
 
 
+CACHED = (3000 * 4.00 + 1000 * 0.20 + 200 * 5.00 + 500 * 20.00) / 1e6  # the r3 usage of moment 3, with cache
+
+
+def calibrate_args(experiment, out, **overrides) -> argparse.Namespace:
+    values = {
+        "sample": None,
+        "source": None,
+        "import_csv": str(experiment["csv"]),
+        "seed": None,
+        "campaign": "v090-juiz-opus",
+        "rater": "owner",
+        "delimiter": ";",
+        "out": str(out),
+        "judge": OPUS,
+        "judge_run": None,
+    }
+    return argparse.Namespace(**(values | overrides))
+
+
 def test_moment_3_both_judges_against_the_same_human_ratings(experiment, opus, tmp_path, capsys):
-    settings, _ = opus
+    """D1 in order: the probe of 3, then the 3 repetitions, in the same database; the comparison reads only the
+    execution named (P2-2) and reports the tokens beside the cost (P2-3)."""
+    settings, provider = opus
+    probe = eval_args(
+        tmp_path,
+        name="v090-juiz-opus-sonda",
+        judge_repeat=1,
+        answers_from=str(experiment["report"]),
+        only_sample=str(experiment["csv"]),
+        limit=3,
+    )
+    assert cli.cmd_eval(settings, probe) == 0
+    provider.handler = judging(dict(FIXED_JUDGEMENT, groundedness=2), cache_read=1000, cache_creation=200)
     full = eval_args(tmp_path, answers_from=str(experiment["report"]), only_sample=str(experiment["csv"]))
     assert cli.cmd_eval(settings, full) == 0
+    # a later round of the original judge under a name of its own stays out of B
+    conn = connect(settings.db_path)
+    original = json.loads(experiment["report"].read_text(encoding="utf-8"))["cases"]
+    again = [
+        row | {"judge_runs": [row["judge"] | {"evaluation_id": "x" + row["judge"]["evaluation_id"]}]}
+        for row in original
+    ]
+    persist_judgements(conn, scripted_judge(PROJECT_ROOT / "prompts", NullMeter()), again, run="outra-rodada")
+    conn.close()
     out = tmp_path / "v090-juiz-opus.md"
-    calibrate = argparse.Namespace(
-        sample=None,
-        source=None,
-        import_csv=str(experiment["csv"]),
-        seed=None,
-        campaign="v090-juiz-opus",
-        rater="owner",
-        delimiter=";",
-        out=str(out),
-        judge=OPUS,
-    )
-    assert cli.cmd_eval_calibrate(settings, calibrate) == 0
+    capsys.readouterr()
+
+    with pytest.raises(SystemExit) as refused:  # the probe and the r3 on the same answers: which one?
+        cli.cmd_eval_calibrate(settings, calibrate_args(experiment, out))
+    message_text = str(refused.value)
+    assert "o juiz anthropic/claude-opus-5-5 tem mais de uma execução sobre estas respostas" in message_text
+    assert "'v090-juiz-opus-r3' (72 julgamentos), 'v090-juiz-opus-sonda' (3 julgamentos)" in message_text
+    with pytest.raises(SystemExit, match="não tem julgamento da execução 'v090-juiz-opus-r9'"):
+        cli.cmd_eval_calibrate(settings, calibrate_args(experiment, out, judge_run="v090-juiz-opus-r9"))
+    with pytest.raises(SystemExit, match="--judge-run is used with --judge"):
+        cli.cmd_eval_calibrate(settings, calibrate_args(experiment, out, judge=None, judge_run="v090-juiz-opus-r3"))
+    assert not out.exists()
+
+    assert cli.cmd_eval_calibrate(settings, calibrate_args(experiment, out, judge_run="v090-juiz-opus-r3")) == 0
     printed = capsys.readouterr().out
-    assert "judges: anthropic/claude-opus-5-5 (campaign v090-juiz-opus) beside scripted/scripted-judge-v3" in printed
+    assert (
+        "judges: anthropic/claude-opus-5-5 (campaign v090-juiz-opus, execution v090-juiz-opus-r3) beside "
+        "scripted/scripted-judge-v3 (campaign original, execution legado), 24 human ratings"
+    ) in printed
     text = out.read_text(encoding="utf-8")
     assert text.startswith("# Calibração humana do juiz: dois juízes (v0.9.0)")
     assert "A = `anthropic/claude-opus-5-5` (campanha `v090-juiz-opus`); B = `scripted/scripted-judge-v3`" in text
+    assert "repetição 1 de cada resposta na execução `v090-juiz-opus-r3`" in text
     assert "| Critério | Exata A | Exata B |" in text
+    # the agreement reads the r3 (groundedness 2), not the probe (groundedness 4): no human gave 2
+    assert "| groundedness (fundamentação) | 0.000 | " in text
     assert "| A `anthropic/claude-opus-5-5` | 0 | 4 | 0 | 20 |" in text  # the verdict matrix of the requested judge
-    # consistency: Opus graded each of the 24 answers 3 times (3 pairs each); the original judge once (no pair)
+    assert "| A `anthropic/claude-opus-5-5` | `v090-juiz-opus-r3` | 24 | 72 | 72 |" in text
+    assert "| B `scripted/scripted-judge-v3` | `legado` | 24 | 24 | 24 |" in text
+    assert "`legado`: julgamentos gravados antes da v0.9.0" in text
+    # consistency: Opus graded each of the 24 answers 3 times in the r3 (3 pairs each); the original judge once
     assert "| A `anthropic/claude-opus-5-5` | 24 | 72 | 0 | groundedness | 1.0 | 1.0 | 72 |" in text
     assert "| B `scripted/scripted-judge-v3` | 24 | 24 | 0 | groundedness | - | - | 0 |" in text
-    assert f"| A `anthropic/claude-opus-5-5` | 72 | 0 | {72 * PER_JUDGEMENT:.6f} | {PER_JUDGEMENT:.6f} |" in text
+    assert f"| A `anthropic/claude-opus-5-5` | 72 | 0 | {72 * CACHED:.6f} | {CACHED:.6f} |" in text
+    assert "| Juiz | Julgamentos com tokens | Entrada | Cache lido | Cache criado | Saída |" in text
+    assert (
+        "| A `anthropic/claude-opus-5-5` | 72 | 302400 / 4200.0 | 72000 / 1000.0 | 14400 / 200.0 | 36000 / 500.0 |"
+        in text
+    )
+    assert "| B `scripted/scripted-judge-v3` | 24 | " in text  # the scripted stand-in reports a usage too
     conn = connect(settings.db_path)
     try:
         linked = conn.execute(
@@ -229,6 +312,11 @@ def test_moment_3_both_judges_against_the_same_human_ratings(experiment, opus, t
         for campaign, provider in linked:
             counts[(campaign, provider)] = counts.get((campaign, provider), 0) + 1
         assert counts == {("original", "scripted"): 24, ("v090-juiz-opus", "anthropic"): 24}
+        runs = conn.execute(
+            "SELECT DISTINCT json_extract(e.evaluator,'$.run') FROM calibrations c "
+            "JOIN run_evaluations e ON e.evaluation_id=c.evaluation_id WHERE c.campaign='v090-juiz-opus'"
+        ).fetchall()
+        assert [tuple(r) for r in runs] == [("v090-juiz-opus-r3",)]
         # without --judge, the v0.8.0 report is the same as before the Claude judgements existed
         again = cal.import_filled(conn, experiment["csv"], now=NOW)
         assert again["report"] == experiment["first"]["report"]

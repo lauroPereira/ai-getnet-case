@@ -28,7 +28,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from merchant_assistant.evaluation import aggregate, evidence
-from merchant_assistant.evaluation.judge import CAMPAIGN_PRINCIPAL, CRITERIA, RUBRIC, RUBRIC_VERSION
+from merchant_assistant.evaluation.judge import (
+    CAMPAIGN_PRINCIPAL,
+    CRITERIA,
+    RUBRIC,
+    RUBRIC_VERSION,
+    TOKEN_KEYS,
+    judge_usage,
+)
 from merchant_assistant.guardrails.input import mask_sensitive
 
 DEFAULT_SAMPLE = 24  # RF-91: at least 24 answers
@@ -448,9 +455,17 @@ def _rate_row(
 # --- the judgement each rating is compared with, and the table `calibrations` ---------------------------------------
 
 
+LEGACY_RUN = "legado"  # judgements written before v0.9.0 carry no execution name: together they are one execution
+
+
 def _judge_name(evaluator_json: str) -> str:
     evaluator = json.loads(evaluator_json)
     return f"{evaluator.get('provider')}/{evaluator.get('model')}"
+
+
+def _run_name(evaluator_json: str) -> str:
+    """The execution that wrote a judgement (`eval --name`, kept in `evaluator.run` since v0.9.0)."""
+    return json.loads(evaluator_json).get("run") or LEGACY_RUN
 
 
 def _judgement(row) -> dict:
@@ -458,14 +473,18 @@ def _judgement(row) -> dict:
         "evaluation_id": row["evaluation_id"],
         "rubric_version": row["rubric_version"],
         "judge": _judge_name(row["evaluator"]),
+        "run": _run_name(row["evaluator"]),
         "scores": json.loads(row["scores"]),
         "unsupported_claim": bool(row["unsupported_claim"]),
     }
 
 
-def judgement_for(conn: sqlite3.Connection, request_id: str, judge: str | None = None) -> dict | None:
+def judgement_for(
+    conn: sqlite3.Connection, request_id: str, judge: str | None = None, run: str | None = None
+) -> dict | None:
     """The first judgement (repetition 1) that the campaign wrote for this request, with its scores and verdict. With
-    `judge` (`<provider>/<model>`, spec v0.9.0 RF-108) only that judge's judgements count; without it, any judge's."""
+    `judge` (`<provider>/<model>`, spec v0.9.0 RF-108) only that judge's judgements count; without it, any judge's.
+    With `run`, only the judgements of that execution (`LEGACY_RUN` for those without a name)."""
     rows = conn.execute(
         "SELECT evaluation_id, rubric_version, evaluator, scores, unsupported_claim FROM run_evaluations "
         "WHERE request_id=? AND principal_id=? AND rubric=? AND state='completed' AND repetition=1 "
@@ -473,8 +492,11 @@ def judgement_for(conn: sqlite3.Connection, request_id: str, judge: str | None =
         (request_id, CAMPAIGN_PRINCIPAL, RUBRIC),
     )
     for row in rows:
-        if judge is None or _judge_name(row["evaluator"]) == judge:
-            return _judgement(row)
+        if judge is not None and _judge_name(row["evaluator"]) != judge:
+            continue
+        if run is not None and _run_name(row["evaluator"]) != run:
+            continue
+        return _judgement(row)
     return None
 
 
@@ -493,12 +515,13 @@ class Pair:
     judgement: dict
 
 
-def link(conn: sqlite3.Connection, filled: Filled, judge: str | None = None) -> list[Pair]:
+def link(conn: sqlite3.Connection, filled: Filled, judge: str | None = None, run: str | None = None) -> list[Pair]:
     pairs, errors = [], []
     for rating in filled.ratings:
-        judgement = judgement_for(conn, rating.request_id, judge)
+        judgement = judgement_for(conn, rating.request_id, judge, run)
         if judgement is None:
             by = f" do juiz {judge}" if judge else ""
+            by += f" na execução {run!r} (repetição 1 completa)" if run else ""
             errors.append(
                 f"linha {rating.line} ({rating.sample_id}): não há julgamento{by} da requisição {rating.request_id} "
                 "em run_evaluations deste banco. Importe no banco em que a campanha gravou os julgamentos."
@@ -649,18 +672,63 @@ def original_pairs(conn: sqlite3.Connection, original: str, rater: str, ratings:
     return pairs
 
 
-def judge_runs(conn: sqlite3.Connection, request_ids: list[str], judge: str) -> dict:
-    """Every judgement of `judge` (rubric judge.v3) on these requests: consistency between its repetitions over the
-    same answer (`aggregate`), how many failed and what they cost."""
+def _judge_rows(conn: sqlite3.Connection, request_ids: list[str], judge: str):
     wanted = set(request_ids)
-    entries: dict[str, dict] = {}
-    cost = 0.0
     for row in conn.execute(
-        "SELECT request_id, evaluator, state, scores, unsupported_claim, cost_usd FROM run_evaluations "
+        "SELECT request_id, evaluator, state, scores, unsupported_claim, cost_usd, result FROM run_evaluations "
         "WHERE principal_id=? AND rubric=? AND rubric_version=? ORDER BY created_at, evaluation_id",
         (CAMPAIGN_PRINCIPAL, RUBRIC, RUBRIC_VERSION),
     ):
-        if row["request_id"] not in wanted or _judge_name(row["evaluator"]) != judge:
+        if row["request_id"] in wanted and _judge_name(row["evaluator"]) == judge:
+            yield row
+
+
+def judge_executions(conn: sqlite3.Connection, request_ids: list[str], judge: str) -> dict[str, int]:
+    """How many judgements (any state) each execution of `judge` wrote on these requests."""
+    found: dict[str, int] = {}
+    for row in _judge_rows(conn, request_ids, judge):
+        name = _run_name(row["evaluator"])
+        found[name] = found.get(name, 0) + 1
+    return dict(sorted(found.items()))
+
+
+def _listed(found: dict[str, int]) -> str:
+    return ", ".join(f"{name!r} ({count} julgamentos)" for name, count in found.items())
+
+
+def choose_run(conn: sqlite3.Connection, request_ids: list[str], judge: str, judge_run: str | None) -> str | None:
+    """The execution of the requested judge that the comparison reads (task 79 round 2): the one named, or the only
+    one there is. Two executions on the same answers (the probe and the repetitions, say) and no name is an error:
+    mixing them would change the agreement, the consistency and the cost. `None` when the judge has no judgement
+    here (the link then says which requests lack one)."""
+    found = judge_executions(conn, request_ids, judge)
+    if judge_run is not None:
+        if judge_run not in found:
+            seen = _listed(found) if found else "nenhuma"
+            raise CalibrationError(
+                f"o juiz {judge} não tem julgamento da execução {judge_run!r} sobre estas respostas. Execuções "
+                f"encontradas: {seen}."
+            )
+        return judge_run
+    if len(found) > 1:
+        raise CalibrationError(
+            f"o juiz {judge} tem mais de uma execução sobre estas respostas: {_listed(found)}. Escolha a que entra na "
+            "comparação com --judge-run <nome> (o --name do eval que a gravou); nada foi alterado."
+        )
+    return next(iter(found), None)
+
+
+def judge_runs(
+    conn: sqlite3.Connection, request_ids: list[str], judge: str, runs: Sequence[str] | None = None
+) -> dict:
+    """The judgements of `judge` (rubric judge.v3) on these requests, only those of the executions `runs` when given:
+    consistency between its repetitions over the same answer (`aggregate`), how many failed, what they cost and the
+    tokens they recorded."""
+    entries: dict[str, dict] = {}
+    cost = 0.0
+    recorded: list[dict] = []
+    for row in _judge_rows(conn, request_ids, judge):
+        if runs is not None and _run_name(row["evaluator"]) not in runs:
             continue
         completed = row["state"] == "completed" and row["scores"] is not None
         record = {
@@ -670,15 +738,18 @@ def judge_runs(conn: sqlite3.Connection, request_ids: list[str], judge: str) -> 
         }
         entries.setdefault(row["request_id"], {"route": "-", "split": "-", "records": []})["records"].append(record)
         cost += row["cost_usd"] or 0.0
+        recorded.append({"usage": json.loads(row["result"] or "{}").get("usage")})
     block = aggregate._block(list(entries.values()))
     judgements = sum(len(entry["records"]) for entry in entries.values())
     return {
         "judge": judge,
+        "runs": sorted(runs) if runs is not None else None,
         "answers": len(entries),
         "judgements": judgements,
         "failed": block["failed"],
         "cost_usd": round(cost, 6),
         "cost_per_judgement_usd": round(cost / judgements, 6) if judgements else None,
+        "usage": judge_usage(recorded),
         "consistency": block,
     }
 
@@ -972,14 +1043,17 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
     rows anyone marked as an unsupported claim, each judge's consistency between repetitions and its cost."""
     other, runs = comparison["analysis"], comparison["runs"]
     a, b = comparison["judge"], comparison["original_judge"]
+    a_runs = ", ".join(f"`{_cell(name)}`" for name in runs["A"]["runs"] or ["-"])
+    b_runs = ", ".join(f"`{_cell(name)}`" for name in runs["B"]["runs"] or ["-"])
     lines = [
         "",
         "## Dois juízes contra as mesmas notas humanas",
         "",
         f"A = `{_cell(a)}` (campanha `{_cell(comparison['campaign'])}`); B = `{_cell(b)}`, o juiz da campanha original "
         f"`{_cell(comparison['original_campaign'])}`. As {analysis['n']} notas humanas são as gravadas na campanha "
-        "original, conferidas linha a linha; não houve avaliação humana nova. Cada juiz entra com o seu primeiro "
-        "julgamento (repetição 1) de cada resposta, sobre a mesma evidência gravada.",
+        "original, conferidas linha a linha; não houve avaliação humana nova. A entra com o julgamento da "
+        f"repetição 1 de cada resposta na execução {a_runs}; B, com o julgamento ao qual cada nota foi ligada na "
+        f"campanha original (execução {b_runs}). Os dois julgaram a mesma evidência gravada.",
         "",
         "| Critério | Exata A | Exata B | ±1 A | ±1 B | Kappa A | Kappa B | Viés A | Viés B |",
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
@@ -1021,16 +1095,35 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
         lines.append("Nenhuma.")
     lines += [
         "",
+        "## Julgamentos considerados",
+        "",
+        "Execuções de cada juiz que entram no relatório (o `--name` do `eval` que gravou os julgamentos) e quantos "
+        "julgamentos entram em cada bloco. Outras execuções do mesmo juiz sobre estas respostas, como a sonda, ficam "
+        "de fora.",
+        "",
+        "| Juiz | Execuções | Concordância | Consistência | Custo e tokens |",
+        "| --- | --- | --- | --- | --- |",
+        f"| A `{_cell(a)}` | {a_runs} | {analysis['n']} | {runs['A']['judgements']} | {runs['A']['judgements']} |",
+        f"| B `{_cell(b)}` | {b_runs} | {other['n']} | {runs['B']['judgements']} | {runs['B']['judgements']} |",
+    ]
+    if LEGACY_RUN in (runs["A"]["runs"] or []) + (runs["B"]["runs"] or []):
+        lines += [
+            "",
+            f"`{LEGACY_RUN}`: julgamentos gravados antes da v0.9.0, que não guardam o nome da execução; contam como "
+            "uma execução só, então podem somar mais de uma rodada do mesmo juiz.",
+        ]
+    lines += [
+        "",
         "## Consistência de cada juiz entre repetições",
         "",
-        "Todos os julgamentos `judge.v3` de cada juiz sobre estas respostas. Exata: parte dos pares de julgamentos da "
-        "mesma resposta com a mesma nota; ±1: diferença de até 1 ponto. Sem pares, o juiz julgou cada resposta uma "
-        "vez só.",
+        "Os julgamentos `judge.v3` de cada juiz sobre estas respostas, das execuções da tabela acima. Exata: parte dos "
+        "pares de julgamentos da mesma resposta com a mesma nota; ±1: diferença de até 1 ponto. Sem pares, o juiz "
+        "julgou cada resposta uma vez só.",
         "",
         "| Juiz | Respostas | Julgamentos | Falhos | Critério | Exata | ±1 | Pares |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for name, run in ((f"A `{_cell(a)}`", runs[a]), (f"B `{_cell(b)}`", runs[b])):
+    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
         block = run["consistency"]
         head = f"| {name} | {run['answers']} | {run['judgements']} | {run['failed']}"
         for criterion in CRITERIA:
@@ -1051,9 +1144,24 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
         "| Juiz | Julgamentos | Falhos | Custo total (US$) | Custo por julgamento (US$) |",
         "| --- | --- | --- | --- | --- |",
     ]
-    for name, run in ((f"A `{_cell(a)}`", runs[a]), (f"B `{_cell(b)}`", runs[b])):
+    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
         per = "-" if run["cost_per_judgement_usd"] is None else f"{run['cost_per_judgement_usd']:.6f}"
         lines.append(f"| {name} | {run['judgements']} | {run['failed']} | {run['cost_usd']:.6f} | {per} |")
+    lines += [
+        "",
+        "Tokens gravados em cada julgamento (desde a v0.9.0; os anteriores não os guardam), total / média por "
+        "julgamento. A entrada inclui o cache lido e o criado; a saída inclui o pensamento.",
+        "",
+        "| Juiz | Julgamentos com tokens | Entrada | Cache lido | Cache criado | Saída |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+        usage = run["usage"]
+        if usage is None:
+            lines.append(f"| {name} | 0 | - | - | - | - |")
+            continue
+        cells = " | ".join(f"{usage['total'][key]} / {usage['mean'][key]}" for key in TOKEN_KEYS)
+        lines.append(f"| {name} | {usage['judgements']} | {cells} |")
     return lines
 
 
@@ -1109,6 +1217,7 @@ def import_filled(
     campaign: str | None = None,
     now=None,
     judge: str | None = None,
+    judge_run: str | None = None,
 ) -> dict:
     """`eval-calibrate --import`: validates the file, stores the ratings and measures the agreement. Nothing is
     written unless every line is valid and has its judgement in `run_evaluations`.
@@ -1116,10 +1225,14 @@ def import_filled(
     With `judge` (`<provider>/<model>`, spec v0.9.0 RF-108) the ratings are compared with that judge's judgements and
     stored under `campaign`, which must differ from the campaign of the file (the original one keeps its link to its
     own judge). The ratings must equal those the original campaign stored; the report then shows that campaign's judge
-    beside the requested one, against the same ratings."""
+    beside the requested one, against the same ratings. `judge_run` names the execution of the requested judge to
+    read (required when it has more than one on these answers); the original judge is read in the executions of the
+    judgements its ratings are linked to."""
     filled = read_filled(_read_text(path))
     meta = dict(filled.meta)
     original = meta.get("campaign")
+    if judge_run is not None and judge is None:
+        raise CalibrationError("--judge-run só vale com --judge: escolhe a execução do juiz comparado.")
     if judge is not None:
         if judge.count("/") != 1 or not all(judge.split("/")):
             raise CalibrationError(f"--judge precisa ser <provedor>/<modelo>, recebi {judge!r}.")
@@ -1147,7 +1260,9 @@ def import_filled(
     if not rater:
         raise CalibrationError("o avaliador (--rater) não pode ficar vazio.")
     before = original_pairs(conn, original, rater, filled.ratings) if judge is not None else None
-    pairs = link(conn, filled, judge)
+    request_ids = [rating.request_id for rating in filled.ratings]
+    run = choose_run(conn, request_ids, judge, judge_run) if judge is not None else None
+    pairs = link(conn, filled, judge, run)
     check_same_sample(conn, meta["campaign"], rater, pairs)
     stored = store(conn, meta["campaign"], rater, pairs, filled.blank)
     seed = int(meta["seed"]) if str(meta.get("seed", "")).lstrip("-").isdigit() else DEFAULT_SEED
@@ -1155,15 +1270,20 @@ def import_filled(
     comparison = None
     if before is not None:
         original_judge = ", ".join(sorted({p.judgement["judge"] for p in before}))
-        request_ids = [p.rating.request_id for p in pairs]
+        original_runs = sorted({p.judgement["run"] for p in before})
         comparison = {
             "judge": judge,
+            "judge_run": run,
             "campaign": meta["campaign"],
             "original_judge": original_judge,
+            "original_runs": original_runs,
             "original_campaign": original,
             "pairs": before,
             "analysis": analyze(before, seed),
-            "runs": {name: judge_runs(conn, request_ids, name) for name in (judge, original_judge)},
+            "runs": {
+                "A": judge_runs(conn, request_ids, judge, [run]),
+                "B": judge_runs(conn, request_ids, original_judge, original_runs),
+            },
         }
     return {
         "meta": meta,

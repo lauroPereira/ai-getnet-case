@@ -479,12 +479,14 @@ def _report_name(args, answers_split: str | None = None) -> str:
     return "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
 
 
-def _store_judgements(db_path, judge, rows, persist) -> None:
+def _store_judgements(db_path, judge, rows, persist, run: str) -> None:
+    """Stores the judgements under the execution name `run` (the report name), so a comparison can tell one execution
+    of a judge from another on the same answers (spec v0.9.0 D1)."""
     from merchant_assistant.data.db import connect
 
     conn = connect(db_path)
     try:
-        print(f"judgements stored in run_evaluations: {persist(conn, judge, rows)}")
+        print(f"judgements stored in run_evaluations: {persist(conn, judge, rows, run=run)} (execution {run})")
     finally:
         conn.close()
 
@@ -512,6 +514,12 @@ def cmd_eval(settings: Settings, args) -> int:
         raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
     if getattr(args, "judge_repeat", None) is not None:
         return cmd_eval_rejudge(settings, args)
+    if getattr(args, "only_sample", None):
+        print(
+            "eval: --only-sample is ignored without --judge-repeat: this runs the agent over the whole selection of "
+            "cases, not the sample.",
+            file=sys.stderr,
+        )
     repeat = getattr(args, "repeat", 1)
     if repeat < 1:
         raise SystemExit("eval: --repeat must be at least 1.")
@@ -578,10 +586,11 @@ def cmd_eval(settings: Settings, args) -> int:
         else None,
         "cases": len(cases),
     }
-    md, js = write_report(rows, summary, Path(args.out), _report_name(args), config)
+    name = _report_name(args)
+    md, js = write_report(rows, summary, Path(args.out), name, config)
     print(json.dumps(summary["overall"], indent=1))
     if judge is not None:
-        _store_judgements(db_path, judge, rows, persist_judgements)
+        _store_judgements(db_path, judge, rows, persist_judgements, name)
     if not args.no_conversations and args.split != "holdout_v080" and case_limit is None:
         from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
 
@@ -678,7 +687,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     }
     md, js = write_report(graded, summary, Path(args.out), name, config)
     print(json.dumps(summary["overall"], indent=1))
-    _store_judgements(db_path, judge, graded, persist_judgements)
+    _store_judgements(db_path, judge, graded, persist_judgements, name)
     print(f"report: {md}")
     print(f"results: {js}")
     return 0
@@ -908,6 +917,8 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         raise SystemExit("eval-calibrate: choose --sample N --from <report.json>, or --import <csv>.")
     if size is not None and getattr(args, "judge", None):
         raise SystemExit("eval-calibrate: --judge is used with --import (the sample never shows a judge's scores).")
+    if getattr(args, "judge_run", None) and not getattr(args, "judge", None):
+        raise SystemExit("eval-calibrate: --judge-run is used with --judge (it picks the execution of that judge).")
     evidence_dir = PROJECT_ROOT / "docs" / "evidence"
     try:
         if size is not None:
@@ -943,7 +954,12 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         conn = connect(settings.db_path)
         try:
             result = calibration.import_filled(
-                conn, Path(filled), rater=args.rater, campaign=args.campaign, judge=getattr(args, "judge", None)
+                conn,
+                Path(filled),
+                rater=args.rater,
+                campaign=args.campaign,
+                judge=getattr(args, "judge", None),
+                judge_run=getattr(args, "judge_run", None),
             )
         finally:
             conn.close()
@@ -959,8 +975,9 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         if result.get("comparison"):
             compared = result["comparison"]
             print(
-                f"judges: {compared['judge']} (campaign {compared['campaign']}) beside {compared['original_judge']} "
-                f"(campaign {compared['original_campaign']}), {result['analysis']['n']} human ratings"
+                f"judges: {compared['judge']} (campaign {compared['campaign']}, execution {compared['judge_run']}) "
+                f"beside {compared['original_judge']} (campaign {compared['original_campaign']}, execution "
+                f"{', '.join(compared['original_runs'])}), {result['analysis']['n']} human ratings"
             )
         if result["outside"]:
             print(
@@ -1253,6 +1270,13 @@ def main(argv: list[str] | None = None) -> int:
         help="With --import: compare the ratings with this judge (<provider>/<model>, e.g. anthropic/claude-opus-5-5) "
         "instead of the first judgement of any judge, under a new --campaign; the report adds the original campaign's "
         "judge side by side and each judge's consistency between repetitions.",
+    )
+    p_calibrate.add_argument(
+        "--judge-run",
+        default=None,
+        help="With --judge: the execution of that judge to compare (the --name of the eval that graded, e.g. "
+        "v090-juiz-opus-r3). Required when the judge has more than one execution on the sample's answers (the probe "
+        "and the repetitions, say).",
     )
     p_calibrate.add_argument(
         "--delimiter",
