@@ -27,19 +27,7 @@ Subagentes desta rodada: `developer`, `reviewer` e `qa` de `.claude/agents/`, de
 
 Campanha real da versão: **US$0,10140195** de US$0,20 (nativa 0,07543317 + ledger do volume Docker 0,02596878); acumulado do projeto cerca de US$0,79 de US$5,00. Rodadas de correção pedidas pela revisão nesta rodada: T66 2, T67 3, T68 1; QA: nenhuma.
 
-**Comparação sonnet/xhigh × opus/high (tarde).** As fatias não são iguais: a tarde construiu as tarefas (identidade, fila, retomada, ticketing, interface, holdout); esta noite endureceu e fechou (integração, estado da interface, regressão, QA). Por isso a comparação é por papel e por unidade, não pelo total.
-
-| Medida | opus/high (tarde) | sonnet/xhigh (noite) |
-| --- | ---: | ---: |
-| Developer: US$ por minuto ativo | 0,29 (US$91,77 em 321 min) | 0,20 (US$26,95 em 137 min) |
-| Developer: US$ por rodada | ≈ 4,0 (23 rodadas) | ≈ 3,9 (7 rodadas, maiores) |
-| Reviewer: US$ por minuto ativo | 0,20 (US$45,07 em 230 min) | 0,09 (US$25,40 em 278 min) |
-| Reviewer: US$ por revisão | ≈ 2,4 (19 revisões, o mesmo Reviewer retomado) | ≈ 3,2 (8 revisões, cada uma em contexto frio novo) |
-| Reviewer: minutos por revisão | ≈ 12 | ≈ 35 |
-| QA | — | US$17,30, 55 min |
-| Achados reais por revisão | P1/P2 na maioria das tarefas | P2 reproduzido em 6 de 8 revisões |
-
-Leitura: o sonnet custou de 30% a 55% menos por minuto, mas cada revisão em contexto frio demorou e custou mais, porque refez sondas pesadas (dois processos, quedas, 20 a 46 mutantes) em vez de reaproveitar o contexto da rodada anterior. A qualidade dos achados não caiu: as revisões reproduziram defeitos reais por execução (aviso perdido numa queda, vazamento de estado entre usuários, rótulo da bancada), e o QA não achou nenhum. O custo dessa profundidade foi o número de rodadas na T67 (quatro), em parte porque o escopo só foi congelado a partir da rodada 6. A sessão principal (Supervisor, Opus 5.5) e a sessão do Codex não entram na medição.
+**Comparação sonnet/xhigh × opus/high (tarde).** Medição por papel e por unidade feita nesta rodada; os números ficam em material local do responsável, fora do repositório. A leitura que ficou para o processo está em `docs/wiki/agents/README.md` ("Por que `opus`/`high` nos três").
 
 **Decisões tomadas por padrão (reversíveis):**
 
