@@ -125,3 +125,92 @@ Não verificado: `eval-retrieval` com embeddings reais e a decisão D7 (QA, tare
 ## Próxima ação
 
 O Developer corrige P2-1, P2-2 e P2-3 numa rodada 2 da tarefa 80. Depois, o Reviewer re-verifica em contexto novo os arquivos afetados (`rag/bm25.py`, `rag/index.py` e os testes) e repete as sondas 9, 10 e 11 e os mutantes M01, M02, M03, M10 e M12. Os P3 vão para as tarefas 81 e 82 ou ficam registrados. Nenhuma decisão humana pendente nesta revisão, além de apagar a árvore vazia `C:/c/`.
+
+---
+
+# Rodada 2
+
+- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
+- **Objetivo e critérios:** fechar P2-1 a P2-3 da rodada 1 conforme as decisões do Supervisor: o pickle guarda só ids e estatísticas, e payload, URL, `source_kind` e `collected_at` vêm sempre do índice ativo; arquivo temporário único com `os.replace` e trava por coleção; testes para `k=60`, `3×k`, `min_score` só no denso, fiação do `main.py` e `eval-retrieval --mode hybrid`; `RETRIEVAL_MODE` comentado no `.env.example`; Knowledge sem mudança. Critérios da tarefa 80 e D7 da spec.
+- **Escopo:** `60ab2c8` (`rag/bm25.py`, `rag/index.py`, `tests/unit/rag/test_bm25_hybrid.py`, `tests/integration/test_v090_hybrid.py`) e `687895c` (`.env.example`). Base da rodada 1: `c99aa90`.
+- **Estado:** **apto para QA** (nenhum P1, nenhum P2; P3 registrados).
+- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR.
+- **Base e versão final:** candidato `687895c` (árvore `8308c07`); HEAD `f8f7db4` (árvore `a97d0b4`). Durante a revisão, a branch ganhou `f7ffe2b`, que muda só documentação do QA do juiz (`v090-juiz-opus-sonda.*`, `v090-qa-juiz-r1.md`). `687895c..f8f7db4` muda só documentação (`v090-candidato-r1.json`, `v090-developer.md`, `v090-reviewer-t79.md`, spec, tarefa 80). Blobs no candidato, no HEAD e na árvore de trabalho, no início e no fim da revisão: `bm25.py 17d1cc1`, `index.py ecc0e85`, `main.py 9d1e0ac`, `cli.py 11f89ed`, `kb.py 17ce5d9`, `config.py 8fb7dfe`, `testing.py 93a92fd`, `evaluation/retrieval.py 8d551eb`, `agents/knowledge.py 7bae3a8`, `test_bm25_hybrid.py 939f2c1`, `test_v090_hybrid.py 3f255b8`, `.env.example 4231574`, `pyproject.toml e215232`. No `index.py` da árvore de trabalho só muda o fim de linha (`text=auto`; `git diff` vazio, sha256 sem CR igual). O manifesto `v090-candidato-r1.json` fixa o experimento do juiz, não a tarefa 80; por isso fixei o candidato pelos blobs acima.
+- **Independência:** independente. Não implementei nada e não li `v090-developer.md` nem as passagens do Developer no scratchpad compartilhado. Ressalva: um `grep` por `min_score|no_evidence` exibiu três linhas da seção Validação da tarefa 80 (linhas 40, 43 e 49); elas só repetem a lista de correções e não mudaram nenhuma verificação.
+
+## Comandos e números
+
+Cópias de leitura com `git archive` de `f8f7db4`, `c99aa90` e `fee7a78`, mais uma cópia de mutação de `f8f7db4`, em `<scratchpad da sessão>/r2`. Python do `.venv` do projeto (3.13.3, pytest 9.1.1), com `PYTHONPATH` no `src/` da cópia; o módulo carregado foi conferido em cada execução. Nenhuma chamada paga, nenhuma rede, nenhum Docker, nenhum Git de escrita. Não toquei em `data/runtime/`, `.pytest_cache/` nem no `.env` do repositório.
+
+| Verificação | Resultado |
+| --- | --- |
+| `git diff --stat` de `60ab2c8` e `687895c` | só `rag/bm25.py`, `rag/index.py`, os dois testes e `.env.example`. Em `c99aa90..687895c`, fora disso, só a tarefa 79 e documentação: `cli.py` muda só em `cmd_eval`, `cmd_eval_rejudge`, `cmd_eval_calibrate` e `main` (`7d1039f`), e nada em `cmd_eval_retrieval`. `agents/`, `prompts/`, `main.py`, `config.py`, `kb.py`, `testing.py`, `evaluation/retrieval.py`, `pyproject.toml` e `tests/scenarios/` não mudam |
+| `checar-caminhos-pessoais.py` (repositório) | limpo: 729 arquivos no início e 732 depois de gravar este parecer |
+| `pytest` (cópia de `f8f7db4`, basetemp em `.pytest_cache/bt` da cópia) | **2050 passed, 0 skipped, 0 failed**, 863 s, exit 0. São 2036 da rodada 1 mais 14 testes novos (11 de unidade e 3 de integração). O teste `test_v070_identity_r2.py:277`, pulado na rodada 1, rodou porque o basetemp ficou dentro do `.pytest_cache` da cópia |
+| `ruff check` (cópia) | All checks passed |
+| `validate_structure` e `validate_skills` (cópia) | válidas |
+
+Rodei as quatro etapas do `lint_and_tests.py --strict` separadamente, como na rodada 1, porque a cópia não tem `.git`. Incidente sem efeito: a primeira execução do pytest falhou por ambiente (o diretório pai do basetemp não existia na cópia). Criei o diretório e reexecutei; os números acima são dessa segunda execução.
+
+## O que re-derivei e como
+
+1. **Equivalência do denso.** A mesma sonda da rodada 1: 145 chunks, 25 perguntas, 7 combinações de `k`, filtro e `min_score`. `fee7a78 search()` × `f8f7db4 search()` e × `f8f7db4 search(mode="dense")` dão **175/175 idênticos**, com ids, sha256 dos payloads, scores bit a bit (diferença máxima 0) e `origin` sempre `dense`.
+2. **`eval-retrieval --fake`** (cópia sem `.env`, 0 token de embedding, nenhum pickle gravado). `--mode dense`: n=19, R@6 0,632, MRR 0,500, termo exato sem acerto em nenhuma das 5 (`None` nas 5). `--mode hybrid`: R@6 1,000, MRR 0,789, ranks do termo exato 2, 4, 1, 4, 2. Hash BM25 `ca4109c8ccf9…`. Idênticos à rodada 1.
+3. **Sonda 9 (P2-1).** `v1` com `public_official` e `url=old`; `v2` com o mesmo id e texto, `simulated_internal`, `url=new` e `collected_at` novo, no mesmo diretório e no mesmo cliente. Um só `bm25-*.pkl` para as duas versões. `v2.search("E-1023", mode="hybrid", source_kinds=["public_official"], min_score=0.99)` devolve **`[]`** (na rodada 1, devolvia o item com `url=old`). Com `["simulated_internal"]`, devolve `("p#0", "bm25", "simulated_internal", "https://new", "2026-11-01")`. `v1` continua citando a própria URL. Numa carga fria do arquivo com outros registros, `built=False` e a URL é a atual. O arquivo não contém `https://`, nem `source_kind`, nem o texto (só ids e estatísticas).
+4. **Sonda 10 (regra do `min_score`).** Sem mudança, como decidido: `min_score=0.99` dá `[]` no denso e `[("a#0", "bm25", 0.0164)]` no híbrido. Agora a regra está fixada por teste e pela docstring de `search()`.
+5. **Sonda 11 (P2-2), Windows.** Com 4 threads, `Barrier` e `load_or_build` de 3 000 registros, repetido 10 vezes: **0 erros**, 1 construção por repetição, nenhum `.tmp` sobrando. O controle em `c99aa90` com a mesma sonda dá `PermissionError` (2 de 4 threads), então a sonda ainda detecta o defeito. Com 4 clientes Qdrant distintos e o mesmo `bm25_dir`, buscando em paralelo: 0 erros, 1 construção (trava pelo caminho), 1 arquivo. Com **4 processos** e partida sincronizada, 8 repetições: 32/32 sem erro, resultado correto, 1 arquivo por diretório e nenhum `.tmp`. Cada processo constrói o seu (3 a 4 construções por repetição): não há trava entre processos, e a gravação atômica com nome único torna isso inofensivo, como diz a docstring de `_write`. No corpus real (145 chunks, `bm25_dir` com pickle), 8 buscas híbridas simultâneas a partir do cache frio, em 5 repetições, terminam com 0 erros, um resultado só, 1 construção por repetição e o `erro-adq-4-91` no top 6.
+6. **Leitura do Developer sobre o cache.** Confirmada: os payloads são lidos ao entrar no cache por `(cliente, coleção)`, não a cada busca. Com o `scroll` instrumentado, 3 buscas híbridas e mais um `KnowledgeIndex` novo no mesmo cliente e na mesma coleção fazem 1 leitura. `rebuild(replace_existing=True)` limpa o cache: a busca seguinte relê (2 leituras), acha o termo novo e não acha o antigo. O cache vale porque as coleções publicadas são imutáveis: em `src/`, só o `rebuild` escreve pontos, e nada chama `replace_existing=True` (`kb.py:373` usa `False`). Os limites dessa premissa estão no P3-7.
+7. **Mutantes** (testes `tests/unit/rag` e `test_v090_hybrid.py`; M01 e M02 também com `test_eval_campaign.py`). Os 5 sobreviventes da rodada 1 agora **morrem**: M01 (`test_min_score_cuts_the_dense_list_only`), M02 (`test_hybrid_fuses_the_top_3k_of_each_list`), M03 (`test_rrf_uses_k_60_over_ranks_starting_at_1`), M10a sem `mode=` e M10b sem `bm25_dir=` (`test_production_assembly_passes_retrieval_mode_and_runtime_bm25_dir`) e M12 (`test_eval_retrieval_hybrid_report_measures_the_hybrid_search`). Os mutantes novos da rodada 2:
+
+| Mutante | Resultado |
+| --- | --- |
+| M05: `rebuild` não descarta o cache | morto |
+| M17: nome temporário só com o pid (o da rodada 1) | morto |
+| M18: `load_or_build` sem trava nem segunda leitura | morto |
+| M19: `bm25_index` sem trava por coleção | morto |
+| M20b: o arquivo volta a guardar os payloads | morto |
+| M20 + M20b: payloads servidos a partir do arquivo (o defeito da rodada 1) | morto (`test_persisted_bm25_takes_payloads_from_the_current_collection`) |
+| M21: falha de escrita propaga | morto |
+| M24: sem a segunda leitura do cache dentro da trava | morto |
+| M20 sozinho | sobreviveu: equivalente, porque o arquivo não tem payloads |
+| M22: sem conferir `chunk_ids` na carga | sobreviveu: redundante, porque o hash do nome já fixa os ids |
+| M23: sem conferir `format` na carga | sobreviveu: redundante, porque o arquivo da rodada 1 cai na checagem de lista |
+
+São 17 mutantes: 14 mortos e 3 sobreviventes, todos equivalentes ou redundantes. A cópia de mutação foi restaurada e conferida contra a cópia do HEAD (`diff -r` sem diferença, fora `__pycache__`).
+
+## Achados
+
+### P1
+
+Nenhum.
+
+### P2
+
+Nenhum. P2-1, P2-2 e P2-3 da rodada 1 estão **fechados** (itens 3, 5 e 7).
+
+### P3 (registrar)
+
+- **P3-7. O cache em processo pressupõe coleção imutável. Há dois casos fora dessa premissa, nenhum alcançável pelo `src/` atual.** (a) Corrida entre `rebuild(replace_existing=True)` e a primeira construção do BM25: o `rebuild` limpa o cache (`rag/index.py:167-168`), mas não toma a trava de construção (`:194-195`), então uma construção já em curso grava depois o corpus apagado. Reprodução: `load_or_build` atrasado em 1 s, uma busca híbrida numa thread e um `rebuild(replace_existing=True)` com outro corpus 0,3 s depois. Em seguida, `"4-91"` (corpus novo) dá `[]` e `"E-1023"` (corpus apagado) dá `[("a#0", "bm25")]`, com o payload de um ponto que já não existe. (b) Uma alteração de payload no lugar (`set_payload`) ou uma reconstrução por outro cliente ou processo não invalida o cache: o denso cita a URL nova e o item só-BM25 cita a antiga. Hoje só testes e coleções descartáveis usam `replace_existing=True`. Sugestão: o `rebuild` tomar a mesma trava de construção ao limpar o cache, ou o cache guardar o `point_digest`. E registrar a premissa no ADR 0020.
+- **P3-8. Regra do `min_score` e limitação do `no_evidence` ainda fora da D7.** Pela decisão do Supervisor, o Knowledge não muda nesta tarefa. A D7 da spec (`juiz-retrieval-v090.md:45`) ainda não diz que, no híbrido, o limiar cosseno vale só para a lista densa, que o `no_evidence` só dispara se o BM25 também não achar nada e que o `score` do trace fica na escala RRF. Levar para a tarefa 82 e o ADR 0020, antes de decidir a D7 pelo híbrido.
+- **P3-9. Concorrência entre processos.** Não há trava entre processos: N workers na primeira busca constroem N vezes (só custo de CPU; o resultado e o arquivo ficam corretos, item 5). `_BUILD_LOCKS` guarda uma trava por arquivo e nunca é podado, o que se soma ao P3-4.
+- Da rodada 1: o P3-5 fica **parcialmente fechado** (`RETRIEVAL_MODE` agora no `.env.example`, comentado, padrão `dense`; o nome `runtime/bm25.pkl` do plano continua para o ADR). P3-1 a P3-4 e P3-6 seguem registrados, sem mudança nesta rodada.
+
+## Critérios
+
+| Critério da tarefa 80 | Estado |
+| --- | --- |
+| `search(mode="dense")` idêntico e Knowledge sem mudança no padrão | **comprovado** (175/175; `agents/knowledge.py` sem mudança desde `fee7a78`) |
+| Híbrido acha os termos exatos que o denso não acha | **comprovado** com embedder de hash (5/5 contra 0/5) |
+| Reconstrução só quando o hash muda, nos dois sentidos | **comprovado**. Agora sem servir metadado velho (sonda 9) e sem erro na concorrência (sonda 11) |
+| `eval-retrieval --mode` sem rede, medindo o modo pedido | **comprovado** e protegido por teste (M12 morto) |
+| Suíte estrita verde | **comprovado** (2050 passed; ruff, caminhos, estrutura e skills limpos) |
+
+Não verificado (fora do escopo da revisão): embeddings reais, latência por modo e a decisão D7 (QA, tarefas 81 e 82).
+
+## Incidentes da revisão
+
+Nenhum efeito no repositório. Encerrei os processos em segundo plano (suíte e mutantes) antes do relato. Ao montar este texto, um heredoc sem aspas fez o shell tentar executar dois trechos entre crases como comandos (`command not found`, sem efeito). O trecho apagado foi restaurado e o texto foi relido. A árvore vazia `C:/c/` da rodada 1 já foi removida e não foi recriada (os caminhos passados ao Python agora são todos no estilo Windows).
+
+## Próxima ação
+
+A tarefa 80 vai ao QA (momentos 4 e 7 da história, com embeddings reais e com custo autorizado). Os P3-7 a P3-9 vão para as tarefas 81 e 82 e para o ADR 0020. Não há decisão humana pendente nesta revisão.
