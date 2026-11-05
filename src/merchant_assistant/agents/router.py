@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from pydantic import ValidationError
 
 from merchant_assistant.agents.common import format_history, guess_language, policy, prompt
@@ -12,14 +14,30 @@ from merchant_assistant.orchestration.state import GraphState, RouterDecision
 
 SUPPORT_ROUTES = {"support", "knowledge_and_support", "human_handoff"}
 
+# Full-message matches only: a confirmation with a new question or instruction must still reach its specialist.
+_RESOLUTION_CLAUSE = r"(?:deu certo|(?:voltou a |j[aá] )?funcionar|funcionou|it works|it worked|working again)"
+_ISOLATED_RESOLUTION = re.compile(
+    rf"\s*{_RESOLUTION_CLAUSE}(?:\s*[,;.!]+\s*{_RESOLUTION_CLAUSE})*\s*[.!]*\s*", re.IGNORECASE
+)
 
-def enforce(decision: RouterDecision, *, new_conversation: bool = False) -> RouterDecision:
+
+def enforce(
+    decision: RouterDecision, *, new_conversation: bool = False, message: str = "", case_state: str = ""
+) -> RouterDecision:
     """Deterministic rules applied after the model decision."""
     data = decision.model_dump()
     if new_conversation:  # there is no previous reply to react to
         data["case_signal"] = "none"
         if data["route"] == "acknowledgement":
             data["route"] = "clarify"
+    elif (
+        case_state == "awaiting_customer"
+        and decision.safety == "none"
+        and decision.case_signal == "resolved"
+        and decision.route != "human_handoff"
+        and _ISOLATED_RESOLUTION.fullmatch(message)
+    ):
+        data["route"] = "acknowledgement"
     if decision.safety != "none":
         data["route"] = "out_of_scope"
     if data["route"] in SUPPORT_ROUTES and data["topic"] is None:
@@ -54,7 +72,9 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     errors = list(state.errors)
     try:
         result = ctx.router_override or ctx.llm_for("router").parse(spec, RouterDecision, ctx).value
-        decision = enforce(result, new_conversation=not state.history)
+        decision = enforce(
+            result, new_conversation=not state.history, message=state.message, case_state=state.case.get("state", "")
+        )
     except (LLMError, ValidationError, LimitExceeded, BudgetExceeded) as exc:
         errors.append(f"router: {exc}")
         ctx.step_notes["router_unavailable"] = True

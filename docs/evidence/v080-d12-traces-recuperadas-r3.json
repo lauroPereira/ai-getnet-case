@@ -1,0 +1,2359 @@
+{
+  "candidate_sha": "f8daab03c9c33a204edd7d38a009dd6345a93723",
+  "source_report_sha256": "40b4e63e21ea967e0ae60a8cc319b0aa90edead329da971930d4ac66306f1833",
+  "trace_db": ".pytest_cache/qa-v080-r1/runtime/traces.sqlite3",
+  "trace_coverage": 132,
+  "requests_with_replan": 117,
+  "max_plan_hops": 2,
+  "rows": [
+    {
+      "id": "REPLAN-WEB",
+      "repetition": 1,
+      "request_id": "req_evala64d53d47623",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-PROCEDURE",
+      "repetition": 1,
+      "request_id": "req_eval866ca888dc9d",
+      "plan_hops": 2,
+      "decisions": [
+        {
+          "sequence": 10,
+          "next": "knowledge",
+          "reason": "support covered the account part; the how-to part needs the official procedure",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:procedure_gap"
+        },
+        {
+          "sequence": 12,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 2,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 14,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 2,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-TOOL-DOWN",
+      "repetition": 1,
+      "request_id": "req_eval06d0d2e78460",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": false
+    },
+    {
+      "id": "REPLAN-ACCOUNT",
+      "repetition": 1,
+      "request_id": "req_eval4e3529ab6de2",
+      "plan_hops": 2,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "support",
+          "reason": "The merchant’s plan-specific eligibility for receivables anticipation requires checking their account.",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "model"
+        },
+        {
+          "sequence": 7,
+          "next": "web",
+          "reason": "A web search may clarify whether receivables anticipation is available under this plan or its contract conditions.",
+          "review": "incomplete",
+          "hops": 2,
+          "origin": "model"
+        },
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 2,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX01",
+      "repetition": 1,
+      "request_id": "req_evald82649d57e03",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX02",
+      "repetition": 1,
+      "request_id": "req_eval64c512560d08",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX03",
+      "repetition": 1,
+      "request_id": "req_eval76c4c33f5a56",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX04",
+      "repetition": 1,
+      "request_id": "req_eval5b3865109cb1",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX05",
+      "repetition": 1,
+      "request_id": "req_eval13bb48446969",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX06",
+      "repetition": 1,
+      "request_id": "req_eval38f3f011ffb1",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX07",
+      "repetition": 1,
+      "request_id": "req_eval523195c0ac8d",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX08",
+      "repetition": 1,
+      "request_id": "req_evalfee8807b81cd",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX09",
+      "repetition": 1,
+      "request_id": "req_evalae2ac1cd5e13",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX10",
+      "repetition": 1,
+      "request_id": "req_evalad61a90973e3",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT01",
+      "repetition": 1,
+      "request_id": "req_eval76bb6e7c6726",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT02",
+      "repetition": 1,
+      "request_id": "req_eval18b2fbfa556b",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT03",
+      "repetition": 1,
+      "request_id": "req_eval005205ff295e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT04",
+      "repetition": 1,
+      "request_id": "req_eval064a3c8d03a5",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT05",
+      "repetition": 1,
+      "request_id": "req_eval2853f10e88ba",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT06",
+      "repetition": 1,
+      "request_id": "req_eval0c6f7493f669",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT07",
+      "repetition": 1,
+      "request_id": "req_evalbcf3dfc3fe68",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT08",
+      "repetition": 1,
+      "request_id": "req_eval87264d6ab851",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT09",
+      "repetition": 1,
+      "request_id": "req_eval2e616e08c70e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT10",
+      "repetition": 1,
+      "request_id": "req_evaleee32e674166",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC12",
+      "repetition": 1,
+      "request_id": "req_eval7f084081744b",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC13",
+      "repetition": 1,
+      "request_id": "req_eval205c1ec4619a",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "nothing left to try; the answer states what could not be confirmed",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:gap_declared"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC14",
+      "repetition": 1,
+      "request_id": "req_eval2b41fd2f434e",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC16",
+      "repetition": 1,
+      "request_id": "req_evalbfe3888510f0",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC17",
+      "repetition": 1,
+      "request_id": "req_eval77ad8b4bf537",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 5,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC18",
+      "repetition": 1,
+      "request_id": "req_eval2403f8d83d80",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "NOEV",
+      "repetition": 1,
+      "request_id": "req_eval6ed9b2bce0f8",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-CONSISTENT",
+      "repetition": 1,
+      "request_id": "req_eval832aa952e03c",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-CONDITIONS",
+      "repetition": 1,
+      "request_id": "req_evalb9883ad08911",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-DIVERGENCE",
+      "repetition": 1,
+      "request_id": "req_eval85cf21d77d8f",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "escalate",
+          "reason": "support asked for a human to take over",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:support_asked_for_human"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-INSUFFICIENT",
+      "repetition": 1,
+      "request_id": "req_evald3894f3f6943",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-ENABLEMENT-PENDING",
+      "repetition": 1,
+      "request_id": "req_evalda08fa632aaf",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-SALE-CANCELLATION",
+      "repetition": 1,
+      "request_id": "req_eval4a3f72210618",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-CONTRACT-TERMINATION",
+      "repetition": 1,
+      "request_id": "req_evale4bdd691f01b",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-CONSISTENT",
+      "repetition": 1,
+      "request_id": "req_eval7631340fc4b9",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-CONDITIONS",
+      "repetition": 1,
+      "request_id": "req_eval18ef931873eb",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-DIVERGENCE",
+      "repetition": 1,
+      "request_id": "req_eval194fa9176996",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "escalate",
+          "reason": "support asked for a human to take over",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:support_asked_for_human"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-INSUFFICIENT",
+      "repetition": 1,
+      "request_id": "req_evalc97781663738",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-ENABLEMENT-PENDING",
+      "repetition": 1,
+      "request_id": "req_evale6bcedf09788",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-SALE-CANCELLATION",
+      "repetition": 1,
+      "request_id": "req_evalf7e7b0b7de91",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-WEB",
+      "repetition": 2,
+      "request_id": "req_evalddaf0d395a8f",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-PROCEDURE",
+      "repetition": 2,
+      "request_id": "req_evalbac9d4c39bc9",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 12,
+          "next": "finish",
+          "reason": "nothing left to try; the answer states what could not be confirmed",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:gap_declared"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-TOOL-DOWN",
+      "repetition": 2,
+      "request_id": "req_evalaf44a257d432",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": false
+    },
+    {
+      "id": "REPLAN-ACCOUNT",
+      "repetition": 2,
+      "request_id": "req_eval5e7813c94180",
+      "plan_hops": 2,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "support",
+          "reason": "A disponibilidade depende do plano contratado pelo estabelecimento e pode ser verificada nos dados da conta.",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "model"
+        },
+        {
+          "sequence": 7,
+          "next": "web",
+          "reason": "As páginas oficiais e os dados da conta não confirmaram se a antecipação está disponível no plano contratado; a web pode cobrir essa lacuna.",
+          "review": "incomplete",
+          "hops": 2,
+          "origin": "model"
+        },
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 2,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX01",
+      "repetition": 2,
+      "request_id": "req_eval92c88e8ac2e7",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX02",
+      "repetition": 2,
+      "request_id": "req_eval94c94f396c32",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX03",
+      "repetition": 2,
+      "request_id": "req_eval70605a79759b",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX04",
+      "repetition": 2,
+      "request_id": "req_eval53003069c651",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX05",
+      "repetition": 2,
+      "request_id": "req_eval15b1831de450",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX06",
+      "repetition": 2,
+      "request_id": "req_eval68fb2fba790a",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX07",
+      "repetition": 2,
+      "request_id": "req_evaleeefc8b2f1e3",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX08",
+      "repetition": 2,
+      "request_id": "req_eval9aac11824af4",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX09",
+      "repetition": 2,
+      "request_id": "req_eval8b7f2ce115dc",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX10",
+      "repetition": 2,
+      "request_id": "req_evalf2ad63637c25",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT01",
+      "repetition": 2,
+      "request_id": "req_eval8b086a2e34da",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT02",
+      "repetition": 2,
+      "request_id": "req_eval5e8be8c35e83",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT03",
+      "repetition": 2,
+      "request_id": "req_eval0e8941161afd",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT04",
+      "repetition": 2,
+      "request_id": "req_eval1269e81a0487",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT05",
+      "repetition": 2,
+      "request_id": "req_eval35eeb715e26e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT06",
+      "repetition": 2,
+      "request_id": "req_eval85cdd3f606f4",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT07",
+      "repetition": 2,
+      "request_id": "req_eval2b3d3588bfed",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT08",
+      "repetition": 2,
+      "request_id": "req_evale65d5bc4cd12",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT09",
+      "repetition": 2,
+      "request_id": "req_evalf8d6ba311567",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT10",
+      "repetition": 2,
+      "request_id": "req_evala3bb62378ae4",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC12",
+      "repetition": 2,
+      "request_id": "req_evale029aa118a66",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC13",
+      "repetition": 2,
+      "request_id": "req_eval8d51eeade54d",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "nothing left to try; the answer states what could not be confirmed",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:gap_declared"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC14",
+      "repetition": 2,
+      "request_id": "req_eval8cf9766ede70",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC16",
+      "repetition": 2,
+      "request_id": "req_eval2cef251434f3",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC17",
+      "repetition": 2,
+      "request_id": "req_eval71f5d54dd725",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 5,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC18",
+      "repetition": 2,
+      "request_id": "req_eval690e531b5cd6",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "NOEV",
+      "repetition": 2,
+      "request_id": "req_eval0cc26c788e23",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-CONSISTENT",
+      "repetition": 2,
+      "request_id": "req_evalaf93e6e5edaf",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-CONDITIONS",
+      "repetition": 2,
+      "request_id": "req_eval65043e5d748b",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-DIVERGENCE",
+      "repetition": 2,
+      "request_id": "req_eval2de834f6bad2",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "escalate",
+          "reason": "support asked for a human to take over",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:support_asked_for_human"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-INSUFFICIENT",
+      "repetition": 2,
+      "request_id": "req_eval71f9df3fcb62",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-ENABLEMENT-PENDING",
+      "repetition": 2,
+      "request_id": "req_evala6729e466090",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-SALE-CANCELLATION",
+      "repetition": 2,
+      "request_id": "req_eval1d0fabb0903d",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-CONTRACT-TERMINATION",
+      "repetition": 2,
+      "request_id": "req_eval39da64d0d827",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-CONSISTENT",
+      "repetition": 2,
+      "request_id": "req_eval504d9bed3b61",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-CONDITIONS",
+      "repetition": 2,
+      "request_id": "req_eval32ba317f4a7e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-DIVERGENCE",
+      "repetition": 2,
+      "request_id": "req_eval2232fe9ac6c1",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "escalate",
+          "reason": "support asked for a human to take over",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:support_asked_for_human"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-INSUFFICIENT",
+      "repetition": 2,
+      "request_id": "req_evalf787fcd0205b",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-ENABLEMENT-PENDING",
+      "repetition": 2,
+      "request_id": "req_eval3e73dd938c10",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-SALE-CANCELLATION",
+      "repetition": 2,
+      "request_id": "req_eval6b1340bbef8e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-WEB",
+      "repetition": 3,
+      "request_id": "req_evalf951afd9e637",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-PROCEDURE",
+      "repetition": 3,
+      "request_id": "req_eval53217412b426",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 11,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "REPLAN-TOOL-DOWN",
+      "repetition": 3,
+      "request_id": "req_evalbaf29900c99f",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": false
+    },
+    {
+      "id": "REPLAN-ACCOUNT",
+      "repetition": 3,
+      "request_id": "req_eval9e6d9da015c0",
+      "plan_hops": 2,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "support",
+          "reason": "A disponibilidade da antecipação depende do plano contratado, então é necessário consultar os dados da conta.",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "model"
+        },
+        {
+          "sequence": 7,
+          "next": "web",
+          "reason": "Official and account-specific results did not confirm whether anticipation of receivables is available on this plan; public web information may fill the gap.",
+          "review": "incomplete",
+          "hops": 2,
+          "origin": "model"
+        },
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 2,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX01",
+      "repetition": 3,
+      "request_id": "req_eval5525d2df471a",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX02",
+      "repetition": 3,
+      "request_id": "req_eval455408eb8b6d",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX03",
+      "repetition": 3,
+      "request_id": "req_evalbfa2c26a2f9a",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX04",
+      "repetition": 3,
+      "request_id": "req_eval028316373f76",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX05",
+      "repetition": 3,
+      "request_id": "req_eval130dbe9bf1ca",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "nothing left to try; the answer states what could not be confirmed",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:gap_declared"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX06",
+      "repetition": 3,
+      "request_id": "req_evala05292a39b8e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX07",
+      "repetition": 3,
+      "request_id": "req_eval3be413fe035a",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX08",
+      "repetition": 3,
+      "request_id": "req_eval96cbbc25608f",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX09",
+      "repetition": 3,
+      "request_id": "req_evald080bd12c2c2",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "EX10",
+      "repetition": 3,
+      "request_id": "req_eval8eec94d6d9b1",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT01",
+      "repetition": 3,
+      "request_id": "req_eval453c60e522b6",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT02",
+      "repetition": 3,
+      "request_id": "req_eval477cd50e0f4e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT03",
+      "repetition": 3,
+      "request_id": "req_evalc2e3f0dca95b",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT04",
+      "repetition": 3,
+      "request_id": "req_eval83b43b9d08ff",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT05",
+      "repetition": 3,
+      "request_id": "req_evalb32733737b56",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT06",
+      "repetition": 3,
+      "request_id": "req_eval399acbbe890d",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT07",
+      "repetition": 3,
+      "request_id": "req_eval984f378b3916",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT08",
+      "repetition": 3,
+      "request_id": "req_eval0d5318b25b42",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 7,
+          "next": "support",
+          "reason": "the Router's plan still has support",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:plan_pending"
+        },
+        {
+          "sequence": 10,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT09",
+      "repetition": 3,
+      "request_id": "req_evala4bea7dba0ab",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "PT10",
+      "repetition": 3,
+      "request_id": "req_eval6c5cd865ec52",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC12",
+      "repetition": 3,
+      "request_id": "req_evale5ef87ac3634",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC13",
+      "repetition": 3,
+      "request_id": "req_evaldbd222fbcbd9",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 9,
+          "next": "clarify",
+          "reason": "the merchant must choose among several options",
+          "review": "incomplete",
+          "hops": 0,
+          "origin": "rule:selection_pending"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC14",
+      "repetition": 3,
+      "request_id": "req_evald0dd5e94dd8e",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC16",
+      "repetition": 3,
+      "request_id": "req_eval060935ebaedc",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC17",
+      "repetition": 3,
+      "request_id": "req_eval4278970e7be1",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 5,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "UC18",
+      "repetition": 3,
+      "request_id": "req_eval2596aefccbe6",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "NOEV",
+      "repetition": 3,
+      "request_id": "req_eval1f3a9c639b37",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 4,
+          "next": "web",
+          "reason": "the official pages do not cover it; try the web",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:evidence_insufficient_web"
+        },
+        {
+          "sequence": 6,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 1,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-CONSISTENT",
+      "repetition": 3,
+      "request_id": "req_evala66b29e9834d",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-CONDITIONS",
+      "repetition": 3,
+      "request_id": "req_eval3e4c4b280777",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-DIVERGENCE",
+      "repetition": 3,
+      "request_id": "req_eval78a31e3394d1",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "escalate",
+          "reason": "support asked for a human to take over",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:support_asked_for_human"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PRICE-INSUFFICIENT",
+      "repetition": 3,
+      "request_id": "req_evalf11a2d817cee",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-ENABLEMENT-PENDING",
+      "repetition": 3,
+      "request_id": "req_evalcb6c984c18d8",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-SALE-CANCELLATION",
+      "repetition": 3,
+      "request_id": "req_eval03ea4c194d67",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-CONTRACT-TERMINATION",
+      "repetition": 3,
+      "request_id": "req_evala3c353497606",
+      "plan_hops": 0,
+      "decisions": [],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-CONSISTENT",
+      "repetition": 3,
+      "request_id": "req_evale9435be1f0ff",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-CONDITIONS",
+      "repetition": 3,
+      "request_id": "req_eval9cc468aa5cb7",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-DIVERGENCE",
+      "repetition": 3,
+      "request_id": "req_eval886d9738236f",
+      "plan_hops": 1,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "escalate",
+          "reason": "support asked for a human to take over",
+          "review": "incomplete",
+          "hops": 1,
+          "origin": "rule:support_asked_for_human"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-PRICE-INSUFFICIENT",
+      "repetition": 3,
+      "request_id": "req_evalc792ebef49a8",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-ENABLEMENT-PENDING",
+      "repetition": 3,
+      "request_id": "req_eval2747d7a8ca2e",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    },
+    {
+      "id": "V030-PT-SALE-CANCELLATION",
+      "repetition": 3,
+      "request_id": "req_eval5ca2d43b1858",
+      "plan_hops": 0,
+      "decisions": [
+        {
+          "sequence": 8,
+          "next": "finish",
+          "reason": "the results answer the question",
+          "review": "complete",
+          "hops": 0,
+          "origin": "rule:complete"
+        }
+      ],
+      "valid_outage_condition": null
+    }
+  ]
+}

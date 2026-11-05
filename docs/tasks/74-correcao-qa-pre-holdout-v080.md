@@ -1,0 +1,42 @@
+# Tarefa 74 — Correção e revalidação do QA pré-holdout da v0.8.0
+
+## Objetivo
+
+Corrigir falhas de resposta e da medição confirmadas na primeira fase do QA real e verificar o candidato corrigido com o saldo da campanha já montada.
+
+## Especificação relacionada
+
+[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), D7, D12, D16, D17, CA-49, CA-50 e CA-51. [Parecer do QA](../evidence/v080-d12-pre-holdout-r3.md).
+
+## Pré-condições
+
+O candidato `f8daab03` tem 132 respostas gravadas em `v080-all-r3.json`. Os 132 IDs existem no banco local de traces. CA-51 ficou em 9/13, 11/13 e 10/13. O ledger de campanha tem US$0,71716239 restantes e o primário tem US$0,75495815 restantes, com zero reservas. O holdout da v0.8.0 permanece fechado.
+
+## Arquivos prováveis
+
+Prompts, testes focados, rótulos de desenvolvimento em `tests/scenarios/business_journeys.jsonl`, coleta da evidência do juiz e evidência de QA. Mudar somente os arquivos exigidos pela reprodução, sem editar o conjunto lacrado, os casos de holdout legado, os contratos ou a guarda de orçamento.
+
+## Passos
+
+1. Conferir cada divergência de conteúdo com a evidência do caso. Aceitar equivalências semânticas específicas apenas quando preservarem a proposição esperada e as recusas de contradições. Manter controles de valores, fontes, ações, rota, status e afirmações proibidas.
+2. Reproduzir as falhas de produto. `REPLAN-WEB` respondeu afirmativamente sobre outros modelos sem confirmar o modelo perguntado. `REPLAN-PROCEDURE` omitiu o procedimento oficial recuperado pelo app. `FU01` resolveu o caso por confirmação do lojista, com rota inicial diferente de `acknowledgement`. Tratar sinais de ausência de evidência e autorização recusada pelo mesmo cotejo, sem editar os rótulos de holdout.
+3. Incluir no input do juiz o protocolo verificável que a escalada registrada na trace produziu. Preservar os limites da evidência, a máscara e a rubrica. Reter o julgamento anterior no relatório original.
+4. Fixar e revisar o candidato corrigido. Verificar offline os casos corrigidos, os controles negativos e a matriz de regressão. Separar mudanças que exigem nova inferência das respostas arquivadas que podem ser reavaliadas sem custo.
+5. Recuperar `detail.plan_hops` e os passos `replan` pelo `request_id` em `traces.sqlite3` do runtime de QA. Executar `REPLAN-TOOL-DOWN` em subprocesso com serviço de preços indisponível e verificar a falha esperada e o protocolo de encaminhamento. Para os demais casos, provar a saúde do mock antes do reteste.
+6. Projetar o recorte afetado e as fases remanescentes antes de chamadas pagas. Preservar o ledger de campanha e a evidência do candidato anterior. Para reaproveitar respostas antigas, demonstrar que as mudanças não atingem a execução dos casos respectivos e identificar o SHA de cada resposta.
+7. Prosseguir às repetições do juiz e ao smoke somente após o pré-holdout apto. O conjunto lacrado permanece o último passo técnico.
+
+## Critérios de conclusão
+
+- As quatro jornadas de replanejamento demonstram o comportamento previsto, origem da decisão e no máximo três saltos.
+- As 13 jornadas de negócio são medidas pela mesma rubrica em três repetições e atingem 12/13 ou mais no critério de aceite.
+- O roteiro separa as fases de variação do agente e do juiz e conserva o custo e a evidência de cada tentativa.
+- O candidato, os hashes, os casos reutilizados e os reexecutados são rastreáveis. Os dois ledgers batem e o cap continua dentro do limite aprovado.
+
+## Validação
+
+[Triagem do QA](../evidence/v080-qa-triagem-r4.md) e [traces recuperadas](../evidence/v080-d12-traces-recuperadas-r3.md). A validação do candidato corrigido está pendente. Validações locais não chamam APIs pagas. O QA pago usa a guarda existente e a mesma campanha.
+
+## Status
+
+Em andamento. Triagem do QA e reprodução local.

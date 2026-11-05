@@ -8,6 +8,7 @@ reads the data through the registry observer while a case runs (`record_tool_res
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import lru_cache
@@ -19,6 +20,7 @@ from merchant_assistant.tools.registry import ToolOutcome
 
 EVIDENCE_LIMIT_CHARS = 6000
 CUT_MARK = " [...cut]"
+HANDOFF_PROTOCOL = re.compile(r"HO-\d{8}-[A-F0-9]{6}\Z")
 KNOWLEDGE_STEPS = ("knowledge", "web")  # the web-search node of the replanning writes its own step, named `web`
 WEB_NOTE = (
     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the "
@@ -58,6 +60,25 @@ def tool_items(outcomes: list[ToolOutcome]) -> list[dict]:
         text = json.dumps(body, ensure_ascii=False, sort_keys=True, default=str)
         items.append({"kind": "tool_result", "label": outcome.name, "text": _masked(text)})
     return items
+
+
+def handoff_protocol_items(status: str, trace: dict) -> list[dict]:
+    """Expose only a verified protocol from a successful escalation step for a handoff."""
+    if status != "handoff":
+        return []
+
+    protocols: set[str] = set()
+    for step in trace.get("steps", []):
+        if step.get("step") != "escalation" or step.get("status") != "ok":
+            continue
+        protocol = step.get("detail", {}).get("protocol")
+        if isinstance(protocol, str) and HANDOFF_PROTOCOL.fullmatch(protocol):
+            protocols.add(protocol)
+    if len(protocols) != 1:
+        return []
+
+    (protocol,) = protocols
+    return [{"kind": "trace", "label": "escalation protocol", "text": _masked(protocol)}]
 
 
 def passage_items(trace: dict, texts: dict[str, str]) -> tuple[list[dict], list[str]]:
@@ -125,7 +146,7 @@ def judge_input(
 ) -> tuple[dict, dict]:
     """The only data the model judge receives, and the truncation record that is stored beside it."""
     passages, notes = passage_items(trace, texts)
-    kept, truncation = fit_items([*tool_items(outcomes), *passages])
+    kept, truncation = fit_items([*tool_items(outcomes), *handoff_protocol_items(body["status"], trace), *passages])
     data = {
         "merchant_message": check_input(message).masked,
         "status": body["status"],
