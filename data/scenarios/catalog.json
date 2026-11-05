@@ -182,14 +182,19 @@
      "status \"solicitado\"",
      "está com status solicitado",
      "cancelamento solicitado",
-     "solicitação foi registrada"
+     "solicitação foi registrada",
+     "cancelamento da venda consta como solicitado",
+     "cancelamento da venda de ontem consta como solicitado"
     ]
    ],
    "expect_sources": true,
    "must_not_include": [
     "cancelamento foi concluído",
     "cancelamento finalizado",
-    "já foi processado"
+    "já foi processado",
+    "cancelamento da venda consta como não solicitado",
+    "cancelamento da venda não consta como solicitado",
+    "cancelamento da venda não foi solicitado"
    ]
   },
   {
