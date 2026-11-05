@@ -1,7 +1,8 @@
 """Provider-agnostic model interface used by the agents.
 
 Every paid call goes through a `Meter` (per request): it reserves budget and checks limits before the call and
-settles the real usage after it. Implementations: OpenAI (real) and Scripted (deterministic tests).
+settles the real usage after it. Implementations: OpenAI (real), Anthropic (real, judge only) and Scripted
+(deterministic tests).
 """
 
 from __future__ import annotations
@@ -24,14 +25,16 @@ class LLMError(Exception):
 class Usage:
     input_tokens: int = 0
     output_tokens: int = 0
-    cached_tokens: int = 0
+    cached_tokens: int = 0  # part of input_tokens read from the provider's cache
     web_search_calls: int = 0
+    cache_creation_tokens: int = 0  # part of input_tokens written to the cache (Anthropic prices it apart)
 
     def add(self, other: Usage) -> None:
         self.input_tokens += other.input_tokens
         self.output_tokens += other.output_tokens
         self.cached_tokens += other.cached_tokens
         self.web_search_calls += other.web_search_calls
+        self.cache_creation_tokens += other.cache_creation_tokens
 
 
 @dataclass

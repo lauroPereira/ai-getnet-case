@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
     typesafe_api_key: SecretStr | None = None
     deepseek_api_key: SecretStr | None = None
+    anthropic_api_key: SecretStr | None = None  # v0.9.0: only the campaign judge (JUDGE_PROVIDER=anthropic)
     api_demo_customer_id: str = "cliente1988"
     # v0.7.0 identity (ADR 0017, spec v0.7.0 D1, D2, D5, D12): JWT issued by the assistant.
     jwt_issuer: str = "http://127.0.0.1:8000"

@@ -30,7 +30,10 @@ MAX_OUTPUT_TOKENS = 400  # four reasons of at most 25 words and the scores take 
 CAMPAIGN_PRINCIPAL = "cli:eval"
 MAX_ERROR_CHARS = 160  # a provider error is stored as its class and a short masked message, never as the raw body
 AGENT_PROVIDER = "openai"  # the system under evaluation is built with the OpenAI client (main.build_orchestrator)
-JUDGE_PROVIDERS = ("openai", "deepseek")  # providers that can return the structured judgement
+JUDGE_PROVIDERS = ("openai", "deepseek", "anthropic")  # providers that can return the structured judgement
+# v0.9.0 D1: a Claude judge runs with its default (adaptive) thinking, which counts against max_tokens; 400 would cut
+# the judgement short. The other judges keep 400.
+MAX_OUTPUT_TOKENS_BY_PROVIDER = {"anthropic": 2000}
 
 
 class JudgeRefused(RuntimeError):
@@ -75,12 +78,16 @@ def short_error(exc: Exception) -> str:
     return f"{type(exc).__name__}: {message}" if message else type(exc).__name__
 
 
-def judge_spec_v3(prompt: Prompt, data: dict) -> CallSpec:
+def max_output_tokens_for(provider: str) -> int:
+    return MAX_OUTPUT_TOKENS_BY_PROVIDER.get(provider, MAX_OUTPUT_TOKENS)
+
+
+def judge_spec_v3(prompt: Prompt, data: dict, max_output_tokens: int = MAX_OUTPUT_TOKENS) -> CallSpec:
     return CallSpec(
         agent="judge",
         instructions=prompt.render(),
         effort="none",
-        max_output_tokens=MAX_OUTPUT_TOKENS,
+        max_output_tokens=max_output_tokens,
         input=json.dumps(data, ensure_ascii=False),
     )
 
@@ -100,8 +107,12 @@ class Judge:
     prompt: Prompt
     meter: Meter
     independence: str
+    max_output_tokens: int = MAX_OUTPUT_TOKENS
 
     def config(self) -> dict:
+        parameters: dict = {"max_output_tokens": self.max_output_tokens, "effort": "none"}
+        if self.provider == "anthropic":  # D3: thinking and effort are left to the model's defaults
+            parameters = {"max_output_tokens": self.max_output_tokens, "effort": "default", "thinking": "default"}
         return {
             "provider": self.provider,
             "model": self.model,
@@ -109,7 +120,7 @@ class Judge:
             "rubric_version": self.prompt.version,
             "prompt": self.prompt.ref,
             "independence": self.independence,
-            "parameters": {"max_output_tokens": MAX_OUTPUT_TOKENS, "effort": "none"},
+            "parameters": parameters,
         }
 
     def evaluate(self, data: dict, *, repetition: int = 1) -> dict:
@@ -122,7 +133,8 @@ class Judge:
         }
         spent_before = getattr(self.meter, "cost_usd", 0.0)
         try:
-            result = self.llm.parse(judge_spec_v3(self.prompt, data), JudgeScoreV3, self.meter)
+            spec = judge_spec_v3(self.prompt, data, self.max_output_tokens)
+            result = self.llm.parse(spec, JudgeScoreV3, self.meter)
         except Exception as exc:  # provider, validation or budget failure: recorded, never raised
             return record | {
                 "state": "failed",
@@ -163,12 +175,12 @@ def check_independence(agent: tuple[str, str], judge: tuple[str, str]) -> str:
 def _has_key(settings, provider: str) -> bool:
     if provider == "openai":
         return settings.has_openai
-    key = settings.deepseek_api_key
+    key = settings.anthropic_api_key if provider == "anthropic" else settings.deepseek_api_key
     return bool(key and key.get_secret_value())
 
 
 def default_factory(settings) -> Callable[[str, str], LLM]:
-    """The model clients the project already has (OpenAI and, for the model profiles, DeepSeek)."""
+    """The model clients the project already has (OpenAI, DeepSeek and, for the judge only, Anthropic)."""
     from merchant_assistant.main import model_factory
 
     return model_factory(settings)
@@ -233,7 +245,15 @@ def resolve_judge(
         raise JudgeRefused(
             f"The judge {setup.provider}/{setup.model} is not available: {exc}. No call was made."
         ) from exc
-    return Judge(llm, setup.provider, setup.model, setup.prompt, meter or NullMeter(), setup.independence)
+    return Judge(
+        llm,
+        setup.provider,
+        setup.model,
+        setup.prompt,
+        meter or NullMeter(),
+        setup.independence,
+        max_output_tokens_for(setup.provider),
+    )
 
 
 # --- persistence ----------------------------------------------------------------------------------------------------

@@ -40,6 +40,15 @@ def deepseek_client(settings: Settings):
     )
 
 
+def anthropic_client(settings: Settings):
+    from anthropic import Anthropic
+
+    key = settings.anthropic_api_key
+    if not (key and key.get_secret_value()):
+        raise RuntimeError("ANTHROPIC_API_KEY is not configured")
+    return Anthropic(api_key=key.get_secret_value(), max_retries=0)
+
+
 def model_factory(settings: Settings):
     """Builds the model client of a provider and model pair: profiles, on-demand evaluator and campaign judge."""
     from merchant_assistant.llm.jev import JevRouter
@@ -50,6 +59,10 @@ def model_factory(settings: Settings):
             return OpenAILLM(openai_client(settings), model)
         if provider == "deepseek":
             return OpenAILLM(deepseek_client(settings), model)
+        if provider == "anthropic":  # v0.9.0: the campaign judge only (parse; no tools, no web search)
+            from merchant_assistant.llm.anthropic_llm import AnthropicLLM
+
+            return AnthropicLLM(anthropic_client(settings), model)
         if provider == "typesafe" and model == "jev-1.14.0":
             if not settings.typesafe_api_key:
                 raise RuntimeError("TYPESAFE_API_KEY is not configured")
