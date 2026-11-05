@@ -1,0 +1,197 @@
+{
+ "source": ".pytest_cache\\qa-v080-r1\\qa-r5-results\\v080-r5-658c70ad-tool-down.json",
+ "cases": [
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 1,
+   "request_id": "req_eval232ee3607615",
+   "trace": {
+    "at": "2026-11-05T07:08:23+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "error",
+      "error": "TIMEOUT"
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 2,
+   "request_id": "req_evalda8dcd66c2b2",
+   "trace": {
+    "at": "2026-11-05T07:08:36+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "error",
+      "error": "TIMEOUT"
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 3,
+   "request_id": "req_eval2579e57de617",
+   "trace": {
+    "at": "2026-11-05T07:08:49+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "error",
+      "error": "TIMEOUT"
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  }
+ ]
+}
