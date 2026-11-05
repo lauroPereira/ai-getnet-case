@@ -147,7 +147,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `AGENT_MODEL` | `gpt-6-luna` | Default model for every agent; the `/v1` model profiles can set another model per agent |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
-| `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers; keep this pointed at the project budget volume when `RUNTIME_DIR` is isolated for a QA run |
+| `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers for the `eval` campaigns; keep it pointed at the project budget volume when `RUNTIME_DIR` is isolated for a QA run. The API and `bootstrap` write their ledger under `RUNTIME_DIR` (so an isolated runtime starts a ledger of its own, capped by `BUDGET_LIMIT_USD`) |
 | `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
 | `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger). Accepted range 0–5.00 (absolute project ceiling); the first limit recorded beside a ledger (`budget.sqlite3.limit`, native 1.00 for a ledger that predates it) can never be raised by a later value |
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |

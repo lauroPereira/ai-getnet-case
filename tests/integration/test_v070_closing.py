@@ -1,6 +1,6 @@
 """v0.7.0 task 68: the release path is ready for the QA. The scripted evaluation runs the 40 labeled cases and the 4
 follow-up conversations through the CLI in process, the `v070-qa` campaign cap mounts once at USD 0.20 combined with
-the primary ledger, the package is 0.8.0 and the compose file declares the four services. No network, no cost."""
+the primary ledger, the package is 0.9.0 and the compose file declares the four services. No network, no cost."""
 
 from __future__ import annotations
 
@@ -101,7 +101,7 @@ def test_a_request_runs_through_the_campaign_guard_and_both_ledgers_record_it(of
 
 def test_package_version_is_0_8_0():
     project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert project["version"] == __version__ == "0.8.0"
+    assert project["version"] == __version__ == "0.9.0"
 
 
 def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contract():
