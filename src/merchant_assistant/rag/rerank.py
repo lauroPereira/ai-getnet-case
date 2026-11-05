@@ -1,7 +1,8 @@
 """Reranker (v0.9.0, task 81, D7): the agent model reorders the first 12 results of the hybrid fusion.
 
 Prompt `rerank.v1`, structured output with the order of the candidate labels, a small output cap, metered like any
-other model call. Any failure keeps the fusion order and is written to the trace notes; it never fails the search."""
+other model call. Any failure is written to the trace notes and never fails the search: the index then answers
+exactly as with RERANK=off."""
 
 from __future__ import annotations
 
@@ -63,18 +64,24 @@ class Reranker:
 
     def rerank(self, query: str, hits: list[Hit], meter: Meter, notes: dict | None = None) -> list[Hit]:
         """`hits` reordered by the model; on failure the same list, and `notes["rerank"]` says why."""
+        reordered = self.reorder(query, hits, meter, notes)
+        return list(hits) if reordered is None else reordered
+
+    def reorder(self, query: str, hits: list[Hit], meter: Meter, notes: dict | None = None) -> list[Hit] | None:
+        """`hits` reordered by the model, or None when it failed or was skipped (`notes["rerank"]` says why). The
+        index uses None to answer exactly as without the reranker (review P2-1 of task 81)."""
         note: dict = {"prompt": self.prompt.ref, "candidates": len(hits)}
         if notes is not None:
             notes["rerank"] = note
         if len(hits) < 2:
             note["status"] = "skipped"
-            return list(hits)
+            return None
         try:
             answer = self.llm.parse(self.spec(query, hits), RerankOrder, meter).value
             positions = self._positions(answer.order, len(hits))
         except RECOVERABLE as exc:
             note.update(status="failed", error=f"{type(exc).__name__}: {exc}"[:300])
-            return list(hits)
+            return None
         note.update(status="ok", order=[p + 1 for p in positions])  # fusion ranks in the new order
         return [hits[p] for p in positions]
 

@@ -5,6 +5,7 @@ tests: they never read the retrieval holdout."""
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -167,13 +168,13 @@ class Reverse:
     def __init__(self) -> None:
         self.seen: list[str] = []
 
-    def rerank(self, query, hits, meter, notes=None):
+    def reorder(self, query, hits, meter, notes=None):
         self.seen = [h.chunk_id for h in hits]
         return list(reversed(hits))
 
 
-class Failing(Reverse):
-    def rerank(self, query, hits, meter, notes=None):
+class Identity(Reverse):
+    def reorder(self, query, hits, meter, notes=None):
         self.seen = [h.chunk_id for h in hits]
         return list(hits)
 
@@ -186,10 +187,77 @@ def test_search_reranks_the_first_12_of_the_fusion(index):
     assert [h.chunk_id for h in result] == list(reversed(fused12))[:6]
 
 
-def test_search_with_a_reranker_that_keeps_the_order_returns_the_fusion_top_k(index):
+def test_search_with_a_reranker_that_keeps_the_order_returns_the_top_k_of_the_fusion_at_12(index):
     fused12 = [h.chunk_id for h in index.search(QUESTION, k=12, mode="hybrid")]
-    result = index.search(QUESTION, k=6, mode="hybrid", reranker=Failing(), meter=NullMeter())
+    result = index.search(QUESTION, k=6, mode="hybrid", reranker=Identity(), meter=NullMeter())
     assert [h.chunk_id for h in result] == fused12[:6]
+
+
+# --- round 2 (review P2-1): a reranker failure answers exactly as RERANK=off -------------------------------------
+
+
+EXTRA_QUESTIONS = [
+    "Como cancelar uma venda no débito?",
+    "Qual o prazo para receber uma venda no Pix?",
+    "How much is the monthly rent of the Get Mini?",
+    "Como trocar a bobina da maquininha?",
+    "How do I change the bank account where I receive my sales?",
+    "O que é antecipação de recebíveis?",
+    "Does the Get Smart accept contactless payments?",
+    "Quanto custa a Get Clássica por mês?",
+]
+
+
+def development_questions() -> list[str]:
+    """`dev` (retrieval.jsonl), the messages of the synthetic scenarios and a few extra synthetic questions, without
+    repeats; never the retrieval holdout."""
+    from merchant_assistant.evaluation.retrieval import load_cases
+
+    scenarios = PROJECT_ROOT / "tests" / "scenarios"
+    questions = [c.question for c in load_cases(scenarios / "retrieval.jsonl")]
+    for name in ("challenge_examples", "core_cases", "business_journeys", "replan", "followup"):
+        for line in (scenarios / f"{name}.jsonl").read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                row = json.loads(line)
+                questions += [t["message"] for t in row["turns"]] if "turns" in row else [row["message"]]
+    return list(dict.fromkeys(questions + EXTRA_QUESTIONS))
+
+
+def shown(hits_: list[Hit]) -> list[tuple]:
+    return [(h.chunk_id, h.score, h.origin) for h in hits_]
+
+
+def test_development_questions_are_the_dev_set_plus_synthetic_ones():
+    questions = development_questions()
+    assert len(questions) >= 58 and len(set(questions)) == len(questions)
+
+
+@pytest.mark.parametrize(
+    ("kinds", "min_score"), [(None, 0.0), (["public_official"], 0.3), (["public_official", "simulated_internal"], 0.3)]
+)
+def test_a_failing_reranker_answers_exactly_as_rerank_off_on_every_question(index, kinds, min_score):
+    failing = Reranker(ScriptedLLM(lambda call: LLMError("rerank provider down")), PROMPT)
+    for question in development_questions():
+        plain = index.search(question, k=6, mode="hybrid", source_kinds=kinds, min_score=min_score)
+        notes: dict = {}
+        failed = index.search(
+            question, k=6, mode="hybrid", source_kinds=kinds, min_score=min_score,
+            reranker=failing, meter=NullMeter(), notes=notes,
+        )
+        assert shown(failed) == shown(plain), question
+        assert notes["rerank"]["status"] in {"failed", "skipped"}, question
+
+
+def test_an_identity_reranker_returns_the_first_k_of_the_fusion_at_12_on_every_question(index):
+    """With the reranker the candidates come from the fusion of width 12 (depth 36), not 6 (depth 18): the two may
+    differ in the lower positions, which the report states (review P2-1)."""
+    differ = 0
+    for question in development_questions():
+        wide = index.search(question, k=12, mode="hybrid", min_score=0.3)
+        kept = index.search(question, k=6, mode="hybrid", min_score=0.3, reranker=Identity(), meter=NullMeter())
+        assert shown(kept) == shown(wide[:6]), question
+        differ += shown(kept) != shown(index.search(question, k=6, mode="hybrid", min_score=0.3))
+    assert differ >= 1  # the depth effect is real on this corpus, so the fallback above is not vacuous
 
 
 def test_search_with_the_programmed_reranker_writes_the_trace_note(index):
