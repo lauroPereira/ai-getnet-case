@@ -1,6 +1,7 @@
 """Task 80 (v0.9.0, D7): BM25 + RRF hybrid retrieval, persisted by corpus hash; dense stays the default."""
 
 import json
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -196,3 +197,169 @@ def test_eval_retrieval_command_line_takes_mode(tmp_path, capsys, monkeypatch):
     monkeypatch.setattr(cli, "get_settings", lambda: settings)
     assert cli.main(["eval-retrieval", "--fake", "--mode", "hybrid"]) == 0
     assert json.loads(capsys.readouterr().out)["mode"] == "hybrid"
+
+
+# --- round 2 (review P2-1 to P2-3) ------------------------------------------------------------------------------
+
+
+def test_rrf_uses_k_60_over_ranks_starting_at_1():
+    fused = rrf([hit("a"), hit("b")], [(9.0, {"chunk_id": "b"})], k=2)
+    assert [h.score for h in fused] == pytest.approx([1 / 62 + 1 / 61, 1 / 61])  # fixed numbers, not RRF_K
+    assert RRF_K == 60
+
+
+class _Lexical:
+    def __init__(self, ranking: list[str], calls: list) -> None:
+        self.ranking, self.calls = ranking, calls
+
+    def search(self, query, *, k, source_kinds=None):
+        self.calls.append(("bm25", k))
+        return [(1.0, {"chunk_id": cid}) for cid in self.ranking[:k]]
+
+
+def test_hybrid_fuses_the_top_3k_of_each_list(monkeypatch):
+    """`e` is 5th in the dense list and 3rd in the BM25 list: with k=2 it only wins through both 3k=6 lists."""
+    idx = KnowledgeIndex(open_qdrant(":memory:", PROJECT_ROOT), "depth", HashEmbedder())
+    calls: list = []
+
+    def dense(query, *, k, source_kinds, min_score):
+        calls.append(("dense", k))
+        return [hit(cid) for cid in ["a", "b", "c", "d", "e", "f", "g"][:k]]
+
+    monkeypatch.setattr(idx, "_dense", dense)
+    monkeypatch.setattr(idx, "bm25_index", lambda: _Lexical(["x", "y", "e", "z"], calls))
+    fused = idx.search("q", k=2, mode="hybrid")
+    assert sorted(calls) == [("bm25", 6), ("dense", 6)]
+    assert [(h.chunk_id, h.origin) for h in fused] == [("e", "both"), ("a", "dense")]
+    assert fused[0].score == pytest.approx(1 / 65 + 1 / 63)
+
+
+def test_min_score_cuts_the_dense_list_only(tmp_path):
+    """Rule for ADR 0020 and D7: the cosine threshold does not apply to BM25 or to the fused score."""
+    idx = KnowledgeIndex(open_qdrant(":memory:", tmp_path), "ms", HashEmbedder())
+    idx.rebuild([chunk("d1#0", "Taxa MDR do débito"), chunk("d2#0", "Erro E-1023 na venda")])
+    assert idx.search("E-1023", k=2, min_score=0.99) == []  # dense: nothing above the threshold
+    strict = idx.search("E-1023", k=2, min_score=0.99, mode="hybrid")
+    assert [(h.chunk_id, h.origin) for h in strict] == [("d2#0", "bm25")]
+    assert strict[0].score == pytest.approx(1 / 61)
+    loose = idx.search("E-1023", k=2, min_score=0.0, mode="hybrid")
+    assert {h.origin for h in loose} & {"dense", "both"}  # without the threshold the dense list takes part
+
+
+def _recollected(cid: str, url: str, kind: str) -> Chunk:
+    return Chunk(cid, cid.split("#")[0], 0, "Erro E-1023 na venda", cid, url, kind, {"collected_at": url})
+
+
+def test_persisted_bm25_takes_payloads_from_the_current_collection(tmp_path):
+    """Same ids and texts, other metadata (recollected snapshot): the file is reused, its metadata is not."""
+    client = open_qdrant(":memory:", tmp_path)
+    v1 = KnowledgeIndex(client, "v1", HashEmbedder(), bm25_dir=tmp_path)
+    v1.rebuild([_recollected("p#0", "https://old.example", "public_official")])
+    assert v1.search("E-1023", k=1, mode="hybrid")[0].payload["url"] == "https://old.example"
+    v2 = KnowledgeIndex(client, "v2", HashEmbedder(), bm25_dir=tmp_path)
+    v2.rebuild([_recollected("p#0", "https://new.example", "simulated_internal")])
+    assert len(list(tmp_path.glob("bm25-*.pkl"))) == 1  # same corpus hash: one file for both versions
+    assert v2.search("E-1023", mode="hybrid", source_kinds=["public_official"], min_score=0.99) == []
+    current = v2.search("E-1023", mode="hybrid", source_kinds=["simulated_internal"], min_score=0.99)
+    assert [(h.origin, h.payload["url"], h.payload["source_kind"]) for h in current] == [
+        ("bm25", "https://new.example", "simulated_internal")
+    ]
+
+
+def test_the_bm25_file_keeps_ids_and_statistics_only(tmp_path):
+    import pickle
+
+    records = [_recollected("p#0", "https://old.example", "public_official").payload()]
+    index, _ = bm25.load_or_build(records, tmp_path)
+    with bm25.bm25_path(tmp_path, index.corpus_hash).open("rb") as handle:
+        state = pickle.load(handle)
+    assert set(state) == {"format", "corpus_hash", "chunk_ids", "bm25"} and state["chunk_ids"] == ["p#0"]
+    assert b"old.example" not in bm25.bm25_path(tmp_path, index.corpus_hash).read_bytes()
+
+
+def test_a_round_1_file_with_payloads_is_rebuilt(tmp_path):
+    import pickle
+
+    records = [_recollected("p#0", "https://new.example", "public_official").payload()]
+    path = bm25.bm25_path(tmp_path, bm25.corpus_hash(records))
+    stale = {"corpus_hash": bm25.corpus_hash(records), "payloads": [{**records[0], "url": "https://old.example"}]}
+    path.write_bytes(pickle.dumps(stale))
+    index, built = bm25.load_or_build(records, tmp_path)
+    assert built and index.payloads[0]["url"] == "https://new.example"
+    assert not bm25.load_or_build(records, tmp_path)[1]  # rewritten in the current format
+
+
+def _big_corpus(n: int = 3000) -> list[dict]:
+    return [
+        chunk(f"d{i}#0", f"Documento {i} sobre taxa MDR, erro E-{1000 + i} e antecipação").payload() for i in range(n)
+    ]
+
+
+def _together(target, n: int = 4) -> tuple[list, list]:
+    import threading
+
+    barrier, results, errors = threading.Barrier(n), [], []
+
+    def run():
+        barrier.wait()
+        try:
+            results.append(target())
+        except Exception as exc:  # collected for the assertion
+            errors.append(exc)
+
+    threads = [threading.Thread(target=run) for _ in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=120)
+    return results, errors
+
+
+def test_concurrent_first_builds_of_one_corpus_build_once_and_write_one_file(tmp_path):
+    records = _big_corpus()
+    results, errors = _together(lambda: bm25.load_or_build(records, tmp_path))
+    assert errors == [] and len(results) == 4
+    assert sum(built for _, built in results) == 1  # the others wait and load the file
+    assert len({index.corpus_hash for index, _ in results}) == 1
+    assert [p.name for p in tmp_path.iterdir()] == [f"bm25-{results[0][0].corpus_hash}.pkl"]  # no .tmp left
+
+
+def test_concurrent_writers_use_their_own_temporary_files(tmp_path):
+    """Builders in different processes are not serialized by the in-process lock: their writes must not collide."""
+    index = bm25.Bm25Index.build(_big_corpus())
+    path = bm25.bm25_path(tmp_path, index.corpus_hash)
+    _, errors = _together(lambda: bm25._write(index, path))
+    assert errors == []
+    assert [p.name for p in tmp_path.iterdir()] == [path.name]
+    assert bm25.load_or_build(_big_corpus(), tmp_path)[1] is False
+
+
+def test_a_failed_write_still_answers_from_memory(tmp_path, monkeypatch):
+    def locked(src, dst):
+        raise PermissionError(32, "The process cannot access the file")
+
+    monkeypatch.setattr(bm25.os, "replace", locked)
+    records = [chunk("d2#0", "Erro E-1023 na venda").payload()]
+    index, built = bm25.load_or_build(records, tmp_path)
+    assert built and [p["chunk_id"] for _, p in index.search("E-1023", k=1)] == ["d2#0"]
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("persisted", [True, False])
+def test_concurrent_first_hybrid_searches_build_the_collection_bm25_once(tmp_path, monkeypatch, persisted):
+    """The per-collection lock: also without a BM25 directory (evaluation, tests) one search builds, the rest wait."""
+    bm25_dir = tmp_path if persisted else None
+    idx = KnowledgeIndex(open_qdrant(":memory:", tmp_path), "conc", HashEmbedder(), bm25_dir=bm25_dir)
+    idx.rebuild([chunk("d1#0", "Taxa MDR do débito"), chunk("d2#0", "Erro E-1023 na venda")])
+    builds: list = []
+    original = bm25.Bm25Index.build
+
+    def counted(records):
+        builds.append(len(records))
+        time.sleep(0.2)  # a slow build: the other searches arrive while it runs
+        return original(records)
+
+    monkeypatch.setattr(bm25.Bm25Index, "build", staticmethod(counted))
+    results, errors = _together(lambda: idx.search("E-1023", k=1, mode="hybrid")[0].chunk_id)
+    assert errors == [] and results == ["d2#0"] * 4
+    assert builds == [2]

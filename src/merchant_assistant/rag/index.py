@@ -23,6 +23,7 @@ _CLIENT_LOCKS_GUARD = threading.Lock()
 # v0.9.0 (task 80): BM25 built per (client, collection). Weak keys: a closed client does not keep, or lend, its cache.
 _BM25_CACHE: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 _BM25_GUARD = threading.Lock()
+_BM25_BUILD_LOCKS: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()  # one builder per (client, collection)
 
 RETRIEVAL_MODES = ("dense", "hybrid")
 RRF_K = 60  # reciprocal rank fusion constant (plan, technical decision 17)
@@ -183,24 +184,32 @@ class KnowledgeIndex:
         return manifest
 
     def bm25_index(self) -> bm25.Bm25Index:
-        """The BM25 over this collection's stored chunks, loaded from `bm25_dir` or built once per client."""
+        """The BM25 over this collection's stored chunks, loaded from `bm25_dir` or built once per client. The
+        payloads come from this read of the collection, not from the file; concurrent first searches wait for one
+        builder instead of each building (and writing) its own."""
         with _BM25_GUARD:
             cached = _BM25_CACHE.get(self.client, {}).get(self.collection)
-        if cached is not None:
-            return cached
-        records: list[dict] = []
-        offset = None
-        with self._lock:
-            while True:
-                page, offset = self.client.scroll(
-                    self.collection, limit=256, offset=offset, with_payload=True, with_vectors=False
-                )
-                records += [dict(record.payload or {}) for record in page]
-                if offset is None:
-                    break
-        index, _ = bm25.load_or_build(records, self.bm25_dir)
-        with _BM25_GUARD:
-            _BM25_CACHE.setdefault(self.client, {})[self.collection] = index
+            if cached is not None:
+                return cached
+            build_lock = _BM25_BUILD_LOCKS.setdefault(self.client, {}).setdefault(self.collection, threading.Lock())
+        with build_lock:
+            with _BM25_GUARD:
+                cached = _BM25_CACHE.get(self.client, {}).get(self.collection)
+            if cached is not None:
+                return cached
+            records: list[dict] = []
+            offset = None
+            with self._lock:
+                while True:
+                    page, offset = self.client.scroll(
+                        self.collection, limit=256, offset=offset, with_payload=True, with_vectors=False
+                    )
+                    records += [dict(record.payload or {}) for record in page]
+                    if offset is None:
+                        break
+            index, _ = bm25.load_or_build(records, self.bm25_dir)
+            with _BM25_GUARD:
+                _BM25_CACHE.setdefault(self.client, {})[self.collection] = index
         return index
 
     def search(
