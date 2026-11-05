@@ -114,3 +114,108 @@ Nenhum efeito no repositório. A sonda do lacre usou uma chave fictícia numa c�
 ## Próxima ação
 
 O Developer corrige P2-1, P2-2 e P2-3 numa rodada 2 da tarefa 81. Depois, o Reviewer re-verifica em contexto novo `rag/index.py`, `evaluation/retrieval.py`, `cli.py`, `agents/knowledge.py` e os testes, e repete a sonda de profundidade e os mutantes K2 e C2. O QA só mede o holdout depois disso. Os P3 vão para a tarefa 82 e o ADR 0020. Os rótulos do P3-12 não podem ser corrigidos sem relacrar o holdout. Como nenhum modo foi medido nele, relacrar agora ainda é possível, mas a decisão é do Supervisor. Não há outra decisão humana pendente.
+
+---
+
+# Passagem de papel: revisão da tarefa 81, rodada 2
+
+- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
+- **Objetivo e critérios:** confirmar as correções de P2-1, P2-2 e P2-3 e o relacre do holdout segundo as decisões do Supervisor. Com `RERANK=off`, vale a fusão da tarefa 80 (profundidade 3k). Com `on`, o modelo reordena os 12 primeiros de uma fusão a 36 e o resultado é cortado em k. Qualquer falha ou pulo do reranker devolve o resultado idêntico ao `off`. O Markdown traz a coluna de falhas, e a linha D7 diz "reranker com N falhas em M consultas". Os testes devem matar K2 e C2. `--fake` recusa o holdout real. O relacre acontece uma vez, antes de qualquer medição, e corrige só os sete rótulos do P3-12. Reli a tarefa 81 só até "## Validação", a spec (D7 e D8) e o parecer da rodada 1.
+- **Escopo:** `1d05f7d` (relacre), `e0dbbf2` (`rag/index.py`, `rag/rerank.py`, `test_rerank.py`) e `aa68cff` (`cli.py`, `evaluation/retrieval.py`, `test_v090_rerank.py`, `test_retrieval_metrics.py`). Os merges `e31587f` e `54a5fcb`, de README e evidência do juiz, ficam fora.
+- **Estado:** **apto para QA**. Nenhum P1 e nenhum P2. Há P3 registrados, e um deles (P3-16) pede decisão do Supervisor antes de o QA medir o holdout.
+- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR.
+- **Base e versão final:** base `4c27e4a`; candidato `aa68cff` (árvore `132a30b`). Blobs: `index.py a27a222`, `rerank.py 89324be`, `retrieval.py 4ca358b`, `cli.py 5587b0b`, `knowledge.py 8f6a04c` (o mesmo da rodada 1), holdout `8efcaf8` e lacre `208f97a`. O HEAD era `4809284` no início e passou a `24b26cd` durante a revisão. Os dois commits só acrescentam documentação (passagem do Developer, Validação da tarefa e ADRs 0020 e 0021): `git diff aa68cff HEAD -- src tests prompts pyproject.toml .env.example` sai vazio. A árvore de trabalho não tem alteração em `src/`, `tests/` e `prompts/`. Em `index.py`, o blob local difere só no fim de linha (CRLF), e `git diff aa68cff` sai vazio.
+- **Independência:** independente. Não li `v090-developer.md` nem as seções Validação e Status da tarefa 81.
+
+## Comandos e números
+
+Executei tudo em cópias de leitura (`git archive aa68cff`) em `<scratchpad da sessão>`, com o Python do `.venv` do projeto (3.13.3) e `PYTHONPATH` no `src/` da cópia. Conferi que o módulo carregado era o da cópia. Não houve chamada paga, rede, Docker nem Git de escrita, e não toquei em `data/runtime/`, `.pytest_cache/qa-*`, `.env`, `_tmp/` nem `discovery/`.
+
+| Verificação | Resultado |
+| --- | --- |
+| `pytest` (cópia de `aa68cff`, basetemp novo) | **2107 passed, 1 skipped, 0 failed**, 731 s, exit 0 (2097 da rodada 1 mais 10 testes novos). O teste pulado é `test_synthetic_v040_script_logs_in_with_passwords`, fora do escopo, porque o basetemp ficou fora de `.pytest_cache`. Rodado depois com basetemp dentro do `.pytest_cache` da cópia: **passed** |
+| `ruff check` (os 163 arquivos do `lint_and_tests.py`) | All checks passed |
+| `validate_structure` e `validate_skills` (cópia) | válidas |
+| `checar-caminhos-pessoais.py` (repositório) | limpo: 749 arquivos antes deste parecer e 749 depois |
+
+As quatro etapas do `--strict` rodaram separadamente, porque a cópia não tem `.git`.
+
+## O que re-derivei e como
+
+1. **Escopo.** `git diff 4c27e4a..aa68cff` em código e testes toca só os 10 arquivos esperados. `agents/knowledge.py`, `config.py`, `scripted_policy.py` e `prompts/` estão **intactos**.
+2. **P2-1 (falha igual ao `off`).** `search` agora faz `fusion(k)` sem reranker e, com reranker, `fusion(max(k, 12))`. Se `reorder` devolve `None` (falha ou pulo), refaz `fusion(k)` com o mesmo vetor da consulta. Sonda própria com 64 perguntas: `dev`, mensagens dos cenários e 10 perguntas sintéticas minhas, sem nenhuma do holdout (interseção 0). Cruzei 3 filtros de fonte, `min_score` 0, 0,3 e 0,6, k 3, 6, 12 e 14, e 5 tipos de falha (`LLMError`, rótulo desconhecido, ordem vazia, `BudgetExceeded` e `LimitExceeded` na reserva do `Meter`). Comparei `(chunk_id, score, origin, payload)` contra `off`: **11.520 comparações, 0 divergências** (10.640 `failed` e 880 `skipped`). Com o reranker identidade, o resultado é sempre igual a `fusion(12)[:6]` (64 de 64). Contra o `off`, difere em 2 de 64 com `min_score` 0,3, o mesmo número da rodada 1 (mesmo exemplo da antecipação), e em **29 de 64 com `min_score` 0** (ver P3-16). No Knowledge, `test_knowledge_keeps_the_fusion_order_when_the_reranker_fails` agora compara `detail["hits"]` inteiro com o do modo híbrido.
+3. **P2-2 (falhas no relatório e na D7).** De ponta a ponta, rodei `cmd_eval_retrieval` real (`--fake`) nos três modos e nos dois splits, com um holdout sintético lacrado em diretório descartável e o reranker programado falhando em 1 de cada 3 chamadas. O `.json` traz `rerank_failures` 6 em `dev` e 1 no holdout. O `.md` traz `| dev | hybrid+rerank | 19 | … | 6 de 19 |` e `| holdout_v090 | hybrid+rerank | 2 | … | 1 de 2 |`, com o cabeçalho "o modelo reordena os 12 primeiros de uma fusão de profundidade 36, contra 18 do `hybrid`; numa consulta em que o reranker falha, a resposta é a do `hybrid`". A linha D7 sai `RETRIEVAL_MODE=hybrid, RERANK=indisponível (reranker com 7 falhas em 21 consultas; …)`. No holdout com falha, o nDCG do `hybrid+rerank` saiu igual ao do `hybrid` (0,816), coerente com o item 2. Nenhum arquivo foi criado no runtime.
+4. **P2-3 (K2 e C2).** `test_the_knowledge_reranker_is_metered_by_the_request` confere `model_calls` (+1 contra o modo híbrido), `models_by_agent["rerank"]` e o lançamento `rerank` no ledger da requisição. `test_paid_reranker_of_eval_retrieval_has_the_cap_per_run` usa um cliente que falha se for chamado e confere o modelo do agente, a constante 0,05, a recusa `BudgetExceeded` (escopo `evaluation`) entre US$0,04 e US$0,05 e o mesmo valor no ledger do projeto. Nenhuma chamada sai.
+5. **P3-11 (`--fake` no holdout).** A recusa vem antes de `split_cases`, só quando `SCENARIOS` é o diretório versionado. `test_fake_runs_refuse_the_real_holdout` confere que nem o runtime é criado.
+6. **Holdout (relacre).** Entre `4c27e4a` e `1d05f7d` mudam só 7 das 25 linhas. Os 25 ids e as 25 perguntas, categorias e idiomas são idênticos, e 13 perguntas continuam em pt. As mudanças, com o que pedi no P3-12:
+   - VOUCHER: `bandeiras#0` passa de 1 para 2. Responde tudo.
+   - GETTAP-12X: `get-tap#1` passa de 1 para 2. Responde tudo.
+   - REDUCED-PLAN-MONTHLY: entra `reduzido#2` com grau 2. Resposta completa.
+   - PLANO-LIGHT: sai `duvidas#31`, que era grau 1 generoso.
+   - MINESTORE-PLANS: entra `duvidas#21` com grau 1. Responde metade.
+   - GETNET-SCALE: sai `www-getnet-net-en#1`, que trazia o número divergente.
+   - DOCK-IP: entra `duvidas#16` com grau 1, consistente com `get-conta#0`.
+
+   Os graus seguem a definição escrita no commit: grau 2 é a resposta inteira, e dois chunks podem tê-lo; grau 1 é parte da resposta. O teste de forma passou de `count(2) == 1` para `>= 1`, de acordo com essa definição. O sha256 normalizado do arquivo é `a23850aa66929eb64047b93697cec6b4b0893bc9f77d259f06d42fd3c46ae393` e confere com o `.sha256`. O blob é o mesmo em `1d05f7d`, `aa68cff` e HEAD. Os `chunk_id` existem no corpo (teste de rótulos verde na suíte).
+7. **Holdout não lido nem medido.** `git grep` em `tests/` e `src/` não acha leitor do arquivo real fora do teste do lacre. Os testes de split usam holdout sintético em `tmp_path`, e o `development_questions()` novo lê `retrieval.jsonl` e os cenários por nome (63 perguntas, interseção 0 com o holdout). Não há relatório de `eval-retrieval` nem arquivo `*retrieval*` gerado no repositório, rastreado ou não (fora os diretórios proibidos, que não abri). As menções a `holdout_v090` em `docs/` são de spec, tarefa, história, ADR 0020 ("relacrado uma vez … ainda sem medição") e evidência, sem números medidos. O relacre (19:10) é anterior às correções de código (19:16). **Não rodei nenhum modo sobre o holdout real.**
+8. **Mutação manual** (cópia própria, 4 arquivos de teste da tarefa). Foram **18 mutantes, 17 mortos e 1 equivalente**, todos mortos pelo teste que lhes cabe (confirmado com `-rf`). Uma primeira passada deu falsos "mortos" por `FileNotFoundError` do meu basetemp e foi descartada e refeita.
+
+| Mutante | Resultado |
+| --- | --- |
+| K2 Knowledge passa `NullMeter()` ao reranker | morto (`test_the_knowledge_reranker_is_metered_by_the_request`) |
+| C2 sem teto (`max_cost_usd=None`); C2b teto x10; C2c `BudgetMeter` sem o ledger | mortos (`test_paid_reranker_of_eval_retrieval_has_the_cap_per_run`) |
+| F1 falha devolve `fusion(12)[:k]`; F3 falha devolve os candidatos (lista em vez de `None`); F4 falha ignora `source_kinds` e `min_score` | mortos (`test_a_failing_reranker_answers_exactly_as_rerank_off_on_every_question` e, no F4, também o teste do Knowledge) |
+| F5 candidatos da fusão a k em vez de 12 | morto |
+| **F2 pulo (menos de 2 candidatos) devolve a lista em vez de `None`** | **sobreviveu, equivalente**: com 0 ou 1 candidato na fusão a 12, a fusão a k tem o mesmo item com o mesmo score RRF (as 880 consultas puladas do item 2 conferem) |
+| D1 D7 ignora falhas; D2 conta falhas só em `dev`; D3 coluna sempre "0 de n"; D4 `record_run` descarta `rerank_failures`; D5 só a partir de 4 falhas | mortos |
+| E1 e E2 `evaluate` não conta falhas | mortos (`test_evaluate_passes_the_reranker_and_counts_its_failures`) |
+| P1 `--fake` aceita o holdout real | morto |
+| H1 cabeçalho com profundidade errada | morto |
+
+A cópia de mutação foi restaurada e conferida (`diff -r` sem diferença contra a cópia do candidato).
+
+## Achados
+
+### P1
+
+Nenhum.
+
+### P2
+
+Nenhum. P2-1, P2-2 e P2-3 da rodada 1 estão **resolvidos** (itens 2 a 4 e 8).
+
+### P3 (registrar)
+
+- **P3-16. Na D7, a comparação `hybrid+rerank` contra `hybrid` continua misturando o modelo com a profundidade, e no `eval-retrieval` o efeito é grande.** Isso segue a decisão do Supervisor e está escrito no cabeçalho do `.md`, por isso não é P2.
+  - Condição: o `eval-retrieval` chama `search` sem `min_score` (0,0), e o Knowledge usa 0,30. Com 0,0, só a fusão a 36 muda o top 6 em 29 de 64 perguntas. Em `dev`, com embeddings de hash, um reranker identidade, que não reordena nada, leva o nDCG@6 de 0,843 para **0,858** e o MRR de 0,789 para 0,811. O reranker programado dá 0,825.
+  - Impacto: a regra D7 usa `>` estrito. Um reranker inútil passaria em `dev` só pela profundidade, e o número medido no holdout herda o mesmo viés. Com embeddings reais o tamanho é desconhecido.
+  - Local: `src/merchant_assistant/rag/index.py:248` e `src/merchant_assistant/evaluation/retrieval.py:110` (`search` sem `min_score`).
+  - Reprodução: `evaluate(idx, load_cases(retrieval.jsonl), k=6, mode="hybrid")` com e sem um `Reranker` cujo `ScriptedLLM` devolve os rótulos na ordem recebida.
+  - Sugestão, a decidir pelo Supervisor **antes** de o QA medir o holdout: uma linha de controle `hybrid@36`, sem chamada de modelo e de custo zero, em `dev` e no holdout, com a D7 comparando o reranker contra ela. Outra saída é registrar no ADR 0020 que o ganho do reranker inclui o efeito de profundidade.
+- **P3-17.** Ficou um comentário desatualizado em `agents/knowledge.py:151` ("a failure keeps the fusion order"); hoje a falha devolve o resultado do `off`. O arquivo ficou intocado de propósito, então o ajuste é só de texto, numa próxima mudança.
+- **P3-18.** `Reranker.rerank` só é usado pelos testes; o índice usa `reorder`. Os testes de `rerank` exercitam `reorder` por dentro, então o efeito é nulo. Fica registrado como API sobrando.
+- **P3-19.** `rerank_failures` conta só `failed`. O `skipped` (menos de 2 candidatos) não entra na linha D7. Como a resposta é a do `off`, o efeito sobre o número é nulo, e com `min_score` 0 isso quase não ocorre.
+- Da rodada 1: P3-11 e P3-12 estão resolvidos (itens 5 e 6). P3-10, P3-13, P3-14 e P3-15 seguem abertos, sem mudança no código (o `record_run` continua sem conferir `bm25_corpus_hash`). Os P3 da tarefa 80 seguem como estavam.
+
+## Critérios
+
+| Critério | Estado |
+| --- | --- |
+| Falha ou pulo do reranker devolvem o resultado idêntico ao `off` (ids, ordem, scores e origem) | **comprovado** (item 2: 11.520 comparações; mutantes F1, F3 e F4) |
+| `on` reordena os 12 primeiros de uma fusão a 36 e corta em k; `off` usa a fusão da tarefa 80 | **comprovado** (item 2; mutante F5). A sonda `RERANK=off` contra `dev` reproduz os números da rodada 1 (híbrido 1,000, 0,789 e 0,843) |
+| Coluna de falhas no `.md` e linha D7 com "N falhas em M consultas" e "indisponível" quando há falha | **comprovado** (item 3, de ponta a ponta; mutantes D1 a D5, E1 e E2) |
+| Testes matam K2 e C2 | **comprovado** (item 8) |
+| `--fake` recusa o holdout real | **comprovado** (item 5; mutante P1) |
+| Relacre único, antes de medir, só nos sete rótulos, com as mesmas 25 perguntas e sha `a23850aa…` | **comprovado** (itens 6 e 7) |
+| Nenhum modo medido no holdout | **sem evidência de medição** no repositório (item 7). Não é provável por ausência: não abri `data/runtime/` nem `_tmp/` |
+| Suíte estrita verde | **comprovado** (2107 passed; o único pulo é de ambiente e passou isolado) |
+
+Não verificado: chamada real do `gpt-6-luna` com `RerankOrder` estrito, custo real por consulta e números com embeddings reais (QA).
+
+## Incidentes da revisão
+
+Nenhum efeito no repositório além deste apêndice. Descartei e refiz a primeira passada de mutação, cujo basetemp tinha o diretório pai inexistente. Os processos em segundo plano (suíte, mutantes e espera) terminaram antes deste relato.
+
+## Próxima ação
+
+O Supervisor decide o P3-16 (controle `hybrid@36` ou registro no ADR 0020) **antes** de o QA medir o holdout, porque depois disso qualquer mudança marca o holdout como "já visto". Depois disso, o QA mede a tarefa 81 com embeddings reais. Os demais P3 vão para a tarefa 82 e para o ADR 0020. Não há decisão humana pendente.
