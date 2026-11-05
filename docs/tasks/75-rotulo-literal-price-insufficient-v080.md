@@ -34,8 +34,13 @@ Candidato `4c3c8a98ddfc4f7af7bba877177f3479152159b5`, campanha `v080-qa`, ambien
 
 ## Validação
 
-Pendente (Developer, revisão e QA).
+Developer (2026-11-05), branch `codex/v0.8.0-replan`:
+
+- Rótulos dev em `tests/scenarios/business_journeys.jsonl`: `must_include_any` ganhou duas formas por idioma, tiradas das respostas reais (`no fee rule or recorded charge`, `no pricing-rule details or recorded charge`; `não há uma taxa esperada disponível`, `não havia uma regra de preço aplicável`). `must_not_assert` ganhou as contradições de taxa correta, incorreta, confirmada e divergente nos dois idiomas. O catálogo da bancada não espelha estes dois IDs (nenhum `source_case` aponta para eles), então não muda.
+- Reavaliação offline pela função `_checks` do runner (`tests/unit/evaluation/test_t75_price_insufficient_archived.py`, 54 testes): as quatro `request_id` passam em todas as checagens determinísticas; as 12 respostas arquivadas da r3 e da r4 destes IDs continuam passando; 51 controles negativos são recusados (17 contradições sozinhas e 34 anexadas a uma das quatro respostas aceitas).
+- Testes focados (rótulos, runner, jornadas, catálogo da v0.7.0): 224 passed. Suíte estrita: ver a passagem em `docs/evidence/v080-developer.md`.
+- Pendente: revisão independente e QA (campanha real).
 
 ## Status
 
-pendente
+implementada; aguarda revisão
