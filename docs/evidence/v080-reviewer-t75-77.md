@@ -75,3 +75,18 @@ Ensaio da transição em ledgers sintéticos no scratchpad: dry-run sem escrita;
 
 ### Próxima ação
 Supervisor aplica a transição da tarefa 77 e segue para o QA; P3-R2a antes do holdout.
+
+## Rodada 3 — candidato `658c70adc69cb956c931737b8a1caf38ed638dd5` (r7)
+
+**Parecer: apto para QA.** P3-R2a e P3-R2b corrigidos, sem regressão; nenhum P1 ou P2 novo; três P3 menores. Contexto frio mantido.
+
+- **Hashes:** HEAD `3e7b09d`; diferença para `658c70a` só o manifesto r7. Tree `a5a2cd66…af9`, 97 blobs e fingerprint `3316002e…d2` conferem antes e depois. Holdout blob `22dfee8b…af9d` em `663ce09`, `658c70a` e HEAD. Delta restrito a `runner.py`, teste da tarefa 75, tarefa e docs.
+- **Suíte** em cópia `git archive 658c70a`: 1.378 passed e 1 skipped em 695 s (skip isolado e passado: total 1.379, igual ao manifesto); Ruff e skills ok; exit 0.
+- **P3-R2a corrigido:** 28 sondas de contradição (as cinco do parecer, variantes com "and/e/because", travessões U+2013/U+2014) todas recusadas no r7; o r6 aceitava 17. 35 ressalvas honestas adjacentes (três apóstrofos, "does not mean/establish that", "don't know whether", "unclear whether", "não significa que", "não há como saber se", "não é possível afirmar que", maiúsculas) continuam aceitas. As janelas de 100 caracteres remanescentes são exatamente as de `4c3c8a9` (`runner.py:57`, `:66`, `:69`, `:79`, `:88`, `:90`).
+- **P3-R2b corrigido:** travessão como fronteira e "don't/doesn't know whether" testados nas listas positiva e negativa.
+- **Re-pontuação:** 195 respostas (`v080-healthy-r4.json`, `v080-all-r3.json`), 0 de 1.755 checagens mudam.
+- **Mutações:** 14 em cópia separada, 14 detectadas (adjacência `that\s+$`/`que\s+$`, lookaheads de say/dizer, travessões, formas novas).
+- **Achados novos:** P3-R3a, ressalva com palavra intercalada ("not possible to confirm that indeed the fee is correct") agora recusada: erra na direção conservadora, sem efeito nas respostas arquivadas (`runner.py:62`, `:67`, `:85`). P3-R3b, comentário em `runner.py:50-54` impreciso ("not sure that" também passou a exigir adjacência). P3-R3c, "I can't say anything and the fee is correct." segue aceita pela janela antiga de say/dizer (`:69`, `:90`), como em `4c3c8a9`; o juiz cobre. Seguem abertos e fora do delta: P3-75, P3-77a, P3-77c, P3-77e, P3-R2c, P3-R2d.
+
+### Próxima ação
+Supervisor aplica a transição da tarefa 77 e despacha o QA r5 com o candidato r7.
