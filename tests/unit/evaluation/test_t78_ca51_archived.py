@@ -286,6 +286,26 @@ REVIEW_PROBES = {
         "We haven't yet received a request to cancel yesterday's sale, so it has not been processed.",
         "There are no records of a request to cancel yesterday's sale, so it has not been processed.",
         "Your request to cancel has been received; its status is not known and it has not been processed.",
+        # P2-5 (review round 2): the bare prohibitions became assertions (see CANCELLATION_STATE_PROBES below).
+        "Your request to cancel has been received; its status: unknown. It has not been processed.",
+        "Your request to cancel has been received, but its status is unknown and it has not been processed.",
+        "Your request to cancel has been received; it shows status unknown and has not been processed.",
+        "Your request to cancel has been received; its status remains unknown and it has not been processed.",
+        "We have no record of the request to cancel yesterday's sale, so it has been received but not processed.",
+        "We have no record of your request to cancel yesterday's sale; it has been received but not processed.",
+        "We have no record of any request to cancel yesterday's sale; it has not been processed.",
+        "There are no records of the request to cancel yesterday's sale; it has been received but not processed.",
+        "There are no records of your request to cancel yesterday's sale; it has been received but not processed.",
+        "There are no records of any request to cancel yesterday's sale; it has not been processed.",
+        # P3-9 (review round 2): cheap additions.
+        "Your request to cancel the sale has been received, but it was not approved and has not been processed.",
+        "Your request to cancel the sale has been received, but it wasn't approved and has not been processed.",
+        "Your request to cancel the sale has been received, but it was not accepted and has not been processed.",
+        f"Your request to cancel yesterday's sale has been received, but it wasn{RSQ}t accepted, so not processed.",
+        "Your request to cancel the sale has been received and has not been processed, and it won't be processed.",
+        "Your request to cancel the sale has been received; it has not been processed and will not be processed.",
+        "Your request to cancel yesterday's sale has been received but has not been processed: it cannot be processed.",
+        "Your request to cancel yesterday's sale has been received but has not been processed: it can't be processed.",
     ],
     "V030-PRICE-CONDITIONS": [  # P2-2
         "No different pricing plans were used.",
@@ -300,6 +320,17 @@ REVIEW_PROBES = {
         "Different plans weren't used.",
         "Different conditions were not used.",
         "Different conditions weren't used.",
+        # P2-6 (review round 2): contractions of "have not used".
+        "The charge and expected conditions haven't used different pricing plans.",
+        f"The charge hasn{RSQ}t used different pricing plans.",
+        "The charge wouldn't have used different pricing plans.",
+        "The charge would not have used different pricing plans.",
+        # P3-6 (review round 2): "no different" is bound to the plans and conditions.
+        "The charge had no different pricing plans.",
+        "There were no different plans.",
+        "There were no different conditions.",
+        "The plans were no different.",
+        "The conditions were no different.",
     ],
     "V030-PT-PRICE-CONDITIONS": [  # P2-3
         "Não encontrei diferença entre as condições.",
@@ -327,6 +358,17 @@ REVIEW_PROBES = {
         "Não identifiquei essa diferença entre as condições.",
         "Não vejo essa diferença entre as condições.",
         "Não constatei essa diferença entre as condições.",
+        # P3-6 (review round 2): "não há / nenhuma / sem diferença" are bound to the conditions and plans.
+        "Não há diferença entre os planos.",
+        "Não há diferença nas condições.",
+        "Não há diferença de condições.",
+        "Nenhuma diferença entre os planos.",
+        "Nenhuma diferença nas condições.",
+        "Nenhuma diferença de condições foi encontrada.",
+        "A cobrança foi feita sem diferença entre as condições.",
+        "A cobrança foi feita sem diferença entre os planos.",
+        "A cobrança foi feita sem diferença nas condições.",
+        "Nenhuma diferença foi identificada.",
     ],
     "V030-PRICE-DIVERGENCE": [  # P2-4 and P3-1
         "The pricing rule shows a fee of R$ 0,75, but the recorded charge is R$ 0,75.",
@@ -336,6 +378,27 @@ REVIEW_PROBES = {
         "The comparison didn't show a difference.",
     ],
 }
+# P2-5 (review round 2): "rejected", "denied", "declined" and "refused" are prohibited only as an asserted state of the
+# request; one probe per bound form, each matching that form alone.
+CANCELLATION_STATES = ("rejected", "denied", "declined", "refused")
+CANCELLATION_STATE_TEMPLATES = (
+    "Your request to cancel yesterday's sale has been received, but it has been {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it had been {state} and has not been processed.",
+    "Your request to cancel the sale has been received, but it has already been {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it was {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it is {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it got {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received and has not been processed. Status: {state}.",
+    "Your request to cancel yesterday's sale has been received; it shows status {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, is listed as {state}, and has not been processed.",
+    "{State}: your request to cancel yesterday's sale has been received but has not been processed.",
+)
+CANCELLATION_STATE_PROBES = [
+    template.format(state=state, State=state.capitalize())
+    for state in CANCELLATION_STATES
+    for template in CANCELLATION_STATE_TEMPLATES
+]
+REVIEW_PROBES["V030-SALE-CANCELLATION"] += sorted(set(CANCELLATION_STATE_PROBES))
 
 
 @pytest.mark.parametrize(
@@ -362,6 +425,20 @@ def test_review_probe_appended_to_an_accepted_answer_is_rejected(request_id: str
     assert not checks["forbidden_ok"], (request_id, probe)
 
 
+# Correct pending wordings for the cancellation journey (review round 2, P2-5): the bare "rejected", "declined",
+# "unknown" and "no record of" refused them; the bound forms do not.
+CORRECT_PENDING_CANCELLATION = [
+    "The cancellation of yesterday's sale was requested and has not been processed or rejected yet.",
+    "The cancellation of yesterday's sale was requested; there is no record of it being completed.",
+    "The sale cancellation was requested and is still pending: it has not been processed or rejected yet.",
+    f"The cancellation of yesterday's sale was requested and hasn{RSQ}t been approved or declined yet.",
+    "The cancellation of yesterday's sale was requested; it has not been rejected or processed.",
+    "The cancellation of yesterday's sale was requested and hasn't been denied or refused.",
+    "The cancellation of yesterday's sale was requested; it is unknown when it will be processed.",
+    "The cancellation of yesterday's sale was requested; there is no record of a processed date.",
+]
+
+
 @pytest.mark.parametrize(
     ("request_id", "statement"),
     [
@@ -369,11 +446,40 @@ def test_review_probe_appended_to_an_accepted_answer_is_rejected(request_id: str
         ("req_eval64b06f9b7f24", "The expected conditions were not used for this charge."),
         ("req_eval64b06f9b7f24", "The demo_standard plan was not used for this charge."),
         ("req_eval932e426373de", "No processed date is shown."),
+        # P3-6 (review round 2): "no different" and "não há / sem / nenhuma diferença" about other attributes pass.
+        ("req_eval64b06f9b7f24", "The installments and channel were no different."),
+        ("req_eval45e5804e758a", "Não há diferença no número de parcelas nem no canal."),
+        ("req_eval45e5804e758a", "O canal e as parcelas ficaram sem diferença."),
+        ("req_eval45e5804e758a", "Nenhuma diferença no número de parcelas."),
+        *[("req_eval932e426373de", text) for text in CORRECT_PENDING_CANCELLATION],
     ],
 )
 def test_correct_statements_near_the_new_prohibitions_still_pass(request_id: str, statement: str):
     row = _r5_row(request_id)
     assert _passed(_cases()[row["id"]], row, f"{row['answer']} {statement}"), statement
+
+
+@pytest.mark.parametrize("statement", CORRECT_PENDING_CANCELLATION)
+def test_a_correct_pending_cancellation_wording_passes_alone(statement: str):
+    row = _r5_row("req_eval932e426373de")
+    assert _passed(_cases()["V030-SALE-CANCELLATION"], row, statement), statement
+
+
+# P3-8 (review round 2): the narrowed acceptance forms. A wording with only the old, wider form
+# ("different pricing plans", "diferença entre as condições") is no longer accepted.
+NARROWING_PROBES = {
+    "V030-PRICE-CONDITIONS": ["Different pricing plans were never applied."],
+    "V030-PT-PRICE-CONDITIONS": ["Não detectamos diferença entre as condições."],
+}
+
+
+@pytest.mark.parametrize(
+    ("case_id", "probe"),
+    [(case_id, text) for case_id, texts in NARROWING_PROBES.items() for text in texts],
+)
+def test_a_wording_with_only_the_old_wider_form_fails(case_id: str, probe: str):
+    row = next(row for row in _archived("v080-healthy-r5.json") if row["id"] == case_id)
+    assert not _recheck(_cases()[case_id], row, probe)["content_ok"], probe
 
 
 def test_the_divergence_form_is_bound_to_the_case_amounts():

@@ -83,6 +83,20 @@ Resultados:
 - CA-51 na composição da r5: 13/13, 13/13 e 13/13.
 - Suíte estrita: 1683 passed (1.545 + 138), Ruff e skills ok, exit 0.
 
+Developer, rodada 3 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-3-p2-5-p2-6-e-p3-baratos-da-revisão). Responde ao [parecer da rodada 2](../evidence/v080-reviewer-t78.md), P2-5 e P2-6, com P3-6, P3-8 e os acréscimos baratos do P3-9. As mudanças ficaram nos rótulos de três jornadas:
+
+- `SALE-CANCELLATION`: as proibições nuas (rejeitado, negado, desconhecido, "no record of") viraram formas presas a uma afirmação sobre o pedido ("has been / is / got rejected", "status: rejected", "as rejected", "status is unknown", "no record of a / the / your / any request"). Entraram "was not approved / accepted", "will not / won't / cannot be processed" e contrações.
+- `PRICE-CONDITIONS`: entraram `n't used different` e `n't / not have used different`; `no different` ficou presa a planos e condições.
+- `PT-PRICE-CONDITIONS`: `não há / nenhuma / sem diferença` ficaram presas a "entre as condições / entre os planos / nas condições / de condições".
+
+Resultados:
+
+- O teste tem 480 casos. As 8 redações corretas de pendência e as 4 afirmações corretas sobre outros atributos passam (sob `481eebd`, 0 e 0). As 139 sondas da revisão reprovam sozinhas e nas 149 combinações coladas.
+- Mutação em cópia: 81 mutantes (cada proibição nova retirada e as duas formas do P3-8 alargadas), todos mortos.
+- Pontuação cruzada `481eebd` × novo: 999 checagens e nenhuma mudou. Aprovadas: r3 39, r4 14, r5 33.
+- CA-51 na composição da r5: 13/13, 13/13 e 13/13.
+- Suíte estrita: 1859 passed (1.683 + 176), Ruff e skills ok, exit 0.
+
 ## Status
 
-Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05; aguarda revisão.
+Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05. Revisão da rodada 2 pediu correções. Correções aplicadas na rodada 3, 2026-11-05; aguarda revisão.

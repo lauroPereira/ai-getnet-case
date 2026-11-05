@@ -1189,3 +1189,57 @@ Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `57b37ab` (prod
 ### Próxima ação
 
 Revisão curta deste commit. Depois, o Supervisor fixa o novo candidato e o QA faz o reteste pago das seis jornadas, em três repetições, no mesmo dia da seed.
+
+## Tarefa 78, rodada 3 (P2-5, P2-6 e P3 baratos da revisão)
+
+Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `0ea2fda` (produto em `481eebd`). Despacho: [parecer da rodada 2](v080-reviewer-t78.md), com P2-5 e P2-6 obrigatórios e P3-6, P3-8 e os acréscimos baratos do P3-9 recomendados. Identidade conferida (`lauroPereira` / `lauro.s.pereira@gmail.com`). Um commit: `tests/scenarios/business_journeys.jsonl` (linhas 2, 6 e 9), `tests/unit/evaluation/test_t78_ca51_archived.py`, esta passagem e a tarefa 78.
+
+`runner.py`, Router, CLI, script, catálogo e holdout não mudaram.
+
+### Mudança por linha
+
+- **Linha 6, `SALE-CANCELLATION` (P2-5 e P3-9).** Saíram as proibições nuas `rejected`, `denied`, `declined`, `refused`, `unknown`, `no record of` e `no records of`. Entraram formas presas a uma afirmação sobre o pedido:
+  - para cada estado X em rejected, denied, declined e refused: `has been X`, `had been X`, `already been X`, `is X`, `got X`, `status: X`, `status X`, `as X` e `X:` (`as X` também cobre "was X", que contém "as X");
+  - `status is unknown`, `status: unknown`, `status unknown`, `status remains unknown` e `sale is unknown`;
+  - `no record of` e `no records of`, cada uma seguida de `a request`, `the request`, `your request` ou `any request`;
+  - P3-9: `was not approved`, `wasn't approved`, `was not accepted`, `wasn't accepted`, `will not be processed`, `won't be processed`, `cannot be processed` e `can't be processed`.
+- **Linha 2, `PRICE-CONDITIONS` (P2-6 e P3-6).** Entraram `n't used different`, `n't have used different` e `not have used different`. `no different` deu lugar a `no different pricing`, `no different plans`, `no different conditions`, `plans were no different` e `conditions were no different`.
+- **Linha 9, `PT-PRICE-CONDITIONS` (P3-6).** `não há diferença`, `nenhuma diferença` e `sem diferença` passaram a valer só seguidas de `entre as condições`, `entre os planos`, `nas condições` ou `de condições`. Ficaram também `não há diferença.` (frase encerrada, sem complemento) e `nenhuma diferença foi` (a família "foi encontrada / identificada", que já era proibida nua em "não foi encontrada diferença").
+
+### Decisões além do despacho
+
+- **Auxiliar em vez de `been X`.** O despacho fala em "was/been/is rejected". Usei `has been`, `had been` e `already been`, sem o `been X` solto, porque `been rejected` recusaria "it has not been rejected" ou "hasn't been denied", redações corretas de pendência. Há teste que aceita essas frases. O custo é que "has since been rejected" escapa.
+- **`sale is unknown`.** A sonda da rodada 1 "The status of your request to cancel yesterday's sale is unknown" não contém `status is unknown`. Para que ela continue reprovando sem proibir `unknown` solto, prendi a forma ao sujeito "sale". "It is unknown when it will be processed" passa.
+- **`no record of` só com "request".** "There is no record of it being completed" e "no record of a processed date" são corretas e passam. Por isso não proibi "no record of the cancellation".
+- **`n't have used different`.** O despacho diz que `n't used different` cobre "wouldn't have used", mas não cobre: o texto é "n't have used different". Acrescentei essa forma e `not have used different`.
+- **Contrações no P3-9.** Acrescentei `wasn't approved`, `wasn't accepted` e `can't be processed`, pela mesma lição do P2-6.
+- **`não há diferença.` e `nenhuma diferença foi`.** As sondas "Não há diferença." e "Nenhuma diferença foi encontrada." da rodada 2 continuam reprovando também quando coladas a uma resposta aceita. "Não há diferença no número de parcelas nem no canal" passa.
+- **Sondas por forma.** Cada forma nova tem uma sonda que casa só com ela. Os estados vêm de 10 modelos × 4 estados, fixados no teste e não derivados do rótulo, para que a mutação de uma forma não leve junto a sua sonda.
+
+### Prova (`runner._checks` real, arquivos só lidos)
+
+`tests/unit/evaluation/test_t78_ca51_archived.py` tem 480 testes: os 304 da rodada 2 e 176 novos.
+
+- **Redações corretas de pendência (P2-5).** São 8, entre elas as quatro do Reviewer, "it has not been rejected or processed", "hasn't been denied or refused" e "it is unknown when it will be processed". Passam sozinhas e coladas à resposta 932e…; sob `481eebd`, 0 de 8 passavam.
+- **Afirmações corretas sobre outros atributos (P3-6).** "The installments and channel were no different", "Não há diferença no número de parcelas nem no canal", "O canal e as parcelas ficaram sem diferença" e "Nenhuma diferença no número de parcelas" passam coladas; sob `481eebd`, 0 de 4.
+- **Sondas da revisão.** Agora são 139, das quais 77 novas: 40 de estado (entre elas "Rejected: …" e "Status: rejected."), 10 de "unknown" e "no record(s)", 8 do P3-9, 9 do P2-6 e P3-6 em EN e 10 do P3-6 em PT. As erradas da rodada 1 que o despacho lista ("…was rejected, so…", "There isn't a request…", "We have no record of a request…") continuam entre as 62 antigas. Todas reprovam sozinhas, e nas 149 combinações coladas a respostas aceitas `forbidden_ok` cai. Sob `481eebd`, 12 passavam sozinhas e 12 coladas.
+- **P3-8.** "Different pricing plans were never applied." e "Não detectamos diferença entre as condições." reprovam por `content_ok`.
+- **Mutação em cópia.** Retirei, uma por vez, cada proibição nova das três linhas (57 na linha 6, 8 na linha 2, 14 na linha 9) e devolvi as duas formas do P3-8 à versão larga (`different pricing plans`, `diferença entre as condições`): são 81 mutantes, e todos morrem. Numa primeira passada sobreviveram `was rejected / denied / declined / refused`, redundantes com `as X`; saíram do rótulo.
+- **Pontuação cruzada `481eebd` × novo.** Foram 111 respostas arquivadas das 13 jornadas e 999 checagens, e **nenhuma checagem mudou**. Aprovadas: r3 39 → 39, r4 14 → 14, r5 33 → 33. As 10 respostas da tarefa seguem aprovadas.
+- **CA-51 na composição da r5:** **13/13, 13/13 e 13/13**.
+
+### Evidência
+
+- Testes focados: `tests/unit/evaluation/test_t78_ca51_archived.py`, **480 passed**. Ruff check e format ok.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` (venv 3.13.3), com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t78-r3-suite-basetemp -p no:cacheprovider"`: **1859 passed** em 774,45 s (1.683 + 176, sem skip). Ruff `All checks passed!`, skills válidas, exit 0. Log em `.pytest_cache/t78-r3-suite.log`, SHA-256 `35f3e72d…835c4`. A mutação rodou em paralelo durante parte da suíte, o que explica o tempo maior.
+
+### Limites
+
+- A régua continua literal. "has since been rejected", "the status of your request is unknown" e "the cancellation request was turned down" escapam; o P3-9 estrutural segue para a decisão de rubrica da v0.9.0.
+- `não houve diferença`, `não existe diferença` e `não há qualquer diferença` continuam nuas na linha 9: o despacho não pediu para prendê-las. "Não houve diferença no canal" colada a uma resposta aceita é recusada (falsa recusa, não falsa aprovação).
+- O P3-7 (falsas recusas pelo estreitamento) segue para o QA conferir no reteste.
+- Nenhuma chamada paga, rede ou `.env`.
+
+### Próxima ação
+
+Revisão curta deste commit. Depois, o Supervisor fixa o novo candidato e o QA faz o reteste pago das seis jornadas.
