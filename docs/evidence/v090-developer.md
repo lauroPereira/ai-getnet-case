@@ -52,3 +52,59 @@
 ### Próxima ação
 
 Revisor: revisar `ffe9803` e `c0045a5`. Supervisor: decidir o cap (achado 1) antes da sonda do QA.
+
+## Tarefa 80 — Retrieval híbrido BM25 + RRF (rodada 1)
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único).
+- **Objetivo e critérios:** [tarefa 80](../tasks/80-retrieval-hibrido-bm25-rrf.md); [spec v0.9.0](../specs/juiz-retrieval-v090.md) D7, D10, CA-52 (parte programada); [história](../historias/juiz-retrieval-v090.md) momentos 4 e 7; plano, decisões técnicas 17 a 19.
+- **Escopo:** código do `rag/`, ligação do modo (`config.py`, `main.py`, `testing.py`, `rag/kb.py`), `eval-retrieval --mode` (`cli.py`, `evaluation/retrieval.py`), `pyproject.toml`, 5 perguntas novas em `tests/scenarios/retrieval.jsonl`, testes, Validação e Status da tarefa 80 e esta passagem. Nenhum prompt, rótulo existente, migração, snapshot ou ledger mudou; o agente Knowledge não mudou.
+- **Estado:** implementado; aguarda revisão.
+- **Branch e base:** `codex/v0.9.0-juiz-retrieval`, base `fee7a78`. Commits: `5d82fd0` (BM25, RRF, modo), `c99aa90` (`eval-retrieval --mode` e perguntas de termo exato) e o commit desta passagem. Depois deles entraram `820c270` e `7d1039f` (rodada 2 da tarefa 79, outro escritor). Identidade conferida: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos
+
+- Novos: `src/merchant_assistant/rag/bm25.py` (tokenização, `corpus_hash`, `Bm25Index`, `load_or_build`), `tests/unit/rag/test_bm25_hybrid.py` (15 testes), `tests/integration/test_v090_hybrid.py` (2 testes).
+- Alterados: `rag/index.py` (`Hit.origin`, `rrf`, `KnowledgeIndex(mode=, bm25_dir=)`, `bm25_index()`, `search(mode=None)` com o denso antigo em `_dense`, manifesto com `bm25_corpus_hash` e `retrieval_modes`), `rag/kb.py` (`capture_active` mantém `mode` e `bm25_dir`), `config.py` (`retrieval_mode`, por acréscimo), `main.py` (passa `RETRIEVAL_MODE` e `<runtime>` ao índice), `testing.py` (passa `RETRIEVAL_MODE`), `evaluation/retrieval.py` (`evaluate(mode=)`), `cli.py` (bloco `eval-retrieval`: `--mode`, saída com `mode` e `bm25_corpus_hash`), `pyproject.toml` (`rank-bm25>=0.2.2`), `tests/scenarios/retrieval.jsonl` (+5 `EXACT-TERM`).
+
+### Evidência
+
+- `rank-bm25 0.2.2` instalado na `.venv` com `uv pip install` (depende só de `numpy`, já presente).
+- Testes novos: **17** (15 + 2), verdes. Testes focados antes da suíte (`tests/unit/rag`, `test_v090_hybrid.py`, `test_cli_index_guard.py`, `test_t74_product_corrections.py`, `test_v060_doc_effect.py`, `test_kb_safety.py`): todos verdes.
+- Equivalência do denso: `search(q)` e `search(q, mode="dense")` comparados com a busca da v0.8.0 reproduzida no teste (uma consulta Qdrant, `Hit(score, payload)`), nas 19 perguntas e em três combinações de `k`, `source_kinds` e `min_score`: mesma ordem, mesmos payloads, `origin="dense"`, scores iguais com `approx(rel=1e-6)`. O `approx` é necessário porque o Qdrant em memória devolve scores diferentes no último dígito em duas consultas idênticas (observado: `0.3881427196…` e `0.3881427599…` para a mesma pergunta, no caminho denso puro).
+- Referência com embeddings de hash (número de referência, não prova real), `eval-retrieval --fake --mode`, k=6, 19 perguntas de `dev`, `bm25_corpus_hash` `ca4109c8…5a98`:
+
+| Modo | Recall@6 (19) | MRR (19) | Recall@6 (5 termo exato) | MRR (5 termo exato) | Recall@6 (14 anteriores) | MRR (14 anteriores) |
+| --- | --- | --- | --- | --- | --- | --- |
+| dense | 0,632 | 0,500 | 0,000 | 0,000 | 0,857 | 0,679 |
+| hybrid | 1,000 | 0,789 | 1,000 | 0,500 | 1,000 | 0,893 |
+
+- Perguntas novas (`case: EXACT-TERM`; a passagem correta existe no corpus): `R-EXACT-SP630-pt` "O que é o SP630?" e `R-EXACT-SP630-en` "Which terminal is the SP630?" (`todas-as-maquininhas`); `R-EXACT-ADQ491-en` e `R-EXACT-ADQ491-pt` sobre "ADQ 4-91" (`erro-adq-4-91`); `R-EXACT-D30-en` "Which rates apply when I receive in D30?" (`todas-as-maquininhas`). Escolhidas entre 14 candidatas porque o denso de hash não as acha no top 6; em reformulações mais longas ele acha o SP630, então o ganho medido aqui é o da pergunta curta com código.
+
+### Suíte estrita
+
+`python tools/scripts/lint_and_tests.py --strict` (venv 3.13.3) com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t80-suite-basetemp -p no:cacheprovider"`, sobre o HEAD `c99aa90` **mais edições não commitadas de outro escritor** (rodada 2 da tarefa 79 em `cli.py`, `evaluation/judge.py`, `evaluation/calibration.py`, `evaluation/runner.py`, `llm/anthropic_llm.py`): **2028 passed, 1 failed** em 994,84 s (2029 = 2012 da tarefa 79 + 17 novos), ruff `All checks passed!`, caminhos pessoais limpos (727 arquivos), exit 1, 1042 s no total. Log em `.pytest_cache/t80-suite.log`, SHA-256 `20178555…0926`.
+
+A falha é `tests/integration/test_v090_judge.py::test_moment_3_both_judges_against_the_same_human_ratings`: o teste espera a linha `judges: … (campaign v090-juiz-opus) beside …` e a `cli.py` em edição já imprimia `(campaign …, execution …)`. É a área da tarefa 79, não desta. Depois que o outro escritor commitou `820c270` e `7d1039f`, rodei no HEAD `7d1039f` `test_v090_judge.py` e os testes da tarefa 80 (`tests/unit/rag`, `test_v090_hybrid.py`, `test_cli_index_guard.py`): **53 passed**. Não rodei a suíte estrita de novo (memória da máquina; instrução de uma execução só): a suíte completa no HEAD final fica para o Reviewer ou o Supervisor.
+
+### Decisões tomadas além do texto do plano (todas reversíveis)
+
+1. **`min_score` no híbrido filtra só a lista densa.** O score devolvido é o do RRF (no máximo cerca de 0,033), então o limiar do Knowledge (`RETRIEVAL_MIN_SCORE`, 0,30) não corta os itens fundidos, e um item só do BM25 entra sem limiar denso (é o caso que o híbrido existe para pegar). Se o Supervisor preferir piso também no BM25, cabe na tarefa 81.
+2. **BM25 só devolve chunks com ao menos um termo da pergunta**, ordenados por score e depois por `chunk_id`; o filtro `source_kinds` vale nas duas listas.
+3. **Tokenização:** palavra com hífen e dígito fica inteira (`e-1023`, `4-91`); sem dígito, o hífen separa (`pré-pago` → `pre`, `pago`). Siglas viram minúsculas (`mdr`) e continuam token.
+4. **Hash do BM25 separado do `corpus_hash` existente.** O existente (só ids, em ordem) continua como estava; o do BM25 é o sha256 dos pares (id, texto) ordenados por id, registrado no manifesto como `bm25_corpus_hash`, ao lado de `retrieval_modes: ["dense", "hybrid"]`.
+5. **Onde o arquivo vai:** `KnowledgeIndex(bm25_dir=)`; `main.py` passa `<runtime>`, então o serviço grava `<runtime>/bm25-<hash>.pkl` na primeira busca híbrida. `testing.py` e `eval-retrieval` deixam o BM25 em memória (`bm25_dir=None`), como o Qdrant deles; `eval-retrieval` não grava nada em disco. Arquivos de hashes antigos não são apagados (versões da base convivem; o retorno do plano já prevê removê-los).
+6. **Cache em processo por (cliente, coleção)**, com chave fraca no cliente para um cliente fechado não emprestar o cache a outro; `rebuild(replace_existing=True)` descarta o cache daquela coleção. O BM25 é montado com os payloads da coleção ativa (scroll no Qdrant), não com os documentos em disco.
+7. **O modo mora no índice:** `KnowledgeIndex(mode=)` (padrão `dense`; modo inválido é `ValueError`); `search()` sem `mode` usa o do índice, e `capture_active` repassa `mode` e `bm25_dir` ao índice da versão ativa. `RETRIEVAL_MODE` é `Literal["dense", "hybrid"]`.
+8. **Desempate do RRF:** score, depois posição no denso, depois posição no BM25.
+
+### Achados e limitações
+
+- **`origin` não aparece no trace do Knowledge.** `Hit.origin` existe, mas o passo `knowledge` do trace grava `doc`, `score`, `chunk_id` e `excerpt` em `agents/knowledge.py`, e a tarefa pede que o Knowledge não mude. Acrescentar `"origin": h.origin` lá é uma linha; **decisão do Supervisor** (muda o trace também no modo denso).
+- **Incidente de commit, corrigido antes de qualquer push.** O primeiro commit da parte de CLI (`a9772da`) levou junto, sem querer, cerca de 40 linhas não commitadas de outro escritor em `cli.py` (`_store_judgements(run=)`, `--judge-run`, aviso de `--only-sample`), porque estavam no mesmo arquivo da árvore de trabalho. Refiz o commit local (`--amend`, com só as minhas linhas de `cli.py`, montadas a partir do arquivo do commit anterior) sem tocar na árvore: as edições do outro escritor voltaram a ficar não commitadas como estavam, e ele as commitou depois em `7d1039f`. `a9772da` não foi publicado; o commit vigente é `c99aa90`.
+- **`.env` carregado uma vez, sem efeito pago.** A primeira medição exploratória (`python -m merchant_assistant.cli eval-retrieval --fake`) rodou com o repositório como diretório corrente, e o `Settings` carrega `.env` de lá. Com `--fake` o embedder é o de hash, sem chamada e sem orçamento. As medições seguintes, inclusive a tabela acima, usaram `Settings(_env_file=None)` fora do repositório.
+- Os números acima são do embedder de hash, que também é lexical; o ganho real do híbrido só aparece com embeddings reais na campanha do QA (tarefa 82). Holdout de retrieval, nDCG@6, `--split` e reranker são da tarefa 81.
+
+### Próxima ação
+
+Reviewer: revisar `5d82fd0` e `c99aa90` e rodar a suíte estrita no HEAD final. Supervisor: decidir sobre `origin` no trace e sobre o piso do BM25 (decisão 1).

@@ -34,8 +34,14 @@ Tarefa 79 commitada na branch (não precisa estar revisada). `rank-bm25` adicion
 
 ## Validação
 
-(Preenchida pelo Developer.)
+Developer, 2026-11-05, commits `5d82fd0` e `c99aa90` na `codex/v0.9.0-juiz-retrieval`. Passagem: [v090-developer.md](../evidence/v090-developer.md), seção "Tarefa 80".
+
+- `rank-bm25>=0.2.2` em `pyproject.toml` (dependência normal) e instalado na `.venv` (`rank-bm25 0.2.2`, via `uv pip install`).
+- Testes novos: 17 (`tests/unit/rag/test_bm25_hybrid.py`, 15; `tests/integration/test_v090_hybrid.py`, 2). Cobrem tokenização (acentos, stopwords, `MDR`, `E-1023`, `ADQ 4-91`), equivalência do denso (`search()` e `search(mode="dense")` contra a busca da v0.8.0, nas 19 perguntas, três combinações de `k`, filtro e `min_score`), modo vindo do índice e modo inválido recusado, `RETRIEVAL_MODE` com padrão `dense`, RRF (pontuação, `origin`, desempate pelo denso), filtro de fonte no híbrido, as perguntas de termo exato, BM25 reconstruído só quando o hash muda (nos dois sentidos, por `load_or_build` e pelo índice com `Bm25Index.build` proibido na segunda carga), cache descartado quando a coleção é substituída, `eval-retrieval --mode` sem rede, e o Knowledge respondendo no grafo nos dois modos com o modo mantido na versão ativa.
+- Referência com embeddings de hash (não é prova real), 19 perguntas de `dev`: denso Recall@6 0,632 e MRR 0,500; híbrido Recall@6 1,000 e MRR 0,789. Nas 5 de termo exato: denso 0,000/0,000; híbrido 1,000/0,500. Nas 14 anteriores: denso 0,857/0,679; híbrido 1,000/0,893.
+- `lint_and_tests.py --strict`: 2028 passed e 1 failed, 2029 no total (2012 da tarefa 79 + 17 novos). A falha é `test_v090_judge.py::test_moment_3_both_judges_against_the_same_human_ratings`, área da tarefa 79, causada por edição em andamento de outro escritor em `cli.py` durante a execução. Ruff sem achados; caminhos pessoais limpos (727 arquivos). No HEAD `7d1039f`, depois dos commits da rodada 2 da tarefa 79, esse arquivo e os testes da tarefa 80 passam (53 passed). Detalhe na passagem.
+- Decisões além do texto e limites (`min_score` só na lista densa; `origin` não aparece no trace do Knowledge, que não mudou): na passagem.
 
 ## Status
 
-Pendente. Aberta pelo Supervisor em 2026-11-05.
+Implementada pelo Developer em 2026-11-05; aguarda revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
