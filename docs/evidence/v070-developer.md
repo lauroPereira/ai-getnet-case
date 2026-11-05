@@ -60,7 +60,7 @@ O mapa critério → teste está na seção Validação da tarefa. Resumo:
 - O MCP rodando fora do Docker valida o token com a chave do runtime local. Para token emitido pela API no Docker, defina `JWT_ISSUER` e `JWT_JWKS_URL` com os valores da API (está na docstring de `cmd_mcp`).
 - No Windows, o modo `0600` do arquivo de chave não é aplicado pelo sistema. A proteção ali é o diretório `data/runtime/`, ignorado pelo Git e fora da imagem.
 - README e CHANGELOG não foram tocados: a quebra de `POST /messages` e de `/v1/sessions`, com as duas chamadas do avaliador, fica para o fechamento (Supervisor). O projeto web ainda chama `/v1/sessions` até a 67.
-- Durante a rodada, o pedido de adiar o formato da credencial chegou antes da decisão por JWT. O estado intermediário (chaves sintéticas) foi salvo como patch em `C:\Users\lauro\AppData\Local\Temp\claude\C--workspace-ai-getnet-case\5e8d3ad9-37a6-4202-a5b5-121938d615be\scratchpad\v070-t63-credencial-chaves-completo.patch`. Ficou superado pela spec v2, nada dele foi commitado e ele pode ser descartado.
+- Durante a rodada, o pedido de adiar o formato da credencial chegou antes da decisão por JWT. O estado intermediário (chaves sintéticas) foi salvo como patch em `<scratchpad da sessão>\v070-t63-credencial-chaves-completo.patch`. Ficou superado pela spec v2, nada dele foi commitado e ele pode ser descartado.
 
 ### Ação externa, próxima ação e decisão pendente
 
@@ -533,7 +533,7 @@ Todos com `.venv/Scripts/python.exe -m pytest -p no:cacheprovider --basetemp .py
 - **Locks entre processos e reinício só exercitados no Windows.** `LANGGRAPH_STRICT_MSGPACK=true` só no processo-filho.
 - `docker compose config` valida o arquivo, não sobe os containers.
 - **README, linha 214, desatualizado:** ainda diz `{"protocol": "SIM-…", "simulated": true}`. Fora do meu escopo (fechamento do Supervisor), junto com CHANGELOG e ADRs.
-- **Diretório vazio criado por engano fora do repositório:** passei um caminho no estilo do Git Bash (`/c/Users/...`) como `--out` do primeiro eval, e o Python do Windows o interpretou como `C:\c\Users\...`. Movi os dois arquivos para o scratchpad e sobrou a árvore **vazia** `C:\c\Users\lauro\AppData\Local\Temp\claude\...\out`. A remoção foi barrada pela verificação de segurança; fica para o Supervisor remover (`C:\c`), depois de conferir que está vazia.
+- **Diretório vazio criado por engano fora do repositório:** passei um caminho no estilo do Git Bash (`/c/Users/...`) como `--out` do primeiro eval, e o Python do Windows o interpretou como `C:\c\Users\...`. Movi os dois arquivos para o scratchpad e sobrou a árvore **vazia** `C:\c\Users\...\out`. A remoção foi barrada pela verificação de segurança; fica para o Supervisor remover (`C:\c`), depois de conferir que está vazia.
 - Os 23 diretórios `.pytest_cache/t68-dev-*` (cerca de 490 MB) que criei como `--basetemp` foram removidos no fim; os demais itens de `.pytest_cache/` não foram tocados.
 
 ### Próximo responsável
