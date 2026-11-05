@@ -1055,3 +1055,66 @@ Pontuei as respostas arquivadas de `v080-healthy-r4.json` (63) e `v080-all-r3.js
 ### Próxima ação
 
 Revisão curta do commit desta rodada (runner e testes), antes do holdout.
+
+## Tarefa 78, rodada 1 (régua literal do CA-51)
+
+Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `91d6ed1` (produto em `658c70a`). Despacho: [tarefa 78](../tasks/78-regua-literal-ca51-recusa-respostas-corretas-v080.md), com a decisão do Supervisor (CA-51 segue pela checagem determinística `passed`; correção pela D15). Identidade conferida (`lauroPereira` / `lauro.s.pereira@gmail.com`). Um commit: `tests/scenarios/business_journeys.jsonl`, `tests/unit/evaluation/test_t78_ca51_archived.py` (novo), esta passagem e a tarefa 78.
+
+`runner.py` não mudou. `data/scenarios/catalog.json` também não: nenhum `source_case` espelha as seis jornadas. O catálogo usa `V030-PT-PRICE-DIVERGENCE`, `V030-PT-ENABLEMENT-PENDING` e `V030-PT-SALE-CANCELLATION`, que ficaram intactos.
+
+### Rótulos e justificativa por caso (D15)
+
+Nas dez respostas, rota, status, ferramentas, valores, fontes, fundamentação e afirmações proibidas já passavam; só `content_ok` falhava. Cada forma nova vem da resposta real e é específica da proposição esperada.
+
+| Jornada | `request_id` | Por que a resposta é correta | Forma que a cobre |
+|---|---|---|---|
+| `PRICE-DIVERGENCE` | `req_eval531ac9146987` | A comparação achou diferença: taxa esperada R$ 0,00, registrada R$ 0,75; encaminha com protocolo (`handoff`) | "found a difference" |
+| `PRICE-DIVERGENCE` | `req_evalb84c1106aea3` | Regra prevê R$ 0,00, cobrança registrada R$ 0,75, pede revisão humana e encaminha. O "but" entre o esperado e o registrado, seguido de valor, é a divergência | "but the recorded charge is R$" (e a variante "was R$") |
+| `PRICE-DIVERGENCE` | `req_eval9a0b07470114` | "shows a difference… R$ 0,00… R$ 0,75… escalated the discrepancy" | "shows a difference" |
+| `PRICE-CONDITIONS` | `req_eval64b06f9b7f24` | Cobrança em `demo_legacy`, condição esperada em `demo_standard`: "used different pricing plans", sem afirmar erro | "different pricing plans" |
+| `PT-PRICE-CONDITIONS` | `req_eval45e5804e758a` | Regra em `demo_standard`, cobrança em `demo_legacy`; "Essa diferença entre as condições, por si só, não confirma erro" | "diferença entre as condições" |
+| `PRICE-INSUFFICIENT` | `req_eval3180af09b4e0` | Sem taxa esperada nem cobrança registrada, não verifica a taxa e não inventa valores | "no expected fee or recorded charge" |
+| `PRICE-INSUFFICIENT` | `req_evalb8354030edbd` | Idem, com "does not establish that the fee was incorrect" (ressalva honesta, já aceita pela T75) | "no expected fee or recorded charge" |
+| `PT-PRICE-INSUFFICIENT` | `req_evalaf77a604682c` | "Não havia uma taxa esperada calculável nem uma cobrança registrada para comparação"; não informa taxa nem líquido | "taxa esperada calculável nem uma cobrança registrada" |
+| `PT-PRICE-INSUFFICIENT` | `req_eval025b4ed82d6f` | "não há evidências suficientes para comparar a taxa", o plural da forma já aceita | "não há evidências suficientes para comparar" |
+| `SALE-CANCELLATION` | `req_eval932e426373de` | O status semeado é `requested` (não `completed`, `rejected` nem `unknown`): "request to cancel… has been received, but the cancellation has not been processed yet" | "request to cancel" junto com "not (yet) (been) processed" |
+
+Decisão além do texto do plano, em `SALE-CANCELLATION`: o rótulo passou de `[["requested"]]` para dois grupos, `[["requested", "request to cancel"], ["requested", "not processed", "not been processed", "not yet processed", "not yet been processed"]]`. Os grupos se combinam por E e as alternativas por OU, então o rótulo equivale a "requested" **ou** ("request to cancel" **e** "não processado"). "requested" sozinho continua aceito, como antes. "request to cancel" sozinho não basta, e há teste para isso. Uma substring só não exprime "request to cancel … received".
+
+Contradições reforçadas (as que já existiam ficaram):
+
+- `PRICE-DIVERGENCE`, `must_not_include`: "no difference", "not/n't found a difference", "did not/didn't find a difference", "not/n't show a difference", "recorded charge is/was the same", "recorded charge matches/matched", "matches the pricing rule". `must_not_assert` novo: "the fee is correct", "the fee was charged correctly", "the charge is correct".
+- `PRICE-CONDITIONS`, `must_not_include`: "did not/didn't use different", "used the same (pricing) plan", "same (pricing) plan was used", "same conditions were used", "conditions/plans are the same", "plans were the same", "conditions/plans did not/didn't differ", "no difference in pricing conditions", "no difference between the pricing plans", "were/are not different". `must_not_assert` novo: "the fee is correct/incorrect/wrong", "the fee was charged correctly".
+- `PT-PRICE-CONDITIONS`, `must_not_include`: "não há/nenhuma/sem/não houve/não existe diferença entre as condições", "planos são iguais", "planos iguais", "mesmos planos". `must_not_assert` novo: "a taxa está correta/incorreta/errada", "a taxa cobrada está correta/incorreta/errada", "a cobrança está correta/incorreta". O teste de contradição achou a lacuna "a taxa cobrada está errada", que entrou.
+- `PRICE-INSUFFICIENT`, `must_not_assert`: "there is sufficient evidence", "the fee was charged incorrectly".
+- `PT-PRICE-INSUFFICIENT`, `must_not_assert`: "as evidências são suficientes para comparar". Não acrescentei "há evidências suficientes": é substring da forma aceita "não há evidências suficientes", e "não" não é qualificador.
+- `SALE-CANCELLATION`, `must_not_include`: "no request to cancel", "not/n't find a request to cancel", "no cancellation request", "no cancellation records", "not marked as requested", "was not/wasn't requested", "has not/hasn't been requested". `must_not_assert` novo: "cancellation has been/was processed", "cancellation has been/was completed", "has already been processed", "sale has been/was canceled/cancelled", "request was/has been rejected", "cancellation was/has been rejected", "marked as completed/rejected/processed".
+
+### Prova offline (`runner._checks` real, arquivos só lidos)
+
+`tests/unit/evaluation/test_t78_ca51_archived.py`, 166 testes:
+
+- (a) As 10 `request_id` passam nas nove checagens. O teste confere antes que o veredito arquivado era `content_ok = false` e que as outras checagens já passavam.
+- (b) Comparei os rótulos de `91d6ed1` com os novos em 111 respostas das 13 jornadas (r3 39, r4 39, r5 33), 999 checagens. **Mudaram 13 checagens.**
+  - 10 de `content_ok` (false → true): as falsas recusas.
+  - 3 de `forbidden_ok` (true → false): as respostas de `SALE-CANCELLATION` da r4 com ambiente inválido ("No cancellation records were found…"), que já reprovavam por `content_ok`.
+  - **Nenhuma resposta que passava deixou de passar.** Eram 76 aprovadas e agora são 86. As 63 que a campanha aprovou seguem aprovadas.
+  - As 25 da r4 que reprovavam continuam reprovadas: ambiente inválido das jornadas datadas e `CONTRACT-TERMINATION` rep. 1 (T76).
+- (c) 53 contradições, em EN e PT, são recusadas sozinhas e também coladas a cada resposta aceita da mesma jornada: `content_ok` segue verdadeiro e `forbidden_ok` cai. Outras 10 sondas negam ou invertem as formas novas e também são recusadas.
+- (d) CA-51 recalculado na composição da r5 (r5 nas 11 jornadas reexecutadas, r4 em `ENABLEMENT-PENDING` EN/PT): **13/13, 13/13 e 13/13**. Os arquivados eram 11/13, 8/13 e 10/13.
+
+### Evidência
+
+- Testes focados, com basetemp `.pytest_cache/t78-focused`: **785 passed**. Arquivos: `tests/unit/evaluation`, `test_v080_journeys`, `test_evaluation_runner`, `test_use_cases`, `test_v080_story`, `test_v070_closing` e `test_t76_contract_termination`.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` (venv 3.13), com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t78-suite-basetemp -p no:cacheprovider"`: **1545 passed** em 640,85 s (1.379 + 166, sem skip). Ruff `All checks passed!`, skills válidas, exit 0. Log em `.pytest_cache/t78-suite.log`, SHA-256 `356751df…c66b`.
+- Nenhuma chamada paga, rede ou `.env`. Não toquei em `runner.py`, Router, CLI, script de transição, catálogo, `data/runtime/`, `.pytest_cache/qa-v080-r1/` nem holdout.
+
+### Limites
+
+- A régua continua literal, e a próxima execução real pode trazer outra redação. A prova vale para as respostas arquivadas; o reteste pago das seis jornadas é do QA.
+- `must_not_include` compara substring, sem qualificador. Uma ressalva honesta que contenha uma das frases novas seria recusada. Nenhuma resposta arquivada cai nisso.
+- `PT-SALE-CANCELLATION` não mudou: está fora das seis, passou 3/3 na r5 e é espelhada no catálogo. "cancelamento foi concluído" já está no rótulo dela.
+
+### Próxima ação
+
+Revisão do commit desta rodada (rótulos e teste). Depois, reteste pago das seis jornadas pelo QA: três repetições, no mesmo dia da seed.

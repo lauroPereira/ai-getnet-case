@@ -57,8 +57,17 @@ Rótulos dev em `tests/scenarios/business_journeys.jsonl` e, se a decisão for d
 
 ## Validação
 
-Pendente.
+Developer, rodada 1 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-1-régua-literal-do-ca-51). Mudaram só os rótulos das seis jornadas em `tests/scenarios/business_journeys.jsonl`, com justificativa por caso. `runner.py` e o catálogo ficaram como estavam: nenhum `source_case` espelha essas jornadas.
+
+- Prova offline com `runner._checks` real, em `tests/unit/evaluation/test_t78_ca51_archived.py` (166 testes):
+  - As 10 respostas passam em todas as checagens.
+  - Comparei 111 respostas arquivadas das 13 jornadas (r3, r4 e r5), 999 checagens. Mudaram 13: as 10 falsas recusas e 3 `forbidden_ok` em respostas da r4 que já reprovavam.
+  - Nenhuma aprovada passou a reprovar: eram 76 e agora são 86.
+  - 53 contradições, em EN e PT, foram recusadas, e outras 10 sondas que negam as formas novas também.
+- CA-51 recalculado na composição da r5: 13/13, 13/13 e 13/13.
+- Suíte estrita: 1545 passed (1.379 + 166), Ruff e skills ok, exit 0.
+- Pendente: revisão e reteste pago das seis jornadas pelo QA.
 
 ## Status
 
-Aberta pelo QA (r5), 2026-11-05.
+Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05; aguarda revisão.
