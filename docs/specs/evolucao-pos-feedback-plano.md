@@ -175,6 +175,8 @@ Na sessão de retomada, o ledger primário registrou **US$0,54250491** gastos e 
 
 **Ampliação confirmada pelo responsável em 2026-11-04.** Autoriza a transição local do teto persistido do ledger primário para **US$1,70**, com o histórico preservado, e uma faixa excepcional de **US$1,10** para `v080-qa` somente quando o artefato revalidado comprovar estimativa acima de US$1,00 e até US$1,10. A revisão e a validação precedem a transição. O teto global de US$5,00 e a reserva de planejamento de US$2,50 continuam vigentes. A margem da campanha acima de US$1,00 sai da contingência da mesma reserva. Antes das chamadas, confirmar os saldos, o serviço sintético de preços e a montagem única. [Projeção complementar](../evidence/v080-projecao-estratificada-r3.md)
 
+**Contingência autorizada pelo responsável em 2026-11-05.** Na retomada da v0.8.0 no Claude Code, com o reteste r4 em curso e o saldo do cap de US$1,10 igual à soma das fases restantes (reteste US$0,25, juiz repetido US$0,07709880, holdout US$0,36062993, smoke e margem US$0,02943366), o responsável autorizou até **US$0,30 adicionais** para `v080-qa`, debitados da linha "Contingência" desta reserva. Condições: usar só se a guarda bloquear uma fase prevista ou um único reteste após correção revisada; aplicar pelo mesmo rito da ampliação de 2026-11-04 (Developer, Reviewer, suíte estrita, transição validada); registrar motivo e valor liberado na evidência e no relatório. Teto global de US$5,00 inalterado. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
+
 ## Plano de implementação
 
 Cada item vira um arquivo em `docs/tasks/` quando a versão for aberta.
