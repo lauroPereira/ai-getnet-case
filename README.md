@@ -262,6 +262,33 @@ Example: *"When will the money from yesterday's sales be deposited?"* (`cliente1
 `status` is one of `answered`, `needs_clarification`, `handoff`, `refused`. `resolution` is separate from the
 request status: answering does not close the case. Handoffs add `{"protocol": "HO-…", "reason": "..."}`; replies also carry `via` (`agent`, or `operator` for a human reply).
 
+
+### Replanning, as it ran
+
+The V4 feedback asked for `agent → observe result → Router reconsiders → replan → different agent → review`, with a
+hop limit. Since v0.8.0 a `replan` node runs after Knowledge, web and Support and decides `finish`, `knowledge`,
+`web`, `support`, `escalate` or `clarify`; named rules decide the clear cases, `replan.v2` decides only when no rule
+applies or two disagree, each specialist runs at most once, and `MAX_PLAN_HOPS=3` bounds the plan changes. Every
+decision carries its origin in the trace. A real request from the v0.8.0 QA (`req_eval866ca888dc9d`, 2 hops: the
+Router planned `support`, replanning added the official procedure and then the web):
+
+```text
+ 2 router          2668 ms  route=support
+ 6 support         7035 ms  (3 tools)
+10 replan             0 ms  next=knowledge  origin=rule:procedure_gap           hops=1  "support covered the account part; the how-to part needs the official procedure"
+11 knowledge       5199 ms
+12 replan             0 ms  next=web        origin=rule:evidence_insufficient_web hops=2  review=incomplete
+13 web             5394 ms
+14 replan             0 ms  next=finish     origin=rule:complete                 hops=2  review=complete
+15 personality     2691 ms
+```
+
+Across the whole v0.8.0 QA runtime (400 `replan` steps), 382 decisions came from rules and 18 from the model; the
+model decided only ambiguous cases (9 → `support`, 8 → `web`, 1 → `finish`). Rules first is a design choice:
+deterministic, free, and auditable by name. The four replanning scenarios passed 3/3 each with real models
+(`REPLAN-ACCOUNT` 2 hops, `REPLAN-WEB` 1, `REPLAN-PROCEDURE` 0 extra, `REPLAN-TOOL-DOWN` 1 with an `HO-` protocol
+instead of an invented number) ([pre-holdout QA](docs/evidence/v080-d12-pre-holdout-r6.md)).
+
 ## Conversations and case follow-up
 
 Since v0.2.0 a conversation carries memory and a case state.
@@ -411,7 +438,7 @@ tests), with `store=false`:
 | Unit | Tools (binding, filters, dates, errors), clock and seed, chunking, guards, pricing, budget atomicity, Router rules | 0 |
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
 | Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
-| Release validation (real) | The 40 labeled cases and 4 multi-turn conversations against real models on each release candidate, inside a fixed campaign budget; see the [v0.6.0 result](docs/evidence/v060-resultado.md) | Paid and capped (v0.6.0 QA: US$0.088) |
+| Release validation (real) | The 44 labeled cases, 13 business journeys and 4 multi-turn conversations against real models on each release candidate, three runs each, judged by an independent model; sealed holdout run once, last; see the [v0.8.0 evidence](docs/evidence/v080-d12-pre-holdout-r6.md) | Paid and capped (v0.6.0 QA: US$0.088) |
 | Retrieval | Recall@k and MRR on labeled questions | ≈ US$0.001 |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
@@ -419,12 +446,44 @@ The scripted model follows simple rules for each agent, so the whole system (rou
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Validated v0.6.0 evidence:** the strict suites pass (backend **349 tests**, web **42 tests**, Ruff clean). The real-model
-regression on the release candidate passed the 10 challenge examples and the 17 core cases (**27/27**) and the 4
-multi-turn conversations (**4/4**). Business journeys passed 7/13 under the literal rubric: four pricing cases used
-different wording with the right tool, values and status, and one English pricing-conditions question went to
-`clarify`. Retrieval: Recall@6 = 1.00 and MRR = 1.00 on 14 labeled questions. The
-[v0.6.0 result](docs/evidence/v060-resultado.md) links the independent review and QA reports.
+**Validated evidence (v0.8.0, real models).** Strict suite **1,997 tests**, Ruff clean. The V4 feedback asked for
+aggregated groundedness, correctness, relevance and usefulness, an independent judge, repeated runs, a holdout and
+human review; this is the main table, from the [campaign](docs/evidence/v080-all-r3.md), the
+[holdout](docs/evidence/v080-holdout-r7.md), the [calibration](docs/evidence/v080-calibracao.md) and the
+[judge experiment](docs/evidence/v090-juiz-opus.md). The judge is `deepseek-flash` over an OpenAI agent (`judge.v3`,
+scores 1–5 against the masked evidence of each answer); "±1" is the share of repeated runs within one point.
+
+| Set (agent runs × judge) | groundedness | factual_correctness | relevance | usefulness | unsupported_claim rate |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Development, 44 cases × 3 runs | 4.56 (±1 0.93) | 4.62 (±1 0.96) | 4.77 (±1 1.00) | 4.53 (±1 0.97) | 0.14 |
+| Sealed holdout `holdout_v080`, 25 cases × 3 runs, run once | 4.67 (±1 0.96) | 4.61 (±1 0.93) | 4.83 (±1 0.96) | 4.64 (±1 0.93) | 0.08 |
+| Judge repeated 3× on the holdout answers (judge variation) | 4.61 (±1 0.99) | 4.59 (±1 0.97) | 4.80 (±1 1.00) | 4.60 (±1 1.00) | 0.11 |
+
+Deterministic checks on the same runs: replanning scenarios 3/3 each, business journeys **13/13, 12/13, 12/13**
+(the two refusals are correct paraphrases the literal floor rejects; the judge gave 13/13), conversations 4/4,
+holdout 62/75 by the literal floor.
+
+**Human review of the judge.** The owner rated a stratified sample of 24 answers with the judge's rubric, without
+seeing its scores; then the same 24 answers were judged by `claude-opus-5-5` under a decision rule written before
+the run (spec D2):
+
+| Agreement with the human (24 answers) | DeepSeek (default judge) | Claude Opus 5.5 |
+| --- | ---: | ---: |
+| Within one point: groundedness / factual / relevance / usefulness | 0.83 / 0.83 / 1.00 / 0.92 | 0.96 / 0.96 / 1.00 / 0.96 |
+| Bias (judge − human), groundedness | −0.33 | −0.17 |
+| `unsupported_claim` verdict: exact agreement, kappa | 0.67, −0.20 | 0.88, 0.36 |
+| Generic claims the human flagged (4) that the judge flagged | 0 | 1 |
+| Self-consistency over 3 repetitions (exact) | 0.76–0.86 | 0.81–1.00 |
+| Cost per judgement | US$0.0003 | US$0.0178 |
+
+Both judges are stricter than the human; neither flags the generic claims the human flagged. The pre-registered rule
+said that this outcome means the gap is in the rubric, not the model, so DeepSeek stays the default and the rubric
+gains a line for generic claims without a source ([next steps](#next-steps)). The quadratic kappa of the 1–5 scores is
+near zero because almost every human score is 5 (ceiling effect); the within-one-point agreement is the usable figure.
+
+History: v0.6.0 passed 27/27 core cases and 4/4 conversations with 7/13 journeys under the literal rubric
+([v0.6.0 result](docs/evidence/v060-resultado.md)); Recall@6 = 1.00 on 14 development questions, which v0.9.0 replaces
+with a sealed retrieval holdout.
 
 ## Design decisions
 
@@ -461,7 +520,63 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 
 **Two breaking changes.** `POST /messages` requires `Authorization: Bearer <token>` (the merchant comes from the token; a different `user_id` in the body gets `403 identity_mismatch`), and `POST /v1/sessions` / `DELETE /v1/sessions/current` were replaced by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The evaluator's two calls are in [Run it](#run-it); `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
 
+
+**The loop, end to end.** This is the flow the V4 feedback asked for, and the commands that drive it against the
+Compose stack (the operator side goes through the same `/v1/handoffs` API the ticketing service and the CLI use):
+
+```text
+Merchant message
+    ↓
+Escalation agent → case HO-… → graph pauses at human_review (LangGraph interrupt(), SQLite checkpoint)
+    ↓
+Operator (op_ana) claims the case and replies / approves / rejects
+    ↓
+Command(resume): the reply becomes a turn marked via=operator, delivered on the merchant's next message
+    ↓
+Merchant message → route human_reply (no model call), GET /v1/conversations/{id} and webhook carry it too
+```
+
+```bash
+TOKEN=$(docker compose exec -T api merchant-assistant auth token --url http://localhost:8000)          # cliente1988
+curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"message": "Quero falar com um atendente humano"}'            # status "handoff", handoff.protocol "HO-…", conversation_id "conv_…"
+OP=$(docker compose exec -T api merchant-assistant auth token --username op_ana --url http://localhost:8000)   # operator
+curl -s "localhost:8000/v1/handoffs?state=open" -H "Authorization: Bearer $OP"                      # the case_id
+curl -s -X POST localhost:8000/v1/handoffs/<case_id>/claim -H "Authorization: Bearer $OP"
+curl -s -X POST localhost:8000/v1/handoffs/<case_id>/actions -H "Authorization: Bearer $OP" -H 'content-type: application/json' \
+  -d '{"action": "reply", "text": "Your payout was sent today.", "idempotency_key": "demo-reply-0001"}'
+curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"message": "Any news?", "conversation_id": "<conversation_id>"}'   # route "human_reply", via "operator", the operator's text
+```
+
+Repeating the claim is idempotent; repeating the action with the same `idempotency_key` returns the first result; a
+second resume of the same case gets `409 already_resumed`. The v0.7.0 story QA walked this sequence with real models
+and the ticketing screen ([story QA](docs/evidence/v070-qa.md), moments 6 to 14).
+
 - **Identity** ([ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md)). The assistant issues RS256 JWTs (own issuer, JWKS and discovery; an external OIDC issuer is a configuration change). Roles `merchant`, `operator`, `service`, `demo` and `admin` carry scopes; every tool call checks scope and merchant and writes an audit row with principal, scope and result. Tokens can be revoked; requests are rate-limited per principal and login attempts are limited.
+
+**The identity chain, with where each step lives.** The V4 feedback described the missing chain as
+`credential → authenticated principal → authorization → merchant`, with every tool call authorized. Since v0.7.0:
+
+```text
+credential               POST /v1/auth/token (password grant for demo users, client_credentials for the ticketing service)
+    ↓
+authenticated principal  RS256 JWT from the assistant's own issuer; verified on every request (api/identity.py: Identity.verify,
+                         principal_from_claims); roles merchant | operator | service | demo | admin with scopes; revocation; rate limit
+    ↓
+authorization            each tool call checks the required scope (tools/registry.py: access_error); a body user_id that differs
+                         from the token gets 403 identity_mismatch (api/app.py); operator endpoints need handoff:operate
+    ↓
+merchant                 the customer of every tool comes from the token (ToolEnv.customer); no tool schema has a customer field;
+                         another merchant's resource returns FORBIDDEN_RESOURCE with no data
+    ↓
+audit row                every tool call writes principal, tool, scope, result and touched resource (tools/registry.py: write_audit);
+                         a call that cannot be audited is not reported as done
+```
+
+An external OIDC issuer is a configuration change (`JWT_JWKS_URL`); the demo users and secrets in `.env.example` are
+fictitious and no private key is versioned (`JWT_PRIVATE_KEY_PATH` empty: the key is generated at startup).
+
 - **Pause and resume** ([ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md)). When the Escalation agent opens a case, the end-of-turn state goes to a review graph checkpointed in SQLite that stops at `human_review` with LangGraph `interrupt()`; the attendance path without a handoff reads no checkpoint. An operator's `approve`, `reply` or `reject` resumes it with `Command(resume)`: approve and reply go to Personality, reject re-runs Support once with the operator's instruction. The reply is a turn marked `via=operator`, delivered on the merchant's next message (route `human_reply`, no model call), in `GET /v1/conversations/{id}` and by webhook. It survives an API restart.
 - **Queue.** States `open → claimed → answered | rejected → closed`; claim and actions are idempotent (`idempotency_key`), a second resume gets `409 already_resumed`, another operator's claim `409 claimed_by_other`. API (`GET /v1/handoffs`, `POST /v1/handoffs/{id}/claim`, `POST /v1/handoffs/{id}/actions`), CLI (`merchant-assistant operator list|show|act`) and the ticketing service go through the same service.
 - **Ticketing service.** A separate service in Compose (own database, published on `127.0.0.1:8002`), with the ticket cycle `new → open → pending → solved` and an operator screen in the web project. It talks to the assistant only through signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction) and a `client_credentials` token. Incoming events are idempotent by id and a repeated refused event gets the original `409`/`422` back.
