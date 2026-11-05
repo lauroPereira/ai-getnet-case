@@ -772,3 +772,153 @@ O relatório de origem precisa ter a evidência das respostas (campanha com `--j
 - Não verificados: planilha real; campanha real.
 - Próxima ação: nova revisão curta da rodada 2; depois o QA da campanha `v080-qa`.
 - Decisão humana pendente: nenhuma. Reversíveis: retirada em vez de manter; exclusão com aviso em vez de recusa; corte de 10% do intervalo.
+
+## Tarefas 75, 76 e 77 (defeitos do QA r4 e contingência)
+
+- Papel e responsável: Developer do Time A (subagente), despacho do Supervisor de 2026-11-05 para as tarefas [75](../tasks/75-rotulo-literal-price-insufficient-v080.md), [76](../tasks/76-encerramento-contrato-pede-esclarecimento-v080.md) e [77](../tasks/77-teto-contingencia-v080-qa.md), nesta ordem, depois do [parecer do QA r4](v080-d12-pre-holdout-r4.md).
+- Objetivo e critérios:
+  - 75: aceitar as quatro respostas corretas de `PRICE-INSUFFICIENT` sem aceitar contradições.
+  - 76: encaminhar a humano o pedido explícito de encerramento do contrato em todas as repetições.
+  - 77: permitir o cap de contingência US$1,40 só para continuar a `v080-qa`, com transição ensaiada em cópia.
+- Escopo:
+  - **75:** `tests/scenarios/business_journeys.jsonl` (2 linhas), `tests/unit/evaluation/test_t75_price_insufficient_archived.py` (novo), tarefa 75.
+  - **76:** `src/merchant_assistant/agents/router.py` (regra em `enforce`), `tests/unit/test_t76_contract_termination.py` (novo), tarefa 76.
+  - **77:** `src/merchant_assistant/cli.py` (só `_evaluation_budget_guard`, a constante e o argparse do `--campaign-cap-usd`), `src/merchant_assistant/orchestration/budget.py` (`FixedBudgetGuard`), `tools/scripts/v080_contingency_transition.py` (novo), `tests/unit/test_t77_contingency_cap.py` (novo), tarefa 77.
+  - **Intocados:** `prompts/` (nenhum `router.v7`), `data/scenarios/catalog.json`, `orchestration/graph.py`, `scripted_policy.py`, o holdout e o `.sha256` dele (lacre LF `91aa5158…4f1bac` conferido sem abrir o conteúdo), `data/runtime/` (só lido para a cópia), `.pytest_cache/qa-v080-r1/`, `.env`, `_tmp/`, `Claude outputs/`, `v/`.
+- Estado: implementadas; em andamento até a revisão independente. A 77 também espera a aplicação pelo Supervisor.
+- Branch e PR: `codex/v0.8.0-replan`, sem PR, sem push.
+- Base e versão final: base `0e3f702`. Commits: 75 `d972dd0`; 76 `a9651f7`, sobre `d972dd0`; 77 `94bf7b3`, sobre `a9651f7`. Esta passagem e a validação das tarefas vão num commit só de docs sobre `94bf7b3`.
+- Independência: não-independente (relato do autor).
+
+### Tarefa 75: rótulos e justificativa por caso (D15)
+
+As quatro respostas estão corretas. A venda de crédito em 2 parcelas de 02/11/2026 não tem regra de preço aplicável nem cobrança registrada (`simulate_pricing` devolve evidência insuficiente). Cada resposta diz isso sem afirmar que a taxa está certa ou errada, e o juiz deu 5 ou 4 em todos os critérios, sem afirmação sem suporte. Em cada caso, a forma acrescentada é a frase da própria resposta:
+
+| `request_id` | Resposta (trecho) | Acrescentado em `must_include_any` |
+|---|---|---|
+| `req_evalbccfe360ff22` (EN, rep. 1) | "no fee rule or recorded charge was available to compare" | `no fee rule or recorded charge` |
+| `req_evaldf38c4d80b5e` (EN, rep. 2) | "there are no pricing-rule details or recorded charge to compare" | `no pricing-rule details or recorded charge` |
+| `req_evale8ee4429374a` (PT, rep. 2) | "Não há uma taxa esperada disponível na regra de preços nem uma taxa registrada para comparação" | `não há uma taxa esperada disponível` |
+| `req_eval51b2a1d763e0` (PT, rep. 3) | "não havia uma regra de preço aplicável nem uma cobrança registrada para comparação" | `não havia uma regra de preço aplicável` (o pretérito da forma que já existia) |
+
+Contradições acrescentadas a `must_not_assert`:
+
+- EN: `the fee was confirmed`, `the fee is incorrect`, `the fee is wrong`, `the fee was charged correctly`, `the fee diverges`, `there is a fee discrepancy`, `there is a fee divergence`.
+- PT: `a taxa foi confirmada`, `a taxa está incorreta`, `a taxa está errada`, `a taxa cobrada está correta`, `a taxa cobrada está incorreta`, `a taxa diverge`, `há divergência na taxa`.
+
+As formas que já existiam ficam como estavam. Não incluí `the fee was charged incorrectly`: `req_evaldf38c4d80b5e` diz corretamente "This does not establish that the fee was charged incorrectly", e "does not establish that" não está entre os qualificadores do runner. `must_not_assert` respeita os qualificadores de incerteza ("não é possível confirmar se a taxa cobrada está correta ou se há divergência" continua aceito). O catálogo da bancada não muda: nenhum `source_case` aponta para estes dois IDs, e o teste de espelhamento da v0.7.0 continua verde.
+
+Prova offline. O teste novo carrega `v080-healthy-r4.json` e `v080-all-r3.json` e recalcula com a própria `runner._checks`, a partir dos campos arquivados (rota, status, idioma, fontes, ferramentas e violações).
+
+- As quatro `request_id`, que o arquivo confirma estarem com `content_ok = false`, agora passam em todas as checagens determinísticas.
+- As 12 respostas da r3 e da r4 destes IDs passam.
+- Os 51 controles negativos são recusados: 17 contradições sozinhas e 34 anexadas a uma das quatro respostas aceitas (nestas, `content_ok` continua verdadeiro e `forbidden_ok` fica falso).
+- Reavaliei, com um script de rascunho, todas as respostas arquivadas destes dois IDs em `docs/evidence/*.json`. Só as quatro mudaram. As falhas anteriores (`v030-real-r1` e `v080-custo-*-r2` PT, com rota ou status errados) continuam iguais.
+
+### Tarefa 76: a regra do Router e seus limites
+
+Segui a decisão do Supervisor, sem nova versão de prompt. A regra fica em `router.enforce` e atua quando:
+
+- a conversa é nova;
+- `safety` é `none`;
+- a rota do modelo não é `human_handoff`;
+- a **mensagem inteira** é um pedido explícito de encerramento.
+
+Nesse caso, a rota vira `human_handoff`, com `topic = contract` e sem pergunta de esclarecimento. Formas aceitas:
+
+- EN: `close`, `end`, `terminate` ou `cancel` + `my`, `the` ou `our` + `[Getnet] contract` + `[with Getnet]`, com `I want/need/wish/would like to`, `I'd like to` e `please` opcionais.
+- PT: `encerrar`, `cancelar`, `rescindir`, `fechar`, `terminar` ou `finalizar`, ou os imperativos (`encerre`, `cancele`…) + `[o] [meu|nosso] contrato` + `[com a|da|na Getnet]`, com `quero`, `preciso`, `desejo`, `gostaria de` e `por favor` opcionais.
+- Pontuação final: só `.` ou `!`.
+
+Ficam com o modelo, de propósito:
+
+- perguntas ("How do I close my contract?", "Quero encerrar meu contrato?");
+- mensagens com serviço ou produto ("Quero cancelar o serviço X", "contrato da maquininha", "Payment Link contract");
+- negação e pedido misto ("… e cancelar a venda de ontem");
+- conversas em andamento;
+- mensagens com `safety` (vão para `out_of_scope`).
+
+Outros limites:
+
+- Formas nominais ("rescisão do contrato", "termination of my contract") não estão cobertas.
+- Quando o modelo já escolheu `human_handoff`, a decisão dele fica intacta, inclusive o `topic`.
+- O trace não marca que a regra atuou: `route_initial` é `human_handoff` nos dois casos.
+- A política programada já encaminhava estas frases e não mudou.
+
+Regressão. A jornada roda com o Router programado para pedir esclarecimento em toda mensagem (a falha da r4). Nas três repetições, a resposta sai com rota `human_handoff`, status `handoff`, protocolo `HO-` distinto e todas as checagens do runner verdes. Em PT, "Quero encerrar meu contrato." encaminha e "Quero cancelar o serviço X." continua em `clarify`.
+
+### Tarefa 77: CLI, guarda, transição e ensaio
+
+**CLI.** O valor `1.40` exige `--campaign-estimate`, verificada pelo mesmo `_verified_v080_campaign_estimate` e na faixa do cap 1,10 (acima de US$1,00 e até US$1,10). Decisão minha: a contingência não muda a estimativa e só continua a campanha que essa estimativa justificou.
+
+Antes de abrir qualquer ledger para escrita, a CLI recusa nestes casos:
+
+- campanha ainda em 1,10: "apply the reviewed contingency transition";
+- nenhum cap `v080-qa` persistido com sidecar: "nothing was mounted".
+
+Depois de montar os dois guardas, recusa quando o teto primário **persistido** (sidecar) menos o comprometido não cobre o restante da campanha: "persisted primary ceiling does not cover".
+
+Minha leitura da condição (a): o cap persistido de 1,10 identifica a campanha, mas a continuação com 1,40 só é aceita depois da transição. Montar 1,40 sobre um registro de 1,10 exigiria que a CLI regravasse o cap, e isso é papel do script revisado.
+
+**Guarda.** Acima de 1,10, `FixedBudgetGuard` exige ledger e sidecar existentes antes de criar qualquer arquivo e nunca insere um cap novo. Assim, nem uma chamada direta monta campanha nova a 1,40. Os valores 0,50, 1,00 e 1,10 não mudaram. Depois da transição, `--campaign-cap-usd 1.10` passa a ser recusado, porque registro e sidecar não batem mais, como esperado.
+
+**Script.**
+
+- SHA-256 lógico: as entradas de `ledger` em ordem de `id`, uma linha JSON por entrada, com `repr` dos `float`. Não é comparável ao hash da transição de 2026-11-04, que usou outro procedimento.
+- Processos: o script lista as linhas de comando (`Win32_Process` no Windows, `ps` no POSIX) e recusa `merchant_assistant`, `merchant-assistant` e `uvicorn`. Exclui o próprio processo e as linhas que citam o script. Com um processo sentinela "uvicorn-sentinel", a sondagem acusou os dois PIDs (lançador da venv e intérprete). Contêineres Docker não são verificados.
+- Sidecars: os reais tinham terminadores diferentes. O do primário era `1.70\n`, gravado pelo procedimento de 2026-11-04; o da campanha, `1.1\r\n`, gravado pelo guard em modo texto. O script grava `repr` e mantém o terminador de cada arquivo: `2.0\n` e `1.4\r\n`.
+
+**Ensaio em cópia** (`.pytest_cache/t77-rehearsal-20261105/`). Copiei byte a byte os quatro arquivos de `data/runtime/` e conferi os SHA-256 antes e depois. Os reais não mudaram: `budget.sqlite3` `45e5a93a…5320`, `.limit` `7f24e2de…278b`, `budget-v080-qa.sqlite3` `9f5cd6f8…1441`, `.limit` `d8bb7408…2ec4`.
+
+| Verificação (cópia) | Antes | Depois |
+|---|---:|---:|
+| Teto primário (sidecar) | US$1,70 | US$2,00 |
+| Cap `v080-qa` (registro e sidecar) | US$1,10 | US$1,40 |
+| Entradas e último ID, primário | 2.733 / 2733 | 2.733 / 2733 |
+| Entradas e último ID, campanha | 1.117 / 1117 | 1.117 / 1117 |
+| Comprometido, primário / campanha | US$1,14385079 / US$0,58164655 | iguais |
+| Reservas abertas | 0 / 0 | 0 / 0 |
+| SHA-256 lógico, primário | `845ee88e6f59d85e00d7ef3579a7da616301c56a756893dd0dae0f1190a36181` | igual |
+| SHA-256 lógico, campanha | `9fae30f59ac848452424bc3c3cefbff4cb2af00bf63f18fa495c78691c8ae100` | igual |
+| Folga primário / campanha | — | US$0,85614921 / US$0,81835345 |
+| Processos do projeto | 0 | 0 |
+
+Passos do ensaio:
+
+1. Dry-run: saída 0, nada escrito, `would_change` = os três alvos.
+2. `--apply`: `applied`, com todas as verificações verdadeiras.
+3. Segunda execução: `already_applied`, sem criar o diretório de auditoria.
+4. CLI sobre a cópia, com o artefato real `v080-custo-estimativa-r3.json` (estimativa verificada US$1,03174096): aceitou 1,40, com restante combinado de US$0,81835345, e recusou 1,10 e 1,00.
+
+Auditoria em `audit/`: `prepared.json` (`949f33f0…c512`), `applied.json` (`07e9071a…4ac6`), os backups SQLite (verificados por `integrity_check` e pelo hash lógico) e os bytes dos sidecars.
+
+O `prepared.json` registra o SHA-256 dos bytes do script como estão no checkout: `366e4f2c…4e14`, com CRLF. O conteúdo LF versionado tem `ecefa4e5…51c9`. O Supervisor deve conferir contra o checkout que usar.
+
+**Não apliquei nos ledgers reais.**
+
+### Evidência
+
+Testes focados (`.venv` Python 3.13, `-p no:cacheprovider`):
+
+- 75: `test_t75_price_insufficient_archived` (54 testes), mais os rótulos de `test_v080_labels_and_handoff_evidence`, `test_evaluation_runner`, `test_v080_journeys` e `test_v070_closing`: **224 passed** (37 s).
+- 76: `test_t76_contract_termination` (74 testes), `test_t74_product_corrections`, `test_budget_and_router`, a trava de D18 (`test_v070_story`, `test_v070_webhooks`, `test_v070_resume`, `test_v070_resume_r2`, `test_v070_handoffs`, `test_v070_handoffs_r2`), `test_v080_journeys`, `test_v080_replan` e `test_v080_story`: **429 passed** (4 min 30 s).
+- 77: `test_t77_contingency_cap`, **22 passed**; `test_budget_and_router`, `test_v080_story` e `test_campaign`, **51 passed** (18 s).
+
+Outras verificações:
+
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` no `HEAD` `94bf7b3`, com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t75-77-suite-basetemp -p no:cacheprovider"`: **1247 passed** em 10 min 35 s de pytest (1097 da linha de base + 150 novos: 54 + 74 + 22), ruff `All checks passed!`, skills válidas, exit 0, 654 s no total. Log `.pytest_cache/t75-77-suite.log`, SHA-256 `a23eb081…b0c9`.
+- `ruff check` e `ruff format --check` nos arquivos novos e alterados: ok. Em `cli.py`, o `ruff format` reformataria trechos que não são meus. Reconstruí o arquivo a partir do `HEAD` só com os meus trechos, e o diff ficou cirúrgico (46 linhas).
+- Nenhuma chamada paga, rede, Docker ou leitura de `.env`.
+- Um `cat` do rascunho travou no início, à espera de stdin, sem efeito; foi encerrado. Nenhum processo ficou em segundo plano.
+
+### Achados e limitações
+
+- 75: o rótulo continua literal. Outras redações corretas podem falhar na campanha real; só acrescentei as quatro observadas.
+- 76: a regra cobre as formas verbais listadas. Formas nominais e perguntas ficam com o modelo, e o `router.v6` ainda diz "goes to clarification or a human". A jornada dev não é afetada, porque a mensagem dela é verbal.
+- 77: a sondagem de processos depende de PowerShell ou `ps` e não cobre Docker. A recusa com cap persistido de 1,10 é uma leitura minha da condição (a), descrita acima.
+- Não verificados: a campanha real (QA) e a aplicação nos ledgers reais (Supervisor).
+
+### Próxima ação e decisão pendente
+
+- Próxima ação: revisão independente dos três commits. Depois, a aplicação da 77 pelo Supervisor: `--dry-run` e então `--apply --audit-dir <novo>` sobre `data/runtime/budget.sqlite3` e `data/runtime/budget-v080-qa.sqlite3`. Por fim, o reteste r5 do QA.
+- Decisão humana pendente: nenhuma nova. São escolhas minhas, reversíveis e listadas para a revisão: a faixa da estimativa exigida para 1,40, a recusa com cap persistido de 1,10 e o `topic = contract`.
