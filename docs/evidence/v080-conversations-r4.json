@@ -1,0 +1,344 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "3",
+   "prompt": "judge@3",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 400,
+    "effort": "none"
+   }
+  },
+  "repeat": 3,
+  "limit": null,
+  "include_replan": true,
+  "campaign": "v080-qa",
+  "campaign_cap_usd": 1.1,
+  "cases": 0
+ },
+ "summary": {
+  "overall": {
+   "n": 0,
+   "passed": null,
+   "route_ok": null,
+   "status_ok": null,
+   "language_ok": null,
+   "tools_ok": null,
+   "amounts_ok": null,
+   "content_ok": null,
+   "forbidden_ok": null,
+   "sources_ok": null,
+   "grounded_ok": null,
+   "cost_usd": 0
+  },
+  "by_split": {},
+  "by_language": {
+   "en": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   },
+   "pt": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   }
+  },
+  "paths": {},
+  "generated_at": "2026-11-05T03:56:52+00:00",
+  "variation": {
+   "kind": "assistant",
+   "description": "variação do assistente (o agente roda cada caso N vezes e o juiz avalia cada resposta uma vez)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 0 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 0,
+    "judgements": 0,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": null,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": null,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": null,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": null,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": null,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {},
+   "by_split": {}
+  },
+  "conversations": {
+   "n": 4,
+   "passed": 4,
+   "cost_usd": 0.00571
+  }
+ },
+ "cases": [],
+ "conversations": [
+  {
+   "id": "FU01",
+   "split": "holdout",
+   "language": "pt",
+   "description": "Problema técnico resolvido no primeiro ciclo",
+   "turns": [
+    {
+     "message": "Minha maquininha não conecta na internet, o que eu faço?",
+     "route": "knowledge_and_support",
+     "status": "answered",
+     "case_state": "awaiting_customer",
+     "evidence": null,
+     "answer": "O Get Smart aparece offline. O último sinal recebido foi em 04/11 às 11:31. O Wi-Fi está configurado, mas isso não confirma se a máquina está conectada agora.\n\nSe estiver usando Wi-Fi, na tela inicial, acesse “Wi-Fi” e selecione “Procurar Redes”. Escolha sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n\nSe estiver usando chip, desligue a máquina, abra a tampa traseira e insira o chip em SIM1 ou SIM2, com a parte metálica voltada para baixo. Feche a tampa, ligue a máquina e aguarde a indicação de rede conectada (2G ou 3G).\n\nPara testar a conexão do chip, pressione a tecla de função (F, # ou a da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação.",
+     "duration_ms": 14313,
+     "cost_usd": 0.00101115,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    },
+    {
+     "message": "Deu certo, voltou a funcionar!",
+     "route": "acknowledgement",
+     "status": "answered",
+     "case_state": "resolved",
+     "evidence": "customer_confirmed",
+     "answer": "Que bom que a situação foi resolvida. Se precisar de mais ajuda, estou à disposição.",
+     "duration_ms": 3500,
+     "cost_usd": 0.00018127,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    }
+   ],
+   "passed": true,
+   "cost_usd": 0.001192
+  },
+  {
+   "id": "FU02",
+   "split": "holdout",
+   "language": "en",
+   "description": "Technical problem that persists until handoff",
+   "turns": [
+    {
+     "message": "My card machine won't connect to the internet, what should I do?",
+     "route": "knowledge_and_support",
+     "status": "answered",
+     "case_state": "awaiting_customer",
+     "evidence": null,
+     "answer": "Your Get Smart is reported offline. Its last signal was received on November 4, 2026, at 11:31. Wi-Fi is configured, but I can’t check the device’s current connection remotely.\n\nOn the machine, tap “Wi-Fi” on the home screen, select “Procurar Redes,” choose your network, enter the password carefully, and confirm. Check that the Wi-Fi is working and the password is correct.\n\nI couldn’t confirm troubleshooting steps for mobile data or other internet connections, or what to do if these Wi-Fi steps don’t restore connectivity.",
+     "duration_ms": 11999,
+     "cost_usd": 0.00090736,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    },
+    {
+     "message": "I already tried that and it still has no connection.",
+     "route": "knowledge_and_support",
+     "status": "handoff",
+     "case_state": "handoff",
+     "evidence": null,
+     "answer": "The Get Smart is still offline after you tried reconnecting it to Wi-Fi. Its latest signal was received on November 4, 2026, at 11:31. Wi-Fi is configured, and mobile data is listed as available, but these signals don’t confirm the machine’s current connection. I couldn’t confirm any further troubleshooting steps, so I’ve escalated this for assistance. I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261105-94CD40.",
+     "duration_ms": 11471,
+     "cost_usd": 0.00078406,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    },
+    {
+     "message": "Still the same, nothing works.",
+     "route": "knowledge_and_support",
+     "status": "handoff",
+     "case_state": "handoff",
+     "evidence": null,
+     "answer": "I couldn’t find further troubleshooting information in the official Getnet sources I checked. Your case has been handed to a human agent on our support team, who will reply here. Protocol: HO-20261105-94CD40.",
+     "duration_ms": 3626,
+     "cost_usd": 0.00021987,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    }
+   ],
+   "passed": true,
+   "cost_usd": 0.001911
+  },
+  {
+   "id": "FU03",
+   "split": "holdout",
+   "language": "pt",
+   "description": "Agradecimento não resolve",
+   "turns": [
+    {
+     "message": "Em quantas parcelas posso vender no crediário?",
+     "route": "knowledge",
+     "status": "answered",
+     "case_state": "awaiting_customer",
+     "evidence": null,
+     "answer": "O Crediário permite parcelamento em até 48x. Porém, o limite de parcelas é definido por cada emissor de cartão, conforme suas políticas de crédito.",
+     "duration_ms": 6449,
+     "cost_usd": 0.00043917,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    },
+    {
+     "message": "Obrigado",
+     "route": "acknowledgement",
+     "status": "answered",
+     "case_state": "awaiting_customer",
+     "evidence": null,
+     "answer": "Por nada! Se tiver outra dúvida, estou à disposição.",
+     "duration_ms": 2692,
+     "cost_usd": 0.00014327,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    }
+   ],
+   "passed": true,
+   "cost_usd": 0.000582
+  },
+  {
+   "id": "FU04",
+   "split": "holdout",
+   "language": "pt",
+   "description": "Pedido de atendente no meio do ciclo e caso já encaminhado",
+   "turns": [
+    {
+     "message": "Minha maquininha está mostrando erro de transação negada.",
+     "route": "knowledge_and_support",
+     "status": "answered",
+     "case_state": "awaiting_customer",
+     "evidence": null,
+     "answer": "Encontrei duas transações negadas recentemente:\n\n- Em 04/11, uma compra no crédito de R$ 230,00 foi recusada pelo código 51, que indica saldo ou limite insuficiente. Ofereça outro cartão ou Pix.\n- Em 01/11, uma compra no débito de R$ 45,90 foi negada pelo código 05. O banco emissor não autorizou; peça ao comprador que fale com o banco ou use outro meio de pagamento.\n\nEssas recusas não indicam defeito na maquininha.",
+     "duration_ms": 12524,
+     "cost_usd": 0.00099399,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    },
+    {
+     "message": "Quero falar com um atendente",
+     "route": "human_handoff",
+     "status": "handoff",
+     "case_state": "handoff",
+     "evidence": null,
+     "answer": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-62AAC6.",
+     "duration_ms": 5467,
+     "cost_usd": 0.00041727,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    },
+    {
+     "message": "Alguma novidade sobre o meu caso?",
+     "route": "support",
+     "status": "answered",
+     "case_state": "handoff",
+     "evidence": null,
+     "answer": "Seu caso foi encaminhado para um atendente, que responderá por aqui. Protocolo: HO-20261105-62AAC6.\n\nAinda não tenho uma atualização da equipe. As transações negadas consultadas anteriormente foram explicadas pelos códigos 51 e 05; elas não indicam, por si só, defeito na maquininha.",
+     "duration_ms": 6850,
+     "cost_usd": 0.00061009,
+     "route_ok": true,
+     "status_ok": true,
+     "state_ok": true,
+     "evidence_ok": true,
+     "same_protocol_ok": true,
+     "grounded_ok": true,
+     "passed": true
+    }
+   ],
+   "passed": true,
+   "cost_usd": 0.002021
+  }
+ ]
+}
