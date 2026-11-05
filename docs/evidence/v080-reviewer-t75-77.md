@@ -40,3 +40,38 @@ Re-derivação: regra em `router.py:22-34` e `:46-47`; `router.v6` intacto; 37 s
 
 ### Próxima ação
 Developer corrige P2-75 e P2-76 com testes novos; P3 a critério. Revisão curta só do que mudar (runner e rótulos, regex do Router) e suíte estrita. A transição da tarefa 77 pode ser aplicada pelo Supervisor com o candidato corrigido aprovado.
+
+## Rodada 2 — candidato `663ce0982b4648736196e99de2a3216601e6bb09` (r6)
+
+**Parecer: apto para QA.** Os dois P2 da rodada 1 corrigidos, sem regressão; nenhum P1 ou P2 novo; quatro P3 registrados. Contexto frio mantido (sem `v080-developer.md`; tarefas só até "## Validação"; holdout só por blob e hash).
+
+### Candidato e hashes
+HEAD `eee8348`; diferença para `663ce09` só em `documentation_only_after_pin`. Tree `eedbb12e…6aff`, 97 blobs e fingerprint `6e3d6c20…9c42` conferem antes e depois. Holdout blob `22dfee8b…af9d` em `94bf7b3`, `663ce09` e HEAD. Sem mudança em `tests/scenarios/*.jsonl`, `prompts/`, `data/` e `cli.py`.
+
+### Suíte
+`lint_and_tests.py --strict` em cópia `git archive 663ce09`: 1.340 passed e 1 skipped em 781 s (o skip exige basetemp dentro de `.pytest_cache`; isolado, passou: total 1.341, igual ao manifesto); Ruff e skills ok; exit 0. Uma execução com basetemp POSIX foi descartada (erros de ambiente).
+
+### Achados da rodada 1
+| Achado | Situação | Re-derivação |
+| --- | --- | --- |
+| P2-75 | corrigido | 22 ressalvas honestas EN/PT (U+2019, U+2018, U+02BC; "does not mean/establish", "não significa que", "não há como saber se", "não é possível afirmar que", "no evidence that") dão `forbidden_ok=True` (21 falhavam no runner antigo); 29 contradições continuam recusadas, inclusive ressalva seguida de afirmação. |
+| Re-pontuação | sem mudança | 195 respostas (`v080-healthy-r4.json`, `v080-all-r3.json`) com `_checks` de `94bf7b3` e `663ce09`: 0 checagens mudam; 80 U+2019 e 10 travessões exercitados. |
+| P2-76 | corrigido | 16 frases mantêm a decisão do modelo ("fechar contrato com a Getnet", "close the contract", "Finalize o contrato", "How do I close my contract?"…); 12 vão a `human_handoff`/`contract` (possessivos EN/PT, "end the contract", "Rescindir o contrato"). O código antigo errava 12/16. |
+| P3-76 | corrigido | `router.py:96-97`: nota `rule` só quando a regra muda a rota. |
+| P3-77b | corrigido | Blob LF `570ac505…e607` = `procedure_sha256` gravado a partir da cópia CRLF. |
+| P3-77d | corrigido | Sem a conferência de `:263-265`, o teste novo falha. |
+| P3-75, P3-77a, P3-77c, P3-77e | abertos | fora do delta. |
+
+Ensaio da transição em ledgers sintéticos no scratchpad: dry-run sem escrita; `--apply` eleva 1,70→2,00 e 1,10→1,40, entradas, comprometidos e reservas inalterados, SHA-256 lógico igual, bytes do primário idênticos, `already_applied` na repetição. Diff do script restrito a `_source_sha256` e sua chamada.
+
+### Achados novos
+- **P3-R2a.** As janelas `[^.!?;,]{0,100}$` de `runner.py:53`, `:56`, `:73` e `:82` passaram a valer para mais formas: uma afirmação posterior na mesma oração ligada por "e/and/porque/senão que" vira ressalva. Reprodução (aceitas no novo, recusadas no antigo): "Não é possível afirmar que houve erro e a taxa está correta."; "Não posso afirmar outra coisa senão que a taxa está correta."; "Não podemos dizer que houve falha porque a taxa está correta."; "It is not possible to establish that there was a problem and the fee is correct."; "It is unclear whether you saw it and the fee is correct.". Construção improvável, juiz cobre, mas um `passed` determinístico falso pode inflar CA-51. Sugestão: exigir adjacência (`que\s+$` / `that\s+$`), como em "não significa que". De preferência antes do holdout.
+- **P3-R2b.** Sem teste: travessão em `_CLAUSE_BOUNDARIES` (`:44`) e "don't/doesn't know whether".
+- **P3-R2c.** `translate` dos termos de `must_include_any`/`must_not_include` sem teste; efeito colateral aceitável ("status `solicitado`" com crase satisfaz `'solicitado'`). Efeito no holdout não verificado (exigiria abrir o conteúdo).
+- **P3-R2d.** Troca de `_source_sha256` por `_file_sha256` só é detectada em checkout CRLF.
+
+### Mutações
+24 em cópias separadas: 18 detectadas; sobreviventes cobertos pelos P3 acima.
+
+### Próxima ação
+Supervisor aplica a transição da tarefa 77 e segue para o QA; P3-R2a antes do holdout.
