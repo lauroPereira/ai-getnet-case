@@ -1,0 +1,294 @@
+{
+ "embedding_model": "text-embedding-3-small",
+ "k": 6,
+ "results": {
+  "dev": {
+   "dense": {
+    "overall": {
+     "n": 19,
+     "recall_at_k": 0.895,
+     "mrr": 0.86,
+     "ndcg_at_k": 0.868,
+     "mean_ms": 457.0
+    },
+    "by_language": {
+     "en": {
+      "n": 10,
+      "recall_at_k": 0.8,
+      "mrr": 0.8,
+      "ndcg_at_k": 0.8,
+      "mean_ms": 474.2
+     },
+     "pt": {
+      "n": 9,
+      "recall_at_k": 1.0,
+      "mrr": 0.926,
+      "ndcg_at_k": 0.944,
+      "mean_ms": 437.9
+     }
+    },
+    "runs": 1,
+    "measured_at": "2026-11-05T22:56:23+00:00"
+   },
+   "hybrid": {
+    "overall": {
+     "n": 19,
+     "recall_at_k": 1.0,
+     "mrr": 0.965,
+     "ndcg_at_k": 0.974,
+     "mean_ms": 624.3
+    },
+    "by_language": {
+     "en": {
+      "n": 10,
+      "recall_at_k": 1.0,
+      "mrr": 0.933,
+      "ndcg_at_k": 0.95,
+      "mean_ms": 615.6
+     },
+     "pt": {
+      "n": 9,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "mean_ms": 633.9
+     }
+    },
+    "runs": 1,
+    "measured_at": "2026-11-05T22:57:02+00:00"
+   },
+   "hybrid+rerank": {
+    "overall": {
+     "n": 19,
+     "recall_at_k": 1.0,
+     "mrr": 0.974,
+     "ndcg_at_k": 0.981,
+     "mean_ms": 2641.7
+    },
+    "by_language": {
+     "en": {
+      "n": 10,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "mean_ms": 3059.3
+     },
+     "pt": {
+      "n": 9,
+      "recall_at_k": 1.0,
+      "mrr": 0.944,
+      "ndcg_at_k": 0.959,
+      "mean_ms": 2177.7
+     }
+    },
+    "runs": 1,
+    "measured_at": "2026-11-05T22:58:09+00:00",
+    "rerank_failures": 0,
+    "rerank_usage": {
+     "calls": 19,
+     "input_tokens": 45842,
+     "output_tokens": 818,
+     "cost_usd": 0.004993
+    }
+   }
+  },
+  "holdout_v090": {
+   "dense": {
+    "overall": {
+     "n": 25,
+     "recall_at_k": 1.0,
+     "mrr": 0.871,
+     "ndcg_at_k": 0.88,
+     "mean_ms": 584.3
+    },
+    "by_language": {
+     "en": {
+      "n": 12,
+      "recall_at_k": 1.0,
+      "mrr": 0.836,
+      "ndcg_at_k": 0.861,
+      "mean_ms": 570.7
+     },
+     "pt": {
+      "n": 13,
+      "recall_at_k": 1.0,
+      "mrr": 0.904,
+      "ndcg_at_k": 0.897,
+      "mean_ms": 597.0
+     }
+    },
+    "runs": 1,
+    "measured_at": "2026-11-05T22:58:48+00:00",
+    "by_category": {
+     "exact_term": {
+      "n": 7,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.991,
+      "mean_ms": 601.1
+     },
+     "fee": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.978,
+      "mean_ms": 581.5
+     },
+     "procedure": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 0.589,
+      "ndcg_at_k": 0.666,
+      "mean_ms": 584.8
+     },
+     "product": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 0.875,
+      "ndcg_at_k": 0.865,
+      "mean_ms": 567.1
+     }
+    },
+    "holdout": {
+     "split": "holdout_v090",
+     "sha256": "a23850aa66929eb64047b93697cec6b4b0893bc9f77d259f06d42fd3c46ae393",
+     "seal": "ok",
+     "used": true
+    }
+   },
+   "hybrid": {
+    "overall": {
+     "n": 25,
+     "recall_at_k": 1.0,
+     "mrr": 0.92,
+     "ndcg_at_k": 0.921,
+     "mean_ms": 533.7
+    },
+    "by_language": {
+     "en": {
+      "n": 12,
+      "recall_at_k": 1.0,
+      "mrr": 0.875,
+      "ndcg_at_k": 0.892,
+      "mean_ms": 551.3
+     },
+     "pt": {
+      "n": 13,
+      "recall_at_k": 1.0,
+      "mrr": 0.962,
+      "ndcg_at_k": 0.948,
+      "mean_ms": 517.4
+     }
+    },
+    "runs": 1,
+    "measured_at": "2026-11-05T22:59:20+00:00",
+    "by_category": {
+     "exact_term": {
+      "n": 7,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.991,
+      "mean_ms": 425.6
+     },
+     "fee": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.975,
+      "mean_ms": 599.0
+     },
+     "procedure": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 0.75,
+      "ndcg_at_k": 0.809,
+      "mean_ms": 526.5
+     },
+     "product": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 0.917,
+      "ndcg_at_k": 0.898,
+      "mean_ms": 601.6
+     }
+    },
+    "holdout": {
+     "split": "holdout_v090",
+     "sha256": "a23850aa66929eb64047b93697cec6b4b0893bc9f77d259f06d42fd3c46ae393",
+     "seal": "ok",
+     "used": true
+    }
+   },
+   "hybrid+rerank": {
+    "overall": {
+     "n": 25,
+     "recall_at_k": 1.0,
+     "mrr": 0.98,
+     "ndcg_at_k": 0.961,
+     "mean_ms": 2391.8
+    },
+    "by_language": {
+     "en": {
+      "n": 12,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.99,
+      "mean_ms": 2474.2
+     },
+     "pt": {
+      "n": 13,
+      "recall_at_k": 1.0,
+      "mrr": 0.962,
+      "ndcg_at_k": 0.934,
+      "mean_ms": 2315.7
+     }
+    },
+    "runs": 1,
+    "measured_at": "2026-11-05T23:00:37+00:00",
+    "by_category": {
+     "exact_term": {
+      "n": 7,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.966,
+      "mean_ms": 3298.2
+     },
+     "fee": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 0.917,
+      "ndcg_at_k": 0.9,
+      "mean_ms": 2071.4
+     },
+     "procedure": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.977,
+      "mean_ms": 2006.0
+     },
+     "product": {
+      "n": 6,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "mean_ms": 2040.6
+     }
+    },
+    "rerank_failures": 0,
+    "rerank_usage": {
+     "calls": 25,
+     "input_tokens": 61078,
+     "output_tokens": 1165,
+     "cost_usd": 0.00669
+    },
+    "holdout": {
+     "split": "holdout_v090",
+     "sha256": "a23850aa66929eb64047b93697cec6b4b0893bc9f77d259f06d42fd3c46ae393",
+     "seal": "ok",
+     "used": true
+    }
+   }
+  }
+ }
+}
