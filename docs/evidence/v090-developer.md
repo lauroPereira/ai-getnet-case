@@ -53,6 +53,59 @@
 
 Revisor: revisar `ffe9803` e `c0045a5`. Supervisor: decidir o cap (achado 1) antes da sonda do QA.
 
+## Tarefa 79 — rodada 2 (correções da revisão)
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único), rodada de correção da mesma tarefa.
+- **Objetivo e critérios:** fechar P2-1, P2-2 e P2-3 do [parecer da rodada 1](v090-reviewer-t79.md) com as decisões do Supervisor; P3 registrados (P3-3 implementado por ser trivial).
+- **Escopo:** `llm/anthropic_llm.py`, `evaluation/judge.py`, `evaluation/runner.py`, `evaluation/calibration.py`, `cli.py` (só os blocos de `eval`/`--judge-repeat` e `eval-calibrate`), `tests/unit/llm/test_anthropic_judge.py`, `tests/integration/test_v090_judge.py`, Validação e Status da tarefa 79 e esta seção. Nenhum prompt, rótulo, cenário, migração, snapshot ou ledger mudou; nenhum arquivo da tarefa 80 tocado.
+- **Estado:** corrigido; aguarda nova rodada do Reviewer.
+- **Branch e base:** `codex/v0.9.0-juiz-retrieval`, base da rodada `fee7a78`. Durante o trabalho chegaram `5d82fd0` e `c99aa90` (tarefa 80; o `cli.py` deles só no bloco de `eval-retrieval`, conferido que não levaram nenhum trecho meu). Commits desta rodada: `820c270` (juiz: paradas falhas, tokens e nome da execução), `7d1039f` (calibração e CLI: `--judge-run`) e o commit desta passagem. Identidade conferida antes de cada commit: `lauroPereira <lauro.s.pereira@gmail.com>`. Commits só com os meus arquivos, adicionados por nome. Sem push.
+- **Independência:** não se aplica (implementação).
+
+### Como cada P2 foi fechado
+
+- **P2-1 (recusa nunca vira nota).** Testes novos com o julgamento válido de `FIXED_JUDGEMENT` no bloco de texto: no adaptador, parametrizado em `refusal`, `max_tokens` e `model_context_window_exceeded` (strings literais, não lidas de `FAILED_STOPS`, para a mutação não encolher o teste), exigindo `LLMError` que termina em `stop_reason=<motivo>)`, ou seja, o ramo da parada e não o de texto vazio; em `Judge.evaluate` (`refusal` e `max_tokens` com corpo válido viram `failed`, sem nota nem veredito); e no fluxo da CLI (`test_a_refusal_or_a_cut_judgement_is_counted_as_a_failure` agora manda corpo válido nas duas falhas). Mutações numa cópia (`<scratchpad da sessão>`): os três mutantes (um motivo fora por vez) morrem; o sobrevivente da rodada 1 (`refusal` fora) agora derruba o teste do adaptador e o da CLI.
+- **P2-2 (sonda misturada às repetições).**
+  - Gravação: `save_evaluation(..., run=)` e `persist_judgements(..., run=)` põem o nome da execução em `evaluator.run` (JSON, sem migração; `config_digest` não muda). O `eval` passa o nome do relatório (`--name`, ou o padrão `avaliacao`, `avaliacao-juiz…`), no caminho normal com `--judge` e no `--judge-repeat`; a CLI imprime `judgements stored in run_evaluations: N (execution <nome>)`.
+  - Leitura: `eval-calibrate --import --judge <par> --judge-run <nome>`. O juiz A é lido só nessa execução: a concordância usa a repetição 1 completa da execução (`judgement_for(..., run=)`), e a consistência, o custo e os tokens usam só os julgamentos dela (`judge_runs(..., runs=[nome])`). Sem `--judge-run`, se o juiz tiver mais de uma execução sobre os pedidos do arquivo, é erro antes de gravar, com a lista (`'v090-juiz-opus-r3' (72 julgamentos), 'v090-juiz-opus-sonda' (3 julgamentos)`); com uma só, ela é usada. `--judge-run` inexistente é erro com as execuções encontradas; `--judge-run` sem `--judge` é erro.
+  - Juiz B: a concordância continua pela ligação `calibrations.evaluation_id`; a consistência, o custo e os tokens usam os julgamentos de B nas execuções desses `evaluation_id` (os gravados sem `run` formam a execução `legado`). Uma rodada posterior do mesmo juiz com outro nome fica de fora (testado com uma rodada `outra-rodada` do juiz original).
+  - Relatório: nova seção "Julgamentos considerados" (juiz, execuções, julgamentos na concordância, na consistência e no custo e tokens) e a nota sobre `legado` quando aparece; o texto da consistência diz que só entram as execuções da tabela; a linha da CLI diz a execução de cada juiz.
+  - Teste do momento 3: roda a sonda (3) e depois a r3 (72, com outra nota de fundamentação para provar que a concordância lê a r3), recusa sem `--judge-run`, recusa com execução inexistente e confere `| A … | \`v090-juiz-opus-r3\` | 24 | 72 | 72 |`, `| B … | \`legado\` | 24 | 24 | 24 |`, a consistência com 72 pares e o custo de 72 julgamentos.
+- **P2-3 (tokens não gravados).** `Judge.evaluate` grava `usage` = `{input_tokens, cache_read_tokens, cache_creation_tokens, output_tokens}` no registro (vai para o JSON do relatório e para `run_evaluations.result.usage`; a falha sem uso conhecido, como erro de rede, fica sem a chave). Uma recusa ou um corte cobrados guardam os tokens: o adaptador Anthropic anexa o `Usage` ao `LLMError` (`error.usage`). `summary.judge_usage` traz total e média por julgamento; o Markdown do `eval` ganha a linha "Tokens do juiz (N julgamentos com uso registrado; total / média por julgamento): entrada …, da qual cache lido … e cache criado …; saída (com o pensamento) …. Custo do juiz: US$ …". O relatório dos dois juízes ganha a tabela de tokens por juiz (total / média) abaixo do custo. Julgamentos gravados antes desta rodada não têm tokens e aparecem com `0 | - | …`.
+
+### P3
+
+- **P3-1** (`_usage` fora do `try`): registrado, sem mudança.
+- **P3-2** (`--rater`): o momento 3 usa `--rater lauro` (roteiro abaixo); o Supervisor ajusta a história.
+- **P3-3** (`--only-sample` sem `--judge-repeat`): aviso em stderr, como decidido; a campanha ainda roda. Uma recusa seria uma linha, se o Supervisor preferir. Sem teste dedicado (o caminho roda o agente inteiro).
+- **P3-4** (`extra="forbid"`), **P3-5** (maiúsculas no nome da campanha), **P3-6** ("limitadas a 100"): registrados, sem mudança.
+- **P3-7** (juiz original "a, b"): sem mudança no nome; os blocos do relatório passaram a ser indexados por `A`/`B`, então `--judge` igual ao juiz original não sobrescreve mais um bloco com o outro.
+
+### Decisões tomadas além do texto (reversíveis)
+
+1. **Nome da execução = nome do relatório.** Repetir o mesmo `--name` junta as execuções numa só; o roteiro usa nomes distintos. Um `--name legado` se confundiria com a execução sem nome.
+2. **Tokens em `result`, nome em `evaluator`.** O nome identifica quem e quando julgou (vai com o avaliador, como decidido); os tokens são do julgamento. A entrada é a total (como em `Usage`), da qual cache lido e criado são partes; o relatório diz isso.
+3. **A concordância do juiz A exige a repetição 1 completa na execução escolhida.** Se a repetição 1 de uma resposta falhar (recusa) na r3, o import recusa aquela linha com a execução no texto; não há recuo para a repetição 2 nem para outra execução. Se isso acontecer no QA, o Supervisor decide entre aceitar o recuo para a repetição seguinte da mesma execução (mudança pequena) ou rejulgar.
+4. **Fixture do teste com `created_at` fixo para a campanha original.** Ao pôr a sonda no momento 3 apareceu uma intermitência: `created_at` tem resolução de segundo, e o caminho da v0.8.0 sem `--judge` (`judgement_for` sem juiz, ordenado por `created_at, evaluation_id`) podia escolher o julgamento da sonda quando ela caía no mesmo segundo da campanha original. No banco real a campanha da v0.8.0 é de outro dia; o código da v0.8.0 não mudou. O fixture grava a campanha original em `2026-11-04T12:00:00+00:00`.
+
+### Roteiro do QA (comandos, com `JUDGE_PROVIDER=anthropic JUDGE_MODEL=claude-opus-5-5`, `BUDGET_RUNTIME_DIR=data/runtime/anthropic`, `BUDGET_LIMIT_USD=4.00`, `RUNTIME_DIR=.pytest_cache/qa-v080-r1/runtime`)
+
+1. Sonda: `eval --judge-repeat 1 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --limit 3 --name v090-juiz-opus-sonda`. Os tokens de cada julgamento saem no relatório e no JSON.
+2. Repetições: `eval --judge-repeat 3 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --name v090-juiz-opus-r3` (ou `--judge-repeat 1 --name v090-juiz-opus-r1`, pela projeção).
+3. Comparação: `eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv --judge anthropic/claude-opus-5-5 --judge-run v090-juiz-opus-r3 --campaign v090-juiz-opus --rater lauro --out docs/evidence/v090-juiz-opus.md`. Sem `--judge-run`, o comando recusa e lista as duas execuções. B (`deepseek/deepseek-flash`) sai como `legado`, que no runtime de QA soma todas as rodadas DeepSeek da v0.8.0 sobre esses pedidos (o achado do Reviewer sobre B: 16 respostas com 4 julgamentos e 8 com 1); a tabela "Julgamentos considerados" mostra o número.
+
+### Evidência
+
+- Testes da tarefa: 22 passed (`tests/unit/llm/test_anthropic_judge.py`, 17, sendo 7 novos; `tests/integration/test_v090_judge.py`, 5, com o momento 3 e o de falhas reescritos).
+- Suítes focadas (`tests/unit/evaluation tests/unit/llm tests/integration/test_v090_judge.py tests/integration/test_calibration_flow.py tests/integration/test_eval_campaign.py tests/integration/test_evaluator_settings.py tests/integration/test_v080_story.py`): 1011 passed, nenhuma falha.
+- Mutações (cópia do código em `<scratchpad da sessão>`, testes da tarefa): 11 de 11 mortos, com a linha de base verde (22 passed): `refusal`, `max_tokens` e `model_context_window_exceeded` fora de `FAILED_STOPS` (um por vez); `judgement_for` ignorando a execução; `judge_runs` ignorando as execuções; sem o erro de ambiguidade; tokens não gravados em `result`; `run` não gravado em `evaluator`; falha cobrada sem tokens; `--judge-repeat` gravando sem nome de execução; relatório do `eval` sem a linha de tokens.
+- `lint_and_tests.py --strict` no HEAD `94df63c` (meus commits mais os da tarefa 80), com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t79r2-suite -p no:cacheprovider"`: **2036 passed** em 1069 s, ruff `All checks passed!`, caminhos pessoais limpos (727 arquivos), skills válidas, exit 0. Log em `.pytest_cache/t79r2-suite.log`, SHA-256 `f98f8d35…56cc`.
+- `ruff check` sem achados nos arquivos alterados. Nenhuma chamada paga, nenhuma rede (provedor programado sobre `MockTransport`), `.env` não lido.
+
+### Próxima ação
+
+Reviewer: nova rodada sobre `820c270` e `7d1039f` (só o que mudou). Supervisor: a história já recebeu `--judge-run` e `--rater lauro` em `4a9f263`; decidir o item 3 das decisões se aparecer no QA.
+
 ## Tarefa 80 — Retrieval híbrido BM25 + RRF (rodada 1)
 
 - **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único).
