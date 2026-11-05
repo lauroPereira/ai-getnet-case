@@ -922,3 +922,84 @@ Outras verificações:
 
 - Próxima ação: revisão independente dos três commits. Depois, a aplicação da 77 pelo Supervisor: `--dry-run` e então `--apply --audit-dir <novo>` sobre `data/runtime/budget.sqlite3` e `data/runtime/budget-v080-qa.sqlite3`. Por fim, o reteste r5 do QA.
 - Decisão humana pendente: nenhuma nova. São escolhas minhas, reversíveis e listadas para a revisão: a faixa da estimativa exigida para 1,40, a recusa com cap persistido de 1,10 e o `topic = contract`.
+
+## Tarefas 75, 76 e 77, rodada 2 (correções da revisão)
+
+Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `0de3b56` (produto em `94bf7b3`); HEAD final do produto `663ce09`. Parecer de origem: [v080-reviewer-t75-77.md](v080-reviewer-t75-77.md), rodada 1. Identidade conferida (`lauroPereira` / `lauro.s.pereira@gmail.com`).
+
+| Commit | Tarefa | Achado |
+|---|---|---|
+| `9a962d1` | 75 | P2-75 |
+| `c782bc1` | 76 | P2-76 e P3-76 |
+| `663ce09` | 77 | P3-77b e P3-77d |
+
+### Tarefa 75: ressalvas honestas no cotejo de `must_not_assert` (P2-75)
+
+**É uma mudança de medição.** `runner.py` também pontua o holdout. A mudança vale para qualquer resultado do holdout, que nunca foi executado; não li o holdout, e o blob `22dfee8b…af9d` não mudou.
+
+O que mudou em `src/merchant_assistant/evaluation/runner.py`:
+
+- O apóstrofo tipográfico e seus parecidos (U+2018, U+2019, U+02BC, U+2032, U+00B4, U+0060) contam como `'` antes do cotejo. Vale para os três tipos de rótulo: `must_include_any`, `must_not_include` e `must_not_assert`.
+- O travessão (U+2013, U+2014) passa a separar orações.
+- Novas formas de ressalva em `_assertion_is_present`:
+  - EN: "does not / doesn't / did not mean, establish, indicate, show, prove, imply, confirm (that)"; "no indication / evidence / sign / proof that"; "cannot / can't / couldn't confirm, verify, determine, tell, know, say whether, if, that"; "not possible to / no way to … whether"; "don't know whether"; "unclear whether".
+  - PT: "não significa / quer dizer / indica / mostra / prova / implica / comprova / confirma que"; "não há como / não tem como / não é possível / não foi possível / não conseguimos saber, confirmar, afirmar, dizer, garantir se/que"; "não há indicação / indício / evidência de que"; "não sabemos / não se sabe / não temos certeza se"; "não posso / não podemos afirmar".
+  - Condicional imediatamente anterior: "if the fee is incorrect, …", "if you think the fee is wrong, …".
+- As famílias novas de negação e indicação ("does not mean", "no indication that", "não significa que", "não há indicação de que") e a condicional só qualificam a asserção que vem **logo depois**. Assim, "Pricing did not show any problem and the fee is correct." e "Isso não significa nada e a taxa está correta." continuam recusadas. As famílias de dúvida já existentes mantêm a janela de 100 caracteres de antes.
+
+Os rótulos não mudaram. Com o cotejo corrigido, nenhuma das asserções novas ficou ambígua nas sondas, então não troquei nenhuma.
+
+Sondas (todas em `tests/unit/evaluation/test_t75_price_insufficient_archived.py`):
+
+- **15 ressalvas honestas passam `forbidden_ok`**, sozinhas e anexadas às quatro respostas aceitas (todas as checagens verdes). Entram as quatro reproduções do parecer: "…so I couldn’t confirm whether the fee was charged correctly." (com U+2019), "This does not mean the fee is incorrect.", "Isso não significa que a taxa está incorreta." e "…não é possível afirmar que há divergência na taxa.". Entram também "doesn’t mean that the fee is wrong", "does not establish that", "There is no indication that the fee is incorrect.", "I can’t tell whether the fee is wrong.", "cannot tell whether there is a fee discrepancy", a condicional, "Não há como saber se a taxa está correta.", "Não é possível confirmar se/que…", "Não há indicação de que a taxa está errada." e "Não sabemos se a taxa cobrada está incorreta.".
+- **Recusadas**: as 17 contradições diretas, também com apóstrofo tipográfico, e 10 frases com ressalva seguida de afirmação (incluindo travessão e "mas").
+- O apóstrofo tipográfico casa com o reto em `must_include_any` ("couldn’t compare its fee") e em `must_not_include`.
+
+**Re-pontuação offline.** Pontuei 529 respostas arquivadas em `docs/evidence/*.json` com os rótulos dev (sem holdout), usando o runner de `94bf7b3` e o novo. Nenhuma checagem mudou, embora 126 dessas respostas tenham apóstrofo tipográfico.
+
+### Tarefa 76: verbos ambíguos só com possessivo (P2-76, P3-76)
+
+- Em `router.py`, "close", "fechar", "finalizar", "terminar" e os imperativos "feche", "finalize" e "termine" só contam com `my/our` ou `meu/nosso`. Já "end/terminate/cancel (my|the|our) contract" e "encerrar/cancelar/rescindir (o) (meu|nosso) contrato", com os imperativos, seguem como antes.
+- Decisão minha: `terminar` entrou no grupo restrito porque "terminar o contrato" também significa concluí-lo. É reversível.
+- Os positivos explícitos continuam valendo: "I want to close my contract.", "Quero encerrar/cancelar/rescindir meu contrato", "Cancel the contract." e "Encerrar contrato.". Somam-se três novos com possessivo: "I want to close our contract.", "Quero fechar meu contrato." e "Quero finalizar o nosso contrato com a Getnet.".
+- Novos negativos, que mantêm a decisão do modelo e que **todos casavam a regex de `94bf7b3`**: os cinco do parecer, mais "Close the contract.", "Feche o contrato." e "Quero terminar o contrato.".
+- P3-76: quando a regra troca a rota do modelo por `human_handoff`, o passo `router` do trace registra `rule = "contract_termination"`. A condição é "o modelo não encaminhou e a decisão final encaminhou", e só essa regra de `enforce` produz essa troca. Os testes cobrem três situações: a jornada ponta a ponta tem a nota; quando o próprio modelo encaminha, não há nota; "Quero fechar contrato com a Getnet." com Router programado em `knowledge` segue `knowledge`, sem protocolo e sem nota.
+
+### Tarefa 77: P3 baratos (P3-77b, P3-77d)
+
+- P3-77b: `procedure_sha256` em `prepared.json` usa `_source_sha256`, o SHA-256 do script com CRLF trocado por LF. Ele é igual ao do blob versionado em qualquer checkout: no `663ce09`, `570ac505…e607`. Os hashes de SQLite e sidecars continuam sobre os bytes. O resto do script e a CLI não mudaram.
+- P3-77d: teste novo em que o backup da campanha devolve um SHA-256 lógico diferente. `apply` para antes de qualquer escrita: ledgers e sidecars ficam iguais, sem `prepared.json`, e os estágios continuam `before`. Conferi a mutação M17 (remover a conferência): o teste falha com ela e passa sem ela.
+- Ficaram de fora P3-77a, P3-77c e P3-77e, porque não foram pedidos e mudariam a CLI ou o fluxo.
+
+### Evidência
+
+Testes focados (`.venv` Python 3.13, `-p no:cacheprovider`):
+
+- 75: `test_t75_price_insufficient_archived`, 127 testes (54 + 73). Com `tests/unit/evaluation`, `test_evaluation_runner`, `test_v080_journeys`, `test_v070_closing` e `test_v080_replan`: **504 passed**.
+- 76: `test_t76_contract_termination`, 93 testes (74 + 19). Com a trava de D18 (`test_budget_and_router` e todas as `test_v070_*` e `test_v080_*` de integração): **480 passed, 1 skipped**. O skip é preexistente: `test_v070_identity_r2` pede o `--basetemp` do projeto e passa na suíte estrita.
+- 77: `test_t77_contingency_cap`, **24 passed** (22 + 2).
+
+Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` no `HEAD` `663ce09`, com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t75-77-r2-suite-basetemp -p no:cacheprovider"`.
+
+- **1341 passed** em 649,89 s, que são 1247 da linha de base mais 94 novos (73 + 19 + 2).
+- Ruff `All checks passed!`, skills válidas, exit 0.
+- Log em `.pytest_cache/t75-77-r2-suite.log`, SHA-256 `e803d381…3dbb`.
+
+Outras verificações:
+
+- `ruff format` não muda nenhum trecho meu. Em `runner.py`, ele ainda reformataria um trecho preexistente de `persisted_checks`, que deixei como estava.
+- Nenhuma chamada paga, rede, Docker ou leitura de `.env`.
+- Não toquei em `data/runtime/`, `.pytest_cache/qa-v080-r1/`, holdout, `prompts/` nem `tests/scenarios/`.
+
+### Limites
+
+- 75: o cotejo continua sendo uma lista finita de formas EN/PT, não um detector geral de negação.
+  - Uma ressalva fora das formas cobertas ainda pode cair em `forbidden_ok=False`.
+  - Uma contradição colada a uma ressalva da família de dúvida, na mesma oração e sem conectivo de quebra, ainda pode passar. Exemplo: "I cannot confirm whether X and the fee is correct". O comportamento é o de antes.
+  - O P3-75 ("the fee matches the plan") continua com o juiz.
+- 76: formas nominais ("encerramento do contrato") e perguntas ficam com o modelo, como antes.
+- 77: os P3 a, c e e seguem abertos, como no parecer.
+
+### Próxima ação
+
+Revisão curta de `9a962d1` (runner e testes), `c782bc1` (regex, trace e testes) e `663ce09` (hash e teste do backup), com a suíte estrita. Depois, a aplicação da 77 pelo Supervisor e o QA.
