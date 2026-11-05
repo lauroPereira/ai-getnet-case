@@ -168,6 +168,11 @@ def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _source_sha256(path: Path) -> str:
+    """Hash of a text source with LF line endings, so it matches the versioned blob on any checkout."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def _backup(source: Path, target: Path) -> dict:
     with _connect(source, write=False) as src, contextlib.closing(sqlite3.connect(target)) as dst:
         src.backup(dst)
@@ -241,7 +246,7 @@ def apply(primary: Path, campaign: Path, audit_dir: Path, *, processes=project_p
     audit_dir.mkdir(parents=True, exist_ok=True)
     prepared = {
         "procedure": Path(__file__).name,
-        "procedure_sha256": _file_sha256(Path(__file__)),
+        "procedure_sha256": _source_sha256(Path(__file__)),
         "at": _now(),
         "targets": {
             "campaign_cap_usd": CAMPAIGN_AFTER,

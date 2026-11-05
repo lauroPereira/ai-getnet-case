@@ -241,7 +241,7 @@ def test_apply_raises_both_ceilings_preserves_history_and_records_the_audit(tmp_
         "campaign_ceiling": "before",
         "campaign_cap": "before",
     }
-    assert prepared["procedure_sha256"] == hashlib.sha256(SCRIPT.read_bytes()).hexdigest()
+    assert prepared["procedure_sha256"] == hashlib.sha256(SCRIPT.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     assert recorded["after"]["complete"] is True
     for name in ("primary", "campaign"):
         backup = prepared["backups"][name]
@@ -256,6 +256,35 @@ def test_apply_raises_both_ceilings_preserves_history_and_records_the_audit(tmp_
         "already_applied"
     )
     assert _bytes(primary, campaign) == state and not (tmp_path / "unused").exists()
+
+
+def test_the_procedure_hash_does_not_depend_on_the_checkout_line_endings(tmp_path):
+    lf, crlf = tmp_path / "lf.py", tmp_path / "crlf.py"
+    lf.write_bytes(b"a = 1\nb = 2\n")
+    crlf.write_bytes(b"a = 1\r\nb = 2\r\n")
+    expected = hashlib.sha256(b"a = 1\nb = 2\n").hexdigest()
+    assert transition._source_sha256(lf) == transition._source_sha256(crlf) == expected
+
+
+def test_apply_stops_before_any_write_when_a_backup_does_not_hold_the_same_entries(tmp_path, monkeypatch):
+    primary, campaign = _ledgers(tmp_path / "budget")
+    state = _bytes(primary, campaign)
+    real_backup = transition._backup
+
+    def tampered_backup(source, target):
+        result = real_backup(source, target)
+        return {**result, "logical_sha256": "0" * 64} if source == campaign else result
+
+    monkeypatch.setattr(transition, "_backup", tampered_backup)
+    with pytest.raises(transition.TransitionError, match="campaign backup does not hold the same entries"):
+        transition.apply(primary, campaign, tmp_path / "audit", processes=_no_processes)
+    assert _bytes(primary, campaign) == state
+    assert not (tmp_path / "audit" / "prepared.json").exists()
+    assert transition.inspect(primary, campaign)["stages"] == {
+        "primary_ceiling": "before",
+        "campaign_ceiling": "before",
+        "campaign_cap": "before",
+    }
 
 
 def test_apply_finishes_an_interrupted_transition(tmp_path):

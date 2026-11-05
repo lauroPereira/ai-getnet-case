@@ -43,6 +43,12 @@ Developer (2026-11-05), branch `codex/v0.8.0-replan`:
 - `tests/unit/test_t77_contingency_cap.py` (22 testes); regressão de orçamento e história da v0.8.0 (`test_budget_and_router`, `test_v080_story`, `test_campaign`): 51 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 ([passagem](../evidence/v080-developer.md)).
 - Pendente: revisão independente, aplicação pelo Supervisor e QA.
 
+Developer, rodada 2 (2026-11-05), P3 opcionais da [revisão](../evidence/v080-reviewer-t75-77.md):
+
+- P3-77b: `procedure_sha256` em `prepared.json` passa a ser o SHA-256 do script com fim de linha LF (`_source_sha256`), igual ao do blob versionado em qualquer checkout; os hashes de SQLite e sidecars continuam sobre os bytes. Nada mais mudou no script nem na CLI.
+- P3-77d: teste novo em que o backup da campanha devolve um SHA-256 lógico diferente; `apply` para com `campaign backup does not hold the same entries` antes de qualquer escrita (bytes dos dois ledgers e sidecars iguais, sem `prepared.json`, estágios todos `before`). A mutação M17 (remover a conferência) agora falha esse teste.
+- `tests/unit/test_t77_contingency_cap.py`: 24 testes (22 + 2).
+
 ## Status
 
-implementada; aguarda revisão e aplicação pelo Supervisor
+implementada (rodada 2); aguarda revisão e aplicação pelo Supervisor
