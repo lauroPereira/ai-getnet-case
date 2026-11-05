@@ -36,8 +36,20 @@ O responsável não dá nota nova: as 24 notas da v0.8.0 são reaproveitadas, e 
 
 ## Resultado da rodada
 
-(Preenchido pelo Supervisor após o QA.)
+Registrado pelo Supervisor em 2026-11-06 a partir dos pareceres do QA (juiz r2, retrieval r1), candidato final r2 (`d7775ff`, código idêntico ao revisado `aa68cff`).
+
+| Momento | Resultado | Evidência |
+| --- | --- | --- |
+| 1 (sonda) | A primeira rodada ficou bloqueada por chave Anthropic sem workspace (3 falhas HTTP 400, US$0,14 reservados); com a chave trocada, 3 julgamentos válidos, projeção US$1,35 para 72 | [QA r1](../evidence/v090-qa-juiz-r1.md), [QA r2](../evidence/v090-qa-juiz-r2.md) |
+| 2 (julgamentos do Opus) | 72/72 completos, sem recusa nem corte, US$1,28; consistência exata 0,81 a 1,00 | [r3](../evidence/v090-juiz-opus-r3.md) |
+| 3 (concordância) | Opus ±1 0,958/0,958/1,000/0,958 contra DeepSeek 0,833/0,833/1,000/0,917; veredito 0,875 contra 0,667; só 1 das 4 frases genéricas marcada. Regra D2: (a) e (c) atendidas, (b) não → DeepSeek continua, lacuna da rubrica; confirmado pelo responsável | [relatório](../evidence/v090-juiz-opus.md), ADR 0021 |
+| 4 (termo exato) | Em `dev` com embeddings reais o híbrido acha as 5 perguntas de termo exato; o denso deixa 2 fora do top 6 | [QA](../evidence/v090-qa-retrieval-r1.md) |
+| 5 (reranker) | Melhora nDCG@6 nos dois conjuntos (0,981 e 0,961) com 0 falhas, mas quadruplica o tempo e o ganho inclui a profundidade da fusão; fica `off` (ADR 0020) | [relatório](../evidence/v090-retrieval.md) |
+| 6 (holdout, por último) | Uma execução por configuração, lacre `a23850aa…` conferido: nDCG@6 denso 0,880, híbrido 0,921; MRR 0,871 e 0,920. Regra D7: híbrido estritamente maior nos dois splits → `RETRIEVAL_MODE=hybrid` padrão | [relatório](../evidence/v090-retrieval.md) |
+| 7 (regressão) | Suíte estrita 2.107 aprovados; denso idêntico à v0.8.0 (175/175); 44 casos e 4 conversas offline iguais com `RERANK=off` | pareceres 80 e 81 |
+
+Custo: Anthropic US$1,48 de US$4,00 (inclui os US$0,14 da rodada bloqueada); projeto US$0,016 (ledger em US$1,419 de US$2,00). Rodadas de correção pedidas pela revisão: 79 uma, 80 uma, 81 uma.
 
 ## Como terminou
 
-(Preenchido pelo Supervisor após o QA.)
+O responsável não deu nota nova: as 24 notas da v0.8.0 bastaram para pôr dois juízes lado a lado, e a regra escrita antes decidiu sem discussão. O avaliador técnico viu a busca achar o termo exato que o denso perdia e viu a decisão do modo padrão sair de um holdout que ninguém tinha olhado. O lojista continua recebendo uma resposta só, agora com o híbrido por baixo.

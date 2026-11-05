@@ -2,6 +2,49 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.9.0] — 2026-11-06 (validated: review and real QA)
+
+Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v090.md), [story](docs/historias/juiz-retrieval-v090.md), [ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md), [ADR 0021](docs/architecture/decisions/0021-juiz-modelo-e-regua.md), tasks 79–82).
+
+### Added
+- **Anthropic judge.** `JUDGE_PROVIDER=anthropic` with `claude-opus-5-5` (also Sonnet and Haiku 5.5 priced, cache read and creation included) through the official SDK: structured output by JSON schema, `refusal` and `max_tokens` become failed judgements (never a score), tokens recorded per judgement. The default judge is unchanged (`deepseek/deepseek-flash`).
+- **Judge experiment tooling.** `eval --judge-repeat N --answers-from <report> --only-sample <csv> [--limit K] --name <run>` re-judges the calibration sample only; each judgement stores the execution name. `eval-calibrate --import <csv> --judge <provider>/<model> --judge-run <name> --campaign <new>` compares another judge with the same human ratings, side by side with the original judge, with per-judge consistency, tokens and cost.
+- **Hybrid retrieval.** In-process BM25 (`rank-bm25`; accent-free tokens, short pt/en stopword lists, codes and acronyms kept) persisted by corpus hash (`bm25-<hash>.pkl`, ids and tokens only; payloads always from the active index) and fused with the dense search by RRF (`k=60`, `3×k` candidates, dense tie-break, `origin` per hit). `RETRIEVAL_MODE=dense|hybrid`; `dense` is byte-identical to v0.8.0.
+- **Reranker (off by default).** `rerank.v1` on the agent model reorders the first 12 hits of the hybrid fusion; `RERANK=on` needs `hybrid`; any failure returns exactly the `RERANK=off` result; metered per request and counted in `MAX_MODEL_CALLS`.
+- **Sealed retrieval holdout** `retrieval_holdout_v090` (25 questions, 13 in Portuguese, graded relevance by `chunk_id`), written before any mode was measured, checked by hash in the suite; `eval-retrieval --mode --rerank --split dev|holdout_v090 --out <md>` with Recall@6, MRR, nDCG@6, time per query, reranker failures and the D7 suggestion line; `--fake` refuses the sealed split.
+
+### Changed
+- `RETRIEVAL_MODE` defaults to `hybrid` (decision D7, by the numbers below). `.env.example` documents `dense` as the v0.8.0 behavior.
+- Five exact-term questions added to the development retrieval set (`tests/scenarios/retrieval.jsonl`); no existing question changed.
+
+### Contract and data
+- No migration. `run_evaluations.evaluator` JSON gains `run` (execution name) and `result` gains `usage` (input, output, cache read, cache creation tokens) for judgements made from this version on.
+- New settings: `ANTHROPIC_API_KEY` (only with `JUDGE_PROVIDER=anthropic`), `RETRIEVAL_MODE`, `RERANK`. New dependencies: `anthropic`, `rank-bm25`.
+
+### Validation
+- Backend strict script **2,107 tests passed** (1 environment-dependent skip), Ruff and skill checks passed. Independent review per task, two rounds each ([79](docs/evidence/v090-reviewer-t79.md), [80](docs/evidence/v090-reviewer-t80.md), [81](docs/evidence/v090-reviewer-t81.md)); final candidate [r2](docs/evidence/v090-candidato-r2.json).
+- **Judge experiment** ([report](docs/evidence/v090-juiz-opus.md), [QA](docs/evidence/v090-qa-juiz-r2.md)): `claude-opus-5-5` judged the same 24 calibrated answers 3× (72/72 valid, US$1.34 on a separate Anthropic ledger, cap US$4.00). Against the human: within one point 0.958 / 0.958 / 1.000 / 0.958 (DeepSeek 0.833 / 0.833 / 1.000 / 0.917); `unsupported_claim` agreement 0.875 (0.667); self-consistency 0.81–1.00; but only 1 of the 4 generic claims the human flagged. Under the pre-registered rule (D2) this is a rubric gap, not a model gap: DeepSeek stays the default judge.
+- **Retrieval** ([report](docs/evidence/v090-retrieval.md), [QA](docs/evidence/v090-qa-retrieval-r1.md)), real embeddings, holdout measured once per configuration, last:
+
+  | Split | dense | hybrid | hybrid + reranker |
+  | --- | --- | --- | --- |
+  | dev (19 questions), nDCG@6 | 0.868 | 0.974 | 0.981 |
+  | holdout_v090 (25), nDCG@6 | 0.880 | 0.921 | 0.961 |
+  | holdout_v090, MRR | 0.871 | 0.920 | 0.980 |
+  | time per query (holdout) | 584 ms | 534 ms | 2,392 ms |
+
+  Hybrid is strictly better on both splits, so it became the default. Cost of the six measurements: US$0.016.
+
+### Limitations
+- The reranker also improves both splits, but its measured gain includes the effect of the deeper fusion (36 instead of 18 candidates), and it quadruples the time per query; it stays `off` until a future version adds a no-model control at the same depth (ADR 0020). The report's suggestion line says `on`; the ADR explains why the default is `off`.
+- In hybrid mode the Knowledge agent's "no evidence" shortcut fires only when BM25 also finds nothing, and the trace `score` is on the RRF scale; hits found only by BM25 have no score floor.
+- The retrieval holdout was labeled by the Developer and checked by an independent reviewer, not by a person; it has 25 questions and was re-sealed once after the label review, before any measurement. It has now been measured: later runs must mark it as seen.
+- `judge.v3` still lacks the generic-claim line and the judge still does not see the web search text (next steps). Repeating an execution name in `eval --judge-repeat` overwrites its report and merges executions; the QA rule is to copy the report first and never repeat a full round under the same name.
+- The Opus judge costs 54× more per judgement than DeepSeek (US$0.0178 vs US$0.00033).
+
+### Return to 0.8.0
+- Set `RETRIEVAL_MODE=dense` (and keep `RERANK=off`) for the v0.8.0 behavior without checking out anything; the BM25 file is ignored. No migration to undo; judgements with `run` and `usage` are read by the 0.8.0 code as before.
+
 ## [0.8.0] — 2026-11-05 (validated: review, real QA and human calibration)
 
 Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-avaliacao-v080.md), [story](docs/historias/orquestracao-avaliacao-v080.md), [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), tasks 69–78).

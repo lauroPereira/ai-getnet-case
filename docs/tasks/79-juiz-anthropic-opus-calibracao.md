@@ -58,3 +58,7 @@ Developer, 2026-11-05, commits `820c270` e `7d1039f` sobre `fee7a78`, a partir d
 ## Status
 
 Rodada 2 implementada pelo Developer em 2026-11-05 (correções P2-1 a P2-3); aguarda nova rodada do Reviewer. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+
+## Fechamento (Supervisor, 2026-11-06)
+
+Concluída: revisão r2 apta (P2-4 virou regra operacional), QA r2 apto (72/72 julgamentos, US$1,34), decisão D2 registrada no ADR 0021 e confirmada pelo responsável.

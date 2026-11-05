@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.8.0, validated by independent reviews and a real-model QA ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)); the [human calibration](docs/evidence/v080-calibracao.md) of the judge is done (24 answers: agreement within one point 0.83–1.00, the judge stricter than the owner). The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence. Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
+**Status:** v0.9.0, validated by independent reviews and a real-model QA: hybrid retrieval beats dense on the development set and on a sealed retrieval holdout ([report](docs/evidence/v090-retrieval.md)) and is now the default; a pre-registered judge experiment (`claude-opus-5-5` vs DeepSeek against 24 human-rated answers, [report](docs/evidence/v090-juiz-opus.md)) kept DeepSeek as the default judge. v0.8.0 ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md), [human calibration](docs/evidence/v080-calibracao.md)) is unchanged underneath. The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence. Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
 
 ### Where each part of the challenge lives
 
@@ -44,8 +44,8 @@ The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the to
 | Human Oversight & Risk Management (7%, 4.0) | Handoff simulated: a local case with a `SIM-` protocol; no operator queue, no human reply back to the agent, no interrupt and resume | On a handoff the graph pauses at `human_review` (LangGraph `interrupt()`, SQLite checkpoint). A persistent operator queue with claim and idempotent `approve`, `reply` and `reject`; the action resumes the graph and the human reply reaches the merchant in the same conversation, by API and by webhook. A separate ticketing service talks to the assistant only through signed webhooks in both directions | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), [result](docs/evidence/v070-resultado.md), [story QA](docs/evidence/v070-qa.md) |
 | Security & Identity (13%, 7.8) | `user_id` was the authority of the payload; no credential → principal → authorization → merchant chain; tool calls not authorized | RS256 JWTs from an own issuer with JWKS; roles and scopes; the merchant comes from the token (`403 identity_mismatch` otherwise); every tool call checks scope and merchant and writes an audit row; revocation, rate limit per principal, MCP with a key | v0.7.0 | [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [result](docs/evidence/v070-resultado.md), [API contract](docs/contracts/api-v040.md) |
 | Agentic Reasoning & Orchestration (15%, 8.5) | A predefined combined route; no observe → reconsider → replan → another agent → review loop with a hop limit | A `replan` node after Knowledge, web and Support: named rules first, the model only on ambiguity, a three-hop budget, each specialist at most once, and the origin of every decision in the trace. The four replanning scenarios pass 3/3 with real models and at most 2 hops | v0.8.0 | [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), [pre-holdout QA](docs/evidence/v080-d12-pre-holdout-r6.md) |
-| Evaluation & Quality Engineering (14%, 9.0) | No aggregated groundedness, correctness, relevance and usefulness; no independent judge, repeated runs, human calibration or holdout; journeys 7/13 by the literal rubric | `judge.v3` (four criteria plus `unsupported_claim`) by a DeepSeek judge over an OpenAI agent; three agent runs and three judge runs with the agreement reported; dev and holdout separated; the sealed holdout run once (62/75); a 24-answer human calibration (agreement within one point 0.83–1.00, the judge stricter than the human). Journeys 13/13, 12/13 and 12/13 by the deterministic floor and 13/13 by the judge | v0.8.0 | [campaign](docs/evidence/v080-all-r3.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md) |
-| Context, Knowledge & RAG (10%, 9.4) | Recall@6 = 1.00 on a small set used during development; no hybrid BM25 + dense, RRF or reranker | Not changed yet. Hybrid retrieval measured against a sealed retrieval holdout is the next step (v0.9.0) | — | [next steps](#next-steps) |
+| Evaluation & Quality Engineering (14%, 9.0) | No aggregated groundedness, correctness, relevance and usefulness; no independent judge, repeated runs, human calibration or holdout; journeys 7/13 by the literal rubric | `judge.v3` (four criteria plus `unsupported_claim`) by a DeepSeek judge over an OpenAI agent; three agent runs and three judge runs with the agreement reported; dev and holdout separated; the sealed holdout run once (62/75); a 24-answer human calibration (agreement within one point 0.83–1.00, the judge stricter than the human). Journeys 13/13, 12/13 and 12/13 by the deterministic floor and 13/13 by the judge. v0.9.0 added a pre-registered judge experiment: `claude-opus-5-5` over the same 24 human-rated answers agrees more with the human (within one point 0.96 vs 0.83) but still misses 3 of 4 generic claims, so by the rule written beforehand the gap is the rubric and DeepSeek stays the default | v0.8.0, v0.9.0 | [campaign](docs/evidence/v080-all-r3.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md), [judge experiment](docs/evidence/v090-juiz-opus.md) |
+| Context, Knowledge & RAG (10%, 9.4) | Recall@6 = 1.00 on a small set used during development; no hybrid BM25 + dense, RRF or reranker | BM25 + dense fused by RRF (`RETRIEVAL_MODE`, now `hybrid` by default), a configurable reranker (`rerank.v1`, off by default), nDCG@6 and a sealed 25-question retrieval holdout measured once, last. With real embeddings, nDCG@6 dense → hybrid: 0.868 → 0.974 on dev, 0.880 → 0.921 on the holdout; the default was chosen by a rule written before the measurement | v0.9.0 | [ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md), [report](docs/evidence/v090-retrieval.md), [QA](docs/evidence/v090-qa-retrieval-r1.md) |
 | Production Engineering (5%, 9.0) | `/messages` without auth; handoff without human integration; comparison in a thread of the process; external access untested; demo credentials to be configured | `/messages` authenticated and the handoff integrated (v0.7.0); `docker compose up` works without editing `.env.example` (fictitious demo keys); a CI workflow runs the strict suite on every push and pull request. Still open: the comparison thread and the external access test | v0.7.0, CI | [workflow](.github/workflows/validate.yml), [result](docs/evidence/v070-resultado.md) |
 | Memory, State & Resilience (8%, 9.0) | A comparison lost on restart is marked failed | The review graph checkpoint and the outbox survive an API restart (v0.7.0); a resumable comparison and a rolling summary of long conversations are next steps | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md) |
 | Observability, Reliability & Cost (6%, 9.2) | Production next steps only described (OTel, dashboards, alerts) | Unchanged: cost ledger with campaign caps and a budget guard, and a trace with the origin of every decision; `/metrics`, OTLP and alert rules are next steps | — | [Observability](#observability) |
@@ -334,15 +334,28 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
    its title, URL, source kind, collection date and hash. 40 documents → 145 chunks.
 6. **Storage.** Qdrant (service in compose, embedded locally, in-memory in tests), `text-embedding-3-small`. The
    index manifest records model, corpus hash and size; bootstrap builds the index only when its collection does not exist and never rebuilds or replaces an existing one (a new knowledge base version is always a new collection, created through the admin API).
-7. **Retrieval.** Top-6 by cosine similarity with a minimum score and a source-kind filter (official pages only for
-   product questions; official + demo procedures for problems).
+7. **Retrieval.** Hybrid by default since v0.9.0: dense top-18 by cosine similarity (minimum score) and BM25 over the
+   same chunks, fused by reciprocal rank fusion (`k=60`, dense tie-break) into the top-6; a source-kind filter (official
+   pages only for product questions; official + demo procedures for problems) applies to both lists. `RETRIEVAL_MODE=dense`
+   restores the v0.8.0 behavior; `RERANK=on` adds a model reordering of the first 12 hits (off by default, see ADR 0020).
 8. **Generation.** Numbered passages go to the Knowledge Agent, which must answer only from them, list the passages
    it used and set `evidence_sufficient = false` when they do not cover the question. Citations are built by code
    from the passage numbers.
 
-**Retrieval quality** (14 questions, the 7 knowledge examples in English and Portuguese): Recall@6 = 1.00 and
-MRR = 1.00 in both languages. English questions retrieve Portuguese content directly, so no query translation is
-used ([evidence](docs/evidence/2026-10-26-pipeline-rag.md)).
+**Retrieval quality.** Measured with real embeddings on the 19-question development set and, once, on the sealed
+25-question holdout `retrieval_holdout_v090` (13 in Portuguese; graded relevance by chunk; written before any mode was
+measured; [report](docs/evidence/v090-retrieval.md)):
+
+| Split | Metric | dense | hybrid | hybrid + reranker |
+| --- | --- | ---: | ---: | ---: |
+| dev (19) | Recall@6 / MRR / nDCG@6 | 0.895 / 0.860 / 0.868 | 1.000 / 0.965 / 0.974 | 1.000 / 0.974 / 0.981 |
+| holdout_v090 (25) | Recall@6 / MRR / nDCG@6 | 1.000 / 0.871 / 0.880 | 1.000 / 0.920 / 0.921 | 1.000 / 0.980 / 0.961 |
+| holdout_v090 | time per query | 584 ms | 534 ms | 2,392 ms |
+
+The decision rule was written before the measurement (spec D7): hybrid becomes the default if its nDCG@6 is strictly
+higher on both splits, which it is. The reranker also improves both splits, but its gain includes the effect of the
+deeper fusion and it quadruples latency, so it stays off this version ([ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md)).
+English questions retrieve Portuguese content directly, so no query translation is used.
 
 ## Support tools and synthetic data
 
@@ -439,7 +452,7 @@ tests), with `store=false`:
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
 | Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
 | Release validation (real) | The 44 labeled cases, 13 business journeys and 4 multi-turn conversations against real models on each release candidate, three runs each, judged by an independent model; sealed holdout run once, last; see the [v0.8.0 evidence](docs/evidence/v080-d12-pre-holdout-r6.md) | Paid and capped (v0.6.0 QA: US$0.088) |
-| Retrieval | Recall@k and MRR on labeled questions | ≈ US$0.001 |
+| Retrieval | Recall@6, MRR and nDCG@6 per mode on the development set and, once, on the sealed retrieval holdout | ≈ US$0.003 per configuration (US$0.016 for the six) |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
 The scripted model follows simple rules for each agent, so the whole system (routing, tool execution, guards,
@@ -514,6 +527,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
+| v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | The retrieval remark of the feedback closed with numbers, and the judge choice made by experiment rather than preference |
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 
 ### Identity and human in the loop (v0.7.0)
@@ -648,15 +662,16 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 
 ### Next steps
 
-In order of value for the open remarks. Items 1 and 2 are the scope of v0.9.0; the rest is written down so the direction is clear even if it ships later.
+In order of value for the open remarks; written down so the direction is clear even where it ships later.
 
-1. **Judge model.** Rate the same 24-answer calibration sample with `claude-opus-5-5` as the judge (same rubric, same evidence, three runs) and compare its agreement with the human scores to DeepSeek's. The calibration suggests the gap is partly the input (no web text recorded) and partly the model or the rubric; this test separates the two.
-2. **Hybrid retrieval.** BM25 + dense with RRF, a configurable reranker, and a sealed retrieval holdout measured once with Recall@6, MRR and nDCG@6; the default mode is decided by the numbers.
+1. **Resumable comparison and rolling summary.** A profile comparison that survives an API restart instead of being marked failed, and a rolling summary for conversations longer than the ten-message window (the one remark of the feedback's top-five dimensions not yet changed).
+2. **Judge rubric `judge.v4`.** Add generic claims without a source to the definition of an unsupported claim (what the v0.9.0 experiment showed neither judge flags), and record the web search text so the judge sees it; then re-run the two-judge comparison against the same 24 human ratings.
 3. **Journey rubric.** Keep the deterministic checks for what is binary (route, status, tools, values, sources, forbidden assertions) and let the judge decide content; add a rubric line for generic claims without a source; record the web search text so the judge sees it.
 4. **Calibration tooling.** `eval-calibrate --sample` must carry the full evidence the judge saw (the v0.8.0 CSV truncated it; the full text was supplied in a companion file).
-5. **Operation.** `/metrics`, optional OTLP, versioned alert rules; a comparison that resumes after a restart; a rolling summary for long conversations (planned v0.10.0).
-6. **Optional Anthropic agent provider** with a per-provider ledger and a paired comparison against the OpenAI profile (specification drafted, not merged).
-7. **Production.** External access test through a tunnel; mapping to a commercial ticketing system; resend of exhausted webhook deliveries.
+5. **Reranker decision.** Add a no-model control at the same fusion depth (`hybrid@36`) so the reranker's own gain can be measured, then decide `RERANK` by the rule; add a score floor for hits found only by BM25.
+6. **Operation.** `/metrics`, optional OTLP, versioned alert rules (planned v0.10.0).
+7. **Optional Anthropic agent provider** with a per-provider ledger and a paired comparison against the OpenAI profile (specification drafted, not merged; the judge adapter of v0.9.0 is the first piece).
+8. **Production.** External access test through a tunnel; mapping to a commercial ticketing system; resend of exhausted webhook deliveries.
 
 ## Repository layout
 

@@ -30,8 +30,8 @@ Tarefas 79 a 81 com parecer apto do Reviewer (79 pode ir ao QA antes de 80 e 81,
 
 ## Validação
 
-(Preenchida pelo Supervisor.)
+Supervisor, 2026-11-06: candidato r2 ([manifesto](../evidence/v090-candidato-r2.json)); QA do juiz r2 e QA do retrieval r1 aptos; D2 e D7 decididos pelas regras escritas antes; ADR 0020 aceita com os números e ADR 0021 aceita; CHANGELOG 0.9.0, README (status, resposta ao feedback, retrieval, próximos passos) e história preenchidos; relatório do Supervisor em `docs/relatorios/`.
 
 ## Status
 
-Pendente. Aberta pelo Supervisor em 2026-11-05.
+Concluída em 2026-11-06 (merge local, push e tag `v0.9.0` pelo responsável).

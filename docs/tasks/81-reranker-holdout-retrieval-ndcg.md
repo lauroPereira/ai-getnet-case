@@ -67,3 +67,7 @@ Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer có
 ## Status
 
 Aberta pelo Supervisor em 2026-11-05. Rodada 1 implementada pelo Developer em 2026-11-05 e revisada (correções necessárias: P2-1 a P2-3). Rodada 2 implementada pelo Developer em 2026-11-05, com o holdout relacrado; aguarda nova revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+
+## Fechamento (Supervisor, 2026-11-06)
+
+Concluída: revisão r2 apta; holdout relacrado uma vez após a revisão dos rótulos e medido uma vez por configuração; reranker fica `off` nesta versão (P3-16, ADR 0020).

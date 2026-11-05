@@ -6,7 +6,7 @@ Acrescentar busca lexical ao índice de conhecimento, fundi-la com a busca densa
 
 ## Status
 
-**Proposta** (v0.9.0, 2026-11-05; implementada nas tarefas 80 e 81 da branch `codex/v0.9.0-juiz-retrieval`; a aceitar no fechamento da versão com os números do QA real, tarefa 82). Spec: [juiz-retrieval-v090.md](../../specs/juiz-retrieval-v090.md), D7 e D8.
+**Aceita** (v0.9.0, 2026-11-06; implementada nas tarefas 80 e 81, QA real em [v090-qa-retrieval-r1.md](../../evidence/v090-qa-retrieval-r1.md)). Spec: [juiz-retrieval-v090.md](../../specs/juiz-retrieval-v090.md), D7 e D8.
 
 ## Contexto
 
@@ -36,8 +36,8 @@ Restrições: o modo denso atual é o que todas as respostas avaliadas da v0.8.0
 
 - Positivas: termo exato passa a ser encontrado (com embeddings de hash, 5/5 contra 0/5 do denso); decisão do padrão com holdout e regra prévia; modo denso preservado byte a byte.
 - Negativas e limitações: no modo híbrido o atalho "sem evidência" do Knowledge só dispara quando o BM25 também não acha nada, e o `score` do trace muda de escala (RRF); itens achados só pelo BM25 não têm piso de score; os rótulos do holdout foram escritos pelo Developer (IA) e revisados em contexto frio, não por pessoa; 25 perguntas é um conjunto pequeno; o "já visto" só é contado no mesmo arquivo de relatório.
-- Resultado da medição real: (a preencher na aceitação, tarefa 82, a partir de `docs/evidence/v090-retrieval.md`).
+- Resultado da medição real ([relatório](../../evidence/v090-retrieval.md)): nDCG@6 denso 0,868 / híbrido 0,974 / híbrido+reranker 0,981 em `dev`; 0,880 / 0,921 / 0,961 no holdout; MRR no holdout 0,871 / 0,920 / 0,980; tempo por consulta 584 / 534 / 2.392 ms. Pela regra D7, `RETRIEVAL_MODE=hybrid` é o padrão; `RERANK=off` pela limitação acima. Custo das seis medições US$0,016.
 
 ## Data
 
-2026-11-05 (proposta). Aceitação: (a preencher).
+2026-11-05 (proposta); 2026-11-06 (aceita).
