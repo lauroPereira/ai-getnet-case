@@ -13,7 +13,7 @@ Regra escrita na spec antes do experimento: o Opus vira o juiz padrão se (a) a 
 - (b) **não atendida**: a concordância do veredito subiu para 0,875 (kappa 0,357, contra 0,667 e −0,200), mas só S01 foi marcada "sim"; S13, S16 e S21 ficaram "não" nas três repetições (1 de 4, mínimo 2).
 - (c) **atendida**: consistência exata 0,972 / 1,000 / 0,889 / 0,806 e 1,000 no veredito, 72 pares, 0 falhas.
 
-Resultado: o caso que a regra chama de lacuna da rubrica. O juiz padrão continua `deepseek/deepseek-flash`; a rubrica `judge.v3` ganha, na próxima versão, a linha sobre afirmação genérica sem fonte; o Opus fica disponível por configuração (`JUDGE_PROVIDER=anthropic JUDGE_MODEL=claude-opus-5-5`). Leitura: o modelo mais forte concorda mais com o humano em tudo o que a rubrica pede e é 45 vezes mais caro por julgamento (US$0,0178 contra cerca de US$0,0004); o que ele não marca é o que a rubrica não pede. Decisão reversível pelo responsável; registrada também na spec (D2) e no ADR 0021.
+Resultado: o caso que a regra chama de lacuna da rubrica. O juiz padrão continua `deepseek/deepseek-flash`; a rubrica `judge.v3` ganha, na próxima versão, a linha sobre afirmação genérica sem fonte; o Opus fica disponível por configuração (`JUDGE_PROVIDER=anthropic JUDGE_MODEL=claude-opus-5-5`). Leitura: o modelo mais forte concorda mais com o humano em tudo o que a rubrica pede e custa 54 vezes mais por julgamento (US$0,0178 contra US$0,00033); o que ele não marca é o que a rubrica não pede. Decisão reversível pelo responsável; registrada também na spec (D2) e no ADR 0021.
 
 As notas humanas são as 24 da v0.8.0, reaproveitadas sem nova avaliação; a localização das evidências por afirmação naquela calibração foi assistida por IA em material não versionado.
 
