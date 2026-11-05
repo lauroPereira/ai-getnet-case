@@ -399,6 +399,40 @@ CANCELLATION_STATE_PROBES = [
     for template in CANCELLATION_STATE_TEMPLATES
 ]
 REVIEW_PROBES["V030-SALE-CANCELLATION"] += sorted(set(CANCELLATION_STATE_PROBES))
+# P2-7 (review round 3): contracted "has been", "it's", adverbs and the active voice; straight and typographic
+# apostrophes (the runner compares both as "'"). One probe per bound form, each matching that form alone.
+P2_7_STATE_TEMPLATES = (
+    "Your request to cancel yesterday's sale has been received, but it's been {state} and has not been processed.",
+    f"Your request to cancel yesterday{RSQ}s sale has been received, but it{RSQ}s been {{state}}, so not processed.",
+    "Your request to cancel yesterday's sale has been received, but it's {state} and has not been processed.",
+    f"Your request to cancel yesterday{RSQ}s sale has been received, but it{RSQ}s {{state}}, so not processed.",
+    "Your request to cancel yesterday's sale has been received, but the request's {state}, so it is not processed.",
+    "Your request to cancel yesterday's sale has been received, but the cancellation's {state}; not processed.",
+    "Your request to cancel the sale has been received, but the sale's {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it is now {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it was later {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it was then {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but it ended up {state} and has not been processed.",
+    "Your request to cancel yesterday's sale has been received, but the bank {state} it, so it has not been processed.",
+)
+P2_7_PROBES = [template.format(state=state) for state in CANCELLATION_STATES for template in P2_7_STATE_TEMPLATES]
+P2_7_PROBES += [
+    "Your request to cancel yesterday's sale has been received, but its status is now denied and it is not processed.",
+    "The status of your request to cancel is unknown; it has been received but has not been processed.",
+    "The status of the sale cancellation is unknown; it was requested and has not been processed.",
+    "The status of your request is unknown; it has been received but has not been processed.",
+    # "concluído" additions: "has been completed", "is complete" and "been refunded" bound to an auxiliary.
+    "Your request to cancel yesterday's sale has been received, and it has been completed.",
+    "Your request to cancel yesterday's sale has been received, and the cancellation is complete.",
+    "Your request to cancel yesterday's sale has been received; the amount has been refunded.",
+    "Your request to cancel yesterday's sale has been received; the amounts have been refunded.",
+    "Your request to cancel yesterday's sale has been received; the amount had been refunded.",
+    "Your request to cancel yesterday's sale has been received; the amount has already been refunded.",
+    f"Your request to cancel yesterday's sale has been received; the amount{RSQ}s been refunded.",
+    "Your request to cancel yesterday's sale has been received; the amount was refunded.",
+    "Your request to cancel yesterday's sale has been received; the amounts were refunded.",
+]
+REVIEW_PROBES["V030-SALE-CANCELLATION"] += P2_7_PROBES
 
 
 @pytest.mark.parametrize(
@@ -436,6 +470,15 @@ CORRECT_PENDING_CANCELLATION = [
     "The cancellation of yesterday's sale was requested and hasn't been denied or refused.",
     "The cancellation of yesterday's sale was requested; it is unknown when it will be processed.",
     "The cancellation of yesterday's sale was requested; there is no record of a processed date.",
+    # Review round 3 (P2-7): the bound forms still accept these.
+    "The cancellation of yesterday's sale was requested; there is no record of the request being processed.",
+    "The cancellation of yesterday's sale was requested and has neither been approved nor rejected.",
+    "The cancellation of yesterday's sale was requested; it is not rejected and has not been processed.",
+    "The cancellation of yesterday's sale was requested and has not been processed; we will tell you if it's rejected.",
+    f"The cancellation of yesterday{RSQ}s sale was requested and not processed; you will be told if it{RSQ}s denied.",
+    "The cancellation of yesterday's sale was requested; its processing date is unknown.",
+    "The cancellation of yesterday's sale was requested; it has not been completed or refunded yet.",
+    f"The cancellation of yesterday's sale was requested; it is not complete and hasn{RSQ}t been refunded.",
 ]
 
 

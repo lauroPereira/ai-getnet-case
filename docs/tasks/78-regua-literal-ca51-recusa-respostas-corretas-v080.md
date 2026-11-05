@@ -99,6 +99,23 @@ Resultados:
 - CA-51 na composição da r5: 13/13, 13/13 e 13/13.
 - Suíte estrita: 1859 passed (1.683 + 176), Ruff e skills ok, exit 0.
 
+Developer, rodada 4 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-4-p2-7-e-acréscimos-de-concluído). Responde ao [parecer da rodada 3](../evidence/v080-reviewer-t78.md), P2-7 e acréscimos de "concluído", sob o complemento do Supervisor das 06h30. Mudou só a linha 6, `SALE-CANCELLATION`:
+
+- Proibidas, para cada estado X (rejected, denied, declined, refused): `'s been X`, `now / later / then / ended up X` e `X it`.
+- Proibidas também `cancel / cancellation / request is unknown`.
+- `no record of the request` virou `no record of the request to cancel`.
+- Como afirmação: `it's / request's / cancellation's / sale's X`, presas ao sujeito para que "if it's rejected" passe.
+- "Concluído": `has been completed`, `is complete` e `been refunded` presa a um auxiliar afirmativo (`has / have / had / already / 's been`, `was / were refunded`), para que "hasn't been refunded" passe.
+
+Resultados:
+
+- O teste tem 618 casos. As 61 sondas novas reprovam sozinhas e coladas; sob `33d18d1`, passavam 51 sozinhas e 61 coladas.
+- As 16 redações corretas de pendência passam sozinhas e coladas.
+- Mutação em memória: 53 mutantes, todos mortos.
+- Pontuação cruzada `33d18d1` × novo: 999 checagens e nenhuma mudou. Aprovadas: r3 39, r4 14, r5 33.
+- CA-51 na composição da r5: 13/13, 13/13 e 13/13.
+- Suíte estrita: 1997 passed (1.859 + 138), Ruff e skills ok, exit 0.
+
 ## Status
 
-Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05. Revisão da rodada 2 pediu correções. Correções aplicadas na rodada 3, 2026-11-05; aguarda revisão.
+Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05. Revisão da rodada 2 pediu correções. Correções aplicadas na rodada 3, 2026-11-05. Revisão da rodada 3 pediu correções (P2-7); o Supervisor limitou o critério à lista registrada. Correções aplicadas na rodada 4, 2026-11-05; aguarda revisão.

@@ -1243,3 +1243,52 @@ Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `0ea2fda` (prod
 ### Próxima ação
 
 Revisão curta deste commit. Depois, o Supervisor fixa o novo candidato e o QA faz o reteste pago das seis jornadas.
+
+## Tarefa 78, rodada 4 (P2-7 e acréscimos de "concluído")
+
+Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `2cf37da` (produto em `33d18d1`). Despacho: [parecer da rodada 3](v080-reviewer-t78.md), P2-7 e os acréscimos de "concluído", sob a decisão do Supervisor das 06h30, que limita o critério "sem aceitar contradições" à lista registrada. Identidade conferida (`lauroPereira` / `lauro.s.pereira@gmail.com`). Um commit: `tests/scenarios/business_journeys.jsonl` (só a linha 6), `tests/unit/evaluation/test_t78_ca51_archived.py`, esta passagem e a tarefa 78.
+
+`runner.py`, as outras 12 jornadas, o catálogo e o holdout não mudaram.
+
+### Mudança na linha 6, `SALE-CANCELLATION`
+
+- **`must_not_include`.** Para cada estado X (rejected, denied, declined, refused) entraram `'s been X`, `now X`, `later X`, `then X`, `ended up X` e `X it`. Entraram também `cancel is unknown`, `cancellation is unknown` e `request is unknown`. `no record of the request` virou `no record of the request to cancel`.
+- **`must_not_assert`.** Para cada estado X entraram `it's X`, `request's X`, `cancellation's X` e `sale's X`. Para "concluído" entraram `has been completed`, `is complete`, `has been refunded`, `have been refunded`, `had been refunded`, `already been refunded`, `'s been refunded`, `was refunded` e `were refunded`.
+- O runner troca o apóstrofo tipográfico e seus parecidos por `'` antes de comparar, tanto em `must_not_include` quanto em `must_not_assert` (`_APOSTROPHES`). Por isso basta a forma com apóstrofo reto, e o teste prova as duas grafias.
+
+### Decisões além do despacho
+
+- **`'s X` presa ao sujeito, em `must_not_assert`.** `'s rejected` solto recusaria "if it's rejected", que o despacho manda aceitar. A ressalva condicional do runner só vale quando "if" vem logo antes da afirmação, e com `'s rejected` o que vem antes é "if it". Por isso usei `it's X`, `request's X`, `cancellation's X` e `sale's X` como afirmações. Assim "we will tell you if it's rejected" passa e "but it's rejected" reprova. O custo é que outro sujeito contraído escapa, como "that's rejected".
+- **`been refunded` presa a um auxiliar afirmativo.** `been refunded` solto recusaria "has not been refunded" e "hasn't been refunded", que são redações corretas e óbvias de um cancelamento pendente: pelo item (4) da decisão, isso seria P2. É a mesma lição do `been X` da rodada 3. Usei `has / have / had / already / 's been refunded` e `was / were refunded`. As formas negadas não as contêm, e o teste aceita "hasn't been refunded".
+- **`no records of the request` ficou como estava.** O despacho trocou só a forma no singular. "There are no records of the request being processed" continua sendo falsa recusa. Fica para o QA, com o P3-7.
+- **Lado das listas.** `'s been X`, os advérbios, `X it` e os "unknown" ficaram em `must_not_include`, junto de `has been X` e `is X`, que já estavam lá. Só `it's X` e "concluído" foram para `must_not_assert`, onde já estavam `cancellation has been completed` e as demais.
+
+### Prova (`runner._checks` real, arquivos só lidos)
+
+`tests/unit/evaluation/test_t78_ca51_archived.py` tem 618 testes: os 480 da rodada 3 e 138 novos.
+
+- **Redações erradas (P2-7 e "concluído").** São 61 sondas novas em `P2_7_PROBES`:
+  - 48 de estado: 12 modelos × 4 estados, com apóstrofo reto e tipográfico;
+  - "its status is now denied";
+  - 3 de "unknown";
+  - 9 de "concluído".
+  As oito do parecer estão entre elas. Todas reprovam sozinhas, e coladas à resposta 932e… derrubam `forbidden_ok`. Sob `33d18d1`, 51 passavam sozinhas e 61 coladas.
+- **Redações corretas de pendência.** Agora são 16. Às 8 da rodada 3 juntei "no record of the request being processed", "neither been approved nor rejected", "it is not rejected", "if it's rejected" (reto) e "if it's denied" (tipográfico), "processing date is unknown", "has not been completed or refunded" e "is not complete and hasn't been refunded". As 16 passam sozinhas e coladas. Sob `33d18d1`, 7 das 8 novas passavam: só a de "no record of the request" falhava.
+- **Mutação em memória.** Retirei, uma por vez, cada uma das 53 proibições novas (28 em `must_not_include` e 25 em `must_not_assert`). As 53 morrem, cada uma com a sua sonda. Devolver a forma larga `no record of the request` também morre, porque recusa uma redação correta.
+- **Pontuação cruzada `33d18d1` × novo.** Foram 111 respostas arquivadas das 13 jornadas e 999 checagens, e **nenhuma checagem mudou**. Aprovadas: r3 39, r4 14, r5 33. As 10 respostas da tarefa seguem aprovadas.
+- **CA-51 na composição da r5:** **13/13, 13/13 e 13/13**.
+
+### Evidência
+
+- Testes focados: `tests/unit/evaluation/test_t78_ca51_archived.py`, **618 passed**. Ruff check e format ok.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` (venv 3.13.3), com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t78-r4-suite-basetemp -p no:cacheprovider"`: **1997 passed** em 679,69 s (1.859 + 138, sem skip). Ruff `All checks passed!`, skills válidas, exit 0. Log em `.pytest_cache/t78-r4-suite.log`, SHA-256 `4d57fb22…7aae9`.
+
+### Limites
+
+- A régua continua literal. Pela decisão do Supervisor, uma paráfrase errada nova fora da lista registrada é P3, e o juiz independente serve de controle adicional. Exemplos que escapam: "that's rejected", "has since been rejected" e "turned down".
+- Continuam falsas recusas conhecidas: "if it is rejected" (por `is rejected`), "if it's been rejected", "if it was later rejected", "nobody has rejected it" e "no records of the request being processed". Ficam para o QA conferir, com o P3-7.
+- Nenhuma chamada paga, rede ou `.env`.
+
+### Próxima ação
+
+Revisão curta deste commit. Depois, o Supervisor fixa o candidato e o QA faz o reteste pago das seis jornadas.
