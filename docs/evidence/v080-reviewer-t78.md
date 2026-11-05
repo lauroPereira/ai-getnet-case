@@ -41,3 +41,25 @@ r5: 23 → 33 aprovadas, só as 10 `content_ok` mudam. r4: 14 → 14 (três `for
 
 ### Próxima ação
 Developer corrige P2-1 a P2-4 com P3-1 como regressão; novo candidato e revisão curta antes do reteste pago das seis jornadas.
+
+## Rodada 2 — candidato `481eebd48c02306f6d2680438f51bf6ddc8ffd2f` (r9)
+
+**Parecer: correções necessárias.** P2-1 a P2-4 e P3-1 fechados; as 10 respostas passam; pontuação cruzada `2b62993` × `481eebd` em 111 respostas: 0 mudanças (r3 39/39, r4 14/14, r5 33/33); CA-51 na composição da r5: 13/13 ×3. Dois P2 novos introduzidos pelas proibições.
+
+- **Hashes:** tree `f86a5333…`, 99 blobs e fingerprint `83c7ee74…dcb0e` conferem; holdout blob `22dfee8b…af9d` em `658c70a`, `2b62993`, `481eebd` e HEAD; `src/`, `prompts/`, `data/`, `tools/` sem mudança.
+- **Suíte** em cópia `git archive 481eebd`: 1.682 passed e 1 skipped em 671 s (skip isolado e passado: 1.683); Ruff e skills ok; exit 0.
+- **Rodada 1:** todas as sondas reprovam agora, sozinhas e coladas; "Rejected:…", "There were no different pricing plans", "Não foram encontradas diferenças…", "R$ 0,75, but the recorded charge was R$ 0,75" reprovam; mutante `n't show a difference` morre.
+
+### Achados novos
+- **P2-5** `business_journeys.jsonl:6`: proibições nuas `rejected`, `declined`, `denied`, `refused`, `unknown`, `no record(s) of` recusam redações corretas de pendência que o r7/r8 aceitavam: "…was requested and has not been processed or rejected yet", "…there is no record of it being completed", "…is still pending: it has not been processed or rejected yet", "…hasn't been approved or declined yet". Correção: prender a afirmações ("was/been/is rejected", "status: rejected", "as rejected", "no record of a/the/your request") e incluir essas redações corretas como regressão (`test_t78_ca51_archived.py:374`).
+- **P2-6** `business_journeys.jsonl:2`: "The charge … haven't/hasn't used different pricing plans" passa (contração de "have not used"); acrescentar `n't used different`.
+- **P3-6** linhas 9 e 2: `não há diferença`, `sem diferença`, `nenhuma diferença`, `no different` recusam respostas corretas que citam atributos iguais ("Não há diferença no número de parcelas nem no canal", "The installments and channel were no different"); prender a "entre as condições/planos".
+- **P3-7** falsas recusas pelo estreitamento (erro conservador, o r7 também recusava): "Há uma diferença entre as condições", "Different pricing plans were used", "made under different pricing plans", "R$ 0.00 … R$ 0.75", "R$0,00", espaço não separável. O QA deve conferir cada `content_ok` falho no reteste.
+- **P3-8** 2 de 18 mutantes sobrevivem: devolver a linha 2 a `different pricing plans` e a linha 9 a `diferença entre as condições` mantém o teste verde; sondas que prendem: "Different pricing plans were never applied.", "Não detectamos diferença entre as condições.".
+- **P3-9** estrutural (extensão do P3-2, para a decisão de rubrica da v0.9.0): paráfrases erradas ainda aceitas ("…not been processed and won't be", "cannot be processed", "was not approved/accepted", "Neither…", "It is not true that…", "Essa diferença entre as condições não existe", "…R$ 0,75, which is expected and correct"). Com o P2-5, `was not approved`, `was not accepted`, `will not be/won't be processed`, `cannot be processed` são acréscimos baratos.
+
+### Mutações
+18 em cópia separada: 16 mortas; sobreviventes as duas do P3-8.
+
+### Próxima ação
+Developer corrige P2-5 e P2-6, de preferência com P3-6 e P3-8 na mesma passada e as sondas como regressão; nova revisão curta antes do reteste pago.
