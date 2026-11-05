@@ -314,3 +314,99 @@ O relatório traz a tabela, o lacre e a linha D7. Custo estimado: embeddings de 
 ### Próxima ação
 
 Reviewer, em contexto novo: o reranker (falhas e limite), o lacre e a ordem dos commits (holdout em `8c1970b`, antes do código que mede), a regra D7 e o `eval-retrieval`. Depois, o QA (momentos 5 e 6) e a decisão D7 na tarefa 82 (Supervisor).
+
+## Tarefa 81 — rodada 2 (correções da revisão)
+
+- **Papel e responsável:** Developer (subagente), 2026-11-05.
+- **Objetivo e critérios:** fechar P2-1, P2-2 e P2-3 de [v090-reviewer-t81.md](v090-reviewer-t81.md), rodada 1, com as decisões do Supervisor; P3-11; relacrar o holdout uma vez com os sete rótulos do P3-12, autorizado porque nenhum modo foi medido nele.
+- **Estado:** apto para nova revisão.
+- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR, sem push.
+- **Base e versão final:** base `ab7ac5c`. O Supervisor integrou depois `e31587f` e `54a5fcb`, só README e evidência do juiz, sem tocar nos meus arquivos. Commits `1d05f7d` (relacre), `e0dbbf2` (P2-1) e `aa68cff` (P2-2, P2-3, P3-11), mais o commit desta documentação.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos
+
+- `tests/scenarios/retrieval_holdout_v090.jsonl` e `.sha256`, `tests/unit/test_retrieval_holdout_v090.py` (relacre, commit próprio).
+- `src/merchant_assistant/rag/index.py` e `rag/rerank.py` (P2-1), `tests/unit/rag/test_rerank.py`.
+- `src/merchant_assistant/evaluation/retrieval.py` (P2-2 e a constante do P3-11), `cli.py` (só o bloco `eval-retrieval`, P3-11), `tests/unit/evaluation/test_retrieval_metrics.py`, `tests/integration/test_v090_rerank.py`.
+- `agents/knowledge.py` não mudou: o `Meter` real já era passado; o P2-3 só acrescenta o teste.
+
+### Como cada P2 foi fechado
+
+**P2-1 (o reranker mudava a fusão).** Regra do Supervisor, aplicada sem variação:
+
+- `RERANK=off`: a fusão é a da tarefa 80 (largura `k`, profundidade `3k`), e a chamada a `_dense` é a mesma de antes.
+- `RERANK=on`: uma fusão de largura 12 (profundidade 36) dá os 12 candidatos; o modelo reordena; o resultado é cortado em `k`.
+- Falha ou pulo do reranker (erro recuperável, ordem inválida, orçamento, limite, menos de 2 candidatos): `search` devolve a fusão de largura `k`, igual à do `off`. Para isso o `Reranker` ganhou `reorder`, que devolve `None` em falha ou pulo; `rerank` continua devolvendo a lista, como antes. A mesma embedding da pergunta serve às duas fusões: a falha não paga uma segunda embedding, só faz uma consulta a mais no Qdrant e no BM25 em memória.
+- Testes sobre 63 perguntas de desenvolvimento, sem repetição e nunca o holdout: as 19 do `dev`, as mensagens de `challenge_examples`, `core_cases`, `business_journeys`, `replan` e `followup`, e 8 sintéticas escritas no teste.
+  - Reranker que falha == `RERANK=off` em todas, com `chunk_id`, score fundido e origem, em três combinações de filtro e `min_score`.
+  - Reranker identidade == primeiros `k` da fusão a 12 em todas. O mesmo teste confere que a profundidade muda o top 6 em pelo menos uma pergunta, para a equivalência na falha não ser vazia.
+  - No Knowledge, o teste de falha compara agora o top `k` inteiro, com scores, ao do `RERANK=off`.
+- Relatório: o Markdown diz que `hybrid+rerank` reordena os 12 primeiros de uma fusão de profundidade 36, contra 18 do `hybrid`, e que numa falha a resposta é a do `hybrid`. Mantive a profundidade 36: a D7 compara o pacote "fusão a 12 + modelo" com o híbrido do serviço, e a diferença fica escrita.
+
+**P2-2 (falhas fora do relatório).** A tabela Markdown ganhou a coluna "Falhas do reranker" (`N de n` na linha `hybrid+rerank`, `—` nas outras). A linha D7 diz sempre "reranker com N falhas em M consultas", somadas nos dois splits. Se N > 0, a sugestão é `RERANK=indisponível`; a sugestão do híbrido segue a própria regra.
+
+**P2-3 (guardas de custo sem teste).**
+
+- K2: `test_the_knowledge_reranker_is_metered_by_the_request` compara `RERANK=on` com `off` e confere uma chamada de modelo a mais no trace (`model_calls`), `models_by_agent["rerank"]["calls"] == 1` (o `usage_by_agent` da requisição) e um lançamento `rerank` no ledger com o `request_id`.
+- C2: `test_paid_reranker_of_eval_retrieval_has_the_cap_per_run` monta o reranker pago de `_retrieval_reranker(fake=False)` com um cliente OpenAI que falha se for tocado e um `BudgetGuard` em diretório temporário. Reserva e liquida chamadas até o `BudgetMeter` recusar com `BudgetExceeded("evaluation")`. O acumulado fica entre US$0,04 e US$0,05, e o ledger recebe o mesmo valor. Nenhuma chamada sai.
+- Mutação manual na cópia de trabalho, restaurada e conferida por `git status`: K2 (`NullMeter` no Knowledge), C2 (`max_cost_usd=None`), falha devolvendo a fusão a 12, D7 ignorando falhas, coluna de falhas fixa e P3-11 desligado. **6 de 6 mortos.**
+
+### P3-11
+
+`eval-retrieval --fake --split holdout_v090` é recusado antes de abrir o arquivo quando o diretório de cenários é o versionado (`PROJECT_SCENARIOS`). Os testes apontam `SCENARIOS` para um holdout sintético e continuam rodando os dois splits sem rede. Teste: `test_fake_runs_refuse_the_real_holdout`.
+
+### Relacre do holdout (P3-12, autorizado pelo Supervisor)
+
+Li os chunks citados no corpo (`load_all` e `chunk_document` sobre `data/`), sem rodar nenhum modo de busca nas perguntas. São as mesmas 25 perguntas, com os mesmos ids e o mesmo texto. A regra dos graus agora está escrita no teste de forma: grau 2 = a passagem traz a resposta inteira (mais de uma pode trazer); grau 1 = traz parte. Por isso o teste de forma passou de "exatamente um grau 2" para "pelo menos um".
+
+| Pergunta | Mudança | Por quê |
+| --- | --- | --- |
+| `RH090-EN-FEE-REDUCED-PLAN-MONTHLY` | `plano-de-recebimento-reduzido#2` entra com grau 2 | termina com "5. Existe alguma mensalidade? Não. Você pagará as taxas aplicáveis às transações (MDR) e a taxa de serviço do plano contratado": a resposta inteira |
+| `RH090-PT-EXACT-DOCK-IP` | `duvidas#16` entra com grau 1 | tem a mesma frase do `get-conta#0` (grau 1): "através de uma parceria com a Dock IP" |
+| `RH090-PT-PROD-MINESTORE-PLANS` | `duvidas#21` entra com grau 1 | lista os três planos, mas não diz em qual a loja começa: metade da resposta |
+| `RH090-EN-PROD-GETNET-SCALE` | `www-getnet-net-en#1` sai (era grau 1) | diz "1.3 million merchants" (não ativos, número diferente) e lista 8 países de presença, não os 35 da licença: leva a uma resposta errada |
+| `RH090-EN-FEE-PLANO-LIGHT-INSTALLMENT` | `duvidas#31` sai (era grau 1) | só abre o tema ("12 parcelas completas"), sem o valor da parcela |
+| `RH090-PT-FEE-VOUCHER-MDR-CAP` | `bandeiras#0` passa de grau 1 a 2 | traz os dois fatos: prazo máximo de 15 dias e MDR limitada a 3,6% |
+| `RH090-PT-FEE-GETTAP-12X` | `get-tap#1` passa de grau 1 a 2 | traz "Crédito 12x 12,88%", a resposta inteira |
+
+- Lacre antigo `d8381ddd7d7f…0d12d`. **Lacre novo `a23850aa66929eb64047b93697cec6b4b0893bc9f77d259f06d42fd3c46ae393`** (sha256 com LF), no commit `1d05f7d`, com a mensagem pedida e antes dos commits de código desta rodada.
+- Os testes do lacre, da forma, dos `chunk_id` no corpo, de ids e perguntas novos e de que nenhum outro teste cita o arquivo passam (6).
+- Continua valendo: nenhum modo foi medido no holdout, nem com hash, nem antes nem depois do relacre. Os testes novos de equivalência usam só `dev` e perguntas sintéticas.
+
+### Evidência
+
+- Testes nos quatro arquivos da tarefa: **58** (47 na rodada 1, mais 11). São 21 em `test_rerank.py`, 20 em `test_retrieval_metrics.py`, 11 em `test_v090_rerank.py` e 6 em `test_retrieval_holdout_v090.py`.
+- Focados (os quatro arquivos, `tests/unit/rag` inteiro e `test_v090_hybrid.py`): todos passaram. Entre eles está o `test_hybrid_fuses_the_top_3k_of_each_list` da tarefa 80, que fixa a chamada a `_dense` do modo `off`.
+- Referência com embeddings de hash, só `dev`, sem `--out` e sem `.env`:
+  - denso: R@6 0,632, MRR 0,500, nDCG@6 0,534;
+  - híbrido: 1,000, 0,789, 0,843;
+  - híbrido+reranker programado: 1,000, 0,765, 0,825, com 19 chamadas e 0 falhas.
+
+  Os números são iguais aos da rodada 1: no sucesso nada mudou.
+- `ruff check src tests`: limpo.
+- Suíte estrita: **2107 passed, 1 skipped** em 697 s, 0 failed (2096 da rodada 1 mais 11 novos; 1 skip, como na rodada 1, onde era o `test_v070_identity_r2.py:277` do basetemp; o log `-q` não nomeia o desta). Ruff `All checks passed!`, caminhos pessoais limpos (747 arquivos), estrutura e skills válidas, exit 0.
+
+### Achados e limitações
+
+- Com `RERANK=on`, uma falha do reranker faz o Knowledge calcular uma segunda fusão (Qdrant e BM25, sem nova embedding). Não há custo de modelo, e a latência extra é pequena.
+- Ficam registrados para a tarefa 82 e o ADR 0020, sem mudança de código:
+  - P3-10: o "já visto" só vale dentro da mesma `--out`, e a nova medição substitui a anterior.
+  - P3-12, parte geral: o holdout foi escrito por quem conhecia o corpo, 7 das 25 perguntas são de termo exato, e Recall@6 e MRR do holdout contam o grau 1 como acerto.
+  - P3-13: a regra do híbrido usa só o nDCG@6.
+  - P3-14: `record_run` não confere `bm25_corpus_hash`.
+  - P3-15: o reranker usa 1 das 8 chamadas de `max_model_calls`.
+  - P3-1 da tarefa 80 segue parcial: a origem aparece só nas linhas do `eval-retrieval`.
+- O roteiro do QA da rodada 1 não muda: as mesmas seis execuções, com a mesma `--out`, o holdout por último e uma vez por configuração, agora com o lacre `a23850aa…`. `--fake` no holdout real é recusado.
+
+### Próxima ação
+
+Reviewer, em contexto novo, verifica:
+
+- `rag/index.py` e `rag/rerank.py`: a equivalência na falha;
+- `evaluation/retrieval.py`: a coluna de falhas e a linha D7;
+- `cli.py`: o P3-11;
+- os testes K2 e C2;
+- o relacre em `1d05f7d`: só rótulos, mesmas perguntas.
+
+Depois vêm o QA (momentos 5 e 6) e a decisão D7 na tarefa 82.

@@ -44,6 +44,26 @@ Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer có
 - **`lint_and_tests.py --strict`:** 2096 passed, 1 skipped (o do basetemp), ruff limpo, caminhos limpos (746 arquivos), exit 0.
 - Decisões além do texto (regra D7 por nDCG@6 estritamente maior, fusão a 12 com reranker, rótulos curtos, teto de US$0,05 por execução paga do reranker) e o roteiro do QA estão na passagem.
 
+**Rodada 2** (Developer, 2026-11-05; commits `1d05f7d`, `e0dbbf2` e `aa68cff`; revisão: [v090-reviewer-t81.md](../evidence/v090-reviewer-t81.md); passagem: seção "Tarefa 81 — rodada 2"):
+
+- **P2-1:** com `RERANK=on`, os candidatos vêm de uma fusão de largura 12 (profundidade 36). Em qualquer falha ou pulo do reranker, `search` devolve a fusão de largura `k` (profundidade `3k`), idêntica à de `RERANK=off`. Os testes cobrem 63 perguntas de desenvolvimento (`dev` mais sintéticas): falha == `off` em todas, e reranker identidade == primeiros `k` da fusão a 12 em todas. O relatório diz que `hybrid+rerank` difere do `hybrid` pela profundidade 36.
+- **P2-2:** a tabela tem a coluna "Falhas do reranker". A linha D7 diz "reranker com N falhas em M consultas" e sugere `RERANK=indisponível` se houver falha.
+- **P2-3:** há testes para o reranker do Knowledge medido pela requisição (`model_calls`, uso por agente e ledger) e para o teto de US$0,05 do `eval-retrieval` pago. Mutantes K2, C2 e mais quatro: 6 de 6 mortos.
+- **P3-11:** `--fake` recusa o holdout real.
+- **Relacre do holdout (P3-12, autorizado pelo Supervisor; nenhum modo medido):** sete rótulos corrigidos lendo o corpo, sem mudar nenhuma das 25 perguntas.
+  - `REDUCED-PLAN-MONTHLY`: entra `#2`, grau 2.
+  - `DOCK-IP`: entra `duvidas#16`, grau 1.
+  - `MINESTORE-PLANS`: entra `duvidas#21`, grau 1.
+  - `GETNET-SCALE`: sai `www-getnet-net-en#1`.
+  - `PLANO-LIGHT`: sai `duvidas#31`.
+  - `VOUCHER`: `bandeiras#0` passa a grau 2.
+  - `GETTAP-12X`: `get-tap#1` passa a grau 2.
+
+  Grau 2 quer dizer que a passagem traz a resposta inteira, e mais de uma pode trazer. O motivo de cada mudança está na passagem. Lacre novo: `a23850aa66929eb64047b93697cec6b4b0893bc9f77d259f06d42fd3c46ae393`.
+- **Testes:** 58 nos quatro arquivos da tarefa (+11). A referência com hash em `dev` é igual à da rodada 1.
+- **`lint_and_tests.py --strict`:** **2107 passed, 1 skipped** em 697 s, 0 failed (2096 da rodada 1 mais 11 novos; 1 skip, como na rodada 1, onde era o `test_v070_identity_r2.py:277` do basetemp; o log `-q` não nomeia o desta). Ruff `All checks passed!`, caminhos pessoais limpos (747 arquivos), estrutura e skills válidas, exit 0.
+- **P3 registrados para a 82 e o ADR 0020:** P3-10, P3-12 (parte geral), P3-13, P3-14 e P3-15.
+
 ## Status
 
-Aberta pelo Supervisor em 2026-11-05. Rodada 1 implementada pelo Developer em 2026-11-05; aguarda revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+Aberta pelo Supervisor em 2026-11-05. Rodada 1 implementada pelo Developer em 2026-11-05 e revisada (correções necessárias: P2-1 a P2-3). Rodada 2 implementada pelo Developer em 2026-11-05, com o holdout relacrado; aguarda nova revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
