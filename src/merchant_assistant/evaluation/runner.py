@@ -459,6 +459,20 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         "",
         f"Gerado em {summary['generated_at']}. Configuração: `{json.dumps(config, ensure_ascii=False)}`.",
         "",
+    ]
+    if "selected_answers" in config:  # eval --judge-repeat with --only-sample or --limit (spec v0.9.0 D1)
+        filtered = (
+            f", filtradas pelos {config['only_sample_ids']} request_id de `{config['only_sample']}`"
+            if "only_sample" in config
+            else ""
+        )
+        limited = f", limitadas a {config['limit']}" if "limit" in config else ""
+        lines += [
+            f"Respostas julgadas: {config['selected_answers']} de {config['recorded_answers']} gravadas"
+            f"{filtered}{limited}.",
+            "",
+        ]
+    lines += [
         "## Resumo",
         "",
         "| Recorte | n | Aprovados | Rota | Status | Ferramentas | Valores | Conteúdo | Fontes | Sem violação | "

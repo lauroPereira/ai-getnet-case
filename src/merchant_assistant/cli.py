@@ -625,6 +625,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         rows, source = load_recorded_answers(Path(args.answers_from))
     except (OSError, ValueError, KeyError) as exc:
         raise SystemExit(f"eval: {exc}") from None
+    rows, selection = _select_recorded_answers(rows, args)
     splits = {row["split"] for row in rows}
     name = _report_name(args, next(iter(splits)) if len(splits) == 1 else None)
     if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
@@ -663,6 +664,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         "repeat": 1,
         "judge_repeat": args.judge_repeat,
         "answers_from": Path(args.answers_from).name,
+        **selection,
         "campaign": getattr(args, "campaign", None),
         "campaign_cap_usd": getattr(args, "campaign_cap_usd", V080_QA_CAP_USD)
         if getattr(args, "campaign", None)
@@ -675,6 +677,46 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     print(f"report: {md}")
     print(f"results: {js}")
     return 0
+
+
+def _select_recorded_answers(rows: list[dict], args) -> tuple[list[dict], dict]:
+    """`--only-sample <csv>` keeps the recorded answers whose request_id is in the calibration CSV, in the order of the
+    CSV (spec v0.9.0 D1); `--limit K` then keeps the first K (the probe). Returns the rows and what was filtered, which
+    goes into the report's configuration."""
+    only, limit = getattr(args, "only_sample", None), getattr(args, "limit", None)
+    if limit is not None and limit < 1:
+        raise SystemExit("eval: --limit must be at least 1.")
+    if only is None and limit is None:
+        return rows, {}
+    selection: dict = {"recorded_answers": len(rows)}
+    if only is not None:
+        from merchant_assistant.evaluation import calibration
+
+        try:
+            wanted = calibration.sample_request_ids(Path(only))
+        except calibration.CalibrationError as exc:
+            raise SystemExit(f"eval: --only-sample: {exc}") from None
+        by_id = {row["request_id"]: row for row in rows}
+        missing = [request_id for request_id in wanted if request_id not in by_id]
+        if missing:
+            raise SystemExit(
+                f"eval: --only-sample: {len(missing)} of the {len(wanted)} request ids of {Path(only).name} are not "
+                f"among the recorded answers (for example {missing[0]}); use the report the sample was drawn from."
+            )
+        rows = [by_id[request_id] for request_id in wanted]
+        selection |= {"only_sample": Path(only).name, "only_sample_ids": len(wanted)}
+    if limit is not None:
+        rows = rows[:limit]
+        selection["limit"] = limit
+    selection["selected_answers"] = len(rows)
+    print(
+        f"eval: grading {len(rows)} of {selection['recorded_answers']} recorded answers"
+        + (f" ({selection['only_sample_ids']} request ids in {selection['only_sample']})" if only else "")
+        + (f", --limit {limit}" if limit is not None else "")
+        + ".",
+        file=sys.stderr,
+    )
+    return rows, selection
 
 
 def cmd_eval_estimate(settings: Settings, args) -> int:
@@ -859,6 +901,8 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
     size, filled = getattr(args, "sample", None), getattr(args, "import_csv", None)
     if (size is None) == (filled is None):
         raise SystemExit("eval-calibrate: choose --sample N --from <report.json>, or --import <csv>.")
+    if size is not None and getattr(args, "judge", None):
+        raise SystemExit("eval-calibrate: --judge is used with --import (the sample never shows a judge's scores).")
     evidence_dir = PROJECT_ROOT / "docs" / "evidence"
     try:
         if size is not None:
@@ -893,7 +937,9 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
 
         conn = connect(settings.db_path)
         try:
-            result = calibration.import_filled(conn, Path(filled), rater=args.rater, campaign=args.campaign)
+            result = calibration.import_filled(
+                conn, Path(filled), rater=args.rater, campaign=args.campaign, judge=getattr(args, "judge", None)
+            )
         finally:
             conn.close()
         out = Path(args.out) if args.out else evidence_dir / "v080-calibracao.md"
@@ -905,6 +951,12 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
             f"calibrations: {counts['created']} stored, {counts['updated']} updated, {len(result['skipped'])} skipped"
             f"{withdrawn} (campaign {result['meta']['campaign']}, rater {result['rater']})"
         )
+        if result.get("comparison"):
+            compared = result["comparison"]
+            print(
+                f"judges: {compared['judge']} (campaign {compared['campaign']}) beside {compared['original_judge']} "
+                f"(campaign {compared['original_campaign']}), {result['analysis']['n']} human ratings"
+            )
         if result["outside"]:
             print(
                 f"eval-calibrate: {len(result['outside'])} rating(s) of this campaign and rater are in the database "
@@ -1106,8 +1158,8 @@ def main(argv: list[str] | None = None) -> int:
         "--judge",
         action="store_true",
         help="Add the model-graded rubric judge.v3 (paid). The judge is set by JUDGE_PROVIDER and JUDGE_MODEL "
-        "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY. Refused, before any call, when the judge "
-        "equals the agent or its key is missing.",
+        "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY (anthropic/claude-opus-5-5 needs "
+        "ANTHROPIC_API_KEY). Refused, before any call, when the judge equals the agent or its key is missing.",
     )
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout", "holdout_v080"], default="all")
     p_evalx.add_argument(
@@ -1126,10 +1178,16 @@ def main(argv: list[str] | None = None) -> int:
         "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
     )
     p_evalx.add_argument(
+        "--only-sample",
+        default=None,
+        help="With --judge-repeat: grade only the answers whose request_id is in this calibration CSV, in its order.",
+    )
+    p_evalx.add_argument(
         "--limit",
         type=int,
         default=None,
-        help="Run at most N cases for a measured cost sample; follow-up conversations are skipped.",
+        help="Run at most N cases for a measured cost sample; follow-up conversations are skipped. With "
+        "--judge-repeat: grade at most N recorded answers (after --only-sample).",
     )
     p_evalx.add_argument(
         "--campaign",
@@ -1183,6 +1241,13 @@ def main(argv: list[str] | None = None) -> int:
         "sampled.",
     )
     p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
+    p_calibrate.add_argument(
+        "--judge",
+        default=None,
+        help="With --import: compare the ratings with this judge (<provider>/<model>, e.g. anthropic/claude-opus-5-5) "
+        "instead of the first judgement of any judge, under a new --campaign; the report adds the original campaign's "
+        "judge side by side and each judge's consistency between repetitions.",
+    )
     p_calibrate.add_argument(
         "--delimiter",
         choices=[";", ","],
