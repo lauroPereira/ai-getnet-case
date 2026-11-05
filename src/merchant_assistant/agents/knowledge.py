@@ -14,6 +14,7 @@ from merchant_assistant.orchestration.budget import BudgetExceeded
 from merchant_assistant.orchestration.run import LimitExceeded, RunContext
 from merchant_assistant.orchestration.state import Citation, GraphState, KnowledgeDraft, KnowledgeResult
 from merchant_assistant.rag.index import Hit
+from merchant_assistant.rag.rerank import Reranker
 
 RECOVERABLE = (LLMError, ValidationError, LimitExceeded, BudgetExceeded)
 
@@ -146,11 +147,16 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     try:
         if ctx.index is None:
             raise LLMError("knowledge index not available")
+        rerank = {}
+        if ctx.settings.rerank == "on":  # task 81: metered by this request; a failure keeps the fusion order
+            rerank = {"reranker": Reranker(ctx.llm_for("rerank"), prompt(ctx, "rerank")), "meter": ctx,
+                      "notes": ctx.step_notes}
         hits = ctx.index.search(
             state.message,
             k=ctx.settings.retrieval_top_k,
             source_kinds=kinds,
             min_score=ctx.settings.retrieval_min_score,
+            **rerank,
         )
     except Exception as exc:  # vector store or embedding failure
         ctx.step_notes["error"] = f"retrieval: {exc}"

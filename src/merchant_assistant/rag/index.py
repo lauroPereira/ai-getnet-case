@@ -220,18 +220,30 @@ class KnowledgeIndex:
         source_kinds: list[str] | None = None,
         min_score: float = 0.0,
         mode: str | None = None,
+        reranker=None,
+        meter=None,
+        notes: dict | None = None,
     ) -> list[Hit]:
         """Dense by default. `hybrid` fuses the dense and BM25 top 3k by RRF; `min_score` filters only the dense list
-        and the returned score is the fused one."""
+        and the returned score is the fused one. With a `reranker` (task 81, hybrid only) the fusion keeps
+        `reranker.candidates` results (12), the model reorders them through `meter`, and the first k are returned;
+        a reranker failure keeps the fusion order and is written to `notes`."""
         mode = mode or self.mode
         if mode == "dense":
+            if reranker is not None:
+                raise ValueError("The reranker runs after the hybrid fusion; use mode='hybrid'.")
             return self._dense(query, k=k, source_kinds=source_kinds, min_score=min_score)
         if mode != "hybrid":
             raise ValueError(f"Unknown retrieval mode: {mode!r}")
-        depth = 3 * k
+        fused_k = max(k, reranker.candidates) if reranker is not None else k
+        depth = 3 * fused_k
         dense = self._dense(query, k=depth, source_kinds=source_kinds, min_score=min_score)
         lexical = self.bm25_index().search(query, k=depth, source_kinds=source_kinds)
-        return rrf(dense, lexical, k)
+        fused = rrf(dense, lexical, fused_k)
+        if reranker is None:
+            return fused
+        head = reranker.rerank(query, fused[: reranker.candidates], meter, notes)
+        return (head + fused[reranker.candidates :])[:k]
 
     def _dense(self, query: str, *, k: int, source_kinds: list[str] | None, min_score: float) -> list[Hit]:
         vector = self.embedder.embed([query])[0]
