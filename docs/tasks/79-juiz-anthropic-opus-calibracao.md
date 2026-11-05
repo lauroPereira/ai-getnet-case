@@ -35,8 +35,15 @@ Branch `codex/v0.9.0-juiz-retrieval` criada da `main` com a v0.8.0. Nenhuma cham
 
 ## Validação
 
-(Preenchida pelo Developer.)
+Developer, 2026-11-05, commits `ffe9803` e `c0045a5` na `codex/v0.9.0-juiz-retrieval`. Passagem: [v090-developer.md](../evidence/v090-developer.md).
+
+- SDK conferido no pacote instalado (`anthropic 2.5.0`): `messages.create(..., output_config={"format": {"type": "json_schema", "schema": ...}})`; `JSONOutputFormatParam` não tem campo `strict`, e o esquema estrito vem de `anthropic.transform_schema` (`additionalProperties: false`, todos os campos em `required`). `thinking` e `effort` omitidos.
+- Provedor programado: o cliente real do SDK sobre `httpx2.MockTransport` (`llm/scripted_anthropic.py`); nenhuma rede, nenhuma chamada paga, `.env` não lido.
+- Testes novos: 15 passed (`tests/unit/llm/test_anthropic_judge.py`, 10; `tests/integration/test_v090_judge.py`, 5). Cobrem esquema estrito no corpo enviado, `refusal`, `max_tokens`, erro de rede, resposta fora do esquema ou da escala, `run_tools`/`web_search` recusados, preço com cache lido e criado, independência e chave, fábrica, `--only-sample` (72 julgamentos na ordem do CSV; recusa de ID ausente), `--limit 3` (3 julgamentos), falhas contadas no relatório, ledger Anthropic separado, `--judge` com os dois juízes, consistência e custo por julgamento, recusas de `--judge` (sem julgamento do juiz, campanha original, formato, nota divergente) e relatório sem `--judge` idêntico ao anterior.
+- `lint_and_tests.py --strict` no HEAD `c0045a5`: **2012 passed** (1997 + 15), ruff sem achados, skills válidas, exit 0.
+- `checar-caminhos-pessoais.py`: nenhuma ocorrência (722 arquivos, dentro da suíte estrita).
+- Decisões além do texto e limites (cap `v090-juiz-opus` sem opção de CLI; teto pelo ledger Anthropic novo com `BUDGET_LIMIT_USD=4.00`): na passagem.
 
 ## Status
 
-Pendente. Aberta pelo Supervisor em 2026-11-05.
+Implementada pelo Developer em 2026-11-05; aguarda revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
