@@ -410,3 +410,25 @@ Reviewer, em contexto novo, verifica:
 - o relacre em `1d05f7d`: só rótulos, mesmas perguntas.
 
 Depois vêm o QA (momentos 5 e 6) e a decisão D7 na tarefa 82.
+
+## Tarefa 82 — D7
+
+- **Branch e base:** `codex/v0.9.0-juiz-retrieval`, a partir de `6067a78`; código em `3746bcc`.
+- **Decisão:** a regra D7 da spec foi escrita antes da medição. O QA real mediu nDCG@6 do híbrido contra o denso: 0,974 contra 0,868 em `dev` e 0,921 contra 0,880 no holdout lacrado. Com isso, `RETRIEVAL_MODE` passa a `hybrid` por padrão. `RERANK` continua `off` (ADR 0020, P3-16). `dense` é o retrieval da v0.8.0; para voltar a ele, use `RETRIEVAL_MODE=dense`.
+- **Arquivos:**
+  - `src/merchant_assistant/config.py`: padrão `hybrid`, com comentário que cita D7 e os números;
+  - `.env.example`: `# RETRIEVAL_MODE=hybrid` e como voltar ao `dense`;
+  - `tests/unit/rag/test_bm25_hybrid.py`: o teste de padrão vira `test_retrieval_mode_setting_defaults_to_hybrid`; a equivalência do denso segue com `mode="dense"` explícito;
+  - `tests/integration/test_v090_rerank.py`: `test_rerank_needs_hybrid_in_the_cli_and_in_settings` dependia do antigo padrão `dense` sem declará-lo. Agora passa `retrieval_mode="dense"` explícito para conferir a recusa de `RERANK=on` e confere que `rerank="on"` é aceito com o padrão novo.
+- **Testes:**
+  - seleção `tests/unit/rag`, `test_v090_hybrid.py` e `test_v090_rerank.py`: 74 passam (`tests/unit/test_config*.py` não existe);
+  - suíte estrita: **2107 passed, 1 skipped** em 696 s; Ruff `All checks passed!`, caminhos pessoais limpos (753 arquivos), estrutura e skills válidas, exit 0.
+- **Eval offline** (`eval --scripted --include-replan`, modelo programado, sem `.env` nem chamada paga):
+  - **29/44** no híbrido (0,659) contra **28/44** no denso (0,636);
+  - em `split=all` sem replan: 0,65 contra 0,625 em 40 casos.
+  - **Só o PT05 mudou** (split holdout): falhava no denso e passa no híbrido, com diferença em `content_ok`. Passagens recuperadas:
+    - denso: "Transações negadas", "Como estornar uma venda na maquininha Getnet?", "Getnet | Maquininha de cartão: Melhores taxas e opções grátis", "Como fazer uma venda na maquininha Getnet?", "Card machine status (your account)";
+    - híbrido: "Como configurar o Wi-Fi na sua maquininha Getnet?", "Dúvidas e Perguntas Frequentes | Getnet", "Como fazer uma venda na maquininha Getnet?", "Getnet | Maquininha de cartão: Melhores taxas e opções grátis", "Card machine status (your account)".
+  - Nenhum caso piorou, e os demais critérios ficaram iguais nos dois modos. Conversas: **4/4 nos dois modos**.
+  - Nenhum rótulo ou cenário foi alterado. O Supervisor aceitou a mudança.
+- **Próxima ação:** Supervisor.
