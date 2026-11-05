@@ -66,7 +66,7 @@ Passe tarefa, critérios, candidato, caminhos e referências. Para revisão, use
 
 Se delegação não estiver disponível, use outra sessão ou revisão humana. Trocar o nome do papel na mesma sessão não produz revisão independente: registre **não-independente**. Se independência for requisito da entrega, essa lacuna bloqueia a decisão final.
 
-Use a [passagem](../../templates/passagem-de-papel.md) para registrar resultado, evidência, candidato e próximo responsável. Reconcilie estado local e remoto autorizado antes de confiar em relatos. Após resposta externa incerta, consulte o destino antes de repetir; nunca fabrique progresso com commit vazio ou PR duplicado.
+Use a [passagem](../../templates/passagem-de-papel.md) para registrar resultado, evidência, candidato e próximo responsável. Em passagens, pareceres e relatórios, caminhos são relativos ao repositório ou um marcador; nunca home, nome de usuário ou `AppData` (AGENTS.md, "Caminhos pessoais", crítico; `checar-caminhos-pessoais.py` recusa). Reconcilie estado local e remoto autorizado antes de confiar em relatos. Após resposta externa incerta, consulte o destino antes de repetir; nunca fabrique progresso com commit vazio ou PR duplicado.
 
 ## Candidato e evidência
 

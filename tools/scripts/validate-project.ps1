@@ -22,4 +22,7 @@ if (Test-Path "ai-dev-template") {
     Write-Warning "Atenção: existe uma subpasta ai-dev-template dentro da raiz."
 }
 
+python -I tools/scripts/checar-caminhos-pessoais.py
+if ($LASTEXITCODE -ne 0) { throw "Caminho pessoal em arquivo versionado (AGENTS.md, Caminhos pessoais)." }
+
 Write-Host "Estrutura básica válida."

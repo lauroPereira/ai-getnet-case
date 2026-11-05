@@ -122,9 +122,9 @@ Preparação, amostra inicial e complemento contabilizaram **US$0,04695654** no 
 | `review-a` | Destacado | `af16869` | Limpo. |
 | `review-a2` | Destacado | `10171c1` | Limpo. |
 | `review-web` | Destacado | `cd7d55d` | Limpo. |
-| Worktree T73 | `codex/v0.8.0-t73` | `60ef1eb` | Candidato da rodada 1 preservado em `C:\Users\lauro\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-worktree`. |
-| Worktree T73 r2 | `codex/v0.8.0-t73-r2` | `9deca61` | Candidato e resultado da suíte r2 preservados em `C:\Users\lauro\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-r2-worktree`. |
-| Worktree T73 r3 | `codex/v0.8.0-t73-r3` | `9057aaa` | Parecer apto e suíte verde. Preservado em `C:\Users\lauro\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-r3-worktree`. |
+| Worktree T73 | `codex/v0.8.0-t73` | `60ef1eb` | Candidato da rodada 1 preservado em `<home>\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-worktree`. |
+| Worktree T73 r2 | `codex/v0.8.0-t73-r2` | `9deca61` | Candidato e resultado da suíte r2 preservados em `<home>\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-r2-worktree`. |
+| Worktree T73 r3 | `codex/v0.8.0-t73-r3` | `9057aaa` | Parecer apto e suíte verde. Preservado em `<home>\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-r3-worktree`. |
 | Web principal | `main` | `0a8e12f` | Limpo. |
 | `_tmp/qa-pr7-20261028` | `codex/qa-pr7-20261028` | `16a06f6` | Registro Git órfão preexistente, preservado. |
 

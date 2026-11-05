@@ -21,7 +21,7 @@ O Supervisor usa este relatório para contar a Lauro o que aconteceu num períod
    - SHAs, `request_id` e nomes de classe ficam na tarefa e na evidência, não no relatório.
 4. **Mostre intervalos parados ou interrompidos** como bloco próprio, com o que foi retomado.
 5. **Feche com "Falta"** (o que resta do plano) **e com "Depende de você"** (ações do responsável, ou "nada").
-6. Não ponha segredo, chave, CPF nem dado real de pessoa, nem conteúdo de `discovery/`.
+6. Não ponha segredo, chave, CPF nem dado real de pessoa, nem conteúdo de `discovery/`. Nem caminho pessoal (home, nome de usuário, `AppData`, scratchpad): caminho relativo ou marcador como `<scratchpad da sessão>` (AGENTS.md, "Caminhos pessoais", crítico).
 7. Inclua o gasto da campanha real (delta do ledger) ao lado do custo equivalente dos agentes; são controles separados.
 
 ## Onde registrar

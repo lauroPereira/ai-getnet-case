@@ -126,6 +126,9 @@ def main() -> int:
 
     if not validate_structure():
         return 1
+    checker = ROOT / "tools" / "scripts" / "checar-caminhos-pessoais.py"
+    if run([sys.executable, "-I", str(checker)]) != 0:
+        return 1
 
     files = python_files()
     if not args.strict:
@@ -133,7 +136,7 @@ def main() -> int:
             print("Lint não foi executado: ruff não está disponível.")
         elif files:
             print("Lint disponível, mas não executado no modo padrão.")
-        print("Validação padrão concluída: somente a estrutura é bloqueante.")
+        print("Validação padrão concluída: estrutura e caminhos pessoais são bloqueantes.")
         return 0
 
     failed = False
