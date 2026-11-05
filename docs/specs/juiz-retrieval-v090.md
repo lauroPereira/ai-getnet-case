@@ -65,7 +65,7 @@ Todas reversíveis; vão também para o relatório do Supervisor.
 ## Requisitos não funcionais e orçamento
 
 - Testes sem chamada paga e sem rede: provedor programado para `anthropic` (mesma política do `scripted`), `rank-bm25` em processo, embeddings de hash.
-- **Orçamento Anthropic (decisão do responsável, a confirmar antes da sonda):** proposta de cap fixo de **US$4,00** na campanha `v090-juiz-opus`, em créditos Anthropic, fora do teto de US$5,00 do projeto. Estimativa antes da sonda: cerca de 3.500 tokens de entrada e 300 a 1.500 de saída (com pensamento) por julgamento no Opus 5.5, entre US$0,02 e US$0,05 cada; 72 julgamentos entre US$1,50 e US$3,60. A sonda de 3 julgamentos fixa o número; se a projeção de 72 passar do cap, o QA roda 1 repetição.
+- **Orçamento Anthropic (autorizado pelo responsável em 2026-11-05, "Autorizo US$4"):** cap fixo de **US$4,00** na campanha `v090-juiz-opus`, em créditos Anthropic, fora do teto de US$5,00 do projeto; ledger próprio em `data/runtime/anthropic` (D5). Estimativa antes da sonda: cerca de 3.500 tokens de entrada e 300 a 1.500 de saída (com pensamento) por julgamento no Opus 5.5, entre US$0,02 e US$0,05 cada; 72 julgamentos entre US$1,50 e US$3,60. A sonda de 3 julgamentos fixa o número; se a projeção de 72 passar do cap, o QA roda 1 repetição.
 - **Orçamento OpenAI (dentro do plano):** `eval-retrieval` real gasta embeddings das perguntas (centavos) e, com `RERANK=on`, chamadas `gpt-6-luna` curtas; cabe nos US$0,10 de QA reservados no plano para a v0.9.0, com US$0,35 de correções.
 - Latência: nenhum limite novo; o relatório de retrieval traz o tempo por modo.
 - Nenhum dado real; snapshots públicos e seed sintética inalterados. Nenhum caminho pessoal em evidência (AGENTS.md, "Caminhos pessoais").
