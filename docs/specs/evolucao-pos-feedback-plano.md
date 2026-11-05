@@ -87,7 +87,7 @@ Adoções do `ampeli-sdd`, aplicadas uma vez, em uma tarefa de documentação e 
 | `prompts/` | `escalation.v2`, `personality.v4` | `judge.v3`, `replan.v1`, `router.v6`, `support.v8` | `rerank.v1` | `summary.v1` |
 | `cli.py`, `mcp_server.py` | `operator …`; `--access-key` | `eval --repeat`, `eval-calibrate` | `eval-retrieval --mode --split` | — |
 | `tests/` | identidade, escopos, fila, interrupção/retomada, idempotência, webhooks, reinício | replan, rubrica, agregação, calibração, holdout | híbrido, reranker, nDCG | métricas, alertas, retomada, resumo |
-| `docker-compose.yml`, `.env.example` | chaves sintéticas, URLs de webhook | `EVALUATOR_MODEL` | `RETRIEVAL_MODE`, `RERANK` | OTLP |
+| `docker-compose.yml`, `.env.example` | chaves sintéticas, URLs de webhook | `EVALUATOR_*`, `JUDGE_*` | `RETRIEVAL_MODE`, `RERANK` | OTLP |
 | Projeto web | aba Operador; login por papel | formulário de calibração | — | — |
 | `docs/` | spec complementar, tarefas, ADRs 0017 (identidade) e 0018 (interrupção e webhooks) | ADR 0019 (replanejamento) | ADR 0020 (híbrido) | — |
 
@@ -99,7 +99,7 @@ Não alterar: regras financeiras das ferramentas, snapshots públicos, ledger de
 
 **Migração 0010 (v0.7.0).** `webhook_outbox`: intenção durável de entrega por evento e destinatário, com corpo mascarado, estado e tentativas (outbox autorizada pelo responsável em 2026-11-03).
 
-**Migração 0011 (v0.8.0).** `run_evaluations.rubric_version`, `scores`, `repetition`, `unsupported_claim`; `calibrations`.
+**Migração 0011 (v0.8.0).** Acrescenta `scores`, `repetition` e `unsupported_claim` a `run_evaluations` e cria `calibrations`; `rubric_version` já existe desde a migração 0008.
 
 **Migração 0012 (v0.10.0).** `comparisons.cells` com estado por célula; `conversations.summary`, `last_summarized_message_id`.
 
@@ -152,7 +152,30 @@ Retorno por versão: tag anterior + migração descendente + remoção de `check
 
 ## Orçamento
 
-Acumulado do projeto: US$0,69 de US$5,00. Campanhas: v0.7.0 ≤ US$0,20; v0.8.0 ≤ US$0,50; v0.9.0 ≤ US$0,10; v0.10.0 ≤ US$0,10; v1.0.0 smoke ≤ US$0,05. Total adicional ≤ US$0,95. Testes automatizados sem chamadas pagas.
+### Decisão aprovada em 2026-11-04
+
+O responsável aprovou a reserva de planejamento de **US$2,50** para concluir o QA e demonstrar as versões até a v1.0.0. Esta é a referência de orçamento para a retomada em qualquer sessão. O teto acumulado do projeto é **US$5,00**. Os saldos informados na decisão eram US$2,66 na OpenAI, US$1,99 na DeepSeek e US$4,99 na TypeSafe. A distribuição proposta da mesma reserva é US$1,85 para OpenAI, US$0,60 para DeepSeek e US$0,05 para TypeSafe. Reconcilie os saldos e o consumo acumulado antes de cada etapa paga.
+
+| Etapa | Reserva | Limite operacional |
+| --- | ---: | --- |
+| Complemento da amostra de desenvolvimento da v0.8.0 | US$0,10 | **Despesa adicional autorizada**, cumulativa para todas as novas chamadas e tentativas da amostra. |
+| Campanha `v080-qa` | US$1,00 | US$0,50 por padrão. US$1,00 ou, após a revisão abaixo, até US$1,10 em montagem única se a estimativa válida justificar e houver saldo no ledger primário. |
+| QA v0.9.0 e v0.10.0 | US$0,40 | US$0,10 para cada rodada prevista e US$0,10 reservado para eventual repetição de cada versão. |
+| Smoke v1.0.0 | US$0,10 | US$0,05 para o smoke previsto e US$0,05 reservado para eventual repetição. |
+| Correções e revalidações | US$0,35 | Priorizar os cenários afetados. Ampliar a rodada quando a alteração atingir o fluxo compartilhado. |
+| Ensaio e gravação da demonstração | US$0,25 | Ensaiar com dados sintéticos e gravar uma execução real no candidato final, com os resultados gravados de QA identificados como tais. |
+| Contingência | US$0,30 | Reserva para variação de custo ou nova rodada mediante decisão do responsável. |
+| **Total** | **US$2,50** | **Reserva de planejamento**, sujeita aos tetos vigentes e à autorização por versão. |
+
+- **Próxima despesa autorizada.** Reaproveitar a amostra da v0.8.0 já medida e complementar apenas rotas sub-representadas do split `dev`. Antes da primeira chamada, registrar no controle do QA o total já comprometido no ledger primário, incluindo gastos liquidados e reservas abertas. O limite efetivo no processo deve ser o menor entre o limite vigente do ledger e esse total mais US$0,10. Reusar esse mesmo valor em todas as tentativas. Se faltar saldo ou a guarda recusar, parar. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
+- **Portões para a campanha.** A estimativa revisada deve caber ao mesmo tempo no teto aprovado da campanha, no saldo do ledger primário, nos saldos por provedor e na margem restante do teto global. Preservar o ledger e o histórico, usar a montagem única de `v080-qa` e manter o holdout da v0.8.0 para o último passo técnico. A autorização desta decisão cobre o complemento da amostra. Alterações dos limites vigentes, rodadas adicionais que os ultrapassem e redução de critérios de aceite dependem de nova decisão do responsável.
+- **Provedores e demonstração.** Usar OpenAI para o assistente, embeddings e busca web, DeepSeek como juiz independente e TypeSafe para demonstrar o Router Jev. Gravar o percurso no candidato final, mostrando o encaminhamento e o retorno humano, o replanejamento e a avaliação, a comparação de retrieval e a retomada após reinício com resumo e métricas. Ensaios programados e testes automatizados têm custo zero de API.
+
+Na sessão de retomada, o ledger primário registrou **US$0,54250491** gastos e **US$0,45749509** disponíveis no limite persistido de US$1,00. A campanha `v080-qa` ficou sem montagem. Esses números são um retrato da parada, a ser conferido antes do complemento. [Evidência do QA](../evidence/v080-qa-r1.md)
+
+**Ampliação confirmada pelo responsável em 2026-11-04.** Autoriza a transição local do teto persistido do ledger primário para **US$1,70**, com o histórico preservado, e uma faixa excepcional de **US$1,10** para `v080-qa` somente quando o artefato revalidado comprovar estimativa acima de US$1,00 e até US$1,10. A revisão e a validação precedem a transição. O teto global de US$5,00 e a reserva de planejamento de US$2,50 continuam vigentes. A margem da campanha acima de US$1,00 sai da contingência da mesma reserva. Antes das chamadas, confirmar os saldos, o serviço sintético de preços e a montagem única. [Projeção complementar](../evidence/v080-projecao-estratificada-r3.md)
+
+**Contingência autorizada pelo responsável em 2026-11-05.** Na retomada da v0.8.0 no Claude Code, com o reteste r4 em curso e o saldo do cap de US$1,10 igual à soma das fases restantes (reteste US$0,25, juiz repetido US$0,07709880, holdout US$0,36062993, smoke e margem US$0,02943366), o responsável autorizou até **US$0,30 adicionais** para `v080-qa`, debitados da linha "Contingência" desta reserva. Condições: usar só se a guarda bloquear uma fase prevista ou um único reteste após correção revisada; aplicar pelo mesmo rito da ampliação de 2026-11-04 (Developer, Reviewer, suíte estrita, transição validada); registrar motivo e valor liberado na evidência e no relatório. Teto global de US$5,00 inalterado. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
 
 ## Plano de implementação
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from pydantic import ValidationError
 
 from merchant_assistant.agents.common import format_history, guess_language, policy, prompt
@@ -12,14 +14,48 @@ from merchant_assistant.orchestration.state import GraphState, RouterDecision
 
 SUPPORT_ROUTES = {"support", "knowledge_and_support", "human_handoff"}
 
+# Full-message matches only: a confirmation with a new question or instruction must still reach its specialist.
+_RESOLUTION_CLAUSE = r"(?:deu certo|(?:voltou a |j[aá] )?funcionar|funcionou|it works|it worked|working again)"
+_ISOLATED_RESOLUTION = re.compile(
+    rf"\s*{_RESOLUTION_CLAUSE}(?:\s*[,;.!]+\s*{_RESOLUTION_CLAUSE})*\s*[.!]*\s*", re.IGNORECASE
+)
+# Task 76: an explicit request to end the whole contract goes to a human. Full-message matches only, so a message that
+# names a service or product ("cancel the Payment Link contract"), asks how, or says anything else stays with the model.
+# "Close", "fechar", "finalizar" and "terminar" also mean signing or completing a contract ("fechar contrato com a
+# Getnet"), so they count only with a possessive (my/our, meu/nosso).
+_TERMINATE_EN = (
+    r"(?:please\s*,?\s*)?(?:i(?:\s+(?:want|need|wish|would\s+like)|['’]d\s+like)\s+to\s+)?(?:please\s+)?"
+    r"(?:(?:end|terminate|cancel)\s+(?:my|the|our)|close\s+(?:my|our))\s+(?:getnet\s+)?contract(?:\s+with\s+getnet)?"
+    r"(?:\s*,?\s*please)?"
+)
+_TERMINATE_PT = (
+    r"(?:por\s+favor\s*,?\s*)?(?:(?:eu\s+)?(?:quero|preciso|desejo|gostaria\s+de)\s+)?"
+    r"(?:(?:encerrar|cancelar|rescindir|encerre|cancele|rescinda)\s+(?:o\s+)?(?:meu\s+|nosso\s+)?"
+    r"|(?:fechar|terminar|finalizar|feche|termine|finalize)\s+(?:o\s+)?(?:meu|nosso)\s+)"
+    r"contrato(?:\s+(?:com\s+a|da|na)\s+getnet)?(?:\s*,?\s*por\s+favor)?"
+)
+_CONTRACT_TERMINATION = re.compile(rf"\s*(?:{_TERMINATE_EN}|{_TERMINATE_PT})\s*[.!]*\s*", re.IGNORECASE)
 
-def enforce(decision: RouterDecision, *, new_conversation: bool = False) -> RouterDecision:
+
+def enforce(
+    decision: RouterDecision, *, new_conversation: bool = False, message: str = "", case_state: str = ""
+) -> RouterDecision:
     """Deterministic rules applied after the model decision."""
     data = decision.model_dump()
     if new_conversation:  # there is no previous reply to react to
         data["case_signal"] = "none"
         if data["route"] == "acknowledgement":
             data["route"] = "clarify"
+        if decision.safety == "none" and data["route"] != "human_handoff" and _CONTRACT_TERMINATION.fullmatch(message):
+            data |= {"route": "human_handoff", "topic": "contract", "clarification_question": None}
+    elif (
+        case_state == "awaiting_customer"
+        and decision.safety == "none"
+        and decision.case_signal == "resolved"
+        and decision.route != "human_handoff"
+        and _ISOLATED_RESOLUTION.fullmatch(message)
+    ):
+        data["route"] = "acknowledgement"
     if decision.safety != "none":
         data["route"] = "out_of_scope"
     if data["route"] in SUPPORT_ROUTES and data["topic"] is None:
@@ -54,7 +90,11 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     errors = list(state.errors)
     try:
         result = ctx.router_override or ctx.llm_for("router").parse(spec, RouterDecision, ctx).value
-        decision = enforce(result, new_conversation=not state.history)
+        decision = enforce(
+            result, new_conversation=not state.history, message=state.message, case_state=state.case.get("state", "")
+        )
+        if decision.route == "human_handoff" and result.route != "human_handoff":
+            ctx.step_notes["rule"] = "contract_termination"  # the only rule in `enforce` that makes a handoff
     except (LLMError, ValidationError, LimitExceeded, BudgetExceeded) as exc:
         errors.append(f"router: {exc}")
         ctx.step_notes["router_unavailable"] = True

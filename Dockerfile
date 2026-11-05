@@ -11,7 +11,8 @@ ENV PATH="/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     DATA_DIR=/app/data \
     PROMPTS_DIR=/app/prompts \
-    RUNTIME_DIR=/app/runtime
+    RUNTIME_DIR=/app/runtime \
+    BUDGET_RUNTIME_DIR=/app/runtime
 WORKDIR /app
 RUN useradd --create-home --uid 10001 app
 COPY --from=builder /venv /venv

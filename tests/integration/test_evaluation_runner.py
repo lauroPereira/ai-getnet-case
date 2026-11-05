@@ -29,7 +29,7 @@ def checked_business_case(case_id: str, answer: str) -> dict:
 
 def test_latest_router_prompt_prioritizes_persistent_failure_after_handoff():
     prompt = load_prompt(PROJECT_ROOT / "prompts", "router")
-    assert prompt.version == "5"
+    assert prompt.version == "6"  # router.v6 (v0.8.0) keeps the v5 rules; the v5 file stays as it was
     template = " ".join(prompt.template.casefold().split())
     assert "continued failure has priority over acknowledgement" in template
     assert "do not open a new handoff" in template

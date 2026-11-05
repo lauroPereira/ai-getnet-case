@@ -3,6 +3,10 @@
 input_guard -> router -> {knowledge | support_prefix -> [knowledge] -> support | escalation} -> personality
 -> output_guard. Every node is traced; recoverable failures are handled inside the agents.
 
+Replanning (task 69, spec v0.8.0): after `knowledge`, `web` and `support` the `replan` node observes the result and
+picks the next step (finish, knowledge, web, support, escalation or a question to the merchant). The Router's route
+stays the initial plan; each specialist runs at most once and the changes of plan are limited by `MAX_PLAN_HOPS`.
+
 Human review (ADR 0018, v0.7.0): when Escalation opens a case, the state at the end of the handed-off turn enters the
 review graph, compiled with a SQLite checkpointer, and stops in `human_review` with `interrupt()` under
 thread = the escalating request (D6). An operator's action resumes that thread with `Command(resume=...)`:
@@ -26,7 +30,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
-from merchant_assistant.agents import escalation, knowledge, personality, router, support
+from merchant_assistant.agents import escalation, knowledge, personality, replanner, router, support
 from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.schemas import Handoff, MessageRequest, MessageResponse, Resolution, Source
@@ -91,7 +95,16 @@ def input_guard(state: GraphState, ctx: RunContext) -> dict:
     return update
 
 
-def _traced(name: str, fn: NodeFn):
+def _traced(name: str, fn: NodeFn, mark: Callable[[GraphState], str] | None = None):
+    """`mark` names the specialist this node runs for the replanner (`plan.ran`/`plan.last`), also when it fails."""
+
+    def marked(state: GraphState, update: dict) -> dict:
+        if mark is None:
+            return update
+        label = mark(state)
+        plan = {**state.plan, **update.get("plan", {})}
+        return {**update, "plan": {**plan, "ran": [*plan.get("ran", []), label], "last": label}}
+
     def node(state: GraphState, config: RunnableConfig) -> dict:
         ctx: RunContext = config["configurable"]["ctx"]
         ctx.step_notes = {}
@@ -99,15 +112,18 @@ def _traced(name: str, fn: NodeFn):
         try:
             update = fn(state, ctx)
             ctx.trace.finish(step, t0, "error" if "error" in ctx.step_notes else "ok", **ctx.step_notes)
-            return update
+            return marked(state, update)
         except Exception as exc:  # unexpected: keep the request alive with a controlled answer
             log.exception("node failed", extra={"event": {"request_id": ctx.request_id, "node": name}})
             ctx.trace.finish(step, t0, "exception", error=f"{type(exc).__name__}: {exc}", **ctx.step_notes)
             language = state.decision.language if state.decision else guess_language(state.message)
-            return {
-                "errors": [*state.errors, f"{name}: {type(exc).__name__}"],
-                "policy": state.policy or policy("unavailable", language),
-            }
+            return marked(
+                state,
+                {
+                    "errors": [*state.errors, f"{name}: {type(exc).__name__}"],
+                    "policy": state.policy or policy("unavailable", language),
+                },
+            )
 
     return node
 
@@ -132,33 +148,47 @@ def _after_prefix(s: GraphState) -> str:
     return "knowledge" if route == "knowledge_and_support" else "support"
 
 
-def _after_knowledge(s: GraphState) -> str:
-    return "support" if s.decision.route == "knowledge_and_support" else "personality"
+def _knowledge_label(s: GraphState) -> str:
+    """The `knowledge` node of the `general_web` route is the web search: it counts as the web specialist."""
+    return "web" if s.decision and s.decision.route == "general_web" else "knowledge"
 
 
-def _after_support(s: GraphState) -> str:
-    return "escalation" if s.support and s.support.escalate else "personality"
+REPLAN_DESTINATIONS = {  # D2: where each decision of the replanner goes; finish and clarify both end in the Personality
+    "finish": "personality",
+    "clarify": "personality",
+    "knowledge": "knowledge",
+    "web": "web",
+    "support": "support",
+    "escalate": "escalation",
+}
+
+
+def _after_replan(s: GraphState) -> str:
+    return REPLAN_DESTINATIONS[s.plan.get("next", "finish")]
 
 
 def build_graph():
     g = StateGraph(GraphState)
-    for name, fn in [
-        ("input_guard", input_guard),
-        ("router", router.run),
-        ("knowledge", knowledge.run),
-        ("support_prefix", support.run_prefix),
-        ("support", support.run),
-        ("escalation", escalation.run),
-        ("personality", personality.run),
-        ("output_guard", personality.run_output_guard),
+    for name, fn, mark in [
+        ("input_guard", input_guard, None),
+        ("router", router.run, None),
+        ("knowledge", knowledge.run, _knowledge_label),
+        ("web", knowledge.run_web, lambda _s: "web"),
+        ("support_prefix", support.run_prefix, None),
+        ("support", support.run, lambda _s: "support"),
+        ("replan", replanner.run, None),
+        ("escalation", escalation.run, None),
+        ("personality", personality.run, None),
+        ("output_guard", personality.run_output_guard, None),
     ]:
-        g.add_node(name, _traced(name, fn))
+        g.add_node(name, _traced(name, fn, mark))
     g.add_edge(START, "input_guard")
     g.add_conditional_edges("input_guard", _after_guard, ["router", "personality"])
     g.add_conditional_edges("router", _after_router, ["knowledge", "support_prefix", "personality"])
     g.add_conditional_edges("support_prefix", _after_prefix, ["knowledge", "support", "escalation"])
-    g.add_conditional_edges("knowledge", _after_knowledge, ["support", "personality"])
-    g.add_conditional_edges("support", _after_support, ["escalation", "personality"])
+    for specialist in ("knowledge", "web", "support"):
+        g.add_edge(specialist, "replan")
+    g.add_conditional_edges("replan", _after_replan, sorted(set(REPLAN_DESTINATIONS.values())))
     g.add_edge("escalation", "personality")
     g.add_edge("personality", "output_guard")
     g.add_edge("output_guard", END)
@@ -690,6 +720,7 @@ class Orchestrator:
                 "knowledge_base_version_id": ctx.knowledge_version_id,
                 "knowledge_base_collection": ctx.index.collection if ctx.index else None,
                 "citations": [c.chunk_id for c in state.knowledge.citations] if state.knowledge else [],
+                "plan_hops": int(state.plan.get("hops", 0)),
                 **(tags or {}),
             },
         }

@@ -1,0 +1,74 @@
+{
+ "estimate_format_version": 1,
+ "campaign": "v080-qa",
+ "campaign_cap_usd": 1.1,
+ "requires_supervisor_decision": false,
+ "source_report": "v080-custo-combinada-r3.json",
+ "agent_model": "gpt-6-luna",
+ "judge": {
+  "provider": "deepseek",
+  "model": "deepseek-flash",
+  "rubric": "judge",
+  "rubric_version": "3",
+  "prompt": "judge@3",
+  "independence": "different_provider",
+  "parameters": {
+   "max_output_tokens": 400,
+   "effort": "none"
+  }
+ },
+ "measured_cases": 11,
+ "measured_agent_cost_usd": 0.04004259,
+ "measured_first_judge_cost_usd": 0.0064249,
+ "agent_repetitions": 3,
+ "judge_repetitions": 3,
+ "formula_per_case": "3 * measured_agent_cost + 6 * measured_first_judge_cost",
+ "by_split": {
+  "dev": {
+   "cases": 27,
+   "sample_cases": 11,
+   "sample_source": "split sample",
+   "mean_agent_cost_usd": 0.00364024,
+   "mean_judge_cost_usd": 0.00058408,
+   "agent_phase_usd": 0.29485907,
+   "assistant_variation_judges_usd": 0.04731063,
+   "judge_variation_usd": 0.04731063,
+   "estimated_cost_usd": 0.38948033
+  },
+  "holdout": {
+   "cases": 17,
+   "sample_cases": 0,
+   "sample_source": "global sample fallback",
+   "mean_agent_cost_usd": 0.00364024,
+   "mean_judge_cost_usd": 0.00058408,
+   "agent_phase_usd": 0.18565201,
+   "assistant_variation_judges_usd": 0.02978817,
+   "judge_variation_usd": 0.02978817,
+   "estimated_cost_usd": 0.24522835
+  },
+  "holdout_v080": {
+   "cases": 25,
+   "sample_cases": 0,
+   "sample_source": "global sample fallback",
+   "mean_agent_cost_usd": 0.00364024,
+   "mean_judge_cost_usd": 0.00058408,
+   "agent_phase_usd": 0.27301766,
+   "assistant_variation_judges_usd": 0.04380614,
+   "judge_variation_usd": 0.04380614,
+   "estimated_cost_usd": 0.36062993
+  }
+ },
+ "followup_conversations": {
+  "conversations": 4,
+  "turns": 10,
+  "runs_per_turn": 1,
+  "mean_agent_cost_per_turn_usd": 0.00364024,
+  "agent_cost_usd": 0.03640235,
+  "judge_runs": 0,
+  "judge_cost_usd": 0.0,
+  "formula": "followup_turns * global_measured_mean_agent_cost; no judge",
+  "estimated_cost_usd": 0.03640235
+ },
+ "estimated_cost_usd": 1.03174096,
+ "within_campaign_cap": true
+}

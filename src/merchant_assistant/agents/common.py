@@ -60,6 +60,10 @@ POLICY = {
         "pt": "Não encontrei essa informação nas fontes oficiais da Getnet que consultei.",
         "en": "I couldn't find this information in the official Getnet sources I checked.",
     },
+    "unconfirmed": {
+        "pt": "Não consegui confirmar uma parte do que você perguntou, então não posso afirmar essa parte.",
+        "en": "I could not confirm part of what you asked, so I can't state that part.",
+    },
     "unavailable": {
         "pt": "Não consegui concluir a consulta agora. Tente novamente em alguns minutos ou peça para falar "
         "com um atendente.",

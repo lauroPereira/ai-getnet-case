@@ -149,7 +149,9 @@ def test_a_running_claim_left_by_a_stopped_process_expires(settings, api):
     estimate = client.post(f"/v1/runs/{request_id}/evaluations/estimate", headers=headers).json()
     conn = sqlite3.connect(settings.db_path)
     conn.execute(
-        "INSERT INTO run_evaluations VALUES ('eval_stale','" + request_id + "','demo:default','model','judge','2',"
+        "INSERT INTO run_evaluations (evaluation_id,request_id,principal_id,method,rubric,rubric_version,evaluator,"
+        "config_digest,result,evidence,critical_failures,cost_usd,state,error,created_at) "
+        "VALUES ('eval_stale','" + request_id + "','demo:default','model','judge','2',"
         "'{}',?,'{}','{}','[]',NULL,'running',NULL,'2000-01-01T00:00:00+00:00')",
         (estimate["config_digest"],),
     )

@@ -29,8 +29,15 @@ def prompt_versions(prompts_dir: Path) -> dict[str, str]:
 
 
 @lru_cache
-def load_prompt(prompts_dir: Path, name: str) -> Prompt:
-    candidates = sorted(prompts_dir.glob(f"{name}.v*.md"), key=lambda p: int(p.stem.rsplit(".v", 1)[1]))
+def load_prompt(prompts_dir: Path, name: str, version: str | None = None) -> Prompt:
+    """The latest version of a prompt, or exactly `version` (older campaigns and the on-demand evaluation pin one)."""
+    if version is not None:
+        pinned = prompts_dir / f"{name}.v{version}.md"
+        if not pinned.exists():
+            raise FileNotFoundError(f"prompt not found: {name} version {version}")
+        candidates = [pinned]
+    else:
+        candidates = sorted(prompts_dir.glob(f"{name}.v*.md"), key=lambda p: int(p.stem.rsplit(".v", 1)[1]))
     if not candidates:
         raise FileNotFoundError(f"prompt not found: {name}")
     raw = candidates[-1].read_text(encoding="utf-8")

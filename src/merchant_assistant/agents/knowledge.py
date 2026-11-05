@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
+
 from pydantic import ValidationError
 
 from merchant_assistant.agents.common import LANGUAGE_NAME, policy, prompt
+from merchant_assistant.agents.replanner import HOW_TO
 from merchant_assistant.data.clock import today
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.orchestration.budget import BudgetExceeded
@@ -49,18 +52,26 @@ def _citations(hits: list[Hit], used: list[int]) -> list[Citation]:
     return out
 
 
-def _web(state: GraphState, ctx: RunContext, language: str) -> KnowledgeResult:
+def _web(state: GraphState, ctx: RunContext, language: str, *, verify_gap: bool = False) -> KnowledgeResult:
     p = prompt(ctx, "knowledge_web")
     ctx.step_notes["prompt"] = p.ref
+    instructions = p.render(
+        language_name=LANGUAGE_NAME[language], today=today(ctx.clock).isoformat(), timezone=ctx.settings.timezone
+    )
+    if verify_gap:
+        instructions += (
+            "\nThis is a fallback because official passages did not answer the question. Assess whether your cited "
+            "source directly supports the exact entity and fact asked about. A mention, analogy or a fact about "
+            "another entity is not confirmation. Add exactly one final line: EVIDENCE: DIRECT if directly supported "
+            "by a cited source, otherwise EVIDENCE: INSUFFICIENT. Do not treat a search result alone as confirmation."
+        )
     spec = CallSpec(
         agent="knowledge",
-        instructions=p.render(
-            language_name=LANGUAGE_NAME[language], today=today(ctx.clock).isoformat(), timezone=ctx.settings.timezone
-        ),
+        instructions=instructions,
         input=state.message,  # masked message only: no user id or account data goes to the web search
         effort="low",
         max_output_tokens=500,
-        context={"mode": "web", "message": state.message},
+        context={"mode": "web", "message": state.message, "verify_gap": verify_gap},
     )
     try:
         answer = ctx.llm_for("knowledge").web_search(spec, ctx, max_calls=ctx.settings.web_search_max_calls).value
@@ -71,15 +82,61 @@ def _web(state: GraphState, ctx: RunContext, language: str) -> KnowledgeResult:
         Citation(title=c.get("title") or c.get("url") or "web", url=c.get("url"), source_kind="web")
         for c in answer.citations
     ]
+    if verify_gap:
+        lines = answer.text.strip().splitlines()
+        markers = [line for line in lines if re.match(r"\s*EVIDENCE\s*:", line, re.IGNORECASE)]
+        direct = (
+            len(markers) == 1 and bool(lines) and lines[-1] == "EVIDENCE: DIRECT"
+            and any(c.url and c.url.startswith(("https://", "http://")) for c in citations)
+        )
+        text = "\n".join(lines[:-1]).strip() if direct else ""
+        if not text:
+            return KnowledgeResult(mode="web", points=[], evidence_sufficient=False, missing=["web_gap_unconfirmed"])
+        return KnowledgeResult(mode="web", points=[text], citations=citations, evidence_sufficient=True,
+                               evidence_texts=[text])
     return KnowledgeResult(
         mode="web", points=[answer.text], citations=citations, evidence_sufficient=True, evidence_texts=[answer.text]
     )
+
+
+def _with_web(previous: KnowledgeResult | None, web: KnowledgeResult) -> KnowledgeResult:
+    """The web search after the official pages fell short (task 69): what the pages did support stays, the web answer
+    is added. A search that found nothing leaves the earlier result as it was, plus the reason."""
+    if previous is None:
+        return web
+    if not web.evidence_sufficient:
+        return previous.model_copy(update={"missing": [*previous.missing, *web.missing]})
+    return KnowledgeResult(
+        mode="web",
+        points=[*previous.points, *web.points],
+        citations=[*previous.citations, *web.citations],
+        evidence_sufficient=True,
+        procedure_id=previous.procedure_id,
+        evidence_texts=[*previous.evidence_texts, *web.evidence_texts],
+    )
+
+
+def run_web(state: GraphState, ctx: RunContext) -> dict:
+    """The `web` step the replanner can choose: the same masked web search as the `general_web` route, joined to what
+    Knowledge already collected. It never carries the merchant's identity or account data."""
+    language = state.decision.language if state.decision else "en"
+    ctx.step_notes["mode"] = "web"
+    verify_gap = state.knowledge is not None and not state.knowledge.evidence_sufficient
+    return {
+        "knowledge": _with_web(state.knowledge, _web(state, ctx, language, verify_gap=verify_gap)),
+        "agents": [*state.agents, "web"],
+    }
 
 
 def run(state: GraphState, ctx: RunContext) -> dict:
     decision = state.decision
     language = decision.language if decision else "en"
     mode = _mode(decision.route if decision else "knowledge")
+    # A support-first replan asks Knowledge for the remaining procedure, not the account answer again.
+    after_support = (
+        mode == "rag" and state.plan.get("last") == "support" and "support" in state.plan.get("ran", [])
+        and bool(HOW_TO.search(state.message))
+    )
     agents = [*state.agents, "knowledge"]
     ctx.step_notes["mode"] = mode
     if mode == "web":
@@ -116,9 +173,16 @@ def run(state: GraphState, ctx: RunContext) -> dict:
 
     p = prompt(ctx, "knowledge_rag" if mode == "rag" else "knowledge_procedure")
     ctx.step_notes["prompt"] = p.ref
+    instructions = p.render(language_name=LANGUAGE_NAME[language], passages=_passages(hits))
+    if after_support:
+        instructions += (
+            "\nSupport already handled the merchant-specific account question. For this call, answer only the "
+            "remaining official procedure with practical ordered steps supported by the passages. Assess sufficiency "
+            "only for that procedure, not for individual account dates or amounts. Do not infer account data."
+        )
     spec = CallSpec(
         agent="knowledge",
-        instructions=p.render(language_name=LANGUAGE_NAME[language], passages=_passages(hits)),
+        instructions=instructions,
         input=f"Merchant question:\n<<<\n{state.message}\n>>>",
         effort="low",
         max_output_tokens=900,

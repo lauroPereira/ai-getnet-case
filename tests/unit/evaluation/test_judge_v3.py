@@ -1,0 +1,348 @@
+"""`judge.v3` (spec v0.8.0 D9): four 1-5 criteria with a reason each and the unsupported-claim verdict, over the masked
+evidence, limited to 6 000 characters with the cut on record. Offline: the judge is the scripted stand-in."""
+
+from __future__ import annotations
+
+import json
+import threading
+
+import pytest
+
+from merchant_assistant.api.identity import Principal
+from merchant_assistant.config import PROJECT_ROOT
+from merchant_assistant.data.db import connect
+from merchant_assistant.evaluation import evidence
+from merchant_assistant.evaluation.judge import CRITERIA, JudgeScoreV3
+from merchant_assistant.evaluation.scripted_judge import handler, scripted_judge
+from merchant_assistant.llm.base import NullMeter
+from merchant_assistant.llm.prompts import load_prompt
+from merchant_assistant.llm.scripted import ScriptedLLM
+from merchant_assistant.testing import offline_orchestrator
+from merchant_assistant.tools import registry
+from merchant_assistant.tools.base import CustomerContext, ToolEnv
+from merchant_assistant.tools.registry import ToolOutcome, execute
+
+PROMPTS = PROJECT_ROOT / "prompts"
+BODY = {"status": "answered", "route": "support", "answer": "O valor líquido é R$ 120,00, com pagamento em 2 dias."}
+
+
+def tool(name="get_receivables_schedule", data=None, ok=True):
+    error = None if ok else {"code": "X"}
+    return ToolOutcome(name, {"period": "yesterday"}, ok, data=data if ok else None, error=error)
+
+
+def data_for(outcomes, reply=None, trace=None, message="Quanto vou receber ontem de recebíveis?"):
+    body = BODY | ({"answer": reply} if reply else {})
+    data, _ = evidence.judge_input(message, body, ["Receivables (your account)"], outcomes, trace or {"steps": []}, {})
+    return data
+
+
+# --- the rubric files -----------------------------------------------------------------------------------------------
+
+
+def test_v3_is_the_latest_and_v2_stays_loadable():
+    latest, old = load_prompt(PROMPTS, "judge"), load_prompt(PROMPTS, "judge", "2")
+    assert (latest.id, latest.version) == ("judge", "3") and (old.id, old.version) == ("judge", "2")
+    text = " ".join(latest.template.split())
+    assert all(criterion in text for criterion in CRITERIA) and "unsupported_claim" in text
+    assert "answers_question" in old.template and "answers_question" not in latest.template
+    with pytest.raises(FileNotFoundError):
+        load_prompt(PROMPTS, "judge", "9")
+
+
+# --- the judgement --------------------------------------------------------------------------------------------------
+
+
+def test_judge_v3_returns_four_scores_with_reasons_and_the_verdict():
+    judge = scripted_judge(PROMPTS, NullMeter())
+    record = judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 120,00"}})]))
+    assert record["state"] == "completed" and record["error"] is None
+    assert set(record["scores"]) == set(CRITERIA) and set(record["reasons"]) == set(CRITERIA)
+    assert all(1 <= score <= 5 for score in record["scores"].values())
+    assert all(isinstance(reason, str) and reason for reason in record["reasons"].values())
+    assert record["unsupported_claim"] is False
+    assert (record["provider"], record["model"], record["rubric_version"]) == ("scripted", "scripted-judge-v3", "3")
+    assert record["repetition"] == 1 and record["evaluation_id"].startswith("eval_")
+
+
+def test_an_amount_the_evidence_does_not_contain_turns_the_verdict_on():
+    judge = scripted_judge(PROMPTS, NullMeter())
+    supported = judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 120,00"}})]))
+    invented = judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 90,00"}})]))
+    assert supported["unsupported_claim"] is False and invented["unsupported_claim"] is True
+    assert invented["scores"]["groundedness"] < supported["scores"]["groundedness"]
+    assert invented["scores"]["factual_correctness"] < supported["scores"]["factual_correctness"]
+
+
+def test_the_judge_receives_the_evidence_content_and_the_truncation_record():
+    llm = ScriptedLLM(handler, model="scripted-judge-v3")
+    judge = scripted_judge(PROMPTS, NullMeter(), llm)
+    judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 120,00"}})]))
+    (call,) = llm.calls
+    sent = json.loads(call.spec.input)
+    assert call.spec.agent == "judge" and call.spec.instructions == load_prompt(PROMPTS, "judge", "3").render()
+    assert sent["evidence"][0]["kind"] == "tool_result" and "R$ 120,00" in sent["evidence"][0]["text"]
+    assert sent["evidence_truncation"]["truncated"] is False and sent["reply"] == BODY["answer"]
+    assert call.schema is JudgeScoreV3
+
+
+def test_a_score_outside_the_scale_is_a_failed_judgement_not_an_invented_one():
+    def bad(call):
+        return handler(call) | {"relevance": 6}
+
+    judge = scripted_judge(PROMPTS, NullMeter(), ScriptedLLM(bad, model="scripted-judge-v3"))
+    record = judge.evaluate(data_for([]))
+    assert record["state"] == "failed" and record["scores"] == {} and record["unsupported_claim"] is None
+    assert "between 1 and 5" in record["error"]
+
+
+def test_a_provider_error_is_recorded_and_does_not_stop_the_campaign():
+    judge = scripted_judge(PROMPTS, NullMeter(), ScriptedLLM(lambda call: RuntimeError("provider down")))
+    record = judge.evaluate(data_for([]))
+    assert record["state"] == "failed" and record["error"] == "RuntimeError: provider down"
+
+
+# --- the evidence ---------------------------------------------------------------------------------------------------
+
+
+def test_long_evidence_is_cut_to_the_limit_and_the_cut_is_recorded():
+    items = [
+        {"kind": "tool_result", "label": "get_payout_status", "text": "t" * 100},
+        {"kind": "passage", "label": "doc", "text": "p" * 10_000},
+    ]
+    kept, record = evidence.fit_items(items)
+    assert record == {
+        "limit_chars": 6000,
+        "original_chars": 10_100,
+        "kept_chars": 6000,
+        "items": 2,
+        "items_cut": 1,
+        "truncated": True,
+    }
+    assert kept[0]["text"] == "t" * 100  # the short item is never pushed out by the long one
+    assert len(kept[1]["text"]) == 5900 and kept[1]["text"].endswith(evidence.CUT_MARK) and kept[1]["cut"] is True
+    assert sum(len(item["text"]) for item in kept) <= evidence.EVIDENCE_LIMIT_CHARS
+
+
+def test_long_items_share_the_limit_equally_and_nothing_is_dropped():
+    items = [{"kind": "passage", "label": str(n), "text": "x" * 5000} for n in range(3)]
+    kept, record = evidence.fit_items(items)
+    assert [len(item["text"]) for item in kept] == [2000, 2000, 2000]
+    assert (record["original_chars"], record["kept_chars"], record["items_cut"], record["truncated"]) == (
+        15_000,
+        6000,
+        3,
+        True,
+    )
+
+
+def test_evidence_within_the_limit_is_left_alone_and_says_so():
+    items = [{"kind": "passage", "label": "doc", "text": "short text"}]
+    kept, record = evidence.fit_items(items)
+    assert kept == items and record["truncated"] is False and record["items_cut"] == 0
+    assert record["kept_chars"] == record["original_chars"] == 10
+
+
+def test_the_judge_input_carries_the_truncation_of_the_evidence_it_cut():
+    big = tool(data={"rows": ["R$ 1,00 " * 40] * 40})
+    data = data_for([big])
+    assert data["evidence_truncation"]["truncated"] is True
+    assert data["evidence_truncation"]["original_chars"] > 6000 and data["evidence_truncation"]["kept_chars"] <= 6000
+    assert sum(len(item["text"]) for item in data["evidence"]) <= 6000
+
+
+def test_evidence_is_masked_before_it_reaches_the_judge():
+    secret = tool(data={"note": "card 4111 1111 1111 1111 and CPF 123.456.789-09 and mail ana@example.com"})
+    text = data_for([secret])["evidence"][0]["text"]
+    assert "4111" not in text and "123.456.789-09" not in text and "ana@example.com" not in text
+    assert "[card number removed]" in text and "[CPF removed]" in text and "[e-mail removed]" in text
+
+
+def test_a_failed_tool_call_is_evidence_too():
+    data = data_for([tool(ok=False)])
+    assert data["evidence"][0]["kind"] == "tool_result" and '"error"' in data["evidence"][0]["text"]
+
+
+def test_cited_passages_come_from_the_corpus_with_the_trace_excerpt_as_fallback():
+    hits = [
+        {"doc": "doc", "chunk_id": "doc#0-aaa", "excerpt": "excerpt zero"},
+        {"doc": "doc", "chunk_id": "doc#1-bbb", "excerpt": "excerpt one"},
+        {"doc": "doc", "chunk_id": "doc#2-ccc", "excerpt": "retrieved but not cited"},
+    ]
+    trace = {"steps": [{"step": "knowledge", "detail": {"citations": ["doc#0-aaa", "doc#1-bbb"], "hits": hits}}]}
+    items, notes = evidence.passage_items(trace, {"doc#0-aaa": "the full text of chunk zero"})
+    assert [(i["kind"], i["text"]) for i in items] == [
+        ("passage", "the full text of chunk zero"),
+        ("passage", "excerpt one"),
+    ]
+    assert notes == []
+    no_citation = {"steps": [{"step": "knowledge", "detail": {"hits": hits[2:]}}]}
+    assert [i["text"] for i in evidence.passage_items(no_citation, {})[0]] == ["retrieved but not cited"]
+
+
+def test_a_web_answer_tells_the_judge_its_text_is_not_recorded():
+    trace = {"steps": [{"step": "knowledge", "detail": {"mode": "web"}}]}
+    items, notes = evidence.passage_items(trace, {})
+    assert items == [] and notes == [evidence.WEB_NOTE]
+    data, _ = evidence.judge_input("Previsão do tempo?", BODY, [], [], trace, {})
+    assert data["evidence_notes"] == [evidence.WEB_NOTE] and data["evidence"] == []
+
+
+def tool_env(settings, orchestrator):
+    conn = connect(settings.db_path)
+    customer = CustomerContext.for_principal(Principal.merchant("cliente1988"), "cliente1988", True)
+    return conn, ToolEnv(conn, orchestrator.clock, customer, mock_services=orchestrator.mock_services)
+
+
+def test_tool_results_are_recorded_during_a_case_and_the_observer_is_removed_after(settings):
+    orchestrator, _ = offline_orchestrator(settings)
+    conn, env = tool_env(settings, orchestrator)
+    with evidence.record_tool_results() as outcomes:
+        assert registry.OUTCOME_OBSERVERS.get()
+        execute("get_device_status", {}, env)
+    assert [o.name for o in outcomes] == ["get_device_status"] and outcomes[0].ok
+    assert registry.OUTCOME_OBSERVERS.get() == ()
+    execute("get_device_status", {}, env)
+    assert len(outcomes) == 1  # a call outside the block is not recorded
+    with pytest.raises(RuntimeError), evidence.record_tool_results():
+        raise RuntimeError("the case failed")
+    assert registry.OUTCOME_OBSERVERS.get() == ()
+    conn.close()
+
+
+def test_two_runs_at_the_same_time_record_only_their_own_tool_calls(settings):
+    """P3-02: the observers belong to the run that registered them, even when the runs overlap in time."""
+    orchestrator, _ = offline_orchestrator(settings)
+    barrier = threading.Barrier(2)
+    seen: dict[str, list[str]] = {}
+
+    def run(label, tool_name):
+        conn, env = tool_env(settings, orchestrator)
+        try:
+            with evidence.record_tool_results() as outcomes:
+                barrier.wait(timeout=10)  # both recorders are registered before either tool call
+                for _ in range(2):
+                    execute(tool_name, {}, env)
+                    barrier.wait(timeout=10)  # the calls of the two runs interleave
+            seen[label] = [o.name for o in outcomes]
+        finally:
+            conn.close()
+
+    first = threading.Thread(target=run, args=("a", "get_device_status"))
+    second = threading.Thread(target=run, args=("b", "get_contract_snapshot"))
+    first.start()
+    second.start()
+    first.join(20)
+    second.join(20)
+    assert seen == {"a": ["get_device_status"] * 2, "b": ["get_contract_snapshot"] * 2}
+    assert registry.OUTCOME_OBSERVERS.get() == ()
+
+
+def test_a_failing_observer_never_changes_the_result_of_a_tool_call(settings):
+    orchestrator, _ = offline_orchestrator(settings)
+    conn, env = tool_env(settings, orchestrator)
+    seen: list[ToolOutcome] = []
+
+    def broken(outcome):
+        raise RuntimeError("the observer failed")
+
+    token = registry.OUTCOME_OBSERVERS.set((broken, seen.append))
+    try:
+        outcome = execute("get_device_status", {}, env)
+    finally:
+        registry.OUTCOME_OBSERVERS.reset(token)
+    assert outcome.ok and seen == [outcome]  # the call returned, and the next observer still ran
+    conn.close()
+
+
+def test_the_arguments_of_a_tool_call_are_part_of_its_evidence():
+    arguments = {"period": "yesterday", "payment_type": "credit"}
+    (item,) = evidence.tool_items([ToolOutcome("simulate_pricing", arguments, True, data={"expected_minor": 3600})])
+    assert item["kind"] == "tool_result" and item["label"] == "simulate_pricing"
+    assert json.loads(item["text"]) == {"arguments": arguments, "result": {"expected_minor": 3600}}
+
+
+def test_passages_and_the_merchant_message_are_masked_before_the_judge_sees_them():
+    sensitive = "cartão 4111 1111 1111 1111, CPF 123.456.789-09 e e-mail ana@example.com"
+    hits = [{"doc": "doc", "chunk_id": "doc#1-bbb", "excerpt": "excerpt with " + sensitive}]
+    trace = {"steps": [{"step": "knowledge", "detail": {"citations": ["doc#0-aaa", "doc#1-bbb"], "hits": hits}}]}
+    items, _ = evidence.passage_items(trace, {"doc#0-aaa": "corpus text with " + sensitive})
+    assert len(items) == 2 and all("4111" not in i["text"] and "123.456.789-09" not in i["text"] for i in items)
+    assert all("ana@example.com" not in i["text"] and "[card number removed]" in i["text"] for i in items)
+    data = data_for([], message="Meu " + sensitive)
+    assert "4111" not in data["merchant_message"] and "[CPF removed]" in data["merchant_message"]
+
+
+def test_the_judge_prompt_reads_the_evidence_notes_and_the_scripted_judge_follows_it():
+    prompt = " ".join(load_prompt(PROMPTS, "judge", "3").template.split())
+    assert "evidence_notes" in prompt and "text is not available" in prompt
+    assert "only because no passage is there to confirm a statement" in prompt
+    web_trace = {"steps": [{"step": "knowledge", "detail": {"mode": "web"}}]}
+    reply = "A previsão para amanhã é de 25 graus e a taxa é de R$ 99,00."
+    judge = scripted_judge(PROMPTS, NullMeter())
+    web = judge.evaluate(data_for([], reply=reply, trace=web_trace, message="Previsão do tempo amanhã?"))
+    plain = judge.evaluate(data_for([], reply=reply, message="Previsão do tempo amanhã?"))
+    assert web["unsupported_claim"] is False  # no passage to check a web answer against is not a reason to flag it
+    assert plain["unsupported_claim"] is True  # the same reply without any note and without evidence is flagged
+
+
+# --- the web note: what stays unsupported, and which trace steps raise it (task 71, P3 C and D) --------------------
+
+WEB_STEP_TRACE = {"steps": [{"step": "web", "detail": {"mode": "web"}}]}
+
+
+def test_data_of_the_merchant_account_without_a_tool_result_is_still_unsupported_under_the_web_note():
+    judge = scripted_judge(PROMPTS, NullMeter())
+    message = "Quanto tenho de saldo hoje?"
+    account = "Pelo que encontrei, seu saldo disponível hoje é de R$ 1.234,56."
+    flagged = judge.evaluate(data_for([], reply=account, trace=WEB_STEP_TRACE, message=message))
+    assert flagged["unsupported_claim"] is True and flagged["scores"]["groundedness"] < 5
+    assert "account" in flagged["reasons"]["groundedness"] and "tool result" in flagged["reasons"]["groundedness"]
+    balance = tool(data={"balance": {"display": "R$ 1.234,56"}})
+    shown = judge.evaluate(data_for([balance], reply=account, trace=WEB_STEP_TRACE, message=message))
+    assert shown["unsupported_claim"] is False and shown["scores"]["groundedness"] == 5  # a tool result shows it
+    said_by_the_merchant = judge.evaluate(
+        data_for([], reply=account, trace=WEB_STEP_TRACE, message="Meu saldo hoje é de R$ 1.234,56, certo?")
+    )
+    assert said_by_the_merchant["unsupported_claim"] is False  # the merchant's own words count as support
+    # a passage of the corpus is not the merchant's account: it cannot support a figure stated as the account's
+    data = data_for([], reply=account, trace=WEB_STEP_TRACE, message=message)
+    data["evidence"] = [{"kind": "passage", "label": "doc", "text": "O limite é de R$ 1.234,56 por dia."}]
+    assert judge.evaluate(data)["unsupported_claim"] is True
+
+
+def test_a_public_amount_in_a_web_reply_is_left_alone_and_the_same_words_without_the_note_are_flagged():
+    judge = scripted_judge(PROMPTS, NullMeter())
+    public = "Segundo o site oficial, a tarifa de cancelamento é de R$ 45,00 por contrato."
+    message = "Qual a tarifa de cancelamento?"
+    under_note = judge.evaluate(data_for([], reply=public, trace=WEB_STEP_TRACE, message=message))
+    assert under_note["unsupported_claim"] is False  # no way to check a public figure against a web text not recorded
+    assert judge.evaluate(data_for([], reply=public, message=message))["unsupported_claim"] is True
+    english = judge.evaluate(
+        data_for([], reply="Your balance today is R$ 77,00.", trace=WEB_STEP_TRACE, message="What is my balance?")
+    )
+    assert english["unsupported_claim"] is True  # the account words are recognised in English too
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [
+        [{"step": "web", "detail": {"mode": "web"}}],  # what the replanning writes
+        [{"step": "web", "detail": {}}],  # the step alone is enough
+        [{"step": "knowledge", "detail": {"mode": "web"}}],  # the web mode of the Knowledge step
+        [{"step": "knowledge", "detail": {"mode": "rag"}}, {"step": "web", "detail": {"mode": "web"}}],
+    ],
+)
+def test_a_web_step_of_the_trace_raises_the_web_note_once(steps):
+    items, notes = evidence.passage_items({"steps": steps}, {})
+    assert items == [] and notes == [evidence.WEB_NOTE]
+    data, _ = evidence.judge_input("Previsão do tempo?", BODY, [], [], {"steps": steps}, {})
+    assert data["evidence_notes"] == [evidence.WEB_NOTE]
+
+
+def test_a_web_step_does_not_hide_the_passages_cited_before_it_and_other_steps_raise_no_note():
+    knowledge = {"step": "knowledge", "detail": {"citations": ["doc#0-aaa"], "hits": [], "mode": "rag"}}
+    items, notes = evidence.passage_items({"steps": [knowledge, *WEB_STEP_TRACE["steps"]]}, {"doc#0-aaa": "the text"})
+    assert [i["text"] for i in items] == ["the text"] and notes == [evidence.WEB_NOTE]
+    other = {"steps": [{"step": "router", "detail": {"mode": "web"}}, {"step": "websearch", "detail": {}}]}
+    assert evidence.passage_items(other, {}) == ([], [])  # only the steps that read sources count

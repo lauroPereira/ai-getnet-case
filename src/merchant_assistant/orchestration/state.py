@@ -93,6 +93,24 @@ class PersonalityOutput(BaseModel):
     answer: str
 
 
+ReplanNext = Literal["finish", "knowledge", "web", "support", "escalate", "clarify"]
+
+
+class ReplanDecision(BaseModel):
+    """What the `replan` prompt returns when no rule settles the next step (task 69, spec v0.8.0 D2, D4)."""
+
+    next: ReplanNext = Field(
+        description="The next step: one specialist that has not run yet, or finish, escalate or clarify."
+    )
+    reason: str = Field(
+        description="One short sentence saying why, for the trace. With finish and review=incomplete it is also "
+        "what the reply says could not be confirmed, so state that missing fact."
+    )
+    review: Literal["complete", "incomplete"] = Field(
+        description="complete only when the results collected so far answer the merchant's question."
+    )
+
+
 class GraphState(BaseModel):
     request_id: str
     conversation_id: str
@@ -118,3 +136,4 @@ class GraphState(BaseModel):
     output_violations: list[str] = []
     case_next: dict = {}
     operator: dict | None = None  # set when an operator resumes the flow: action, text, operator_id
+    plan: dict = {}  # replanning (task 69): `hops` taken away from the initial plan, `next` step, `gap` declared

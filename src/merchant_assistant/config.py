@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     data_dir: Path = PROJECT_ROOT / "data"
     prompts_dir: Path = PROJECT_ROOT / "prompts"
     runtime_dir: Path | None = None
+    budget_runtime_dir: Path | None = None  # persistent budget ledgers, independent of isolated QA runtime
     checkpoints_path: Path | None = None  # v0.7.0: graph checkpoints of handed-off cases (default: runtime dir)
 
     qdrant_url: str | None = None
@@ -71,16 +72,23 @@ class Settings(BaseSettings):
     max_tool_calls: int = 8
     max_request_seconds: float = 90.0
     web_search_max_calls: int = 1
+    # v0.8.0 replanning (task 69, spec D6): decisions that send the flow away from the Router's initial plan
+    max_plan_hops: int = Field(default=3, ge=0, le=6)
 
     # v0.6.0 demonstration controls
     demo_session_message_limit: int = Field(default=20, ge=1, le=1000)
     evaluator_provider: str = "openai"
     evaluator_model: str = "gpt-6-luna"
+    # v0.8.0 (D11): the judge of the evaluation campaign (`eval --judge`) is not the agent. It has its own settings and
+    # is refused before any call when it equals the agent, has no provider key or has no price.
+    judge_provider: str = "deepseek"
+    judge_model: str = "deepseek-flash"
 
     user_id_pattern: str = Field(default=r"^[A-Za-z0-9_\-.]{1,64}$")
 
     @field_validator(
         "runtime_dir",
+        "budget_runtime_dir",
         "checkpoints_path",
         "jwt_private_key_path",
         "jwt_jwks_url",
@@ -100,6 +108,18 @@ class Settings(BaseSettings):
     @property
     def runtime_path(self) -> Path:
         return self.runtime_dir or (self.data_dir / "runtime")
+
+    @property
+    def budget_runtime_path(self) -> Path:
+        if self.budget_runtime_dir is not None:
+            return self.budget_runtime_dir
+        default_runtime = self.data_dir / "runtime"
+        if self.runtime_dir is None or self.runtime_dir == default_runtime:
+            return self.runtime_path
+        raise ValueError(
+            "RUNTIME_DIR is isolated but BUDGET_RUNTIME_DIR is unset; set it to the persistent project budget "
+            "directory before paid evaluation."
+        )
 
     @property
     def checkpoint_db_path(self) -> Path:

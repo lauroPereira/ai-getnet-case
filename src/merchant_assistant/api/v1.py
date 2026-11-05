@@ -1062,6 +1062,7 @@ def execute_run(
     from merchant_assistant.llm.prompts import prompt_versions
 
     orchestrator, settings = app_state.orchestrator, app_state.settings
+    prompt_set = prompt_versions(settings.prompts_dir)
     actual_models = {name: f"{config['provider']}:{config['model']}" for name, config in profile["agents"].items()}
     if mechanism == "jev":
         actual_models["router"] = "typesafe:jev-1.14.0"
@@ -1072,8 +1073,8 @@ def execute_run(
         "agents": profile["agents"],
         "models": actual_models,
         "router_mechanism": mechanism,
-        "prompt_versions": {"router": "router.v5"},
-        "prompt_set": prompt_versions(settings.prompts_dir),
+        "prompt_versions": {"router": f"router.v{prompt_set['router']}"},
+        "prompt_set": prompt_set,
         "knowledge_base": "current",
         "execution_mode": _execution_mode(orchestrator),
         "comparison_id": router_comparison_id,
@@ -1270,6 +1271,7 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
 
 
 STEP_DETAIL_FIELDS = ("prompt", "mode", "hits", "citations", "agent", "arguments", "topic", "tools", "failed", "reused")
+REPLAN_STEP_FIELDS = ("next", "reason", "review", "hops", "origin", "observed")  # only the `replan` step (task 69, D7)
 
 
 def _steps(trace: dict | None) -> list[dict]:
@@ -1278,13 +1280,14 @@ def _steps(trace: dict | None) -> list[dict]:
     steps = []
     for step in trace.get("steps", []):
         detail = step.get("detail") or {}
+        fields = (*STEP_DETAIL_FIELDS, *REPLAN_STEP_FIELDS) if step["step"] == "replan" else STEP_DETAIL_FIELDS
         steps.append(
             {
                 "seq": step["seq"],
                 "step": step["step"],
                 "status": step["status"],
                 "duration_ms": step["duration_ms"],
-                **{key: detail[key] for key in STEP_DETAIL_FIELDS if key in detail},
+                **{key: detail[key] for key in fields if key in detail},
             }
         )
     return steps

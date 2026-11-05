@@ -14,6 +14,18 @@ from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.llm.base import LLMError
 from merchant_assistant.llm.scripted import ScriptedCall, ToolPlan
 
+# `router.v6`: a question about whether different conditions, plan or rate were used for a charge or sale (any
+# interrogative form, "Were...", "Was...", "Did...", "Foi...") is a pricing question about one real charge of the
+# merchant, never a clarification. It needs a word of difference or change, the conditions or plan, a charge or sale,
+# and a period that points at one the merchant already had ("yesterday's credit charge"): a general question such as
+# "Do the conditions change for sales above R$ 1.000?" stays a knowledge question.
+CONDITIONS_QUESTION = (
+    r"(?s)^(?=.*\b(?:differ(?:s|ed)?|different|chang(?:e|es|ed)|diferentes?|distint[ao]s?|mudou|mudaram)\b)"
+    r"(?=.*(?:\bconditions?\b|\bplans?\b|\bplano\b|condi[cç][aãoõ]\w*))"
+    r"(?=.*(?:\bcharge[ds]?\b|\bsales?\b|\bvendas?\b|cobran[cç]a|cobrad))"
+    r"(?=.*\b(?:yesterday|today|last|latest|ontem|hoje|passad[ao]|[uú]ltim[ao])\b)"
+)
+
 ROUTE_RULES: list[tuple[str, str, str | None]] = [
     (
         r"encerrar (?:o |meu )?contrato|fechar (?:o |meu )?contrato|terminate (?:the )?contract|close (?:my )?contract",
@@ -37,6 +49,7 @@ ROUTE_RULES: list[tuple[str, str, str | None]] = [
         "support",
         "pricing",
     ),
+    (CONDITIONS_QUESTION, "support", "pricing"),
     (r"won'?t connect|n[aã]o conecta|sem conex|internet|wi-?fi", "knowledge_and_support", "device"),
     (r"decline|negad|recusad", "knowledge_and_support", "authorization"),
     (
@@ -250,10 +263,12 @@ def _support(call: ScriptedCall) -> ToolPlan:
             for word in ("insuficiente", "sem evidência", "no evidence", "not enough evidence", "insufficient")
         ):
             args = {"period": "latest", "payment_type": "credit", "installments": 2}
-        elif any(
+        elif re.search(CONDITIONS_QUESTION, message, flags=re.IGNORECASE) or any(
             word in low for word in ("diferentes condições", "condições diferentes", "different conditions", "legacy")
         ):
-            args["payment_type"] = "credit"
+            args["payment_type"] = (
+                "pix" if "pix" in low else "debit" if re.search(r"d[eé]bito|debit", low) else "credit"
+            )
         elif any(word in low for word in ("divergência", "divergente", "diverg", "mismatch")):
             args["payment_type"] = "pix"
         else:
@@ -330,7 +345,8 @@ def _support(call: ScriptedCall) -> ToolPlan:
                             f"{item['scheme']}: {item['status']}, protocolo {item['protocol']}; "
                             f"disponibilidade no equipamento: {item['device_availability']['available']}."
                             if pt
-                            else f"{item['scheme']}: {item['status']}, protocol {item['protocol']}; "
+                            else f"{item['scheme']} enablement request is {item['status']}, "
+                            f"protocol {item['protocol']}; "
                             f"device availability: {item['device_availability']['available']}."
                         )
                         for item in _load(r, 0).get("requests", [])
@@ -378,6 +394,53 @@ def _support(call: ScriptedCall) -> ToolPlan:
     )
 
 
+def _web(call: ScriptedCall) -> dict | Exception:
+    """The scripted web search. A product the pages do not know ("Get XYZ", the `_knowledge` trigger below) has a
+    third-party page about it; everything else keeps the exchange-rate answer the general web cases have always had."""
+    text = call.spec.input
+    if "unavailable" in text.lower():
+        return LLMError("web search unavailable (scripted)")
+    if "get xyz" in text.lower():
+        english = guess_language(text) == "en"
+        answer = {
+            "text": "A third-party page says the Get XYZ accepts contactless (NFC) payments."
+            if english
+            else "Uma página pública de terceiros informa que a Get XYZ aceita pagamento por aproximação (NFC).",
+            "citations": [{"url": "https://example.com/get-xyz", "title": "Third-party review of the Get XYZ"}],
+        }
+        if call.spec.context.get("verify_gap"):
+            # This fixture only supports the contactless-payment question, not every question mentioning the device.
+            supported = re.fullmatch(
+                r"\s*(?:(?:a\s+)?(?:maquininha\s+)?get xyz aceita (?:pagamento por aproxima[cç][aã]o|nfc)"
+                r"|does (?:the )?get xyz accept (?:contactless payments?|nfc))\s*\?\s*",
+                text, re.IGNORECASE,
+            )
+            answer["text"] += "\nEVIDENCE: DIRECT" if supported else "\nEVIDENCE: INSUFFICIENT"
+        return answer
+    answer = {
+        "text": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00).",
+        "citations": [{"url": "https://example.com/fx", "title": "Example FX"}],
+    }
+    if call.spec.context.get("verify_gap"):
+        answer["text"] += "\nEVIDENCE: INSUFFICIENT"
+    return answer
+
+
+# What the scripted planner prefers when the `replan` prompt is asked (the rules disagree): a human, then the merchant's
+# account, then the official pages, then the web, then a question.
+REPLAN_PREFERENCE = ("escalate", "support", "knowledge", "web", "clarify")
+
+
+def _replan(call: ScriptedCall) -> dict:
+    ctx = call.spec.context
+    choice = next((n for n in REPLAN_PREFERENCE if n in ctx["candidates"] and n in ctx["allowed"]), "finish")
+    return {
+        "next": choice,
+        "review": "complete" if choice == "finish" else "incomplete",
+        "reason": f"scripted planner: {choice}",
+    }
+
+
 def _personality(call: ScriptedCall) -> dict:
     c = call.spec.context["contributions"]
     if c.get("route") == "acknowledgement":
@@ -402,12 +465,9 @@ def handler(call: ScriptedCall):
     if agent == "router":
         return _router(call)
     if agent == "knowledge" and call.kind == "web":
-        if "unavailable" in call.spec.input.lower():
-            return LLMError("web search unavailable (scripted)")
-        return {
-            "text": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00).",
-            "citations": [{"url": "https://example.com/fx", "title": "Example FX"}],
-        }
+        return _web(call)
+    if agent == "replan":
+        return _replan(call)
     if agent == "knowledge":
         return _knowledge(call)
     if agent == "customer_support":

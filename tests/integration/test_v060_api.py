@@ -57,10 +57,13 @@ def test_scenario_catalog_requires_a_session_and_lists_labeled_scenarios(api):
     assert client.get("/v1/scenarios").status_code == 401
     body = client.get("/v1/scenarios", headers=login(client)).json()
     ids = [item["scenario_id"] for item in body["scenarios"]]
-    assert body["version"] == "1" and len(ids) == 10 and len(set(ids)) == len(ids)
+    assert body["version"] == "1" and len(ids) == 14 and len(set(ids)) == len(ids)  # 10 + 4 of v0.8.0 (replan)
     journeys = {item["journey"] for item in body["scenarios"]}
     assert journeys >= {"knowledge", "receivables", "device", "authorization", "pricing", "enablement"}
-    assert journeys >= {"cancellation", "handoff", "safety", "doc_effect"}  # P3-08: every essential journey
+    assert journeys >= {"cancellation", "handoff", "safety", "doc_effect", "replan"}  # P3-08: every essential journey
+    assert sorted(i for i in ids if i.startswith("SC-REPLAN-")) == [
+        "SC-REPLAN-ACCOUNT", "SC-REPLAN-PROCEDURE", "SC-REPLAN-TOOL-DOWN", "SC-REPLAN-WEB"
+    ]
     assert "SC-DOC-EFFECT" in ids and "SC-HANDOFF" in ids and "SC-INJECTION" in ids
     assert all("route_ok" in item["checks"] and item["message"] for item in body["scenarios"])
 
@@ -452,8 +455,13 @@ def test_migration_0008_round_trip_on_a_synthetic_database(settings, api):
     conn.row_factory = sqlite3.Row
     snapshots = conn.execute("SELECT * FROM run_snapshots").fetchall()
     sessions = conn.execute("SELECT session_id, principal_id FROM api_sessions").fetchall()
-    assert current_version(conn) == 10
-    assert migrate(conn, 7) == ["down 0010_webhook_outbox", "down 0009_identity_hitl", "down 0008_demo_results"]
+    assert current_version(conn) == 11
+    assert migrate(conn, 7) == [
+        "down 0011_evaluation_rubric",
+        "down 0010_webhook_outbox",
+        "down 0009_identity_hitl",
+        "down 0008_demo_results",
+    ]
     tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     assert "run_evaluations" not in tables and "comparisons" not in tables
     columns = [row[1] for row in conn.execute("PRAGMA table_info(api_sessions)")]

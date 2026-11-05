@@ -1,0 +1,173 @@
+{
+ "started": "2026-11-05T07:20:41-03:00",
+ "url": "http://127.0.0.1:8000",
+ "health": {
+  "status": 200
+ },
+ "ready": {
+  "status": 200,
+  "body": {
+   "knowledge_base": {
+    "version_id": "kb_initial",
+    "collection": "getnet_kb_v1"
+   },
+   "ready": true,
+   "index_chunks": 145,
+   "database": true,
+   "model": "gpt-6-luna",
+   "budget_remaining_usd": 0.0293,
+   "pending_handoffs": 0,
+   "checkpoints": {
+    "store": "sqlite",
+    "threads": 0
+   },
+   "versions": {
+    "app": "0.8.0",
+    "schema": 11,
+    "index": {
+     "collection": "getnet_kb_v1",
+     "embedding_model": "text-embedding-3-small",
+     "corpus": "d7ed966b69d6",
+     "chunks": 145,
+     "built_at": "2026-11-05T10:20:15+00:00"
+    },
+    "prompts": {
+     "escalation": "2",
+     "judge": "3",
+     "knowledge_procedure": "1",
+     "knowledge_rag": "1",
+     "knowledge_web": "2",
+     "personality": "5",
+     "replan": "2",
+     "router": "6",
+     "support": "7"
+    }
+   }
+  }
+ },
+ "messages_without_token": {
+  "status": 401
+ },
+ "token": {
+  "status": 200,
+  "token_type": "Bearer"
+ },
+ "replan_question": {
+  "status": "answered",
+  "at": "2026-11-05T07:21:02-03:00",
+  "message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+  "request_id": "req_ad9ea35aeec04e1aa754",
+  "route": "support",
+  "language": "pt",
+  "answer": "Das vendas de ontem, o Pix líquido de R$ 80,00 foi creditado em 04/11/2026. O débito líquido de R$ 148,06 está previsto para hoje, 05/11/2026, e o crédito líquido de R$ 1.162,20 está previsto para 06/11/2026. Ainda não consegui confirmar se esses dois valores foram creditados na conta.\n\nPara verificar se há oferta de antecipação e quais condições se aplicam, consulte o app Getnet ou os canais de atendimento. No app, acesse **Serviços > Antecipação de Vendas**, simule e confira os valores e as taxas antes de confirmar. O mínimo para antecipar é R$50,00. Não consigo solicitar a antecipação por aqui.",
+  "executed_path": null,
+  "sources": [
+   {
+    "type": "official",
+    "title": "Como antecipar suas vendas pelo app - Getnet",
+    "url": "https://site.getnet.com.br/get-ajuda-antecipacao-de-venda/como-antecipar-sua-vendas-pelo-app/",
+    "observed_at": null
+   },
+   {
+    "type": "tool",
+    "title": "Receivables schedule (your account)",
+    "url": null,
+    "observed_at": "2026-11-05T07:20:49-03:00"
+   },
+   {
+    "type": "tool",
+    "title": "Payout status (your account)",
+    "url": null,
+    "observed_at": "2026-11-05T07:20:50-03:00"
+   }
+  ]
+ },
+ "replan_trace": {
+  "status": 200,
+  "keys": [
+   "at",
+   "cost_usd",
+   "detail",
+   "duration_ms",
+   "errors",
+   "language",
+   "model_calls",
+   "request_id",
+   "route",
+   "status",
+   "steps",
+   "tool_calls",
+   "user_id"
+  ],
+  "detail_plan_hops": 1,
+  "steps": [
+   {
+    "step": "input_guard",
+    "status": "ok"
+   },
+   {
+    "step": "router",
+    "status": "ok",
+    "route": "support"
+   },
+   {
+    "step": "support_prefix",
+    "status": "ok"
+   },
+   {
+    "step": "tool:get_complaint_history",
+    "status": "ok"
+   },
+   {
+    "step": "tool:run_customer_healthcheck",
+    "status": "ok"
+   },
+   {
+    "step": "support",
+    "status": "ok"
+   },
+   {
+    "step": "tool:get_receivables_schedule",
+    "status": "ok"
+   },
+   {
+    "step": "tool:get_payout_status",
+    "status": "ok"
+   },
+   {
+    "step": "replan",
+    "status": "ok",
+    "next": "knowledge",
+    "origin": "rule:procedure_gap",
+    "hops": 1,
+    "review": "incomplete"
+   },
+   {
+    "step": "knowledge",
+    "status": "ok"
+   },
+   {
+    "step": "replan",
+    "status": "ok",
+    "next": "finish",
+    "origin": "rule:complete",
+    "hops": 1,
+    "review": "complete"
+   },
+   {
+    "step": "personality",
+    "status": "ok"
+   },
+   {
+    "step": "output_guard",
+    "status": "ok"
+   }
+  ]
+ },
+ "smoke": {
+  "exit_code": 0,
+  "at": "2026-11-05T07:22:29-03:00",
+  "stdout": "token for cliente1988 (scope: support:read handoff:create conversation:read)\n200 knowledge              answered             What's the difference between the Get Clássica and the Get Smart?\n200 general_web            answered             What's the weather forecast in Porto Alegre tomorrow?\n200 support                answered             When will the money from yesterday's sales be deposited?\n200 knowledge              answered             Do I need a bank account to receive my sales via Pix?\n200 knowledge_and_support  answered             My card machine won't connect to the internet, what should I do?\n200 knowledge              answered             How does receivables advance (antecipação) work with Getnet?\n200 general_web            answered             What's the euro exchange rate today?\n200 knowledge_and_support  answered             My card machine is showing a transaction decline error.\n200 knowledge              answered             How many installments can I split a sale into with the crediário?\n200 knowledge              answered             Can I sell through WhatsApp using the Payment Link?\nsmoke ok\n"
+ },
+ "ended": "2026-11-05T07:22:29-03:00"
+}

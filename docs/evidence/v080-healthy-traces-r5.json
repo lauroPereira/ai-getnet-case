@@ -1,0 +1,2098 @@
+{
+ "source": ".pytest_cache\\qa-v080-r1\\qa-r5-results\\v080-r5-658c70ad-healthy.json",
+ "cases": [
+  {
+   "id": "REPLAN-PROCEDURE",
+   "repetition": 1,
+   "request_id": "req_eval36bd78485bbd",
+   "trace": {
+    "at": "2026-11-05T07:00:51+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "the Router's plan still has support"
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_contract_snapshot",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-CONSISTENT",
+   "repetition": 1,
+   "request_id": "req_eval106d6e104368",
+   "trace": {
+    "at": "2026-11-05T07:01:03+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-CONDITIONS",
+   "repetition": 1,
+   "request_id": "req_eval1844e9164283",
+   "trace": {
+    "at": "2026-11-05T07:01:15+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-DIVERGENCE",
+   "repetition": 1,
+   "request_id": "req_eval531ac9146987",
+   "trace": {
+    "at": "2026-11-05T07:01:30+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-INSUFFICIENT",
+   "repetition": 1,
+   "request_id": "req_eval3f9b744b97bb",
+   "trace": {
+    "at": "2026-11-05T07:01:40+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-SALE-CANCELLATION",
+   "repetition": 1,
+   "request_id": "req_evale9f04bf7f0cf",
+   "trace": {
+    "at": "2026-11-05T07:01:51+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 1,
+   "request_id": "req_eval806717179b08",
+   "trace": {
+    "at": "2026-11-05T07:02:00+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-CONSISTENT",
+   "repetition": 1,
+   "request_id": "req_eval711b66ed4ef3",
+   "trace": {
+    "at": "2026-11-05T07:02:14+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-CONDITIONS",
+   "repetition": 1,
+   "request_id": "req_eval6a1deb9976e1",
+   "trace": {
+    "at": "2026-11-05T07:02:26+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-DIVERGENCE",
+   "repetition": 1,
+   "request_id": "req_eval1e6c25f1a7fc",
+   "trace": {
+    "at": "2026-11-05T07:02:42+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 1,
+   "request_id": "req_evalaf77a604682c",
+   "trace": {
+    "at": "2026-11-05T07:02:52+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-SALE-CANCELLATION",
+   "repetition": 1,
+   "request_id": "req_eval765140cd8d82",
+   "trace": {
+    "at": "2026-11-05T07:03:01+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "REPLAN-PROCEDURE",
+   "repetition": 2,
+   "request_id": "req_eval95bf18cc51a9",
+   "trace": {
+    "at": "2026-11-05T07:03:18+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "the Router's plan still has support"
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-CONSISTENT",
+   "repetition": 2,
+   "request_id": "req_evalc7581d2078b6",
+   "trace": {
+    "at": "2026-11-05T07:03:28+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-CONDITIONS",
+   "repetition": 2,
+   "request_id": "req_eval64b06f9b7f24",
+   "trace": {
+    "at": "2026-11-05T07:03:37+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-DIVERGENCE",
+   "repetition": 2,
+   "request_id": "req_evalb84c1106aea3",
+   "trace": {
+    "at": "2026-11-05T07:03:49+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-INSUFFICIENT",
+   "repetition": 2,
+   "request_id": "req_eval3180af09b4e0",
+   "trace": {
+    "at": "2026-11-05T07:03:58+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-SALE-CANCELLATION",
+   "repetition": 2,
+   "request_id": "req_eval932e426373de",
+   "trace": {
+    "at": "2026-11-05T07:04:06+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 2,
+   "request_id": "req_evalb19781c3508e",
+   "trace": {
+    "at": "2026-11-05T07:04:13+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-CONSISTENT",
+   "repetition": 2,
+   "request_id": "req_eval351d88745112",
+   "trace": {
+    "at": "2026-11-05T07:04:21+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-CONDITIONS",
+   "repetition": 2,
+   "request_id": "req_eval45e5804e758a",
+   "trace": {
+    "at": "2026-11-05T07:04:32+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-DIVERGENCE",
+   "repetition": 2,
+   "request_id": "req_eval413aa47e7f79",
+   "trace": {
+    "at": "2026-11-05T07:04:44+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 2,
+   "request_id": "req_evaldd3fc4153818",
+   "trace": {
+    "at": "2026-11-05T07:04:54+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-SALE-CANCELLATION",
+   "repetition": 2,
+   "request_id": "req_eval8076dab16a6c",
+   "trace": {
+    "at": "2026-11-05T07:05:03+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "REPLAN-PROCEDURE",
+   "repetition": 3,
+   "request_id": "req_evale1604956aa56",
+   "trace": {
+    "at": "2026-11-05T07:05:22+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "the Router's plan still has support"
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "nothing left to try; the answer states what could not be confirmed"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-CONSISTENT",
+   "repetition": 3,
+   "request_id": "req_evala7d8baa47bf8",
+   "trace": {
+    "at": "2026-11-05T07:05:32+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-CONDITIONS",
+   "repetition": 3,
+   "request_id": "req_eval1909726091d1",
+   "trace": {
+    "at": "2026-11-05T07:05:41+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-DIVERGENCE",
+   "repetition": 3,
+   "request_id": "req_eval9a0b07470114",
+   "trace": {
+    "at": "2026-11-05T07:05:54+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PRICE-INSUFFICIENT",
+   "repetition": 3,
+   "request_id": "req_evalb8354030edbd",
+   "trace": {
+    "at": "2026-11-05T07:06:03+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-SALE-CANCELLATION",
+   "repetition": 3,
+   "request_id": "req_evale6d844146432",
+   "trace": {
+    "at": "2026-11-05T07:06:12+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 3,
+   "request_id": "req_eval76a72cd66d5e",
+   "trace": {
+    "at": "2026-11-05T07:06:19+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-CONSISTENT",
+   "repetition": 3,
+   "request_id": "req_evald8c698c058f0",
+   "trace": {
+    "at": "2026-11-05T07:06:28+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-CONDITIONS",
+   "repetition": 3,
+   "request_id": "req_evalb5b5a59bd258",
+   "trace": {
+    "at": "2026-11-05T07:06:39+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-DIVERGENCE",
+   "repetition": 3,
+   "request_id": "req_eval5fff25a14231",
+   "trace": {
+    "at": "2026-11-05T07:06:53+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "handoff",
+    "errors": [],
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "escalate",
+      "origin": "rule:support_asked_for_human",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": null,
+      "reason": "support asked for a human to take over"
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 3,
+   "request_id": "req_eval025b4ed82d6f",
+   "trace": {
+    "at": "2026-11-05T07:07:03+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V030-PT-SALE-CANCELLATION",
+   "repetition": 3,
+   "request_id": "req_eval7259f5373b13",
+   "trace": {
+    "at": "2026-11-05T07:07:13+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "errors": [],
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null,
+      "reason": "the results answer the question"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  }
+ ]
+}

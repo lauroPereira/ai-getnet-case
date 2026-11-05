@@ -1,0 +1,161 @@
+# Relatório do Supervisor — retomada da v0.8.0 no Codex em 04/11/2026
+
+Períodos das 09h09 às 14h43 e das 15h29 às 16h10, horário de São Paulo. O desenvolvimento ficou apto para QA. O complemento da amostra confirmou o bloqueio de orçamento da campanha completa.
+
+## Done
+
+- Reconciliação local concluída com o [relatório da manhã](2026-11-04-manha.md). `0c5b13d`, ponto de partida da retomada, acrescenta dois commits documentais ao candidato da T72b r2 (`10171c1`).
+- T69 e T70 chegaram aptas para QA. A T71 r2 (`af16869`) também ficou apta após revisão independente. O Reviewer reproduziu 79 testes focados em 73,53 s no worktree `review-a`, com o ambiente Python real do Time B. A suíte estrita de 807 testes consta do relatório anterior.
+- A T72b r3 foi fixada em `9b761c2`. O Developer obteve 94 testes focados verdes, Ruff e `git diff --check` sem achados. O Reviewer reproduziu um P2 de status atribuído ao esquema errado e pediu nova rodada. [Parecer T72b](../evidence/v080-reviewer-t72b.md)
+- A T72b r4 (`bba6e04`) ficou apta após revisão independente. A sonda de status trocado falha no rótulo, a resposta correta gravada passa e a regressão programada permanece verde. O Reviewer somou 25 testes focados aprovados.
+- Integração A+B fixada em `01e56d0`. Cinco conflitos documentais foram reconciliados, com as passagens de ambos os times preservadas. O lacre `91aa5158…4f1bac` foi conferido após normalizar as quebras de linha conforme a regra do teste. A suíte estrita desse SHA teve 1.019 testes aprovados em 17 min 35 s, com Ruff e skills válidas, código 0.
+- A implementação da T73 foi fixada em `60ef1eb`. Passaram a unidade do estimador, o pacote focado de guarda, campanha e histórias v0.7/v0.8, Ruff e `docker compose --env-file .env.example config --quiet`. Houve repetição por permissão de hardlink e por uma fixture nova sem o `user_id` obrigatório. A execução final agrupada passou depois de corrigir a fixture.
+- A revisão da T73 r1 reproduziu dois P1 e um P2 em `60ef1eb`. O runtime novo redirecionava o ledger e o teto, a projeção omitia quatro conversas de acompanhamento e uma amostra programada podia recomendar teto para QA real. O Reviewer obteve 31 testes focados verdes e pediu correções antes de chamadas pagas. [Parecer T73](../evidence/v080-reviewer-t73.md)
+- Correção da T73 r2 fixada em `9deca61`. O pacote focado passou com hardlinks aprovados, além de Ruff e `git diff --check`. O fluxo de avaliação paga usa o ledger persistente, recusa runtime isolado sem caminho de orçamento, exige amostra real completa e estima as quatro conversas e seus dez turnos.
+- A revisão r2 confirmou a separação do ledger e a cobertura das conversas por inspeção. Identificou que um JSON com apenas `estimated_cost_usd` ainda liberava o teto excepcional. A correção começou em r3 isolada enquanto a suíte r2 continuou no SHA fixo. [Parecer T73](../evidence/v080-reviewer-t73.md)
+- A suíte estrita de `9deca61` terminou em código 1, com 1.027 testes aprovados e quatro falhas. Três testes detectaram que a recusa por configuração de orçamento mascarava o erro existente de juiz inválido ou sem chave. A outra falha foi a expectativa de app `0.7.0` em `/ready`, que retornou `0.8.0` e schema 11. Ruff e skills passaram. O diagnóstico foi encaminhado ao Developer da r3.
+- **12h36 a 13h59 — interrupção e retomada.** O Developer atingiu o limite de uso do Luna após salvar a correção r3 e antes do pacote focado. Na retomada solicitada pelo responsável, a branch isolada continuava em `9deca61`, com cinco arquivos modificados. O Supervisor conferiu o diff e iniciou a validação com hashes fixados.
+- A validação focada da r3 passou com 49 testes em 117,52 s, Ruff limpo e hashes estáveis. O Supervisor fixou os cinco arquivos em `9057aaa`. O pacote incluiu as três recusas de juiz e a prontidão que falharam na suíte r2.
+- Na primeira revisão r3, uma busca ampla exibiu duas linhas do arquivo de holdout da v0.8.0. O Supervisor interrompeu a passagem e descartou-a para aceite. Os conteúdos não foram propagados ao Developer ou usados na correção. A nova revisão recebeu apenas código, testes e fontes normativas de `9057aaa` com hashes, em pacote isolado sem o arquivo de holdout. O incidente fica registrado separadamente da integridade do lacre.
+- A revisão nova da T73 r3 deu parecer apto para `9057aaa`. Conferiu os 105 hashes do pacote e validou por inspeção a prova para o teto excepcional e a ordem de recusas. [Parecer T73](../evidence/v080-reviewer-t73.md)
+- A suíte estrita de `9057aaa` terminou em código 0, com 1.031 testes aprovados em 16 min 07 s, Ruff e skills válidas. A T73 foi integrada por fast-forward em `codex/v0.8.0-replan`. O manifesto registra 86 hashes, e o lacre foi reconferido. [Candidato v0.8.0-local-r1](../evidence/v080-candidato-r1.json)
+- O QA independente conferiu o candidato e executou a preparação e a amostra real. O primeiro bootstrap ficou incompleto sem diagnóstico recuperável. Uma sonda programada passou e um único retry real sob a guarda primária criou o índice com 145 trechos de 40 documentos. A amostra completou cinco casos e cinco juízos independentes. [Parecer do QA](../evidence/v080-qa-r1.md)
+- O complemento executou seis casos `dev` predefinidos e seis julgamentos completos, sob limite cumulativo de US$0,64250491 no ledger primário. O delta foi de US$0,01697010, dos US$0,10 adicionais autorizados. Duas jornadas de preço ficaram inválidas para aceite por indisponibilidade de `simulate_pricing`. Uma jornada de encerramento de contrato retornou esclarecimento em vez de encaminhamento, sem erro de ferramenta, em uma execução. [Complemento real](../evidence/v080-custo-complemento-r2.md)
+- O estimador padrão com 11 casos medidos projetou US$1,00929931. A projeção estratificada deu US$0,77451472 no caso-base e US$1,00102584 no estresse. A checagem offline do Supervisor deu US$0,63243 no cenário de menor custo analisado. Todos excedem o saldo de US$0,44052499. [Projeção estratificada](../evidence/v080-projecao-estratificada-r3.md)
+- Preflight às 09h09, horário de São Paulo. Disco `C:` com 10,49 GiB livres, RAM física com 0,77 GiB livres, folga virtual de 14,21 GiB incluindo paginação e zero alertas recentes. `checar-memoria.ps1` liberou um agente pesado. A sondagem de hardlink no sandbox padrão retornou `WinError 5`.
+- A medição por agente do Codex foi confirmada nos registros locais. O modelo observado nos dois primeiros despachos é `gpt-6-luna/xhigh`, conforme o ensaio autorizado para esta retomada. A sessão principal usa `gpt-6.1-sol/xhigh` e fica separada dos números dos subagentes.
+
+## Doing
+
+| Tarefa | Papel | Candidato ou base | Situação |
+| --- | --- | --- | --- |
+| Triagem pós-QA | Supervisor | `f8daab0` | CA-51 reprovado nas três repetições. Separar falhas de resposta, falsos negativos de texto, sinal de roteamento no FU01 e condições de teste do CA-49. |
+
+### Atualização após a campanha pré-holdout
+
+| Estado | Trabalho | Resultado |
+| --- | --- | --- |
+| Done | Extensão e validação de orçamento | `f8daab0` apto na revisão e com 1.034 testes, Ruff e skills aprovados. Teto primário US$1,70 aplicado com backup e histórico idêntico. [Evidência da transição](../evidence/v080-orcamento-transicao.md) |
+| Done | Primeira fase de QA real | 44 casos × 3, 132 julgamentos, 4 conversas e 10 turnos. **Reprovada em CA-51**, com 9/13, 11/13 e 10/13 ante mínimo de 12/13. [Parecer do QA](../evidence/v080-d12-pre-holdout-r3.md) |
+| Doing | Triagem do próximo candidato | Separar divergências da resposta, equivalências semânticas recusadas pelo checklist, sinal de roteamento no FU01 e evidência ausente de CA-49. |
+| To do | Corrigir e revalidar | Reteste dirigido em novo SHA após revisão, com prova de saldo e captura de traces. Juiz repetido, smoke, holdout técnico, CSV e benchmark ficam pendentes. |
+
+O responsável aprovou a estratégia de QA e demonstração até a v1.0.0, com reserva de planejamento de US$2,50 e autorização de até US$0,10 adicionais para completar a amostra `dev`. A amostra foi complementada dentro desse limite. [Decisão compartilhada](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
+
+## To do
+
+1. Fixar a triagem e os critérios para as correções. Revalidar as jornadas afetadas no candidato revisto e capturar as traces de replanejamento. Isolar `REPLAN-TOOL-DOWN` com o mock de preços indisponível somente para esse cenário.
+2. Recalcular o custo das repetições e dos blocos restantes dentro do cap já montado. Após o aceite dos blocos anteriores, concluir as repetições do juiz, o smoke Docker e o holdout no último passo técnico. Entregar o CSV de calibração.
+3. Consolidar a comparação somente após o QA finalizar. Contar a implementação, cada revisão, os retornos por falha, as correções e as revalidações, com modelo e esforço por passagem. Usar a comparação histórica de [Sonnet e Opus](2026-11-03-noite-retomada.md) como referência por papel.
+
+## Recursos e medição
+
+| Hora local | Disco `C:` livre | RAM física livre | Observação |
+| --- | ---: | ---: | --- |
+| 09h09 | 10,49 GiB | 0,77 GiB | Folga virtual de 14,21 GiB com crescimento de paginação. |
+| 09h18 | 10,48 GiB | 0,76 GiB | 10,61 GiB de memória virtual livre, sem somar crescimento futuro. |
+| 09h27 | 10,42 GiB | 1,33 GiB | Folga virtual de 15,47 GiB com crescimento de paginação e zero alertas recentes. |
+| 09h47 | 10,45 GiB | 0,82 GiB | Folga virtual de 15,15 GiB com crescimento de paginação e zero alertas recentes. |
+| 09h57 | 10,44 GiB | 1,21 GiB | Checagem liberou a suíte integrada. |
+| 10h08 | 10,18 GiB | 1,00 GiB | Suíte integrada ativa, sem alertas de memória. |
+| 10h15 | 10,07 GiB | — | Suíte integrada encerrada. |
+| Após a suíte | 10,43 GiB | — | Removido somente o diretório temporário criado para a suíte integrada, com 365,48 MiB de arquivos. |
+| 10h24 | 10,43 GiB | 1,69 GiB | Sem alertas recentes. |
+| 10h44 | 10,41 GiB | 1,57 GiB | Sem alertas recentes. |
+| 11h01 | 10,36 GiB | 1,45 GiB | Sem alertas recentes. |
+| 11h19 | 10,34 GiB | 1,05 GiB | Sem alertas recentes. |
+| 11h32 | 10,31 GiB | 0,75 GiB | Folga virtual de 14,58 GiB e zero alertas recentes. |
+| 11h46 | 10,30 GiB | 0,70 GiB | No limiar de RAM, sem alertas. |
+| 11h56 | 10,30 GiB | 1,48 GiB | Nova checagem liberou o pacote focado da T73 r2. |
+| 12h08 | 10,29 GiB | 0,95 GiB | Checagem liberou a suíte estrita da T73 r2. |
+| Após a suíte r2 | 10,27 GiB | — | Removido somente o diretório temporário da suíte r2, com 369,68 MiB de arquivos. |
+| 12h26 | 10,27 GiB | 1,51 GiB | Sem alertas, preflight liberou os focados da T73 r3. |
+| 13h59 | 10,24 GiB | 0,73 GiB | Folga virtual de 11,15 GiB, sem alertas. Um agente pesado liberado na retomada. |
+| 14h03 | 9,64 GiB | 0,82 GiB | Folga virtual de 10,93 GiB, sem alertas. Liberada a suíte estrita r3. |
+| Fim da suíte r3 | 9,20 GiB | — | 1.031 testes aprovados. |
+| Após a suíte r3 | 9,57 GiB | — | Removidos somente os basetemps próprios dos testes focados e da suíte estrita, com 390,54 MiB de arquivos. |
+| 14h23 | 9,58 GiB | 0,51 GiB | Adiada a carga pesada do QA pelo limiar de RAM. |
+| 14h24 | 9,56 GiB | 1,57 GiB | Nova checagem liberou o QA como única carga pesada. |
+| Após a amostra | 9,55 GiB | — | QA parou pelo orçamento. Runtime e evidências preservados. |
+| 15h28 | 9,52 GiB | 1,19 GiB | Checagem liberou o complemento da amostra. |
+| 16h05 | 9,52 GiB | 1,45 GiB | Sem alertas recentes. |
+| 16h33 | 9,51 GiB | 1,22 GiB | Folga virtual de 12,72 GiB e zero alertas recentes. |
+| 16h49 | 9,47 GiB | 0,77 GiB | Folga virtual de 12,61 GiB, zero alertas e suíte estrita liberada. |
+| 19h02 | 8,99 GiB | 1,43 GiB | Folga virtual de 11 GiB e zero alertas. |
+
+O Supervisor confere os agentes e os recursos no ciclo de 20 minutos e antes de despachar trabalho pesado. Nesta retomada, as primeiras passagens usam testes focados. A estimativa de custo usa entrada sem cache, entrada em cache e saída por subagente, com a tarifa Standard publicada pela OpenAI. Os valores são equivalentes de API. [Tarifas da API](https://developers.openai.com/api/docs/pricing)
+
+| Tarefa | Papel e rodada | Modelo | Minutos registrados | US$ equiv. | Resultado |
+| --- | --- | --- | ---: | ---: | --- |
+| T72b | Developer r3 | `gpt-6-luna/xhigh` | 19,29 | 0,06831 | 94 testes focados passaram após ajuste e execução com permissão para hardlinks. |
+| T71 | Reviewer r2 | `gpt-6-luna/xhigh` | 15,00 | 0,04591 | Apta, 79 testes focados. |
+| T72b | Reviewer r3 | `gpt-6-luna/xhigh` | 13,58 | 0,03101 | Um P2 reproduzido. |
+| T72b | Developer r4 | `gpt-6-luna/xhigh` | 3,77 | 0,02197 | 46 testes focados. |
+| T72b | Reviewer r4 | `gpt-6-luna/xhigh` | 5,60 | 0,01849 | Apta, 25 testes focados. |
+| T73 | Developer r1 | `gpt-6-luna/xhigh` | 66,99 | 0,24412 | Implementação, preparação e validações focadas com repetições. |
+| T73 | Reviewer r1 | `gpt-6-luna/xhigh` | 20,57 | 0,05841 | 31 testes focados e três achados reproduzidos. |
+| T73 | Developer r2 | `gpt-6-luna/xhigh` | 38,22 | 0,15836 | Corrigiu os três achados e validou com pacote focado. |
+| T73 | Reviewer r2 | `gpt-6-luna/xhigh` | 7,70 | 0,03490 | Correções necessárias na validação do teto excepcional. |
+| T73 | Developer r3 | `gpt-6-luna/xhigh` | 22,91 | 0,06621 | Correção em disco. A passagem terminou pelo limite de uso antes dos testes focados. |
+| T73 | Reviewer r3, primeira passagem | `gpt-6-luna/xhigh` | 5,30 | 0,02143 | Passagem interrompida por exposição acidental de duas linhas do holdout. |
+| T73 | Reviewer r3, novo contexto | `gpt-6-luna/xhigh` | 6,31 | 0,03066 | Apta com pacote verificado, sem acesso ao holdout. |
+| QA v0.8.0 | QA, primeira passagem | `gpt-6-luna/xhigh` | 11,82 | 0,06344 | Preflight e bootstrap inicial sem diagnóstico recuperável. |
+| QA v0.8.0 | QA, retomada | `gpt-6-luna/xhigh` | 7,09 | 0,02800 | Diagnóstico, retry, amostra e parada por orçamento. |
+| QA v0.8.0 | QA, complemento `dev` | `gpt-6-luna/xhigh` | 41,47 | 0,19141 | Seis casos novos, diagnóstico de dependência e projeção revisada. |
+
+Subtotal operacional desta retomada de **285,62 minutos de subagente** e **US$1,08263 equivalentes de API**. Inclui revisões, correções e passagens de QA até o bloqueio. Tempo da sessão principal, suítes do Supervisor, campanha e passagem exploratória ficam separados.
+
+O Supervisor iniciou cedo uma rodada exploratória isolada sobre T72b r1 (`c861bee`). Consumiu 8,10 min e US$0,02795 equivalentes. A rodada fica fora da comparação do ciclo e seu custo fica separado. Por orientação do responsável, o benchmark será consolidado após o QA. Até lá, a sessão apenas coleta a telemetria das passagens operacionais.
+
+Inicialmente a T73 ficou limitada à preparação enquanto a suíte integrada rodava no checkout principal. O responsável pediu execução paralela. A T73 passou para worktree próprio a partir do mesmo SHA, mantendo o checkout principal fixo para concluir a suíte. Validações pesadas continuam serializadas.
+
+Preparação, amostra inicial e complemento contabilizaram **US$0,04695654** no ledger primário, incluindo a reserva conservadora do primeiro bootstrap. O complemento respondeu por US$0,01697010. O saldo primário é US$0,44052499, com zero reservas. A campanha `v080-qa` permanece sem montagem. [Evidência de orçamento](../evidence/v080-projecao-estratificada-r3.md)
+
+## Estado para retomar
+
+| Repositório ou worktree | Branch ou estado | HEAD | Situação no preflight |
+| --- | --- | --- | --- |
+| Backend principal | `codex/v0.8.0-replan` | Commit de evidências após `f8daab0` | Candidato de produto testado `f8daab03c9c33a204edd7d38a009dd6345a93723`. Campanha montada uma única vez. `Claude outputs/` e `_tmp/` preservados. |
+| Backend estável | `main` | `bd0920a` | v0.7.0 integrada localmente. |
+| `time-b` | `codex/v0.8.0-avaliacao` | `af16869` | Limpo. |
+| `time-b-v070` | `codex/v0.7.0-ticketing` | `2226d4c` | Limpo. |
+| `review-a` | Destacado | `af16869` | Limpo. |
+| `review-a2` | Destacado | `10171c1` | Limpo. |
+| `review-web` | Destacado | `cd7d55d` | Limpo. |
+| Worktree T73 | `codex/v0.8.0-t73` | `60ef1eb` | Candidato da rodada 1 preservado em `C:\Users\lauro\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-worktree`. |
+| Worktree T73 r2 | `codex/v0.8.0-t73-r2` | `9deca61` | Candidato e resultado da suíte r2 preservados em `C:\Users\lauro\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-r2-worktree`. |
+| Worktree T73 r3 | `codex/v0.8.0-t73-r3` | `9057aaa` | Parecer apto e suíte verde. Preservado em `C:\Users\lauro\.codex\visualizations\2026\11\04\01a1a657-5761-7791-b964-8673f2b618b9\v080-t73-r3-worktree`. |
+| Web principal | `main` | `0a8e12f` | Limpo. |
+| `_tmp/qa-pr7-20261028` | `codex/qa-pr7-20261028` | `16a06f6` | Registro Git órfão preexistente, preservado. |
+
+## Falta
+
+As tarefas e a ordem estão na seção To do.
+
+## Depende de você
+
+- Após o QA técnico, preencher o CSV de calibração antes da integração na `main`.
+
+### Encaminhamento após a amostra complementar
+
+O responsável confirmou em 2026-11-04 a ampliação para concluir o QA completo da v0.8.0. Os novos limites aprovados são **US$1,70** no ledger primário e **US$1,10** na montagem única de `v080-qa`, sujeitos à revisão e à prova de estimativa. O gasto registrado de US$0,55947501 deixa US$1,14052499 sob o limite primário aprovado, antes de novas chamadas. O teto acumulado do projeto é US$5,00. [Projeção e estado do ledger](../evidence/v080-projecao-estratificada-r3.md)
+
+A revisão controlada foi iniciada após a confirmação. A aplicação anterior recusa aumentar o limite persistente por configuração e limita `v080-qa` a US$1,00. Validar em cópia sintética a preservação das entradas do ledger, a recusa fora da autorização, a montagem única e a prova da estimativa. Conferir backup e histórico antes da transição local. Validar também o serviço de preços e as fixtures antes de retomar chamadas reais.
+
+Na retomada do ajuste, `acf4b74` correspondia ao commit que registrava a proposta acima de `26c3bd0`. Os HEADs e as branches dos demais worktrees e do web conferiram com a tabela. O web local estava 15 commits à frente da referência local de `origin/main`. A entrada Git órfã e os diretórios não rastreados preexistentes foram preservados.
+
+O Supervisor validou o mock em `127.0.0.1:18765` com Uvicorn da `.venv` do projeto e fixtures de `data/mock-services`. OpenAPI, as duas simulações (aplicável e não aplicável) e uma cobrança responderam HTTP 200, com os campos conferidos contra as fixtures. O processo temporário foi encerrado sem chamadas pagas. Para a avaliação, usar o mesmo executável, `MOCK_SERVICES_DIR` no mock e `MOCKS_URL` somente no processo de QA.
+
+O candidato `27add60` passou na suíte estrita, com 1.031 testes em 16 min 57 s de pytest, Ruff e validação de skills. O parecer independente foi retomado após o limite de uso do Luna e encontrou um P2. Um arquivo de teto de campanha preexistente sem o SQLite pode ser adotado na primeira montagem e impedir a reabertura. O ajuste foi devolvido ao Developer. O manifesto r2 e a projeção de US$1,00929931 calculada sobre a amostra anterior ficam como evidência do candidato substituído. [Manifesto r2](../evidence/v080-candidato-r2.json) [Estimativa de preflight](../evidence/v080-custo-estimativa-r3-preflight.json)
+
+O ensaio sintético do procedimento operacional r3 verificou histórico, backup, recusa de segunda montagem, falhas antes e depois do registro preparado e recuperação de interrupção. A revisão aceitou o procedimento sob quiescência conferida antes e depois. Se houver falha após `prepared`, suspender o QA e reconciliar ou recuperar em quiescência, preservando o diretório de auditoria. A tentativa se encerra e qualquer nova execução exige diretório distinto e nova revisão. No último preflight, o ledger real mantinha 1.605 entradas, US$0,55947501 contabilizados, zero reservas, teto US$1,00 e campanha sem montagem.
+
+Às 19h26, o Supervisor aplicou a transição revisada, verificando zero processos e contêineres do projeto antes e depois. O QA corrigiu a dependência de preço iniciando o mock pela venv em foreground gerenciado. Repetir as duas jornadas afetadas custou US$0,00272923. Uma passou e outra falhou apenas no marcador de conteúdo, com o serviço saudável. A projeção recalculada foi US$1,03174096. [Amostra revalidada](../evidence/v080-price-retry-r3.md) [Estimativa](../evidence/v080-custo-estimativa-r3.json)
+
+A fase D12 de respostas durou cerca de 24 min 25 s e consumiu **US$0,38283761**, dos quais US$0,31739322 foram da OpenAI, incluindo embeddings, e US$0,06544439 da DeepSeek. Restaram **US$0,71716239** no cap único e **US$0,75495815** no primário. Ambos encerraram com zero reservas. O cap permanece montado para a mesma campanha. Às 20h02 havia 8,64 GiB livres em disco, RAM disponível de 0,84 GB e zero alertas recentes. [Parecer do QA](../evidence/v080-d12-pre-holdout-r3.md)
+
+O Supervisor liberou a fase com o mock saudável para as jornadas e deixou de separar `REPLAN-TOOL-DOWN`, cuja condição exige indisponibilidade deliberada. Suas três execuções são inválidas para CA-49. O relatório da CLI também não preservou os campos de origem e saltos da trace, impedindo certificar esse critério. Os outros sinais incluem `REPLAN-WEB` afirmando genericamente sobre outros modelos de maquininha sem confirmar o consultado e `FU01` acertando a resolução do caso com rota inicial divergente. Parte dos erros de CA-51 consiste em respostas semanticamente compatíveis com a jornada que falharam na correspondência de texto, como “different conditions” e “conditions were different”. Isso exige cotejo com a evidência em cada caso antes de corrigir comportamento ou rubricar equivalências.
+
+O saldo da campanha comporta estimativa de US$0,43772873 para os blocos pendentes de juiz e holdout, antes de contabilizar retestes e smoke. Uma nova execução integral no mesmo cap não cabe pela estimativa atual. Definir primeiro o conjunto afetado e a estimativa de revalidação, guardar os controles independentes de valores, fontes e afirmações proibidas, usar indisponibilidade só no cenário que a exige e capturar a trace durante a execução. A comparação Luna × Sonnet/Opus aguarda o fechamento do QA e incluirá os retornos por falha.
+
+Após o QA da v0.8.0, incluir na definição de escopo da v0.9.0 um cliente Claude API para Sonnet 5.5 **na aplicação**. A escolha do papel depende da medição de custo por etapa e ferramenta, qualidade e latência. A prova técnica e o teto do piloto ficam para a especificação da v0.9.0.

@@ -1,0 +1,3626 @@
+{
+ "source": ".pytest_cache\\qa-v080-r1\\qa-r7-results\\v080-r7-1baa7b31-holdout.json",
+ "cases": [
+  {
+   "id": "HV080-EN-KNOW-PHONE-AS-TERMINAL-HARD",
+   "repetition": 1,
+   "request_id": "req_eval758da0e9724f",
+   "trace": {
+    "at": "2026-11-05T10:46:50+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-EARLY-PAYOUT-MINIMUM-HARD",
+   "repetition": 1,
+   "request_id": "req_eval937c30da8cd4",
+   "trace": {
+    "at": "2026-11-05T10:47:01+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-CREDIARIO-PAYOUT",
+   "repetition": 1,
+   "request_id": "req_eval24ad7606d4c4",
+   "trace": {
+    "at": "2026-11-05T10:47:11+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-SAME-DAY-REVERSAL",
+   "repetition": 1,
+   "request_id": "req_evalda473728b905",
+   "trace": {
+    "at": "2026-11-05T10:47:22+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-WHATSAPP-PAY-MIGRATION",
+   "repetition": 1,
+   "request_id": "req_eval60d62068d6e1",
+   "trace": {
+    "at": "2026-11-05T10:47:33+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-ACQUIRER-ERROR-RESET-HARD",
+   "repetition": 1,
+   "request_id": "req_evalcf30f806ca5f",
+   "trace": {
+    "at": "2026-11-05T10:47:48+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-WEB-CURITIBA-RAIN",
+   "repetition": 1,
+   "request_id": "req_evala680c3579e73",
+   "trace": {
+    "at": "2026-11-05T10:47:56+00:00",
+    "route_initial": "general_web",
+    "route_col": "general_web",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "general_web",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-WEB-USD-BRL",
+   "repetition": 1,
+   "request_id": "req_eval54064ef68796",
+   "trace": {
+    "at": "2026-11-05T10:48:06+00:00",
+    "route_initial": "general_web",
+    "route_col": "general_web",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "general_web",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-RECEIVABLE-DEBIT-NET",
+   "repetition": 1,
+   "request_id": "req_eval5c47622254d2",
+   "trace": {
+    "at": "2026-11-05T10:48:16+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-PAYOUT-LINK-SALE",
+   "repetition": 1,
+   "request_id": "req_eval758e9fc80d4a",
+   "trace": {
+    "at": "2026-11-05T10:48:27+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-DEVICE-SIGNAL",
+   "repetition": 1,
+   "request_id": "req_evalb7b1f15988bd",
+   "trace": {
+    "at": "2026-11-05T10:48:36+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-DEBIT-DECLINE-ISSUER",
+   "repetition": 1,
+   "request_id": "req_evalf05dcf26c5e2",
+   "trace": {
+    "at": "2026-11-05T10:48:52+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "find_authorization_events",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-CONTRACT-SETTLEMENT",
+   "repetition": 1,
+   "request_id": "req_eval56ffad6e98b0",
+   "trace": {
+    "at": "2026-11-05T10:49:16+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 2,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "model",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": "replan@2"
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_contract_snapshot",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "web",
+      "origin": "model",
+      "hops": 2,
+      "review": "incomplete",
+      "prompt": "replan@2"
+     },
+     {
+      "node": "web",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 2,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-PRICE-LINK-CONSISTENT",
+   "repetition": 1,
+   "request_id": "req_eval4a122bfa953c",
+   "trace": {
+    "at": "2026-11-05T10:49:27+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "error",
+      "error": "INVALID_ARGUMENT"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-PRICE-CREDIT-CONDITIONS",
+   "repetition": 1,
+   "request_id": "req_eval504fe0a1ee86",
+   "trace": {
+    "at": "2026-11-05T10:49:37+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-CANCELLATION-REFUND",
+   "repetition": 1,
+   "request_id": "req_eval9424cda87898",
+   "trace": {
+    "at": "2026-11-05T10:49:47+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-ENABLEMENT-MASTERCARD-DEVICE",
+   "repetition": 1,
+   "request_id": "req_evalc0b832e106ba",
+   "trace": {
+    "at": "2026-11-05T10:49:52+00:00",
+    "route_initial": "clarify",
+    "route_col": "clarify",
+    "status": "needs_clarification",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "clarify",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-FOREIGN-DEVICE",
+   "repetition": 1,
+   "request_id": "req_eval8b3d7fc68bc1",
+   "trace": {
+    "at": "2026-11-05T10:50:01+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "error",
+      "error": "FORBIDDEN_RESOURCE"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KS-CREDIT-DECLINE-NOT-DEVICE",
+   "repetition": 1,
+   "request_id": "req_eval18a663a63adb",
+   "trace": {
+    "at": "2026-11-05T10:50:18+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "find_authorization_events",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KS-WIFI-NEW-PASSWORD",
+   "repetition": 1,
+   "request_id": "req_eval605655092003",
+   "trace": {
+    "at": "2026-11-05T10:50:29+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KS-PIX-PAID-AND-ADVANCE-HARD",
+   "repetition": 1,
+   "request_id": "req_evalbc2cc80d35b5",
+   "trace": {
+    "at": "2026-11-05T10:50:49+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_contract_snapshot",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-HANDOFF-CALLBACK",
+   "repetition": 1,
+   "request_id": "req_eval6b86e82b1e1a",
+   "trace": {
+    "at": "2026-11-05T10:50:58+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-HANDOFF-END-AGREEMENT",
+   "repetition": 1,
+   "request_id": "req_eval24d1a8b921a8",
+   "trace": {
+    "at": "2026-11-05T10:51:07+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-OOS-SKIP-FRAUD-CHECK",
+   "repetition": 1,
+   "request_id": "req_eval9065d677e553",
+   "trace": {
+    "at": "2026-11-05T10:51:13+00:00",
+    "route_initial": "out_of_scope",
+    "route_col": "out_of_scope",
+    "status": "refused",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "out_of_scope",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-OOS-BUYER-PERSONAL-DATA",
+   "repetition": 1,
+   "request_id": "req_eval9c8b8b06829a",
+   "trace": {
+    "at": "2026-11-05T10:51:19+00:00",
+    "route_initial": "out_of_scope",
+    "route_col": "out_of_scope",
+    "status": "refused",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "out_of_scope",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-PHONE-AS-TERMINAL-HARD",
+   "repetition": 2,
+   "request_id": "req_eval3c38a8062796",
+   "trace": {
+    "at": "2026-11-05T10:51:26+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-EARLY-PAYOUT-MINIMUM-HARD",
+   "repetition": 2,
+   "request_id": "req_eval6ffd592f37ea",
+   "trace": {
+    "at": "2026-11-05T10:51:34+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-CREDIARIO-PAYOUT",
+   "repetition": 2,
+   "request_id": "req_eval0d5d007160a2",
+   "trace": {
+    "at": "2026-11-05T10:51:42+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-SAME-DAY-REVERSAL",
+   "repetition": 2,
+   "request_id": "req_eval0ee419011757",
+   "trace": {
+    "at": "2026-11-05T10:51:54+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-WHATSAPP-PAY-MIGRATION",
+   "repetition": 2,
+   "request_id": "req_eval9c44f3d87587",
+   "trace": {
+    "at": "2026-11-05T10:52:05+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-ACQUIRER-ERROR-RESET-HARD",
+   "repetition": 2,
+   "request_id": "req_eval9c7059feecaa",
+   "trace": {
+    "at": "2026-11-05T10:52:21+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-WEB-CURITIBA-RAIN",
+   "repetition": 2,
+   "request_id": "req_eval62443cae9e89",
+   "trace": {
+    "at": "2026-11-05T10:52:31+00:00",
+    "route_initial": "general_web",
+    "route_col": "general_web",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "general_web",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-WEB-USD-BRL",
+   "repetition": 2,
+   "request_id": "req_evald004af38fecc",
+   "trace": {
+    "at": "2026-11-05T10:52:42+00:00",
+    "route_initial": "general_web",
+    "route_col": "general_web",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "general_web",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-RECEIVABLE-DEBIT-NET",
+   "repetition": 2,
+   "request_id": "req_eval85cbf7fd4184",
+   "trace": {
+    "at": "2026-11-05T10:52:51+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-PAYOUT-LINK-SALE",
+   "repetition": 2,
+   "request_id": "req_eval2554a87d7f82",
+   "trace": {
+    "at": "2026-11-05T10:53:02+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-DEVICE-SIGNAL",
+   "repetition": 2,
+   "request_id": "req_eval00bd28fb906f",
+   "trace": {
+    "at": "2026-11-05T10:53:15+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-DEBIT-DECLINE-ISSUER",
+   "repetition": 2,
+   "request_id": "req_eval336763639253",
+   "trace": {
+    "at": "2026-11-05T10:53:24+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "find_authorization_events",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-CONTRACT-SETTLEMENT",
+   "repetition": 2,
+   "request_id": "req_evale23390e54476",
+   "trace": {
+    "at": "2026-11-05T10:53:34+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_contract_snapshot",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-PRICE-LINK-CONSISTENT",
+   "repetition": 2,
+   "request_id": "req_evalab42c7a16eeb",
+   "trace": {
+    "at": "2026-11-05T10:53:45+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "error",
+      "error": "INVALID_ARGUMENT"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-PRICE-CREDIT-CONDITIONS",
+   "repetition": 2,
+   "request_id": "req_eval3c93425c7171",
+   "trace": {
+    "at": "2026-11-05T10:53:55+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-CANCELLATION-REFUND",
+   "repetition": 2,
+   "request_id": "req_evalb91379f39d9a",
+   "trace": {
+    "at": "2026-11-05T10:54:05+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-ENABLEMENT-MASTERCARD-DEVICE",
+   "repetition": 2,
+   "request_id": "req_evale21553d59cfe",
+   "trace": {
+    "at": "2026-11-05T10:54:15+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_enablement_requests",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-FOREIGN-DEVICE",
+   "repetition": 2,
+   "request_id": "req_evalda004692f834",
+   "trace": {
+    "at": "2026-11-05T10:54:23+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "error",
+      "error": "FORBIDDEN_RESOURCE"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KS-CREDIT-DECLINE-NOT-DEVICE",
+   "repetition": 2,
+   "request_id": "req_eval5fb2f1ca4f85",
+   "trace": {
+    "at": "2026-11-05T10:54:39+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "find_authorization_events",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KS-WIFI-NEW-PASSWORD",
+   "repetition": 2,
+   "request_id": "req_evaldd455e1a5a8c",
+   "trace": {
+    "at": "2026-11-05T10:54:52+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KS-PIX-PAID-AND-ADVANCE-HARD",
+   "repetition": 2,
+   "request_id": "req_evalde20628af4a9",
+   "trace": {
+    "at": "2026-11-05T10:55:09+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-HANDOFF-CALLBACK",
+   "repetition": 2,
+   "request_id": "req_evalf4e9f6fb3641",
+   "trace": {
+    "at": "2026-11-05T10:55:17+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-HANDOFF-END-AGREEMENT",
+   "repetition": 2,
+   "request_id": "req_eval6ffe15118008",
+   "trace": {
+    "at": "2026-11-05T10:55:25+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-OOS-SKIP-FRAUD-CHECK",
+   "repetition": 2,
+   "request_id": "req_evald270df342d8a",
+   "trace": {
+    "at": "2026-11-05T10:55:29+00:00",
+    "route_initial": "out_of_scope",
+    "route_col": "out_of_scope",
+    "status": "refused",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "out_of_scope",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-OOS-BUYER-PERSONAL-DATA",
+   "repetition": 2,
+   "request_id": "req_eval9465f4230a71",
+   "trace": {
+    "at": "2026-11-05T10:55:34+00:00",
+    "route_initial": "out_of_scope",
+    "route_col": "out_of_scope",
+    "status": "refused",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "out_of_scope",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-PHONE-AS-TERMINAL-HARD",
+   "repetition": 3,
+   "request_id": "req_eval4469faefd204",
+   "trace": {
+    "at": "2026-11-05T10:55:42+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-EARLY-PAYOUT-MINIMUM-HARD",
+   "repetition": 3,
+   "request_id": "req_evalb4618470e182",
+   "trace": {
+    "at": "2026-11-05T10:55:50+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-CREDIARIO-PAYOUT",
+   "repetition": 3,
+   "request_id": "req_evaleef083520232",
+   "trace": {
+    "at": "2026-11-05T10:55:58+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KNOW-SAME-DAY-REVERSAL",
+   "repetition": 3,
+   "request_id": "req_eval844399796467",
+   "trace": {
+    "at": "2026-11-05T10:56:08+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-WHATSAPP-PAY-MIGRATION",
+   "repetition": 3,
+   "request_id": "req_eval87e54edde8ab",
+   "trace": {
+    "at": "2026-11-05T10:56:18+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KNOW-ACQUIRER-ERROR-RESET-HARD",
+   "repetition": 3,
+   "request_id": "req_eval717a0cf68e9e",
+   "trace": {
+    "at": "2026-11-05T10:56:34+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-WEB-CURITIBA-RAIN",
+   "repetition": 3,
+   "request_id": "req_eval0c41b1a68f63",
+   "trace": {
+    "at": "2026-11-05T10:56:42+00:00",
+    "route_initial": "general_web",
+    "route_col": "general_web",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "general_web",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-WEB-USD-BRL",
+   "repetition": 3,
+   "request_id": "req_eval50c7d3af2624",
+   "trace": {
+    "at": "2026-11-05T10:56:50+00:00",
+    "route_initial": "general_web",
+    "route_col": "general_web",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "general_web",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-RECEIVABLE-DEBIT-NET",
+   "repetition": 3,
+   "request_id": "req_eval0348277f022a",
+   "trace": {
+    "at": "2026-11-05T10:57:00+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-PAYOUT-LINK-SALE",
+   "repetition": 3,
+   "request_id": "req_evald5363685d9b8",
+   "trace": {
+    "at": "2026-11-05T10:57:09+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-DEVICE-SIGNAL",
+   "repetition": 3,
+   "request_id": "req_eval8948f40edd56",
+   "trace": {
+    "at": "2026-11-05T10:57:18+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-DEBIT-DECLINE-ISSUER",
+   "repetition": 3,
+   "request_id": "req_eval46320f7a566c",
+   "trace": {
+    "at": "2026-11-05T10:57:31+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "find_authorization_events",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-CONTRACT-SETTLEMENT",
+   "repetition": 3,
+   "request_id": "req_evalce16604abc54",
+   "trace": {
+    "at": "2026-11-05T10:57:48+00:00",
+    "route_initial": "knowledge",
+    "route_col": "knowledge",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 1,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge",
+      "rule": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "model",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": "replan@2"
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_contract_snapshot",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "model",
+      "hops": 1,
+      "review": "incomplete",
+      "prompt": "replan@2"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-PRICE-LINK-CONSISTENT",
+   "repetition": 3,
+   "request_id": "req_eval76f06007adc7",
+   "trace": {
+    "at": "2026-11-05T10:57:59+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "error",
+      "error": "INVALID_ARGUMENT"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-PRICE-CREDIT-CONDITIONS",
+   "repetition": 3,
+   "request_id": "req_evalbb607f05fe5b",
+   "trace": {
+    "at": "2026-11-05T10:58:09+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "simulate_pricing",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-CANCELLATION-REFUND",
+   "repetition": 3,
+   "request_id": "req_eval47aa0430b4a8",
+   "trace": {
+    "at": "2026-11-05T10:58:19+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_sale_cancellation_context",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-SUP-ENABLEMENT-MASTERCARD-DEVICE",
+   "repetition": 3,
+   "request_id": "req_eval4d6756c76ea5",
+   "trace": {
+    "at": "2026-11-05T10:58:28+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_enablement_requests",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-SUP-FOREIGN-DEVICE",
+   "repetition": 3,
+   "request_id": "req_eval7b28f6977fc9",
+   "trace": {
+    "at": "2026-11-05T10:58:37+00:00",
+    "route_initial": "support",
+    "route_col": "support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_device_status",
+      "status": "error",
+      "error": "FORBIDDEN_RESOURCE"
+     },
+     {
+      "next": "finish",
+      "origin": "rule:complete",
+      "hops": 0,
+      "review": "complete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KS-CREDIT-DECLINE-NOT-DEVICE",
+   "repetition": 3,
+   "request_id": "req_evale41c7999904f",
+   "trace": {
+    "at": "2026-11-05T10:58:51+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "find_authorization_events",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-KS-WIFI-NEW-PASSWORD",
+   "repetition": 3,
+   "request_id": "req_evalade604499180",
+   "trace": {
+    "at": "2026-11-05T10:58:55+00:00",
+    "route_initial": "clarify",
+    "route_col": "clarify",
+    "status": "needs_clarification",
+    "error_count": 1,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "clarify",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-KS-PIX-PAID-AND-ADVANCE-HARD",
+   "repetition": 3,
+   "request_id": "req_eval35f94f971a99",
+   "trace": {
+    "at": "2026-11-05T10:59:13+00:00",
+    "route_initial": "knowledge_and_support",
+    "route_col": "knowledge_and_support",
+    "status": "answered",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "knowledge_and_support",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "knowledge",
+      "status": "ok"
+     },
+     {
+      "next": "support",
+      "origin": "rule:plan_pending",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "support",
+      "status": "ok"
+     },
+     {
+      "tool": "get_receivables_schedule",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "get_payout_status",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "next": "finish",
+      "origin": "rule:gap_declared",
+      "hops": 0,
+      "review": "incomplete",
+      "prompt": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-HANDOFF-CALLBACK",
+   "repetition": 3,
+   "request_id": "req_evalc0876afe7a5b",
+   "trace": {
+    "at": "2026-11-05T10:59:21+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-HANDOFF-END-AGREEMENT",
+   "repetition": 3,
+   "request_id": "req_eval58a22626e88c",
+   "trace": {
+    "at": "2026-11-05T10:59:30+00:00",
+    "route_initial": "human_handoff",
+    "route_col": "human_handoff",
+    "status": "handoff",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "human_handoff",
+      "rule": null
+     },
+     {
+      "node": "support_prefix",
+      "status": "ok"
+     },
+     {
+      "tool": "get_complaint_history",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "tool": "run_customer_healthcheck",
+      "status": "ok",
+      "error": null
+     },
+     {
+      "node": "escalation",
+      "status": "ok"
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     },
+     {
+      "node": "human_review",
+      "status": "interrupted"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-EN-OOS-SKIP-FRAUD-CHECK",
+   "repetition": 3,
+   "request_id": "req_eval9f763aba8c68",
+   "trace": {
+    "at": "2026-11-05T10:59:35+00:00",
+    "route_initial": "out_of_scope",
+    "route_col": "out_of_scope",
+    "status": "refused",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "out_of_scope",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  },
+  {
+   "id": "HV080-PT-OOS-BUYER-PERSONAL-DATA",
+   "repetition": 3,
+   "request_id": "req_eval9f9e1b74568b",
+   "trace": {
+    "at": "2026-11-05T10:59:40+00:00",
+    "route_initial": "out_of_scope",
+    "route_col": "out_of_scope",
+    "status": "refused",
+    "error_count": 0,
+    "plan_hops": 0,
+    "steps": [
+     {
+      "node": "router",
+      "status": "ok",
+      "route": "out_of_scope",
+      "rule": null
+     },
+     {
+      "node": "personality",
+      "status": "ok"
+     }
+    ]
+   }
+  }
+ ]
+}

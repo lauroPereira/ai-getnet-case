@@ -1,0 +1,604 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "3",
+   "prompt": "judge@3",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 400,
+    "effort": "none"
+   }
+  },
+  "repeat": 3,
+  "limit": null,
+  "include_replan": true,
+  "campaign": "v080-qa",
+  "campaign_cap_usd": 1.4,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 3,
+   "passed": 1.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 11319,
+   "latency_p95_ms": 11525,
+   "cost_usd": 0.00139,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 3,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 5.0,
+    "factual_correctness": 5.0,
+    "relevance": 5.0,
+    "usefulness": 5.0
+   },
+   "unsupported_claim_rate": 0.0
+  },
+  "by_split": {
+   "dev": {
+    "n": 3,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11319,
+    "latency_p95_ms": 11525,
+    "cost_usd": 0.00139,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   },
+   "pt": {
+    "n": 3,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11319,
+    "latency_p95_ms": 11525,
+    "cost_usd": 0.00139,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0
+   }
+  },
+  "paths": {
+   "support": {
+    "customer_support → escalation": 3
+   }
+  },
+  "generated_at": "2026-11-05T07:08:51+00:00",
+  "judge_cost_usd": 0.00104,
+  "variation": {
+   "kind": "assistant",
+   "description": "variação do assistente (o agente roda cada caso N vezes e o juiz avalia cada resposta uma vez)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 3,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     },
+     "factual_correctness": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     },
+     "relevance": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     },
+     "usefulness": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.0,
+     "exact": 1.0,
+     "pairs": 3
+    }
+   },
+   "by_route": {
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 1,
+   "request_id": "req_eval232ee3607615",
+   "split": "dev",
+   "language": "pt",
+   "message": "A taxa da venda no débito de ontem está correta?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "Não consegui confirmar se a taxa está correta porque a consulta de preços apresentou uma instabilidade. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-7B357E.",
+   "sources": [],
+   "duration_ms": 11525,
+   "cost_usd": 0.00059147,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A taxa da venda no débito de ontem está correta?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-05T04:08:13-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-05T04:08:13-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"debit\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"TIMEOUT\", \"message\": \"Pricing service timed out.\"}}}"
+     },
+     {
+      "kind": "trace",
+      "label": "escalation protocol",
+      "text": "HO-20261105-7B357E"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 512,
+     "kept_chars": 512,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Não consegui confirmar se a taxa está correta porque a consulta de preços apresentou uma instabilidade. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-7B357E."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 512,
+    "kept_chars": 512,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_df2f0ae5757b48c3a85c",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Timeout in simulate_pricing and the protocol HO-20261105-7B357E are both in the evidence.",
+     "factual_correctness": "Reply accurately reflects the pricing tool timeout and the handoff protocol; no contradictions.",
+     "relevance": "Merchant asked about the debit fee; reply explains it could not verify and hands over, matching handoff status.",
+     "usefulness": "Clear, polite Portuguese, states the gap plainly, and gives the protocol for follow-up."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00034754,
+    "error": null
+   }
+  },
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 2,
+   "request_id": "req_evalda8dcd66c2b2",
+   "split": "dev",
+   "language": "pt",
+   "message": "A taxa da venda no débito de ontem está correta?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "Não consegui confirmar se a taxa está correta porque a análise não respondeu. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-24B1FA.",
+   "sources": [],
+   "duration_ms": 11319,
+   "cost_usd": 0.00040232,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A taxa da venda no débito de ontem está correta?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-05T04:08:26-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-05T04:08:26-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"debit\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"TIMEOUT\", \"message\": \"Pricing service timed out.\"}}}"
+     },
+     {
+      "kind": "trace",
+      "label": "escalation protocol",
+      "text": "HO-20261105-24B1FA"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 512,
+     "kept_chars": 512,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Não consegui confirmar se a taxa está correta porque a análise não respondeu. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-24B1FA."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 512,
+    "kept_chars": 512,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_dd11e353c9e248548371",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The timeout and the escalation protocol HO-20261105-24B1FA are both traceable to the tool results and trace.",
+     "factual_correctness": "Correctly states the pricing analysis failed and the case was escalated, consistent with the TIMEOUT and handoff trace.",
+     "relevance": "Directly answers the merchant's question about the debit fee by explaining it could not be confirmed and handing over.",
+     "usefulness": "Clear, concise, polite Portuguese, plainly states the gap and gives the protocol number for follow-up."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00036044,
+    "error": null
+   }
+  },
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 3,
+   "request_id": "req_eval2579e57de617",
+   "split": "dev",
+   "language": "pt",
+   "message": "A taxa da venda no débito de ontem está correta?",
+   "route": "support",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "customer_support",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "customer_support → escalation",
+   "answer": "Não consegui confirmar se a taxa está correta, pois não recebi o retorno da análise da cobrança. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-1DAA5C.",
+   "sources": [],
+   "duration_ms": 10873,
+   "cost_usd": 0.00039972,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A taxa da venda no débito de ontem está correta?",
+    "status": "handoff",
+    "route": "support",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-05T04:08:39-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-05T04:08:39-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"debit\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"error\": {\"code\": \"TIMEOUT\", \"message\": \"Pricing service timed out.\"}}}"
+     },
+     {
+      "kind": "trace",
+      "label": "escalation protocol",
+      "text": "HO-20261105-1DAA5C"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 512,
+     "kept_chars": 512,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Não consegui confirmar se a taxa está correta, pois não recebi o retorno da análise da cobrança. Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261105-1DAA5C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 512,
+    "kept_chars": 512,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "judge": {
+    "evaluation_id": "eval_e17371324faa4e5d82ab",
+    "rubric_version": "3",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Reply only cites the pricing timeout and the escalation protocol code, both present in evidence.",
+     "factual_correctness": "Accurately states the analysis could not be confirmed and references the correct protocol code.",
+     "relevance": "Directly addresses the fee question and explains the handoff when it cannot be verified.",
+     "usefulness": "Clear, concise, polite Portuguese with a protocol number and plain statement of the gap."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00033314,
+    "error": null
+   }
+  }
+ ]
+}

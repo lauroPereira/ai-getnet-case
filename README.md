@@ -17,14 +17,14 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.7.0, validated by independent reviews and a real-model QA ([result](docs/evidence/v070-resultado.md)). Offline, the strict suites pass (backend **640 tests**, web **92 tests**, Ruff clean). Against real models, the challenge examples and core cases pass **27/27**, the multi-turn conversations **4/4**, and the human-in-the-loop story (token, handoff, ticket, operator reply, restart) passes end to end, also in Docker. The whole project spent about **US$0.79** of its US$5 cap.
+**Status:** v0.8.0, validated by independent reviews and a real-model QA ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)); the [human calibration](docs/evidence/v080-calibracao.md) of the judge is done (24 answers: agreement within one point 0.83–1.00, the judge stricter than the owner). Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
 
 ### Where each part of the challenge lives
 
 | Challenge item | Section | Code |
 | --- | --- | --- |
 | Three or more cooperating agents and how they communicate | [Architecture](#architecture), [Message workflow](#message-workflow) | `orchestration/graph.py`, `orchestration/state.py` |
-| Router as entry point and workflow manager | [Architecture](#architecture) | `agents/router.py`, `prompts/router.v5.md` |
+| Router as entry point and workflow manager | [Architecture](#architecture) | `agents/router.py`, `prompts/router.v6.md` |
 | Knowledge Agent: RAG over Getnet's site plus web search | [RAG pipeline](#rag-pipeline) | `rag/`, `agents/knowledge.py` |
 | Customer Support Agent with tools | [Support tools and data](#support-tools-and-synthetic-data) | `tools/`, `agents/support.py` |
 | HTTP endpoint with a JSON body | [Run it](#run-it), [Message workflow](#message-workflow) | `api/app.py`, `api/schemas.py` |
@@ -107,9 +107,20 @@ pytest                                   # backend tests; use tools/scripts/lint
 ruff check .
 merchant-assistant eval --scripted       # end-to-end evaluation offline (wiring only, zero cost)
 merchant-assistant eval --judge          # real evaluation; paid, check the current budget before running
+merchant-assistant eval --judge --include-replan --split dev --limit 5 --no-conversations --name v080-cost-sample  # five-case cost sample
+merchant-assistant eval-estimate --from docs/evidence/v080-cost-sample.json --out docs/evidence/v080-cost-estimate.json  # D12 estimate; no model call
+merchant-assistant eval --campaign v080-qa --include-replan --judge --repeat 3 --split all  # fixed QA cap + installation ledger
+merchant-assistant eval --campaign v080-qa --judge-repeat 3 --answers-from docs/evidence/v080-all.json --name v080-all-judge  # judge variation; the agent does not run
+merchant-assistant eval --campaign v080-qa --judge --repeat 3 --split holdout_v080  # sealed holdout: once, as the last technical step
+merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.json   # CSV for the owner to rate, without the judge's scores; no model call
+merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
 merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.001)
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
 ```
+
+`eval --judge` uses the independent judge (`JUDGE_PROVIDER`, `JUDGE_MODEL`). `--repeat 3` measures the variation of the assistant (the judge grades each answer once); `--judge-repeat 3 --answers-from` measures the variation of the judge over recorded answers. `--campaign v080-qa` mounts its fixed cap once (US$0.50; US$1.00 or US$1.10 with `--campaign-estimate` and a verified `eval-estimate`). That campaign is already mounted at US$1.40 after the approved contingency: `--campaign-cap-usd 1.40 --campaign-estimate docs/evidence/v080-custo-estimativa-r3.json` only continues it and never mounts a new one.
+
+The seed dates the synthetic sales relative to the day it ran ("yesterday" is the day before the seeding). A paid QA run must run `merchant-assistant bootstrap` (or a container start, which seeds) on the same local day, or the date-dependent cases are invalid.
 
 ## Configuration
 
@@ -121,6 +132,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `AGENT_MODEL` | `gpt-6-luna` | Default model for every agent; the `/v1` model profiles can set another model per agent |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
+| `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers; keep this pointed at the project budget volume when `RUNTIME_DIR` is isolated for a QA run |
 | `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
 | `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger). Accepted range 0–5.00 (absolute project ceiling); the first limit recorded beside a ledger (`budget.sqlite3.limit`, native 1.00 for a ledger that predates it) can never be raised by a later value |
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
@@ -130,6 +142,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
 | `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
 | `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
+| `JUDGE_PROVIDER`, `JUDGE_MODEL` | `deepseek`, `deepseek-flash` | Independent judge for `eval --judge`; the default requires `DEEPSEEK_API_KEY` and must differ from the agent model |
 | `DEMO_USER_PASSWORDS` | fictitious values in `.env.example` | `user:password` pairs of the synthetic users (`cliente1988`, `cliente_demo_002`, operators `op_ana`, `op_bruno`); stored as PBKDF2 hashes |
 | `API_DEMO_PASSWORD`, `API_ADMIN_PASSWORD` | empty (off) | Passwords of the `demo` and `admin` users of the `/v1` interface |
 | `JWT_ISSUER`, `JWT_PRIVATE_KEY_PATH`, `JWT_JWKS_URL` | own issuer, key generated in the runtime | Token issuer; `JWT_JWKS_URL` switches verification to an external OIDC issuer |
@@ -137,7 +150,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `TICKETING_WEBHOOK_URL`, `CONVERSATION_WEBHOOK_URL` and their secrets | Compose values | Signed webhooks to the ticketing service and to the merchant receiver; an empty URL turns a destination off; a URL without a secret is warned at startup |
 | `WEBHOOK_MAX_ATTEMPTS`, `WEBHOOK_RETRY_WAITS_S`, `WEBHOOK_TIMEOUT_S` | `3`, `1,2`, `3` | Delivery attempts (total per event and destination, also across restarts) |
 
-`DEEPSEEK_API_KEY` and `TYPESAFE_API_KEY` are optional: DeepSeek runs the Router (Hybrid profile) or the Router and Support (Adjusted profile), and TypeSafe JEV is the alternative Router engine; neither is needed for `POST /messages`. Every secret in `.env.example` is a fictitious demo value named as such; the API warns at startup when one of them is in use. The web app signs in with a user and password and never receives a provider key.
+`DEEPSEEK_API_KEY` is required for the default `eval --judge` evaluator and optional for the DeepSeek model profiles (Hybrid: Router; Adjusted: Router and Support). `TYPESAFE_API_KEY` enables the alternative Router engine; neither key is needed for `POST /messages`. Every secret in `.env.example` is a fictitious demo value named as such; the API warns at startup when one of them is in use. The web app signs in with a user and password and never receives a provider key.
 
 ## Architecture
 
@@ -154,22 +167,30 @@ flowchart LR
     SP -->|support| S[Customer Support Agent<br/>tool calling]
     SP -->|knowledge_and_support| K
     SP -->|human_handoff| E[Escalation Agent]
-    K -->|combined route| S
-    K --> P
-    S -->|escalate| E
-    S --> P
+    K --> RP{{Replan}}
+    W[Web search] --> RP
+    S --> RP
+    RP -->|knowledge| K
+    RP -->|web| W
+    RP -->|support| S
+    RP -->|escalate| E
+    RP -->|finish / clarify| P
     E --> P[Personality<br/>final voice]
     P --> O[Output guard<br/>values must match evidence] --> Out([JSON response])
 ```
 
 This is the workflow from the challenge diagram (Router → specialists with tools → **Personality** → output), with
-the "custom agent" slot filled by the Escalation Agent.
+the "custom agent" slot filled by the Escalation Agent. After each Knowledge, web-search or Support result, the
+replanner can finish, call a different specialist, search the web, escalate or ask a clarifying question. Clear cases
+are decided by rules; `replan.v2` is reserved for ambiguous decisions, and at most three plan changes are allowed.
+The reported route remains the Router's initial plan; the trace records the path that actually ran.
 
 | Component | Kind | Responsibility |
 | --- | --- | --- |
 | Router Agent | LLM, structured output | Picks one of the 8 routes below, the language, the support topic and a safety label |
 | Knowledge Agent | LLM + RAG / web search | Answers from retrieved official passages (with citations) or one web search; gives the official procedure on combined routes |
 | Customer Support Agent | LLM + function calling | Looks up the merchant's data with 9 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation |
+| Replanner | Rules + LLM on ambiguity | Reviews specialist evidence after each step and selects the next action within a three-hop limit |
 | Escalation Agent | LLM + persistence | Writes the handover summary, opens an idempotent case with an `HO-` protocol and pauses the graph until an operator acts on the ticket ([human in the loop](#identity-and-human-in-the-loop-v070)) |
 | Personality | LLM | Turns the agents' structured contributions into one reply, in the merchant's language, without changing facts |
 | Input / output guards, case prefix | Deterministic code | Masking and injection blocking; history + healthcheck at case opening; evidence check of values |
@@ -419,6 +440,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
+| v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 
 ### Identity and human in the loop (v0.7.0)
 
@@ -482,7 +504,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 ## Limitations and next steps
 
 - The ticketing service is the project's own (Zendesk/Freshdesk-style contract); a commercial ticketing system would be a mapping and configuration change. A delivery that exhausts its three attempts, or that the receiver refuses, has no automatic or manual resend yet and holds the later events of the same case and destination. If the API dies in the middle of the turn that opens a case, the case is completed when the merchant sends the same message again; otherwise it stays open without a ticket. The ticket id appears on the case after the first operator event from the ticketing; it is empty while the ticket is still in reception. The cross-process locks were exercised on Windows only.
-- The English handoff sentence lost the word "human" with the end of the "simulated" wording, and one business-journey case that requires it fails its label with real models (fix planned for v0.8.0).
+- Business journeys are measured by a literal rubric: real runs bring correct paraphrases it refuses (v0.8.0 passed 13/13, 12/13 and 12/13; the judge 13/13 each). The handoff sentence and the journey labels were fixed in v0.8.0. The judge does not see the web search text, so `general_web` answers score lower and vary more. The human calibration of the judge is [done](docs/evidence/v080-calibracao.md) (24 answers: the judge is the stricter rater, and the two never flag the same answer as unsupported), and the v0.8.0 holdout has been seen once.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
