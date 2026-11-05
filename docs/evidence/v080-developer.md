@@ -1292,3 +1292,34 @@ Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `2cf37da` (prod
 ### Próxima ação
 
 Revisão curta deste commit. Depois, o Supervisor fixa o candidato e o QA faz o reteste pago das seis jornadas.
+
+## Tarefa 73, item final: CHANGELOG e README da v0.8.0
+
+Data: 2026-11-05. Branch `codex/v0.8.0-replan`, base `393535e` (produto em `1baa7b3`). Só documentação.
+
+### Arquivos
+
+- `CHANGELOG.md`: entrada `[0.8.0] — 2026-11-05 (validated: review and real QA apt; human calibration pending)` acima da 0.7.0, com Added, Changed, Contract and data, Validation, Limitations e Return to 0.7.0. Sem SHA longo, `request_id` ou chave.
+- `README.md`: status da v0.8.0; `replan.v1` → `replan.v2` na descrição do grafo; comandos de `--judge-repeat`, holdout, `eval-calibrate --sample/--import` e o parágrafo do cap (`--campaign-cap-usd 1.40` só continua a campanha montada); regra da seed no mesmo dia; linha v0.8.0 na tabela de versões; a limitação "fix planned for v0.8.0" foi substituída pela limitação atual (régua literal, juiz sem o texto da web, calibração pendente, holdout já visto).
+- `docs/tasks/73-regressao-fechamento-v080.md`: Validação e Status.
+
+### Decisões além do despacho
+
+- **`replan.v2`, não `replan.v1`.** O carregador de prompts usa o arquivo mais recente, o ADR 0019 e o `/ready` da r6 mostram `replan` 2. O CHANGELOG cita os dois (v2 em vigor, v1 substituído na versão) e o README passou a dizer v2.
+- **Status do README.** Reescrevi a linha de status para a v0.8.0 e tirei o total do projeto (US$0,79 da v0.7.0), porque não há total consolidado da v0.8.0 nas evidências que li; ficou só o custo da campanha. O Supervisor pode recolocar o total do relatório da versão.
+- **Retorno à 0.7.0.** Não existe a tag `v0.7.0` neste clone, então o texto diz "check out the 0.7.0 release". `migrate --to 10` recusa enquanto `calibrations` tiver notas humanas (guarda da migração 0011), o que está escrito.
+- **Conversas 4/4** entram na validação a partir da r4, reaproveitadas no candidato final pela análise de impacto da r5/r6.
+- A frase "Planned for v0.8.0" da entrada 0.7.0 do CHANGELOG ficou como está, por ser histórico.
+
+### Validação
+
+- Só arquivos Markdown; nenhum Python tocado, então não rodei `ruff` nem a suíte. `git diff --stat`: `CHANGELOG.md` +45, `README.md` +12/−3, tarefa 73 +5/−1.
+- Conferi que não sobra "planned for v0.8.0" no README e que os números citados batem com `v080-d12-pre-holdout-r6.md`, `v080-holdout-r7.md`, `v080-orcamento-contingencia.md` e `v080-candidato-r11.json` (1.997 testes).
+
+### Limites
+
+- Não editei `docs/relatorios/`, `docs/historias/` nem a tarefa 74. Não marquei critérios de aceite.
+
+### Próxima ação
+
+Supervisor: revisar o texto e decidir o merge local com o responsável, depois da calibração.

@@ -2,6 +2,51 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.8.0] — 2026-11-05 (validated: review and real QA apt; human calibration pending)
+
+Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-avaliacao-v080.md), [story](docs/historias/orquestracao-avaliacao-v080.md), [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), tasks 69–78).
+
+### Added
+- **Replanning.** A `replan` node after Knowledge, the new `web` node and Support replaces the fixed edges. It can `finish`, call another specialist (`knowledge`, `web`, `support`), `escalate` or `clarify`. Clear cases are decided by named rules (`complete`, `plan_pending`, `procedure_gap`, `account_dependent_question`, `evidence_insufficient_web`, `tool_failure_no_alternative`, `support_asked_for_human`, `selection_pending`, `gap_declared`, `specialist_failed`); the model (`replan.v2`, which superseded `replan.v1` during the release; no reasoning effort, 80 output tokens) decides only when no rule applies or two disagree. Each specialist runs at most once per request, and a hop budget (`MAX_PLAN_HOPS=3`) caps the changes to the Router's plan; at the limit the reply states what could not be confirmed. Every `replan` step in the trace carries `next`, `reason`, `review`, `hops`, `origin` (`rule:<name>` or `model`) and the observed summary; the request detail keeps `plan_hops`. The operator resume graph of v0.7.0 is unchanged.
+- **Rubric `judge.v3`**: `groundedness`, `factual_correctness`, `relevance` and `usefulness` (1–5, a short reason each) plus `unsupported_claim`, judged against the masked evidence of the answer (passages and tool results, up to 6,000 characters, truncation recorded) and, for escalations, the verifiable `HO-` protocol from the trace.
+- **Independent judge**: `JUDGE_PROVIDER` / `JUDGE_MODEL` (default DeepSeek `deepseek-flash`, needs `DEEPSEEK_API_KEY`); `eval --judge` refuses before any call when the judge equals the agent or its key is missing. Provider, model and independence are recorded with each evaluation.
+- **Repetitions without mixing variations**: `eval --repeat N` runs the agent N times and grades each answer once; `eval --judge-repeat N --answers-from <report>` grades recorded answers N times without running the agent. Reports give mean, deviation, exact and ±1 agreement per criterion, route and split (`dev`, `holdout`, `holdout_v080`), with small slices marked.
+- **Human calibration**: `eval-calibrate --sample 24 --from <report>` writes a CSV stratified by route and split, with instructions and without the judge's scores (never from `holdout_v080`); `eval-calibrate --import <csv>` computes exact and ±1 agreement and quadratic weighted kappa per criterion into `docs/evidence/v080-calibracao.md`. No model call.
+- `eval-estimate --from <sample>` projects the campaign cost from a measured real sample of at least five cases (agent ×3, judge ×3 over the first run, follow-up conversations), revalidating the source; no model call.
+- Migration 0011 (see below); prompts `router.v6` (the interrogative English pricing-conditions question) and `personality.v5` (states the declared gap clearly).
+- **Campaign `v080-qa`**: `eval --campaign v080-qa` reserves every paid call against a fixed one-time campaign ledger and the installation ledger together. Caps above US$0.50 require a verified estimate (`--campaign-estimate`); US$1.40 only continues the mounted campaign after the reviewed contingency transition and never mounts a new one.
+- Deterministic contract-termination rule in the Router: an explicit request to end the contract (English or Portuguese, new conversation, no service named) goes to `human_handoff` with an `HO-` protocol, recorded as `rule = contract_termination` in the trace.
+- `tests/scenarios/replan.jsonl` (four replanning scenarios, `SC-REPLAN-*` in the catalog) and the sealed `holdout_v080` split (25 new cases, about half in Portuguese), checked by hash in the suite.
+
+### Changed
+- Development labels of the business journeys (only where the real answer was correct, justified per case) and of `REPLAN-WEB`; the legacy and v0.8.0 holdouts were not edited.
+- The runner's content check matches qualified answers (no evidence, refused authorization, conditional or negated states) against the expected proposition and keeps refusing the registered contradictions; typographic apostrophes are normalized.
+- The evaluated route is the Router's initial plan (`route_ok` unchanged); the path actually run is reported separately as `executed_path` in the runner, the trace and the report.
+
+### Contract and data
+- Migration 0011 (reversible): `run_evaluations.rubric_version`, `scores` (JSON), `repetition` and `unsupported_claim`, rebuilt from existing rows; table `calibrations` for the human scores. Schema version 11. Rolling back refuses while `calibrations` holds human scores.
+- New report fields: `executed_path`, `plan_hops`, the assistant-variation and judge-variation blocks, judge provider, model and independence, and a note on answers that used web search. `GET /v1/runs/{id}` shows the `replan` fields only on that step; other steps are unchanged. `POST /messages` keeps `route` as the initial plan.
+- New settings: `MAX_PLAN_HOPS`, `JUDGE_PROVIDER`, `JUDGE_MODEL`, `BUDGET_RUNTIME_DIR` (persistent budget ledgers when `RUNTIME_DIR` is isolated for QA).
+
+### Validation
+- Backend strict script **1,997 tests passed**, Ruff and skill checks passed. Independent reviews per task, several in multiple rounds.
+- Real QA on the final candidate, campaign `v080-qa` ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)): **CA-49** replanning 4/4 scenarios (3/3 each), every decision with its origin, at most 2 hops. **CA-51** business journeys **13/13, 12/13 and 12/13** by the deterministic rubric (gate 12/13; the two misses are correct answers refused by the literal wording) and 13/13 in all three repetitions by the judge. Follow-up conversations 4/4.
+- Repeated judge: 44 development answers × 3, 132 judgments, no judge failure; ±1 agreement 0.985–0.992 per criterion, stable outside `general_web`.
+- Docker smoke 10/10; a mixed account-and-procedure question replanned from Support to Knowledge by `rule:procedure_gap`, visible in the trace.
+- `holdout_v080`, run once as the last technical step and reported separately (it does not decide approval): **62/75 (0.827)** by the deterministic rubric, judge means 4.6–4.8, judge repeated 3× with no failure. The 24-answer calibration CSV is ready.
+- Campaign cost **US$0.84** in the campaign ledger (cap US$1.40 after the approved US$0.30 contingency, which was not consumed), plus **US$0.03** in the Docker volume ledger.
+
+### Limitations
+- The deterministic journey rubric is literal: each real run brings correct paraphrases it refuses (known false refusals are listed in the task 78 review), and a new wrong paraphrase outside the registered list can pass; the independent judge is the extra control. How CA-51 is measured from v0.9.0 is open with the owner.
+- The judge does not see the web search text, so `general_web` answers get lower and less stable scores.
+- `holdout_v080` has now been seen: any later QA run must mark it as such, and no change may be guided by its result.
+- Human calibration is pending: the owner rates the CSV and imports it. With 24 answers, agreement and kappa are an indication, not proof.
+- On mixed questions the Router's initial plan varies between runs (Support followed by replanning, or `knowledge_and_support` directly); both give the right answer. Replanning does not run in the operator resume graph.
+- The seed dates "yesterday" by the day it ran: a paid QA run needs `bootstrap` on the same local day.
+
+### Return to 0.7.0
+- Stop the stack, make sure `calibrations` holds no human scores (or recreate the runtime), run `merchant-assistant migrate --to 10` against the runtime and check out the 0.7.0 release. The prompt loader takes the latest file of each prompt, so 0.7.0 uses `router.v5`, `personality.v4` and `judge.v2` again; `MAX_PLAN_HOPS` and the judge settings are ignored. The budget ledgers stay as they are.
+
 ## [0.7.0] — 2026-11-04 (validated: review and real QA apt)
 
 Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md), [story](docs/historias/identidade-hitl-v070.md), [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), tasks 63–68 and 66b).

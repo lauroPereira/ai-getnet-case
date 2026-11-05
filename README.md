@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.7.0, validated by independent reviews and a real-model QA ([result](docs/evidence/v070-resultado.md)). Offline, the strict suites pass (backend **640 tests**, web **92 tests**, Ruff clean). Against real models, the challenge examples and core cases pass **27/27**, the multi-turn conversations **4/4**, and the human-in-the-loop story (token, handoff, ticket, operator reply, restart) passes end to end, also in Docker. The whole project spent about **US$0.79** of its US$5 cap.
+**Status:** v0.8.0, validated by independent reviews and a real-model QA ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)); the human calibration of the judge is pending. Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
 
 ### Where each part of the challenge lives
 
@@ -110,9 +110,17 @@ merchant-assistant eval --judge          # real evaluation; paid, check the curr
 merchant-assistant eval --judge --include-replan --split dev --limit 5 --no-conversations --name v080-cost-sample  # five-case cost sample
 merchant-assistant eval-estimate --from docs/evidence/v080-cost-sample.json --out docs/evidence/v080-cost-estimate.json  # D12 estimate; no model call
 merchant-assistant eval --campaign v080-qa --include-replan --judge --repeat 3 --split all  # fixed QA cap + installation ledger
+merchant-assistant eval --campaign v080-qa --judge-repeat 3 --answers-from docs/evidence/v080-all.json --name v080-all-judge  # judge variation; the agent does not run
+merchant-assistant eval --campaign v080-qa --judge --repeat 3 --split holdout_v080  # sealed holdout: once, as the last technical step
+merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.json   # CSV for the owner to rate, without the judge's scores; no model call
+merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
 merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.001)
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
 ```
+
+`eval --judge` uses the independent judge (`JUDGE_PROVIDER`, `JUDGE_MODEL`). `--repeat 3` measures the variation of the assistant (the judge grades each answer once); `--judge-repeat 3 --answers-from` measures the variation of the judge over recorded answers. `--campaign v080-qa` mounts its fixed cap once (US$0.50; US$1.00 or US$1.10 with `--campaign-estimate` and a verified `eval-estimate`). That campaign is already mounted at US$1.40 after the approved contingency: `--campaign-cap-usd 1.40 --campaign-estimate docs/evidence/v080-custo-estimativa-r3.json` only continues it and never mounts a new one.
+
+The seed dates the synthetic sales relative to the day it ran ("yesterday" is the day before the seeding). A paid QA run must run `merchant-assistant bootstrap` (or a container start, which seeds) on the same local day, or the date-dependent cases are invalid.
 
 ## Configuration
 
@@ -174,7 +182,7 @@ flowchart LR
 This is the workflow from the challenge diagram (Router → specialists with tools → **Personality** → output), with
 the "custom agent" slot filled by the Escalation Agent. After each Knowledge, web-search or Support result, the
 replanner can finish, call a different specialist, search the web, escalate or ask a clarifying question. Clear cases
-are decided by rules; `replan.v1` is reserved for ambiguous decisions, and at most three plan changes are allowed.
+are decided by rules; `replan.v2` is reserved for ambiguous decisions, and at most three plan changes are allowed.
 The reported route remains the Router's initial plan; the trace records the path that actually ran.
 
 | Component | Kind | Responsibility |
@@ -432,6 +440,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
+| v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 
 ### Identity and human in the loop (v0.7.0)
 
@@ -495,7 +504,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 ## Limitations and next steps
 
 - The ticketing service is the project's own (Zendesk/Freshdesk-style contract); a commercial ticketing system would be a mapping and configuration change. A delivery that exhausts its three attempts, or that the receiver refuses, has no automatic or manual resend yet and holds the later events of the same case and destination. If the API dies in the middle of the turn that opens a case, the case is completed when the merchant sends the same message again; otherwise it stays open without a ticket. The case does not show the ticket id yet (task 68b). The cross-process locks were exercised on Windows only.
-- The English handoff sentence lost the word "human" with the end of the "simulated" wording, and one business-journey case that requires it fails its label with real models (fix planned for v0.8.0).
+- Business journeys are measured by a literal rubric: real runs bring correct paraphrases it refuses (v0.8.0 passed 13/13, 12/13 and 12/13; the judge 13/13 each). The handoff sentence and the journey labels were fixed in v0.8.0. The judge does not see the web search text, so `general_web` answers score lower and vary more. The human calibration of the judge is pending, and the v0.8.0 holdout has been seen once.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
