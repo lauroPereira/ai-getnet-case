@@ -206,3 +206,97 @@ def test_a_typographic_apostrophe_matches_the_straight_one_in_every_label_kind()
     assert _recheck(case, row, f"I couldn{RSQUO}t compare its fee.")["content_ok"]
     banned = Case(**{**case.__dict__, "must_not_include": ["merchant's id"]})
     assert not _recheck(banned, row, f"There is insufficient evidence. The merchant{RSQUO}s ID is 1.")["forbidden_ok"]
+
+
+# --- Round 3 (review P3-R2a, P3-R2b): adjacency of the new forms, dash boundary, "don't know whether" ----------------
+
+LSQUO, MODIFIER_APOSTROPHE, EM_DASH, EN_DASH = "‘", "ʼ", "—", "–"
+# The five reproductions of P3-R2a and their siblings: a qualifier that is not directly followed by the assertion
+# does not cover a claim joined later in the same clause by "and/e/porque/senão que".
+QUALIFIER_NOT_ADJACENT = {
+    "V030-PRICE-INSUFFICIENT": [
+        "It is not possible to establish that there was a problem and the fee is correct.",
+        "It is unclear whether you saw it and the fee is correct.",
+        f"I don{RSQUO}t know whether you saw it and the fee is correct.",
+        "The system does not know whether you saw it and the fee is correct.",
+        "I can't say that there was a problem and the fee is correct.",
+        "I am not sure that there was a problem and the fee is correct.",
+    ],
+    "V030-PT-PRICE-INSUFFICIENT": [
+        "Não é possível afirmar que houve erro e a taxa está correta.",
+        "Não posso afirmar outra coisa senão que a taxa está correta.",
+        "Não podemos dizer que houve falha porque a taxa está correta.",
+        "Não posso dizer que houve falha porque a taxa está correta.",
+        "Não sabemos se você viu e a taxa está correta.",
+    ],
+}
+# Honest caveats in the forms of round 2, with the three apostrophes, still accepted with adjacency.
+HONEST_CAVEATS_ADJACENT = {
+    "V030-PRICE-INSUFFICIENT": [
+        f"I don{RSQUO}t know whether the fee is correct.",
+        f"I don{LSQUO}t know whether the fee is correct.",
+        f"The system doesn{MODIFIER_APOSTROPHE}t know whether the fee is correct.",
+        "We do not know if the fee is wrong.",
+        "It is unclear whether the fee is correct.",
+        "It is unclear if the fee is incorrect.",
+        "It is not possible to establish that the fee is correct.",
+        "There is no way to know whether the fee was charged correctly.",
+        f"I wasn{RSQUO}t able to verify that the fee is correct.",
+        f"I can{LSQUO}t say that the fee is correct.",
+        f"This doesn{MODIFIER_APOSTROPHE}t establish that the fee is wrong.",
+        "There is no evidence that the fee is correct.",
+        "I am not sure that the fee is correct.",
+    ],
+    "V030-PT-PRICE-INSUFFICIENT": [
+        "Não é possível afirmar que a taxa está correta.",
+        "Não podemos afirmar que a taxa está correta.",
+        "Não posso dizer que a taxa está correta.",
+        "Não posso afirmar se a taxa está correta.",
+        "Não há como saber se a taxa está correta.",
+        "Não se sabe se a taxa está incorreta.",
+        "Não temos certeza se a taxa cobrada está correta.",
+        "Isso não significa que a taxa está errada.",
+        "Não há evidência de que a taxa está correta.",
+    ],
+}
+# A dash (U+2013, U+2014) ends the clause, so a doubt form with its window does not reach a claim after it.
+CLAIM_AFTER_A_DASH = {
+    "V030-PRICE-INSUFFICIENT": [
+        f"I cannot confirm whether the rule applies {EM_DASH} the fee is correct.",
+        f"I am not sure whether the rule applies {EN_DASH} the fee is wrong.",
+    ],
+    "V030-PT-PRICE-INSUFFICIENT": [
+        f"Não sei se a regra se aplica {EN_DASH} a taxa está correta.",
+        f"Não consigo confirmar se a regra vale {EM_DASH} a taxa está errada.",
+    ],
+}
+
+
+def _row(case_id: str) -> dict:
+    return next(row for row in _archived("v080-healthy-r4.json") if row["id"] == case_id)
+
+
+@pytest.mark.parametrize(
+    ("case_id", "answer"),
+    [(case_id, text) for case_id, texts in QUALIFIER_NOT_ADJACENT.items() for text in texts]
+    + [(case_id, text) for case_id, texts in CLAIM_AFTER_A_DASH.items() for text in texts],
+)
+def test_a_qualifier_not_directly_before_the_claim_does_not_cover_it(case_id: str, answer: str):
+    assert not _recheck(_cases()[case_id], _row(case_id), answer)["forbidden_ok"], answer
+
+
+@pytest.mark.parametrize(
+    ("case_id", "caveat"),
+    [(case_id, text) for case_id, texts in HONEST_CAVEATS_ADJACENT.items() for text in texts],
+)
+def test_an_honest_caveat_directly_before_the_assertion_is_still_accepted(case_id: str, caveat: str):
+    assert _recheck(_cases()[case_id], _row(case_id), caveat)["forbidden_ok"], caveat
+
+
+def test_the_dash_is_what_ends_the_clause_in_the_dash_probes():
+    case_id = "V030-PRICE-INSUFFICIENT"
+    for text in CLAIM_AFTER_A_DASH[case_id]:
+        # without the dash the claim falls inside the pre-v0.8.0 doubt window (a known limit), so the dash is what
+        # rejects the probes above
+        joined = text.replace(f" {EM_DASH} ", " and ").replace(f" {EN_DASH} ", " and ")
+        assert _recheck(_cases()[case_id], _row(case_id), joined)["forbidden_ok"], joined

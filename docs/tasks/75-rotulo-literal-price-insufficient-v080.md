@@ -48,6 +48,13 @@ Developer, rodada 2 (2026-11-05), correção do P2-75 da [revisão](../evidence/
 - Re-pontuação offline de 529 respostas arquivadas em `docs/evidence/*.json` (rótulos dev, sem holdout) com o runner de `94bf7b3` e com o novo: nenhuma checagem muda (126 delas têm apóstrofo tipográfico).
 - Testes focados (avaliação, runner, jornadas, fechamento da v0.7.0, replanejamento): 504 passed.
 
+Developer, rodada 3 (2026-11-05), P3-R2a e P3-R2b da [revisão](../evidence/v080-reviewer-t75-77.md), rodada 2:
+
+- `runner.py`: só as formas de dúvida anteriores à v0.8.0 mantêm a janela de 100 caracteres ("cannot confirm/verify/determine/tell whether", "not sure/uncertain/not clear whether", "cannot say", "não consigo… confirmar se", "não sei se", "não posso dizer"). Toda forma nova da v0.8.0, todo complemento com "that"/"que" (inclusive "not sure that", "cannot say that", "não posso dizer que"), "unclear", "don't know whether", "não sabemos se" e "não posso/podemos afirmar" exigem a asserção logo depois do qualificador. As cinco frases do parecer voltam a ser recusadas.
+- `tests/unit/evaluation/test_t75_price_insufficient_archived.py`: 165 testes (127 + 38): 11 frases com qualificador não adjacente (as cinco do parecer e variações) e 4 com travessão/meia-risca são recusadas; 22 ressalvas honestas adjacentes (U+2019, U+2018, U+02BC; "don't/doesn't know whether", "unclear whether", "não podemos afirmar que"…) seguem aceitas; um teste mostra que é o travessão que recusa as sondas.
+- Re-pontuação offline de `v080-healthy-r4.json` e `v080-all-r3.json`: 195 respostas, 1.755 checagens, comparadas com o runner de `663ce09` e com o de `94bf7b3`: nenhuma muda.
+- Testes focados: 542 passed. Suíte estrita: ver [passagem](../evidence/v080-developer.md), rodada 3.
+
 ## Status
 
-implementada (rodada 2); aguarda revisão
+implementada (rodada 3); aguarda revisão

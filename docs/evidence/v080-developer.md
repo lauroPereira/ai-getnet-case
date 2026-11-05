@@ -1003,3 +1003,55 @@ Outras verificações:
 ### Próxima ação
 
 Revisão curta de `9a962d1` (runner e testes), `c782bc1` (regex, trace e testes) e `663ce09` (hash e teste do backup), com a suíte estrita. Depois, a aplicação da 77 pelo Supervisor e o QA.
+
+## Tarefa 75, rodada 3 (P3-R2a e P3-R2b)
+
+Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `2228b6c` (produto em `663ce09`). Parecer de origem: [v080-reviewer-t75-77.md](v080-reviewer-t75-77.md), rodada 2. Identidade conferida (`lauroPereira` / `lauro.s.pereira@gmail.com`). Um commit: `src/merchant_assistant/evaluation/runner.py`, `tests/unit/evaluation/test_t75_price_insufficient_archived.py` e esta documentação.
+
+### O que mudou (mudança de medição, também vale para o holdout, que não li)
+
+- Só as formas de dúvida que já existiam em `94bf7b3` mantêm a janela de 100 caracteres: "cannot/can't/could not/couldn't/am not able to/is not able to/unable to confirm/verify/determine/tell whether/if", "not sure/uncertain/not clear whether/if", "cannot say", "não foi possível/não é possível/não consigo/não podemos/não pude/não dá para confirmar/verificar/determinar/saber se", "não sei/não tenho certeza/incerto/não está claro se" e "não posso/não dá para dizer".
+- Exigem a asserção logo depois do qualificador (`that\s+$`, `que\s+$`, `se\s+$`): toda forma acrescentada na v0.8.0 (sujeitos e verbos novos, "unclear", "don't/doesn't know whether", "não sabemos/não se sabe/não temos certeza se", "não posso/podemos afirmar", "não há como/não tem como") e todo complemento com "that"/"que".
+- Decisão além do pedido: "not sure that", "cannot say that" e "não posso dizer que" também passaram a exigir adjacência. As três tinham janela já em `94bf7b3`, mas são complementos com "that"/"que". Para "cannot say" e "não posso dizer", uso um lookahead `(?!\s+that\b)` e `(?!\s+que\b)`. É reversível.
+
+### Testes
+
+`tests/unit/evaluation/test_t75_price_insufficient_archived.py`: 165 testes (127 + 38).
+
+- 11 frases com qualificador não adjacente são recusadas: as cinco do parecer, mais "I don’t know whether you saw it and…", "does not know whether…", "can't say that… and…", "not sure that… and…", "Não posso dizer que houve falha porque…" e "Não sabemos se você viu e…".
+- 4 sondas com travessão (U+2014) e meia-risca (U+2013) depois de uma forma de dúvida com janela são recusadas. Um teste mostra que, trocando o travessão por "and", a frase passa. Ou seja, é a fronteira que recusa (P3-R2b).
+- 22 ressalvas honestas adjacentes, com U+2019, U+2018 e U+02BC, continuam aceitas, entre elas "don’t/doesn't know whether", "unclear whether/if", "not possible to establish that", "no evidence that", "Não podemos afirmar que", "Não posso dizer que" e "Não há como saber se". As 15 da rodada 2 também seguem aceitas.
+- Mutações (sondas no scratchpad, sem tocar o código): cada uma derruba pelo menos uma sonda nova.
+  - Sem travessão na fronteira: 4.
+  - "that/que" de volta à janela: 6.
+  - "know whether" de volta à janela: 2.
+  - Sem "don't know": 3.
+  - Sem lookahead: 2.
+  - "unclear" na janela: 1.
+
+### Re-pontuação offline (obrigatória)
+
+Pontuei as respostas arquivadas de `v080-healthy-r4.json` (63) e `v080-all-r3.json` (132) com os rótulos dev. Comparei o runner de `663ce09` com o novo, e também o de `94bf7b3` com o novo.
+
+- **195 respostas e 1.755 checagens (9 por resposta), com 0 mudanças** nas duas comparações.
+- Nenhuma resposta foi pulada.
+- 24 dessas respostas têm `must_not_assert`, 52 têm U+2019 e 7 têm travessão.
+
+### Evidência
+
+- Testes focados (`tests/unit/evaluation`, `test_evaluation_runner`, `test_v080_journeys`, `test_v070_closing`, `test_v080_replan`): **542 passed**, que são 504 + 38.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict`, com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t75-r3-suite-basetemp -p no:cacheprovider"`.
+  - **1379 passed** em 614,57 s, que são 1.341 + 38, sem skip.
+  - Ruff `All checks passed!`, skills válidas, exit 0.
+  - Log em `.pytest_cache/t75-r3-suite.log`, SHA-256 `42a7fbde…c2e5`.
+- `ruff format` só reformataria o trecho preexistente de `persisted_checks`, como na rodada 2.
+- Nenhuma chamada paga, rede ou `.env`. Não toquei em rótulos, Router, CLI, script de transição, `data/runtime/`, `.pytest_cache/qa-v080-r1/` nem holdout.
+
+### Limites
+
+- As janelas que já existiam continuam com o comportamento de `94bf7b3`. Exemplos que ainda passam: "I cannot confirm whether X and the fee is correct", "I can't say anything other than that the fee is correct" e "Não posso dizer outra coisa senão que a taxa está correta".
+- P3-R2c e P3-R2d seguem abertos, como pedido.
+
+### Próxima ação
+
+Revisão curta do commit desta rodada (runner e testes), antes do holdout.

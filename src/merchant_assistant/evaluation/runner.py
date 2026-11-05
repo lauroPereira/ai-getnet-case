@@ -47,39 +47,48 @@ _CLAUSE_BOUNDARIES = re.compile(
 # Typographic apostrophes and look-alikes (U+2018, U+2019, U+02BC, U+2032, U+00B4, U+0060) compare as "'".
 _APOSTROPHES = str.maketrans(dict.fromkeys("\u2018\u2019\u02bc\u2032\u00b4\u0060", "'"))
 _QUALIFIED_ASSERTION_PREFIXES = (
+    # Only the doubt forms that predate v0.8.0 (cannot confirm/verify/determine/tell whether, not sure/uncertain/
+    # not clear whether, cannot say, não consigo/não sei ... se, não posso dizer) keep their 100-character window.
+    # Every form added since then, every "that"/"que" complement, "does not mean", "no indication" and an open
+    # conditional only qualify the assertion that follows them directly, so a later, unqualified claim in the
+    # same clause ("... that there was a problem and the fee is correct") is still caught.
+    re.compile(
+        r"\b(?:cannot|can't|could not|couldn't|am not able to|is not able to|unable to)\s+"
+        r"(?:confirm|verify|determine|tell)\s+(?:whether|if)\b[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"\b(?:cannot|can not|can't|could not|couldn't|am not able to|is not able to|are not able to|"
         r"was not able to|wasn't able to|unable to|(?:not possible|impossible|no way) to)\s+"
-        r"(?:confirm|verify|determine|tell|know|say|establish)\s+(?:whether|if|that)\b[^.!?;,]{0,100}$",
+        r"(?:confirm|verify|determine|tell|know|say|establish)\s+(?:whether|if|that)\s+$",
         re.IGNORECASE,
     ),
-    re.compile(r"\b(?:not sure|uncertain|unclear|not clear)\s+(?:whether|if|that)\b[^.!?;,]{0,100}$", re.IGNORECASE),
-    re.compile(
-        r"\b(?:do not|don't|does not|doesn't|did not|didn't)\s+know\s+(?:whether|if)\b[^.!?;,]{0,100}$",
-        re.IGNORECASE,
-    ),
-    re.compile(r"\b(?:cannot|can't|couldn't)\s+say\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:not sure|uncertain|not clear)\s+(?:whether|if)\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:not sure|uncertain|unclear|not clear)\s+(?:whether|if|that)\s+$", re.IGNORECASE),
+    re.compile(r"\b(?:do not|don't|does not|doesn't|did not|didn't)\s+know\s+(?:whether|if)\s+$", re.IGNORECASE),
+    re.compile(r"\b(?:cannot|can't|couldn't)\s+say\b(?!\s+that\b)[^.!?;,]{0,100}$", re.IGNORECASE),
     re.compile(
         r"\b(?:does not|doesn't|do not|don't|did not|didn't|would not|wouldn't|will not|won't)\s+"
         r"(?:necessarily\s+)?(?:mean|establish|indicate|show|prove|imply|confirm)\s+(?:that\s+)?$",
         re.IGNORECASE,
     ),
     re.compile(r"\bno\s+(?:indication|evidence|sign|proof)\s+that\s+$", re.IGNORECASE),
-    # "Does not mean", "no indication" and an open conditional only qualify the assertion that follows them
-    # directly, so a later, unqualified claim in the same clause is still caught.
     re.compile(r"\b(?:if|in case)\s+(?:you\s+(?:think|believe|suspect|feel)\s+(?:that\s+)?)?$", re.IGNORECASE),
+    re.compile(
+        r"\b(?:não foi possível|não é possível|não consigo|não podemos|não pude|não dá para)\s+"
+        r"(?:confirmar|verificar|determinar|saber)\s+se\b[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"\b(?:não foi possível|não é possível|não consigo|não conseguimos|não podemos|não pude|não dá para|"
         r"não há como|não tem como)\s+(?:confirmar|verificar|determinar|saber|afirmar|dizer|garantir)\s+"
-        r"(?:se|que)\b[^.!?;,]{0,100}$",
+        r"(?:se|que)\s+$",
         re.IGNORECASE,
     ),
-    re.compile(
-        r"\b(?:não sei|não sabemos|não se sabe|não tenho certeza|não temos certeza|incerto|não está claro)\s+se\b"
-        r"[^.!?;,]{0,100}$",
-        re.IGNORECASE,
-    ),
-    re.compile(r"\b(?:não posso|não podemos|não dá para)\s+(?:dizer|afirmar)\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:não sei|não tenho certeza|incerto|não está claro)\s+se\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:não sabemos|não se sabe|não temos certeza)\s+se\s+$", re.IGNORECASE),
+    re.compile(r"\b(?:não posso|não dá para)\s+dizer\b(?!\s+que\b)[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:não posso|não podemos|não dá para)\s+(?:dizer|afirmar)\s+(?:(?:se|que)\s+)?$", re.IGNORECASE),
     re.compile(
         r"\bnão\s+(?:necessariamente\s+)?(?:significa|quer dizer|indica|mostra|prova|implica|comprova|confirma)"
         r"\s+que\s+$",
