@@ -71,7 +71,7 @@ No último fechamento, `C:` tinha 7,71 GiB livres. Antes da última suíte, havi
 | Revisões preexistentes | `review-a`, `review-a2`, `review-web` | `af16869`, `10171c1`, `cd7d55d` |
 | T73 r1, r2 e r3 | Worktrees isolados | `60ef1eb`, `9deca61`, `9057aaa` |
 
-Os caminhos, os logs, as bases, os pacotes de revisão e a telemetria bruta estão no [inventário de registros](2026-11-04-inventario-registros.md). A [comparação Luna × Sonnet × Opus](2026-11-04-comparacao-luna-sonnet-opus.md) usa os recortes históricos por papel e registra as limitações do QA ainda aberto.
+Os caminhos, os logs, as bases, os pacotes de revisão e a telemetria bruta estão em um inventário de registros, e a comparação Luna × Sonnet × Opus por papel em um relatório à parte; os dois são material local do responsável (`discovery/relatorios/`), fora do repositório, porque trazem caminhos da máquina e medições de ferramentas que não fazem parte do produto.
 
 ## Depende de você
 
