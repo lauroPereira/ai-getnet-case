@@ -54,5 +54,5 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 
 ```text
 QA técnico da v0.8.0 concluído em 2026-11-05; CHANGELOG e README da v0.8.0 escritos.
-Calibração humana importada em 2026-11-05 (docs/evidence/v080-calibracao.md). Pendente: merge local, que aguarda o responsável.
+Calibração humana importada em 2026-11-05 (docs/evidence/v080-calibracao.md). Merge local na main feito em 2026-11-05 (d3740d0). Pendentes do responsável: push e tag v0.8.0.
 ```
