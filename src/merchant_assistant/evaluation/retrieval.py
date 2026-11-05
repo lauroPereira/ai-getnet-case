@@ -27,10 +27,10 @@ def _relevant(payload: dict, expected: list[str]) -> bool:
     return any(e in haystack for e in expected)
 
 
-def evaluate(index: KnowledgeIndex, cases: list[RetrievalCase], k: int = 6) -> dict:
+def evaluate(index: KnowledgeIndex, cases: list[RetrievalCase], k: int = 6, mode: str | None = None) -> dict:
     rows = []
     for case in cases:
-        hits = index.search(case.question, k=k)
+        hits = index.search(case.question, k=k, mode=mode)
         rank = next((i + 1 for i, h in enumerate(hits) if _relevant(h.payload, case.expected_docs)), None)
         rows.append(
             {

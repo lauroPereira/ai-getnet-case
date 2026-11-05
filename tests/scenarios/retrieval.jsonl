@@ -12,3 +12,8 @@
 {"id": "R-UC09-pt", "case": "UC-09", "language": "pt", "question": "Em quantas parcelas posso dividir uma venda no crediário?", "expected_docs": ["crediario"]}
 {"id": "R-UC10-en", "case": "UC-10", "language": "en", "question": "Can I sell through WhatsApp using the Payment Link?", "expected_docs": ["whatsapp", "link-de-pagamento"]}
 {"id": "R-UC10-pt", "case": "UC-10", "language": "pt", "question": "Posso vender pelo WhatsApp usando o Link de Pagamento?", "expected_docs": ["whatsapp", "link-de-pagamento"]}
+{"id": "R-EXACT-SP630-pt", "case": "EXACT-TERM", "language": "pt", "question": "O que é o SP630?", "expected_docs": ["todas-as-maquininhas"]}
+{"id": "R-EXACT-SP630-en", "case": "EXACT-TERM", "language": "en", "question": "Which terminal is the SP630?", "expected_docs": ["todas-as-maquininhas"]}
+{"id": "R-EXACT-ADQ491-en", "case": "EXACT-TERM", "language": "en", "question": "My terminal shows ADQ 4-91, what does it mean?", "expected_docs": ["erro-adq-4-91"]}
+{"id": "R-EXACT-ADQ491-pt", "case": "EXACT-TERM", "language": "pt", "question": "Apareceu ADQ 4-91 na maquininha, o que significa?", "expected_docs": ["erro-adq-4-91"]}
+{"id": "R-EXACT-D30-en", "case": "EXACT-TERM", "language": "en", "question": "Which rates apply when I receive in D30?", "expected_docs": ["todas-as-maquininhas"]}

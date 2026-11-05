@@ -255,9 +255,14 @@ def cmd_eval_retrieval(settings: Settings, args) -> int:
     from merchant_assistant.rag.index import KnowledgeIndex, open_qdrant
 
     embedder = build_embedder(settings, fake=args.fake, budget=None if args.fake else _budget_guard(settings))
+    mode = getattr(args, "mode", None) or settings.retrieval_mode
     index = KnowledgeIndex(open_qdrant(":memory:", settings.runtime_path), "eval_retrieval", embedder)
-    index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
-    report = evaluate(index, load_cases(PROJECT_ROOT / "tests" / "scenarios" / "retrieval.jsonl"), k=args.k)
+    manifest = index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
+    report = evaluate(
+        index, load_cases(PROJECT_ROOT / "tests" / "scenarios" / "retrieval.jsonl"), k=args.k, mode=mode
+    )
+    report["mode"] = mode
+    report["bm25_corpus_hash"] = manifest["bm25_corpus_hash"]  # BM25 kept in memory, like this Qdrant
     report["embedding_model"] = embedder.model
     report["embedding_tokens"] = getattr(embedder, "tokens_used", 0)
     print(json.dumps(report, indent=1, ensure_ascii=False))
@@ -1145,6 +1150,7 @@ def main(argv: list[str] | None = None) -> int:
     p_eval = sub.add_parser("eval-retrieval", help="Measure Recall@k on the labeled retrieval set.")
     p_eval.add_argument("--fake", action="store_true")
     p_eval.add_argument("-k", type=int, default=6)
+    p_eval.add_argument("--mode", choices=["dense", "hybrid"], default=None, help="Default: RETRIEVAL_MODE.")
     p_boot = sub.add_parser("bootstrap", help="Seed synthetic data and build the index if needed.")
     p_boot.add_argument("--force-index", action="store_true")
     p_ask = sub.add_parser("ask", help="Run one message through the real system (paid).")
