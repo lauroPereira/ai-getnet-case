@@ -56,7 +56,9 @@ def test_shape_languages_and_categories():
     for c in cases:
         assert set(c) == {"id", "category", "language", "question", "relevant_chunks"}, c["id"]
         grades = list(c["relevant_chunks"].values())
-        assert grades.count(2) == 1 and set(grades) <= {1, 2}, c["id"]  # one correct passage, optional grade-1 extra
+        # grade 2: the passage carries the whole answer (two chunks may, after the label review of round 2);
+        # grade 1: it carries part of it
+        assert grades.count(2) >= 1 and set(grades) <= {1, 2}, c["id"]
 
 
 def test_labels_point_to_chunks_of_the_versioned_corpus():
