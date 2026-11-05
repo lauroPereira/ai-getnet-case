@@ -402,16 +402,28 @@ def _web(call: ScriptedCall) -> dict | Exception:
         return LLMError("web search unavailable (scripted)")
     if "get xyz" in text.lower():
         english = guess_language(text) == "en"
-        return {
+        answer = {
             "text": "A third-party page says the Get XYZ accepts contactless (NFC) payments."
             if english
             else "Uma página pública de terceiros informa que a Get XYZ aceita pagamento por aproximação (NFC).",
             "citations": [{"url": "https://example.com/get-xyz", "title": "Third-party review of the Get XYZ"}],
         }
-    return {
+        if call.spec.context.get("verify_gap"):
+            # This fixture only supports the contactless-payment question, not every question mentioning the device.
+            supported = re.fullmatch(
+                r"\s*(?:(?:a\s+)?(?:maquininha\s+)?get xyz aceita (?:pagamento por aproxima[cç][aã]o|nfc)"
+                r"|does (?:the )?get xyz accept (?:contactless payments?|nfc))\s*\?\s*",
+                text, re.IGNORECASE,
+            )
+            answer["text"] += "\nEVIDENCE: DIRECT" if supported else "\nEVIDENCE: INSUFFICIENT"
+        return answer
+    answer = {
         "text": "1 EUR = R$ 5,57 (Example FX, 2026-10-26 10:00).",
         "citations": [{"url": "https://example.com/fx", "title": "Example FX"}],
     }
+    if call.spec.context.get("verify_gap"):
+        answer["text"] += "\nEVIDENCE: INSUFFICIENT"
+    return answer
 
 
 # What the scripted planner prefers when the `replan` prompt is asked (the rules disagree): a human, then the merchant's

@@ -8,7 +8,9 @@ import pytest
 
 from merchant_assistant.agents import knowledge, personality, router
 from merchant_assistant.config import Settings
+from merchant_assistant.evaluation.scripted_policy import handler as scripted_handler
 from merchant_assistant.llm.base import WebAnswer
+from merchant_assistant.llm.scripted import ScriptedCall
 from merchant_assistant.orchestration.state import GraphState, KnowledgeDraft, KnowledgeResult, RouterDecision
 from merchant_assistant.rag.index import Hit
 
@@ -82,18 +84,19 @@ def test_support_first_knowledge_assesses_the_procedure_only():
     )
     original = state(plan={"last": "support", "ran": ["support"]})
     result = knowledge.run(original, ctx)["knowledge"]
-    assert result.mode == "procedure" and result.evidence_sufficient
+    assert result.mode == "rag" and result.evidence_sufficient
     assert "app" in result.points[0]
-    assert calls[0][1]["source_kinds"] == ["public_official", "simulated_internal"]
+    assert calls[0][1]["source_kinds"] == ["public_official"]
     assert "Assess sufficiency only" in calls[1].instructions
     assert "individual account dates or amounts" in calls[1].instructions
     assert calls[1].input.endswith(f"<<<\n{original.message}\n>>>")
 
 
-def test_fallback_includes_only_a_procedure_collected_after_support():
-    k = KnowledgeResult(mode="procedure", points=["Open the app."], evidence_sufficient=True)
+def test_fallback_includes_rag_points_and_uses_support_for_procedure_mode():
+    k = KnowledgeResult(mode="rag", points=["Open the app."], evidence_sufficient=True)
     after = state(plan={"ran": ["support", "knowledge"]}).model_copy(update={"knowledge": k})
-    before = state(plan={"ran": ["knowledge", "support"]}).model_copy(update={"knowledge": k})
+    procedure = k.model_copy(update={"mode": "procedure"})
+    before = state(plan={"ran": ["knowledge", "support"]}).model_copy(update={"knowledge": procedure})
     assert "Open the app." in personality.deterministic_answer(after, "en")
     assert "Open the app." not in personality.deterministic_answer(before, "en")
 
@@ -146,3 +149,46 @@ def test_direct_web_route_does_not_require_fallback_marker():
     )
     result = knowledge.run(state(route="general_web"), ctx)["knowledge"]
     assert result.evidence_sufficient and result.points == ["Forecast: sunny."]
+
+
+@pytest.mark.parametrize(("message", "sufficient"), [
+    ("A maquininha Get XYZ aceita pagamento por aproximação?", True),
+    ("Does the Get XYZ accept contactless payments?", True),
+    ("A Get XYZ aceita NFC e quanto custa?", False),
+    ("A Get XYZ aceita Pix?", False),
+    ("Outro modelo aceita NFC?", False),
+])
+def test_scripted_web_fallback_only_marks_its_supported_question(message, sufficient):
+    calls = []
+
+    class Model:
+        def web_search(self, spec, meter, **kwargs):
+            calls.append(spec)
+            return SimpleNamespace(value=WebAnswer.model_validate(scripted_handler(ScriptedCall("web", spec))))
+
+    ctx = SimpleNamespace(
+        settings=Settings(_env_file=None, prompts_dir=Path("prompts")),
+        clock=SimpleNamespace(now=datetime.now), step_notes={}, llm_for=lambda _: Model(),
+    )
+    previous = KnowledgeResult(mode="rag", points=[], evidence_sufficient=False, missing=["specific product feature"])
+    original = state(route="knowledge").model_copy(update={"knowledge": previous, "message": message})
+    result = knowledge.run_web(original, ctx)["knowledge"]
+    assert calls[0].context["verify_gap"] is True
+    assert result.evidence_sufficient is sufficient
+    assert all("EVIDENCE:" not in point for point in result.points)
+    if not sufficient:
+        assert "specific product feature" in result.missing
+
+
+def test_scripted_direct_web_does_not_emit_a_marker():
+    class Model:
+        def web_search(self, spec, meter, **kwargs):
+            assert spec.context["verify_gap"] is False
+            return SimpleNamespace(value=WebAnswer.model_validate(scripted_handler(ScriptedCall("web", spec))))
+
+    ctx = SimpleNamespace(
+        settings=Settings(_env_file=None, prompts_dir=Path("prompts")),
+        clock=SimpleNamespace(now=datetime.now), step_notes={}, llm_for=lambda _: Model(),
+    )
+    result = knowledge.run(state(route="general_web"), ctx)["knowledge"]
+    assert result.evidence_sufficient and "EVIDENCE:" not in result.points[0]

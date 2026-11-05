@@ -71,7 +71,7 @@ def _web(state: GraphState, ctx: RunContext, language: str, *, verify_gap: bool 
         input=state.message,  # masked message only: no user id or account data goes to the web search
         effort="low",
         max_output_tokens=500,
-        context={"mode": "web", "message": state.message},
+        context={"mode": "web", "message": state.message, "verify_gap": verify_gap},
     )
     try:
         answer = ctx.llm_for("knowledge").web_search(spec, ctx, max_calls=ctx.settings.web_search_max_calls).value
@@ -137,8 +137,6 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         mode == "rag" and state.plan.get("last") == "support" and "support" in state.plan.get("ran", [])
         and bool(HOW_TO.search(state.message))
     )
-    if after_support:
-        mode = "procedure"
     agents = [*state.agents, "knowledge"]
     ctx.step_notes["mode"] = mode
     if mode == "web":
@@ -178,8 +176,9 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     instructions = p.render(language_name=LANGUAGE_NAME[language], passages=_passages(hits))
     if after_support:
         instructions += (
-            "\nSupport already handled the merchant-specific account question. Assess sufficiency only for the "
-            "remaining official procedure, not for individual account dates or amounts. Do not infer account data."
+            "\nSupport already handled the merchant-specific account question. For this call, answer only the "
+            "remaining official procedure with practical ordered steps supported by the passages. Assess sufficiency "
+            "only for that procedure, not for individual account dates or amounts. Do not infer account data."
         )
     spec = CallSpec(
         agent="knowledge",

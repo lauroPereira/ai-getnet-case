@@ -93,10 +93,7 @@ def deterministic_answer(state: GraphState, language: str, case_state: str | Non
     if state.policy:
         parts.append(state.policy)
     already_says_missing = False
-    # When Knowledge runs after Support, no support agent has incorporated its procedure into the reply.
-    ran = state.plan.get("ran", [])
-    procedure_after_support = "support" in ran and "knowledge" in ran and ran.index("support") < ran.index("knowledge")
-    if state.knowledge and (state.knowledge.mode != "procedure" or procedure_after_support):
+    if state.knowledge and state.knowledge.mode != "procedure":  # procedure points are guidance for the support agent
         parts += state.knowledge.points or (
             [policy("no_evidence", language)] if state.knowledge.mode != "web" else [policy("unavailable", language)]
         )

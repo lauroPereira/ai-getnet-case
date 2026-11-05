@@ -75,6 +75,12 @@ def test_contradictory_business_journey_answers_still_fail(scenario_id: str, ans
     assert not checks["content_ok"] or not checks["forbidden_ok"]
 
 
+def test_a_single_expected_amount_does_not_prove_fee_consistency():
+    answer = "A taxa prevista e a registrada foram ambas de valores diferentes; a taxa cobrada é R$ 1,94."
+    checks = _scenario_checks(_cases()["V030-PT-PRICE-CONSISTENT"], answer)
+    assert not checks["content_ok"]
+
+
 @pytest.mark.parametrize(
     ("scenario_id", "answer"),
     [
