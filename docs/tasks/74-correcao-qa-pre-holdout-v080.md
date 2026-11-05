@@ -39,4 +39,4 @@ Prompts, testes focados, rótulos de desenvolvimento em `tests/scenarios/busines
 
 ## Status
 
-Concluída em 2026-11-05 (QA técnico). Calibração humana e merge local pendentes do responsável.
+Concluída em 2026-11-05: QA técnico e calibração humana importada ([relatório](../evidence/v080-calibracao.md)). Merge local pendente do responsável.

@@ -54,5 +54,7 @@ Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080
 ## Status
 
 ```text
-Rodada 2 apta na revisão independente de af16869, com 79 testes focados. CSV real e calibração dependem da campanha v080-qa.
+Rodada 2 apta na revisão independente de af16869, com 79 testes focados.
+Calibração real importada em 2026-11-05 (campanha v080-all-r3, 24 linhas): docs/evidence/v080-calibracao.md.
+Defeito para a v0.9.0: a coluna evidence do CSV corta as passagens que o juiz viu inteiras; a amostra precisa trazer a evidência completa ou um arquivo companheiro.
 ```

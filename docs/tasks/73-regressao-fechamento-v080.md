@@ -48,10 +48,11 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 - O lacre foi conferido pelo hash normalizado. [Manifesto do candidato](../evidence/v080-candidato-r1.json)
 - QA técnico concluído em 2026-11-05 sobre o candidato final `1baa7b3` ([manifesto r11](../evidence/v080-candidato-r11.json)), suíte estrita com 1.997 testes. Pré-holdout ([r6](../evidence/v080-d12-pre-holdout-r6.md)): CA-49 com os quatro cenários 3/3 e no máximo 2 saltos; CA-51 13/13, 12/13 e 12/13 pela checagem determinística e 13/13 nas três pelo juiz; juiz repetido sobre 44 respostas (132 julgamentos, sem falha); smoke Docker 10/10. Holdout `holdout_v080` uma única vez ([r7](../evidence/v080-holdout-r7.md)): 62/75 (0,827), reportado à parte. CSV de calibração com 24 respostas gerado. Custo da campanha US$0,84 no ledger de US$1,40, mais US$0,03 do volume Docker.
 - Fechamento documental: entrada 0.8.0 no `CHANGELOG.md` e README atualizado (status, comandos de avaliação e calibração, regra da seed no mesmo dia, limitações). [Passagem](../evidence/v080-developer.md)
+- Calibração humana importada em 2026-11-05 no runtime de QA (`eval-calibrate --import`, 24 gravadas, 0 puladas): 24 respostas avaliadas pelo responsável e importadas em 2026-11-05: concordância exata 0,58 a 0,75 por critério, ±1 de 0,83 a 1,00; kappa perto de zero porque quase todas as notas humanas são 5; juiz mais severo que o humano (viés de −0,17 a −0,42). No veredito de afirmação sem suporte, exata 0,67 e nenhum "sim" em comum: o humano apontou afirmações genéricas em 4 respostas de conhecimento; o juiz, 3 buscas web sem texto gravado e 1 encaminhamento. [Relatório](../evidence/v080-calibracao.md)
 
 ## Status
 
 ```text
 QA técnico da v0.8.0 concluído em 2026-11-05; CHANGELOG e README da v0.8.0 escritos.
-Pendentes: calibração humana (preencher e importar o CSV) e merge local, que aguardam o responsável.
+Calibração humana importada em 2026-11-05 (docs/evidence/v080-calibracao.md). Pendente: merge local, que aguarda o responsável.
 ```

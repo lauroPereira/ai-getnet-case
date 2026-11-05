@@ -2,7 +2,7 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
-## [0.8.0] — 2026-11-05 (validated: review and real QA apt; human calibration pending)
+## [0.8.0] — 2026-11-05 (validated: review, real QA and human calibration)
 
 Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-avaliacao-v080.md), [story](docs/historias/orquestracao-avaliacao-v080.md), [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), tasks 69–78).
 
@@ -34,13 +34,14 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 - Repeated judge: 44 development answers × 3, 132 judgments, no judge failure; ±1 agreement 0.985–0.992 per criterion, stable outside `general_web`.
 - Docker smoke 10/10; a mixed account-and-procedure question replanned from Support to Knowledge by `rule:procedure_gap`, visible in the trace.
 - `holdout_v080`, run once as the last technical step and reported separately (it does not decide approval): **62/75 (0.827)** by the deterministic rubric, judge means 4.6–4.8, judge repeated 3× with no failure. The 24-answer calibration CSV is ready.
+- **Human calibration** ([report](docs/evidence/v080-calibracao.md)): the owner rated 24 answers (balanced by route and split) with the judge's rubric and imported them with `eval-calibrate --import`. Exact agreement per criterion 0.58–0.75, within one point 0.83–1.00; the judge is the stricter rater (bias −0.17 to −0.42). `unsupported_claim`: exact agreement 0.67. Evidence localization per claim was AI-assisted in unversioned support material; every score is human.
 - Campaign cost **US$0.84** in the campaign ledger (cap US$1.40 after the approved US$0.30 contingency, which was not consumed), plus **US$0.03** in the Docker volume ledger.
 
 ### Limitations
 - The deterministic journey rubric is literal: each real run brings correct paraphrases it refuses (known false refusals are listed in the task 78 review), and a new wrong paraphrase outside the registered list can pass; the independent judge is the extra control. How CA-51 is measured from v0.9.0 is open with the owner.
 - The judge does not see the web search text, so `general_web` answers get lower and less stable scores.
 - `holdout_v080` has now been seen: any later QA run must mark it as such, and no change may be guided by its result.
-- Human calibration is pending: the owner rates the CSV and imports it. With 24 answers, agreement and kappa are an indication, not proof.
+- Human calibration rests on 24 answers rated by one person: agreement and kappa are an indication, not proof, and the quadratic kappa is near zero because almost every human score is 5 (ceiling). The judge and the owner never flag the same answer as `unsupported_claim`: the owner flags generic claims inside knowledge answers, the judge flags web answers whose text was not recorded. The sample CSV truncates the evidence the judge saw in full; the full passages were provided in a companion file this time.
 - On mixed questions the Router's initial plan varies between runs (Support followed by replanning, or `knowledge_and_support` directly); both give the right answer. Replanning does not run in the operator resume graph.
 - The seed dates "yesterday" by the day it ran: a paid QA run needs `bootstrap` on the same local day.
 
