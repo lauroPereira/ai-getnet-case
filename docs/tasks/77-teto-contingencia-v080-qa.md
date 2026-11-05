@@ -34,8 +34,15 @@ Alterar 0,50, 1,00 e 1,10; mudar a estimativa, o seletor do QA ou a forma de con
 
 ## Validação
 
-Pendente (Developer, revisão, aplicação pelo Supervisor e QA).
+Developer (2026-11-05), branch `codex/v0.8.0-replan`:
+
+- **CLI** (`src/merchant_assistant/cli.py`): quarto valor `1.40` em `--campaign-cap-usd`. Exige `--campaign-estimate` revalidada pelo mesmo verificador e na mesma faixa que justificou o cap 1,10 (acima de US$1,00 e até US$1,10). Antes de abrir qualquer ledger para escrita, recusa quando o ledger da campanha ainda está em 1,10 ("apply the reviewed contingency transition") ou quando não há cap `v080-qa` persistido com sidecar ("nothing was mounted"). Depois, recusa quando o teto primário persistido (sidecar) menos o comprometido não cobre o restante da campanha. Após a transição, `1.10` deixa de montar (registro e sidecar não batem mais).
+- **Guarda** (`src/merchant_assistant/orchestration/budget.py`): `FixedBudgetGuard` aceita teto até 1,40 só para `v080-qa` e só como continuação. Acima de 1,10 exige ledger e sidecar existentes e um registro de cap já gravado; nunca insere um cap novo acima de 1,10. Os valores 0,50, 1,00 e 1,10 não mudam.
+- **Transição** (`tools/scripts/v080_contingency_transition.py`): dry-run por padrão (somente leitura); `--apply` exige `--primary`, `--campaign` e `--audit-dir` novo. Faz backup SQLite verificado e dos bytes dos sidecars, confere zero reservas e nenhum processo do projeto (`merchant_assistant`, `merchant-assistant`, `uvicorn`), grava `prepared.json`, aplica (cap 1,10 → 1,40, sidecar da campanha 1,40, sidecar do primário 1,70 → 2,00, preservando o terminador de linha de cada sidecar), confere e grava `applied.json`. É idempotente e retoma uma aplicação interrompida.
+- **Ensaio em cópia** (`.pytest_cache/t77-rehearsal-20261105/`, cópia byte a byte dos quatro arquivos de `data/runtime/`): antes, primário 1,70 com 2.733 entradas (último ID 2733), US$1,14385079 e 0 reservas; campanha 1,10 com 1.117 entradas (último ID 1117), US$0,58164655 e 0 reservas. Depois, 2,00 e 1,40, com entradas, últimos IDs, comprometidos e SHA-256 lógico iguais (primário `845ee88e…6181`, campanha `9fae30f5…e100`). Folga após a transição: primário US$0,85614921 ≥ campanha US$0,81835345. A segunda execução retornou `already_applied` sem escrever. Com a cópia, a CLI aceitou 1,40 (estimativa verificada US$1,03174096, restante combinado US$0,81835345) e recusou 1,10. Os ledgers reais conferem por SHA-256 com os valores anteriores à cópia. **Não aplicado nos ledgers reais.**
+- `tests/unit/test_t77_contingency_cap.py` (22 testes); regressão de orçamento e história da v0.8.0 (`test_budget_and_router`, `test_v080_story`, `test_campaign`): 51 passed. Suíte estrita: ver a passagem em `docs/evidence/v080-developer.md`.
+- Pendente: revisão independente, aplicação pelo Supervisor e QA.
 
 ## Status
 
-pendente
+implementada; aguarda revisão e aplicação pelo Supervisor

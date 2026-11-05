@@ -17,6 +17,8 @@ from pathlib import Path
 ABSOLUTE_BUDGET_LIMIT_USD = 5.0  # project-wide ceiling for every paid call; no setting or ledger may exceed it
 CAMPAIGN_CAP_LIMIT_USD = 0.50  # default ceiling for fixed QA campaigns; v0.8.0 has a measured one-time exception
 V080_CAMPAIGN_CAP_LIMIT_USD = 1.10  # approved one-time ceiling when the measured v080-qa estimate exceeds USD 1.00
+# Contingency approved on 2026-11-05 (task 77): continues the v080-qa campaign already mounted; never mounts a new one.
+V080_CAMPAIGN_CONTINGENCY_LIMIT_USD = 1.40
 
 LEDGER_SCHEMA = """
 CREATE TABLE IF NOT EXISTS ledger (
@@ -175,12 +177,15 @@ class FixedBudgetGuard:
     ) -> None:
         if (
             not math.isfinite(cap_ceiling_usd)
-            or not CAMPAIGN_CAP_LIMIT_USD <= cap_ceiling_usd <= V080_CAMPAIGN_CAP_LIMIT_USD
+            or not CAMPAIGN_CAP_LIMIT_USD <= cap_ceiling_usd <= V080_CAMPAIGN_CONTINGENCY_LIMIT_USD
             or (cap_ceiling_usd > CAMPAIGN_CAP_LIMIT_USD and cap_id != "v080-qa")
             or not math.isfinite(limit_usd)
             or not 0 < limit_usd <= cap_ceiling_usd
         ):
             raise ValueError(f"QA campaign cap must be greater than zero and no more than USD {cap_ceiling_usd:.2f}.")
+        continuation_only = limit_usd > V080_CAMPAIGN_CAP_LIMIT_USD
+        if continuation_only and not (Path(path).is_file() and Path(f"{path}.limit").is_file()):
+            raise ValueError("A QA campaign cap above USD 1.10 only continues an existing campaign ledger.")
         self.guard = BudgetGuard(path, limit_usd)
         conn = self.guard._conn()
         try:
@@ -194,6 +199,9 @@ class FixedBudgetGuard:
                 conn.execute("ROLLBACK")
                 raise ValueError("The persistent QA cap is already assigned to a different campaign.")
             row = conn.execute("SELECT limit_usd FROM fixed_budget_cap WHERE cap_id=?", (cap_id,)).fetchone()
+            if row is None and continuation_only:
+                conn.execute("ROLLBACK")
+                raise ValueError("A QA campaign cap above USD 1.10 only continues an existing campaign cap.")
             if row is None:
                 conn.execute(
                     "INSERT INTO fixed_budget_cap VALUES(?,?,?)",

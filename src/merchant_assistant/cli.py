@@ -28,6 +28,7 @@ V080_QA_CAMPAIGN = "v080-qa"
 V080_QA_CAP_USD = 0.50
 V080_QA_MAX_CAP_USD = 1.00
 V080_QA_EXCEPTIONAL_CAP_USD = 1.10
+V080_QA_CONTINGENCY_CAP_USD = 1.40  # 2026-11-05 contingency (task 77): continues the mounted v080-qa campaign only
 V080_HOLDOUT_CASE_COUNT = 25  # sealed 72a metadata; estimate uses the count without opening the holdout JSONL
 
 
@@ -113,8 +114,22 @@ def _evaluation_budget_guard(
                 "above USD 1.00 and at most USD 1.10."
             )
         cap_ceiling_usd = V080_QA_EXCEPTIONAL_CAP_USD
+    elif campaign_cap_usd == V080_QA_CONTINGENCY_CAP_USD:
+        if estimate_report is None:
+            raise SystemExit("eval: a USD 1.40 v080-qa cap requires --campaign-estimate from the measured cost report.")
+        estimate = _verified_v080_campaign_estimate(Path(estimate_report))
+        if (
+            isinstance(estimate, bool)
+            or not isinstance(estimate, (int, float))
+            or not 1.00 < estimate <= V080_QA_EXCEPTIONAL_CAP_USD
+        ):
+            raise SystemExit(
+                "eval: USD 1.40 continues only the v080-qa campaign whose verified estimate is "
+                "above USD 1.00 and at most USD 1.10."
+            )
+        cap_ceiling_usd = V080_QA_CONTINGENCY_CAP_USD
     else:
-        raise SystemExit("eval: --campaign-cap-usd must be 0.50, 1.00 or 1.10.")
+        raise SystemExit("eval: --campaign-cap-usd must be 0.50, 1.00, 1.10 or 1.40.")
 
     from merchant_assistant.orchestration.budget import (
         CombinedBudgetGuard,
@@ -124,8 +139,19 @@ def _evaluation_budget_guard(
     budget_dir = _evaluation_budget_runtime_path(settings)
     from merchant_assistant.orchestration.budget import BudgetGuard
 
-    primary = BudgetGuard(budget_dir / "budget.sqlite3", settings.budget_limit_usd)
     campaign_path = budget_dir / f"budget-{V080_QA_CAMPAIGN}.sqlite3"
+    if campaign_cap_usd == V080_QA_CONTINGENCY_CAP_USD:  # checked before any ledger is opened for writing
+        if _has_persisted_v080_cap(campaign_path, V080_QA_EXCEPTIONAL_CAP_USD):
+            raise SystemExit(
+                "eval: the v080-qa campaign is still fixed at USD 1.10; apply the reviewed contingency "
+                "transition before using USD 1.40."
+            )
+        if not _has_persisted_v080_cap(campaign_path, V080_QA_CONTINGENCY_CAP_USD):
+            raise SystemExit(
+                "eval: USD 1.40 only continues the v080-qa campaign already mounted; no matching persisted "
+                "v080-qa cap and ceiling sidecar were found, so nothing was mounted."
+            )
+    primary = BudgetGuard(budget_dir / "budget.sqlite3", settings.budget_limit_usd)
     if campaign_cap_usd == V080_QA_EXCEPTIONAL_CAP_USD:
         persisted_cap_matches = _has_persisted_v080_cap(campaign_path, campaign_cap_usd)
         campaign_sidecar = Path(f"{campaign_path}.limit")
@@ -148,6 +174,13 @@ def _evaluation_budget_guard(
         cap_id=V080_QA_CAMPAIGN,
         cap_ceiling_usd=cap_ceiling_usd,
     )
+    if campaign_cap_usd == V080_QA_CONTINGENCY_CAP_USD:
+        primary_ceiling = float(Path(f"{primary.path}.limit").read_text(encoding="ascii").strip())
+        if primary_ceiling - primary.spent() + 1e-12 < campaign.remaining():
+            raise SystemExit(
+                "eval: the persisted primary ceiling does not cover the rest of the USD 1.40 v080-qa cap; "
+                "apply the reviewed contingency transition to both ledgers first."
+            )
     return CombinedBudgetGuard(primary, campaign)
 
 
@@ -1107,15 +1140,18 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--campaign-cap-usd",
         type=float,
-        choices=[V080_QA_CAP_USD, V080_QA_MAX_CAP_USD, V080_QA_EXCEPTIONAL_CAP_USD],
+        choices=[V080_QA_CAP_USD, V080_QA_MAX_CAP_USD, V080_QA_EXCEPTIONAL_CAP_USD, V080_QA_CONTINGENCY_CAP_USD],
         default=V080_QA_CAP_USD,
         help=(
             "Fixed cap for v080-qa (USD 1.00 requires a verified estimate above USD 0.50; "
-            "USD 1.10 requires one above USD 1.00; both require --campaign-estimate)."
+            "USD 1.10 and 1.40 require one above USD 1.00; each needs --campaign-estimate). USD 1.40 only continues "
+            "the mounted campaign after the reviewed contingency transition and never mounts a new one."
         ),
     )
     p_evalx.add_argument(
-        "--campaign-estimate", default=None, help="Measured eval-estimate JSON; required for a USD 1.00 or 1.10 cap."
+        "--campaign-estimate",
+        default=None,
+        help="Measured eval-estimate JSON; required for a USD 1.00, 1.10 or 1.40 cap.",
     )
     p_evalx.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
     p_evalx.add_argument(
