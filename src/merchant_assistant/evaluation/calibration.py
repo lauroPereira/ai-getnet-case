@@ -27,8 +27,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from merchant_assistant.evaluation import evidence
-from merchant_assistant.evaluation.judge import CAMPAIGN_PRINCIPAL, CRITERIA, RUBRIC, RUBRIC_VERSION
+from merchant_assistant.evaluation import aggregate, evidence
+from merchant_assistant.evaluation.judge import (
+    CAMPAIGN_PRINCIPAL,
+    CRITERIA,
+    RUBRIC,
+    RUBRIC_VERSION,
+    TOKEN_KEYS,
+    judge_usage,
+)
 from merchant_assistant.guardrails.input import mask_sensitive
 
 DEFAULT_SAMPLE = 24  # RF-91: at least 24 answers
@@ -331,6 +338,48 @@ def read_filled(text: str) -> Filled:
     return Filled(meta, ratings, blank)
 
 
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_bytes().decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise CalibrationError(
+            f"{path.name} não está em UTF-8: salve a planilha como 'CSV UTF-8' e importe de novo."
+        ) from None
+    except OSError as exc:
+        raise CalibrationError(f"não consegui ler {path}: {type(exc).__name__}") from None
+
+
+def sample_request_ids(path: Path) -> list[str]:
+    """The `request_id` of every data row of a calibration CSV, in the order of the file (`eval --only-sample`, spec
+    v0.9.0 D1). The ratings are not read: a blank or a filled file gives the same ids."""
+    text = _read_text(path).lstrip("\ufeff")
+    found = next((match for line in text.splitlines() if (match := _HEADER.match(line))), None)
+    if found is None:
+        raise CalibrationError(f"{path.name}: não encontrei o cabeçalho com a coluna sample_id.")
+    reader = csv.reader(io.StringIO(text, newline=""), delimiter=found.group(1))
+    at: int | None = None
+    ids: list[str] = []
+    for cells in reader:
+        cells = [cell.strip() for cell in cells]
+        if not any(cells) or cells[0].startswith("#"):
+            continue
+        if at is None:
+            header = [_plain(cell) for cell in cells]
+            if "request_id" not in header:
+                raise CalibrationError(f"{path.name}: falta a coluna request_id no cabeçalho.")
+            at = header.index("request_id")
+            continue
+        value = cells[at] if at < len(cells) else ""
+        if not value:
+            raise CalibrationError(f"{path.name}, linha {reader.line_num}: request_id vazio.")
+        if value in ids:
+            raise CalibrationError(f"{path.name}, linha {reader.line_num}: request_id {value} repetido.")
+        ids.append(value)
+    if not ids:
+        raise CalibrationError(f"{path.name}: nenhuma linha de dados com request_id.")
+    return ids
+
+
 def _parse_rating(values: dict[str, str]) -> tuple[dict[str, int], bool, list[str]]:
     """The four scores and the verdict of one row, and what is wrong with them."""
     scores: dict[str, int] = {}
@@ -406,24 +455,58 @@ def _rate_row(
 # --- the judgement each rating is compared with, and the table `calibrations` ---------------------------------------
 
 
-def judgement_for(conn: sqlite3.Connection, request_id: str) -> dict | None:
-    """The first judgement (repetition 1) that the campaign wrote for this request, with its scores and verdict."""
-    row = conn.execute(
-        "SELECT evaluation_id, rubric_version, evaluator, scores, unsupported_claim FROM run_evaluations "
-        "WHERE request_id=? AND principal_id=? AND rubric=? AND state='completed' AND repetition=1 "
-        "AND scores IS NOT NULL ORDER BY created_at, evaluation_id LIMIT 1",
-        (request_id, CAMPAIGN_PRINCIPAL, RUBRIC),
-    ).fetchone()
-    if row is None:
-        return None
-    evaluator = json.loads(row["evaluator"])
+LEGACY_RUN = "legado"  # judgements written before v0.9.0 carry no execution name: together they are one execution
+
+
+def _judge_name(evaluator_json: str) -> str:
+    evaluator = json.loads(evaluator_json)
+    return f"{evaluator.get('provider')}/{evaluator.get('model')}"
+
+
+def _run_name(evaluator_json: str) -> str:
+    """The execution that wrote a judgement (`eval --name`, kept in `evaluator.run` since v0.9.0)."""
+    return json.loads(evaluator_json).get("run") or LEGACY_RUN
+
+
+def _judgement(row) -> dict:
     return {
         "evaluation_id": row["evaluation_id"],
         "rubric_version": row["rubric_version"],
-        "judge": f"{evaluator.get('provider')}/{evaluator.get('model')}",
+        "judge": _judge_name(row["evaluator"]),
+        "run": _run_name(row["evaluator"]),
         "scores": json.loads(row["scores"]),
         "unsupported_claim": bool(row["unsupported_claim"]),
     }
+
+
+def judgement_for(
+    conn: sqlite3.Connection, request_id: str, judge: str | None = None, run: str | None = None
+) -> dict | None:
+    """The first judgement (repetition 1) that the campaign wrote for this request, with its scores and verdict. With
+    `judge` (`<provider>/<model>`, spec v0.9.0 RF-108) only that judge's judgements count; without it, any judge's.
+    With `run`, only the judgements of that execution (`LEGACY_RUN` for those without a name)."""
+    rows = conn.execute(
+        "SELECT evaluation_id, rubric_version, evaluator, scores, unsupported_claim FROM run_evaluations "
+        "WHERE request_id=? AND principal_id=? AND rubric=? AND state='completed' AND repetition=1 "
+        "AND scores IS NOT NULL ORDER BY created_at, evaluation_id",
+        (request_id, CAMPAIGN_PRINCIPAL, RUBRIC),
+    )
+    for row in rows:
+        if judge is not None and _judge_name(row["evaluator"]) != judge:
+            continue
+        if run is not None and _run_name(row["evaluator"]) != run:
+            continue
+        return _judgement(row)
+    return None
+
+
+def judgement_by_id(conn: sqlite3.Connection, evaluation_id: str) -> dict | None:
+    row = conn.execute(
+        "SELECT evaluation_id, rubric_version, evaluator, scores, unsupported_claim FROM run_evaluations "
+        "WHERE evaluation_id=? AND state='completed' AND scores IS NOT NULL",
+        (evaluation_id,),
+    ).fetchone()
+    return None if row is None else _judgement(row)
 
 
 @dataclass
@@ -432,14 +515,16 @@ class Pair:
     judgement: dict
 
 
-def link(conn: sqlite3.Connection, filled: Filled) -> list[Pair]:
+def link(conn: sqlite3.Connection, filled: Filled, judge: str | None = None, run: str | None = None) -> list[Pair]:
     pairs, errors = [], []
     for rating in filled.ratings:
-        judgement = judgement_for(conn, rating.request_id)
+        judgement = judgement_for(conn, rating.request_id, judge, run)
         if judgement is None:
+            by = f" do juiz {judge}" if judge else ""
+            by += f" na execução {run!r} (repetição 1 completa)" if run else ""
             errors.append(
-                f"linha {rating.line} ({rating.sample_id}): não há julgamento da requisição {rating.request_id} em "
-                "run_evaluations deste banco. Importe no banco em que a campanha gravou os julgamentos."
+                f"linha {rating.line} ({rating.sample_id}): não há julgamento{by} da requisição {rating.request_id} "
+                "em run_evaluations deste banco. Importe no banco em que a campanha gravou os julgamentos."
             )
         else:
             pairs.append(Pair(rating, judgement))
@@ -546,6 +631,127 @@ def store(
         if row["sample_id"] not in in_file
     ]
     return Stored(created, updated, removed, outside)
+
+
+# --- a second judge against the same human ratings (spec v0.9.0 D1, RF-108, CA-56) ---------------------------------
+
+
+def original_pairs(conn: sqlite3.Connection, original: str, rater: str, ratings: list[Rating]) -> list[Pair]:
+    """The ratings of this file paired with the judgement they were linked to when the original campaign imported them.
+    The ratings must be the ones stored then, request and scores alike: the experiment reuses the human ratings, it
+    does not take new ones."""
+    errors, pairs = [], []
+    for rating in ratings:
+        row = conn.execute(
+            "SELECT request_id, evaluation_id, scores, unsupported_claim FROM calibrations "
+            "WHERE campaign=? AND sample_id=? AND rater=?",
+            (original, rating.sample_id, rater),
+        ).fetchone()
+        where = f"linha {rating.line} ({rating.sample_id})"
+        if row is None:
+            errors.append(f"{where}: a campanha original {original!r} não tem nota de {rater!r} para esta amostra.")
+            continue
+        same = (
+            row["request_id"] == rating.request_id
+            and json.loads(row["scores"]) == rating.scores
+            and bool(row["unsupported_claim"]) == rating.unsupported_claim
+        )
+        if not same:
+            errors.append(
+                f"{where}: a nota deste arquivo difere da gravada na campanha original {original!r}; o experimento "
+                "compara juízes contra as mesmas notas humanas. Nada foi alterado."
+            )
+            continue
+        judgement = judgement_by_id(conn, row["evaluation_id"])
+        if judgement is None:
+            errors.append(f"{where}: o julgamento {row['evaluation_id']} da campanha original não está no banco.")
+            continue
+        pairs.append(Pair(rating, judgement))
+    if errors:
+        raise CalibrationError(errors)
+    return pairs
+
+
+def _judge_rows(conn: sqlite3.Connection, request_ids: list[str], judge: str):
+    wanted = set(request_ids)
+    for row in conn.execute(
+        "SELECT request_id, evaluator, state, scores, unsupported_claim, cost_usd, result FROM run_evaluations "
+        "WHERE principal_id=? AND rubric=? AND rubric_version=? ORDER BY created_at, evaluation_id",
+        (CAMPAIGN_PRINCIPAL, RUBRIC, RUBRIC_VERSION),
+    ):
+        if row["request_id"] in wanted and _judge_name(row["evaluator"]) == judge:
+            yield row
+
+
+def judge_executions(conn: sqlite3.Connection, request_ids: list[str], judge: str) -> dict[str, int]:
+    """How many judgements (any state) each execution of `judge` wrote on these requests."""
+    found: dict[str, int] = {}
+    for row in _judge_rows(conn, request_ids, judge):
+        name = _run_name(row["evaluator"])
+        found[name] = found.get(name, 0) + 1
+    return dict(sorted(found.items()))
+
+
+def _listed(found: dict[str, int]) -> str:
+    return ", ".join(f"{name!r} ({count} julgamentos)" for name, count in found.items())
+
+
+def choose_run(conn: sqlite3.Connection, request_ids: list[str], judge: str, judge_run: str | None) -> str | None:
+    """The execution of the requested judge that the comparison reads (task 79 round 2): the one named, or the only
+    one there is. Two executions on the same answers (the probe and the repetitions, say) and no name is an error:
+    mixing them would change the agreement, the consistency and the cost. `None` when the judge has no judgement
+    here (the link then says which requests lack one)."""
+    found = judge_executions(conn, request_ids, judge)
+    if judge_run is not None:
+        if judge_run not in found:
+            seen = _listed(found) if found else "nenhuma"
+            raise CalibrationError(
+                f"o juiz {judge} não tem julgamento da execução {judge_run!r} sobre estas respostas. Execuções "
+                f"encontradas: {seen}."
+            )
+        return judge_run
+    if len(found) > 1:
+        raise CalibrationError(
+            f"o juiz {judge} tem mais de uma execução sobre estas respostas: {_listed(found)}. Escolha a que entra na "
+            "comparação com --judge-run <nome> (o --name do eval que a gravou); nada foi alterado."
+        )
+    return next(iter(found), None)
+
+
+def judge_runs(
+    conn: sqlite3.Connection, request_ids: list[str], judge: str, runs: Sequence[str] | None = None
+) -> dict:
+    """The judgements of `judge` (rubric judge.v3) on these requests, only those of the executions `runs` when given:
+    consistency between its repetitions over the same answer (`aggregate`), how many failed, what they cost and the
+    tokens they recorded."""
+    entries: dict[str, dict] = {}
+    cost = 0.0
+    recorded: list[dict] = []
+    for row in _judge_rows(conn, request_ids, judge):
+        if runs is not None and _run_name(row["evaluator"]) not in runs:
+            continue
+        completed = row["state"] == "completed" and row["scores"] is not None
+        record = {
+            "state": "completed" if completed else "failed",
+            "scores": json.loads(row["scores"]) if completed else {},
+            "unsupported_claim": bool(row["unsupported_claim"]) if completed else None,
+        }
+        entries.setdefault(row["request_id"], {"route": "-", "split": "-", "records": []})["records"].append(record)
+        cost += row["cost_usd"] or 0.0
+        recorded.append({"usage": json.loads(row["result"] or "{}").get("usage")})
+    block = aggregate._block(list(entries.values()))
+    judgements = sum(len(entry["records"]) for entry in entries.values())
+    return {
+        "judge": judge,
+        "runs": sorted(runs) if runs is not None else None,
+        "answers": len(entries),
+        "judgements": judgements,
+        "failed": block["failed"],
+        "cost_usd": round(cost, 6),
+        "cost_per_judgement_usd": round(cost / judgements, 6) if judgements else None,
+        "usage": judge_usage(recorded),
+        "consistency": block,
+    }
 
 
 # --- agreement ------------------------------------------------------------------------------------------------------
@@ -723,13 +929,14 @@ def render_report(
     removed: Sequence[str] = (),
     outside: Sequence[str] = (),
     now: datetime | None = None,
+    comparison: dict | None = None,
 ) -> str:
     stamp = (now or datetime.now(UTC)).isoformat(timespec="seconds")
     n = analysis["n"]
     judges = sorted({p.judgement["judge"] for p in pairs})
     rubrics = sorted({p.judgement["rubric_version"] for p in pairs})
     lines = [
-        "# Calibração humana do juiz (v0.8.0)",
+        "# Calibração humana do juiz: dois juízes (v0.9.0)" if comparison else "# Calibração humana do juiz (v0.8.0)",
         "",
         f"Gerado em {stamp}. Campanha `{_cell(meta['campaign'])}`, avaliador humano `{_cell(rater)}`, rubrica "
         f"`judge.v{', '.join(rubrics)}`, juiz {', '.join(f'`{_cell(j)}`' for j in judges)}.",
@@ -787,6 +994,8 @@ def render_report(
         ]
     else:
         lines.append("Nenhuma.")
+    if comparison:
+        lines += render_comparison(pairs, analysis, comparison)
     by_route: dict[str, int] = {}
     by_split: dict[str, int] = {}
     for p in pairs:
@@ -823,6 +1032,137 @@ def render_report(
 
 def _fmt(value: float | None) -> str:
     return "-" if value is None else f"{value:.2f}"
+
+
+def _bias(measure: dict) -> str:
+    return "-" if measure["human_mean"] is None else f"{measure['judge_mean'] - measure['human_mean']:+.2f}"
+
+
+def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> list[str]:
+    """The requested judge (A) and the judge of the original campaign (B) side by side against the same ratings, the
+    rows anyone marked as an unsupported claim, each judge's consistency between repetitions and its cost."""
+    other, runs = comparison["analysis"], comparison["runs"]
+    a, b = comparison["judge"], comparison["original_judge"]
+    a_runs = ", ".join(f"`{_cell(name)}`" for name in runs["A"]["runs"] or ["-"])
+    b_runs = ", ".join(f"`{_cell(name)}`" for name in runs["B"]["runs"] or ["-"])
+    lines = [
+        "",
+        "## Dois juízes contra as mesmas notas humanas",
+        "",
+        f"A = `{_cell(a)}` (campanha `{_cell(comparison['campaign'])}`); B = `{_cell(b)}`, o juiz da campanha original "
+        f"`{_cell(comparison['original_campaign'])}`. As {analysis['n']} notas humanas são as gravadas na campanha "
+        "original, conferidas linha a linha; não houve avaliação humana nova. A entra com o julgamento da "
+        f"repetição 1 de cada resposta na execução {a_runs}; B, com o julgamento ao qual cada nota foi ligada na "
+        f"campanha original (execução {b_runs}). Os dois julgaram a mesma evidência gravada.",
+        "",
+        "| Critério | Exata A | Exata B | ±1 A | ±1 B | Kappa A | Kappa B | Viés A | Viés B |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for criterion in CRITERIA:
+        x, y = analysis["criteria"][criterion], other["criteria"][criterion]
+        lines.append(
+            f"| {criterion} ({CRITERIA_LABELS[criterion]}) | {_share(x['exact'], None)} | {_share(y['exact'], None)} | "
+            f"{_share(x['within_one'], None)} | {_share(y['within_one'], None)} | {_kappa(x)} | {_kappa(y)} | "
+            f"{_bias(x)} | {_bias(y)} |"
+        )
+    x, y = analysis["verdict"], other["verdict"]
+    lines += [
+        f"| {VERDICT} | {_share(x['exact'], None)} | {_share(y['exact'], None)} | - | - | {_kappa(x)} | {_kappa(y)} "
+        "| - | - |",
+        "",
+        "Matriz do veredito `unsupported_claim` (humano × juiz):",
+        "",
+        "| Juiz | Ambos sim | Só humano | Só juiz | Nenhum |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for name, verdict in ((f"A `{_cell(a)}`", x), (f"B `{_cell(b)}`", y)):
+        t = verdict["table"]
+        lines.append(f"| {name} | {t['both']} | {t['human_only']} | {t['judge_only']} | {t['neither']} |")
+    original = {p.rating.sample_id: p.judgement for p in comparison["pairs"]}
+    marked = [
+        p for p in pairs if p.rating.unsupported_claim or p.judgement[VERDICT] or original[p.rating.sample_id][VERDICT]
+    ]
+    lines += ["", "Respostas que o humano ou algum juiz marcou como afirmação sem suporte:", ""]
+    if marked:
+        lines += ["| Amostra | Caso | Rota | Humano | A | B |", "| --- | --- | --- | --- | --- | --- |"]
+        lines += [
+            f"| {_cell(p.rating.sample_id)} | {_cell(p.rating.case_id or '-')} | {_cell(p.rating.route or '-')} | "
+            f"{_yes(p.rating.unsupported_claim)} | {_yes(p.judgement[VERDICT])} | "
+            f"{_yes(original[p.rating.sample_id][VERDICT])} |"
+            for p in marked
+        ]
+    else:
+        lines.append("Nenhuma.")
+    lines += [
+        "",
+        "## Julgamentos considerados",
+        "",
+        "Execuções de cada juiz que entram no relatório (o `--name` do `eval` que gravou os julgamentos) e quantos "
+        "julgamentos entram em cada bloco. Outras execuções do mesmo juiz sobre estas respostas, como a sonda, ficam "
+        "de fora.",
+        "",
+        "| Juiz | Execuções | Concordância | Consistência | Custo e tokens |",
+        "| --- | --- | --- | --- | --- |",
+        f"| A `{_cell(a)}` | {a_runs} | {analysis['n']} | {runs['A']['judgements']} | {runs['A']['judgements']} |",
+        f"| B `{_cell(b)}` | {b_runs} | {other['n']} | {runs['B']['judgements']} | {runs['B']['judgements']} |",
+    ]
+    if LEGACY_RUN in (runs["A"]["runs"] or []) + (runs["B"]["runs"] or []):
+        lines += [
+            "",
+            f"`{LEGACY_RUN}`: julgamentos gravados antes da v0.9.0, que não guardam o nome da execução; contam como "
+            "uma execução só, então podem somar mais de uma rodada do mesmo juiz.",
+        ]
+    lines += [
+        "",
+        "## Consistência de cada juiz entre repetições",
+        "",
+        "Os julgamentos `judge.v3` de cada juiz sobre estas respostas, das execuções da tabela acima. Exata: parte dos "
+        "pares de julgamentos da mesma resposta com a mesma nota; ±1: diferença de até 1 ponto. Sem pares, o juiz "
+        "julgou cada resposta uma vez só.",
+        "",
+        "| Juiz | Respostas | Julgamentos | Falhos | Critério | Exata | ±1 | Pares |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+        block = run["consistency"]
+        head = f"| {name} | {run['answers']} | {run['judgements']} | {run['failed']}"
+        for criterion in CRITERIA:
+            c = block["criteria"][criterion]
+            lines.append(
+                f"{head} | {criterion} | {aggregate._fmt(c['exact'])} | {aggregate._fmt(c['within_one'])} | "
+                f"{c['pairs']} |"
+            )
+        u = block["unsupported_claim"]
+        lines.append(f"{head} | {VERDICT} | {aggregate._fmt(u['exact'])} | - | {u['pairs']} |")
+    lines += [
+        "",
+        "## Custo por julgamento",
+        "",
+        "Custo gravado em cada julgamento (`run_evaluations.cost_usd`; um julgamento falho custa o que foi reservado "
+        "ou cobrado).",
+        "",
+        "| Juiz | Julgamentos | Falhos | Custo total (US$) | Custo por julgamento (US$) |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+        per = "-" if run["cost_per_judgement_usd"] is None else f"{run['cost_per_judgement_usd']:.6f}"
+        lines.append(f"| {name} | {run['judgements']} | {run['failed']} | {run['cost_usd']:.6f} | {per} |")
+    lines += [
+        "",
+        "Tokens gravados em cada julgamento (desde a v0.9.0; os anteriores não os guardam), total / média por "
+        "julgamento. A entrada inclui o cache lido e o criado; a saída inclui o pensamento.",
+        "",
+        "| Juiz | Julgamentos com tokens | Entrada | Cache lido | Cache criado | Saída |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+        usage = run["usage"]
+        if usage is None:
+            lines.append(f"| {name} | 0 | - | - | - | - |")
+            continue
+        cells = " | ".join(f"{usage['total'][key]} / {usage['mean'][key]}" for key in TOKEN_KEYS)
+        lines.append(f"| {name} | {usage['judgements']} | {cells} |")
+    return lines
 
 
 def _import_notes(removed: list[str], outside: list[str]) -> list[str]:
@@ -870,20 +1210,41 @@ def make_sample(
 
 
 def import_filled(
-    conn: sqlite3.Connection, path: Path, *, rater: str = "owner", campaign: str | None = None, now=None
+    conn: sqlite3.Connection,
+    path: Path,
+    *,
+    rater: str = "owner",
+    campaign: str | None = None,
+    now=None,
+    judge: str | None = None,
+    judge_run: str | None = None,
 ) -> dict:
     """`eval-calibrate --import`: validates the file, stores the ratings and measures the agreement. Nothing is
-    written unless every line is valid and has its judgement in `run_evaluations`."""
-    try:
-        text = path.read_bytes().decode("utf-8-sig")
-    except UnicodeDecodeError:
-        raise CalibrationError(
-            f"{path.name} não está em UTF-8: salve a planilha como 'CSV UTF-8' e importe de novo."
-        ) from None
-    except OSError as exc:
-        raise CalibrationError(f"não consegui ler {path}: {type(exc).__name__}") from None
-    filled = read_filled(text)
+    written unless every line is valid and has its judgement in `run_evaluations`.
+
+    With `judge` (`<provider>/<model>`, spec v0.9.0 RF-108) the ratings are compared with that judge's judgements and
+    stored under `campaign`, which must differ from the campaign of the file (the original one keeps its link to its
+    own judge). The ratings must equal those the original campaign stored; the report then shows that campaign's judge
+    beside the requested one, against the same ratings. `judge_run` names the execution of the requested judge to
+    read (required when it has more than one on these answers); the original judge is read in the executions of the
+    judgements its ratings are linked to."""
+    filled = read_filled(_read_text(path))
     meta = dict(filled.meta)
+    original = meta.get("campaign")
+    if judge_run is not None and judge is None:
+        raise CalibrationError("--judge-run só vale com --judge: escolhe a execução do juiz comparado.")
+    if judge is not None:
+        if judge.count("/") != 1 or not all(judge.split("/")):
+            raise CalibrationError(f"--judge precisa ser <provedor>/<modelo>, recebi {judge!r}.")
+        if not original:
+            raise CalibrationError(
+                "com --judge, o arquivo precisa da linha 'amostra:' com a campanha original (a das notas humanas)."
+            )
+        if not campaign or _token(campaign) == original:
+            raise CalibrationError(
+                f"com --judge, informe --campaign com um nome novo (diferente de {original!r}): a campanha original "
+                "continua ligada ao seu juiz."
+            )
     if campaign:
         meta["campaign"] = _token(campaign)
     if not meta.get("campaign"):
@@ -898,11 +1259,32 @@ def import_filled(
     rater = rater.strip()
     if not rater:
         raise CalibrationError("o avaliador (--rater) não pode ficar vazio.")
-    pairs = link(conn, filled)
+    before = original_pairs(conn, original, rater, filled.ratings) if judge is not None else None
+    request_ids = [rating.request_id for rating in filled.ratings]
+    run = choose_run(conn, request_ids, judge, judge_run) if judge is not None else None
+    pairs = link(conn, filled, judge, run)
     check_same_sample(conn, meta["campaign"], rater, pairs)
     stored = store(conn, meta["campaign"], rater, pairs, filled.blank)
     seed = int(meta["seed"]) if str(meta.get("seed", "")).lstrip("-").isdigit() else DEFAULT_SEED
     analysis = analyze(pairs, seed)
+    comparison = None
+    if before is not None:
+        original_judge = ", ".join(sorted({p.judgement["judge"] for p in before}))
+        original_runs = sorted({p.judgement["run"] for p in before})
+        comparison = {
+            "judge": judge,
+            "judge_run": run,
+            "campaign": meta["campaign"],
+            "original_judge": original_judge,
+            "original_runs": original_runs,
+            "original_campaign": original,
+            "pairs": before,
+            "analysis": analyze(before, seed),
+            "runs": {
+                "A": judge_runs(conn, request_ids, judge, [run]),
+                "B": judge_runs(conn, request_ids, original_judge, original_runs),
+            },
+        }
     return {
         "meta": meta,
         "rater": rater,
@@ -911,6 +1293,7 @@ def import_filled(
         "removed": stored.removed,
         "outside": stored.outside,
         "analysis": analysis,
+        "comparison": comparison,
         "report": render_report(
             meta,
             rater,
@@ -920,5 +1303,6 @@ def import_filled(
             removed=stored.removed,
             outside=stored.outside,
             now=now,
+            comparison=comparison,
         ),
     }

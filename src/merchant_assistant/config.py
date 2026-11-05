@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from merchant_assistant.orchestration.budget import ABSOLUTE_BUDGET_LIMIT_USD
@@ -24,6 +25,7 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
     typesafe_api_key: SecretStr | None = None
     deepseek_api_key: SecretStr | None = None
+    anthropic_api_key: SecretStr | None = None  # v0.9.0: only the campaign judge (JUDGE_PROVIDER=anthropic)
     api_demo_customer_id: str = "cliente1988"
     # v0.7.0 identity (ADR 0017, spec v0.7.0 D1, D2, D5, D12): JWT issued by the assistant.
     jwt_issuer: str = "http://127.0.0.1:8000"
@@ -65,6 +67,12 @@ class Settings(BaseSettings):
 
     retrieval_top_k: int = 6
     retrieval_min_score: float = 0.30
+    # v0.9.0 (task 80, D7): `hybrid` fuses dense and BM25 by RRF. Default `hybrid` since task 82: by the D7 rule it
+    # beat `dense` on nDCG@6 in dev (0.974 > 0.868) and in the sealed holdout (0.921 > 0.880). `dense` is v0.8.0.
+    retrieval_mode: Literal["dense", "hybrid"] = "hybrid"
+    # v0.9.0 (task 81, D7): the agent model reorders the first 12 results of the hybrid fusion (prompt rerank.v1).
+    # Off until it improves nDCG@6 in dev and in the retrieval holdout; it requires RETRIEVAL_MODE=hybrid.
+    rerank: Literal["on", "off"] = "off"
 
     budget_limit_usd: float = Field(default=1.00, ge=0, le=ABSOLUTE_BUDGET_LIMIT_USD, allow_inf_nan=False)
     max_request_cost_usd: float = 0.05
@@ -100,6 +108,12 @@ class Settings(BaseSettings):
     def _empty_is_unset(cls, value):
         """`KEY=` in .env (as in .env.example) means "not set": never Path(".") or an empty URL."""
         return None if isinstance(value, str) and not value.strip() else value
+
+    @model_validator(mode="after")
+    def _rerank_needs_hybrid(self):
+        if self.rerank == "on" and self.retrieval_mode != "hybrid":
+            raise ValueError("RERANK=on requires RETRIEVAL_MODE=hybrid (the reranker runs after the fusion).")
+        return self
 
     @property
     def webhook_waits(self) -> tuple[float, ...]:

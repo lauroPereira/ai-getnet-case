@@ -30,7 +30,10 @@ MAX_OUTPUT_TOKENS = 400  # four reasons of at most 25 words and the scores take 
 CAMPAIGN_PRINCIPAL = "cli:eval"
 MAX_ERROR_CHARS = 160  # a provider error is stored as its class and a short masked message, never as the raw body
 AGENT_PROVIDER = "openai"  # the system under evaluation is built with the OpenAI client (main.build_orchestrator)
-JUDGE_PROVIDERS = ("openai", "deepseek")  # providers that can return the structured judgement
+JUDGE_PROVIDERS = ("openai", "deepseek", "anthropic")  # providers that can return the structured judgement
+# v0.9.0 D1: a Claude judge runs with its default (adaptive) thinking, which counts against max_tokens; 400 would cut
+# the judgement short. The other judges keep 400.
+MAX_OUTPUT_TOKENS_BY_PROVIDER = {"anthropic": 2000}
 
 
 class JudgeRefused(RuntimeError):
@@ -75,14 +78,49 @@ def short_error(exc: Exception) -> str:
     return f"{type(exc).__name__}: {message}" if message else type(exc).__name__
 
 
-def judge_spec_v3(prompt: Prompt, data: dict) -> CallSpec:
+def max_output_tokens_for(provider: str) -> int:
+    return MAX_OUTPUT_TOKENS_BY_PROVIDER.get(provider, MAX_OUTPUT_TOKENS)
+
+
+def judge_spec_v3(prompt: Prompt, data: dict, max_output_tokens: int = MAX_OUTPUT_TOKENS) -> CallSpec:
     return CallSpec(
         agent="judge",
         instructions=prompt.render(),
         effort="none",
-        max_output_tokens=MAX_OUTPUT_TOKENS,
+        max_output_tokens=max_output_tokens,
         input=json.dumps(data, ensure_ascii=False),
     )
+
+
+def tokens(usage) -> dict | None:
+    """The tokens of one judgement (spec v0.9.0, task 79 round 2): the input is the whole input, of which the cache
+    reads and the cache writes are parts; the output includes the thinking. `None` when the provider's usage is unknown
+    (a network failure: the reservation stands as the cost)."""
+    if usage is None:
+        return None
+    return {
+        "input_tokens": usage.input_tokens,
+        "cache_read_tokens": usage.cached_tokens,
+        "cache_creation_tokens": usage.cache_creation_tokens,
+        "output_tokens": usage.output_tokens,
+    }
+
+
+TOKEN_KEYS = ("input_tokens", "cache_read_tokens", "cache_creation_tokens", "output_tokens")
+
+
+def judge_usage(records: list[dict]) -> dict | None:
+    """Tokens of the judgements that recorded them (spec v0.9.0, task 79 round 2): total and mean per judgement. A
+    failed judgement the provider billed counts; one whose usage is unknown (network failure) does not."""
+    known = [record["usage"] for record in records if record.get("usage")]
+    if not known:
+        return None
+    total = {key: sum(int(usage.get(key) or 0) for usage in known) for key in TOKEN_KEYS}
+    return {
+        "judgements": len(known),
+        "total": total,
+        "mean": {key: round(value / len(known), 1) for key, value in total.items()},
+    }
 
 
 def _now() -> str:
@@ -100,8 +138,12 @@ class Judge:
     prompt: Prompt
     meter: Meter
     independence: str
+    max_output_tokens: int = MAX_OUTPUT_TOKENS
 
     def config(self) -> dict:
+        parameters: dict = {"max_output_tokens": self.max_output_tokens, "effort": "none"}
+        if self.provider == "anthropic":  # D3: thinking and effort are left to the model's defaults
+            parameters = {"max_output_tokens": self.max_output_tokens, "effort": "default", "thinking": "default"}
         return {
             "provider": self.provider,
             "model": self.model,
@@ -109,7 +151,7 @@ class Judge:
             "rubric_version": self.prompt.version,
             "prompt": self.prompt.ref,
             "independence": self.independence,
-            "parameters": {"max_output_tokens": MAX_OUTPUT_TOKENS, "effort": "none"},
+            "parameters": parameters,
         }
 
     def evaluate(self, data: dict, *, repetition: int = 1) -> dict:
@@ -122,7 +164,8 @@ class Judge:
         }
         spent_before = getattr(self.meter, "cost_usd", 0.0)
         try:
-            result = self.llm.parse(judge_spec_v3(self.prompt, data), JudgeScoreV3, self.meter)
+            spec = judge_spec_v3(self.prompt, data, self.max_output_tokens)
+            result = self.llm.parse(spec, JudgeScoreV3, self.meter)
         except Exception as exc:  # provider, validation or budget failure: recorded, never raised
             return record | {
                 "state": "failed",
@@ -131,6 +174,7 @@ class Judge:
                 "reasons": {},
                 "unsupported_claim": None,
                 "cost_usd": round(getattr(self.meter, "cost_usd", 0.0) - spent_before, 8),
+                "usage": tokens(getattr(exc, "usage", None)),  # a refusal or a cut answer was billed all the same
                 "error": short_error(exc),
             }
         score = result.value
@@ -141,6 +185,7 @@ class Judge:
             "reasons": {criterion: getattr(score, f"{criterion}_reason") for criterion in CRITERIA},
             "unsupported_claim": score.unsupported_claim,
             "cost_usd": round(getattr(self.meter, "cost_usd", 0.0) - spent_before, 8),
+            "usage": tokens(result.usage),
             "error": None,
         }
 
@@ -163,12 +208,12 @@ def check_independence(agent: tuple[str, str], judge: tuple[str, str]) -> str:
 def _has_key(settings, provider: str) -> bool:
     if provider == "openai":
         return settings.has_openai
-    key = settings.deepseek_api_key
+    key = settings.anthropic_api_key if provider == "anthropic" else settings.deepseek_api_key
     return bool(key and key.get_secret_value())
 
 
 def default_factory(settings) -> Callable[[str, str], LLM]:
-    """The model clients the project already has (OpenAI and, for the model profiles, DeepSeek)."""
+    """The model clients the project already has (OpenAI, DeepSeek and, for the judge only, Anthropic)."""
     from merchant_assistant.main import model_factory
 
     return model_factory(settings)
@@ -233,15 +278,28 @@ def resolve_judge(
         raise JudgeRefused(
             f"The judge {setup.provider}/{setup.model} is not available: {exc}. No call was made."
         ) from exc
-    return Judge(llm, setup.provider, setup.model, setup.prompt, meter or NullMeter(), setup.independence)
+    return Judge(
+        llm,
+        setup.provider,
+        setup.model,
+        setup.prompt,
+        meter or NullMeter(),
+        setup.independence,
+        max_output_tokens_for(setup.provider),
+    )
 
 
 # --- persistence ----------------------------------------------------------------------------------------------------
 
 
-def save_evaluation(conn, *, request_id: str, judge: Judge, record: dict, data: dict) -> None:
+def save_evaluation(
+    conn, *, request_id: str, judge: Judge, record: dict, data: dict, run: str | None = None
+) -> None:
     """Writes one judgement into `run_evaluations` (the columns 0011 added hold the queryable parts; `result` holds
-    the whole judgement). Campaign judgements belong to the principal `cli:eval`, so no API session ever lists them."""
+    the whole judgement). Campaign judgements belong to the principal `cli:eval`, so no API session ever lists them.
+    `run` is the name of the execution that wrote it (the report name of `eval`, spec v0.9.0 D1), kept in `evaluator`
+    so a comparison can tell the probe from the repetitions; `result` also keeps the judgement's tokens. No column is
+    added for either."""
     completed = record["state"] == "completed"
     # `result` carries everything the columns of 0011 hold (scores, verdict, repetition), so a rollback and a new
     # upgrade rebuild them from it.
@@ -252,7 +310,9 @@ def save_evaluation(conn, *, request_id: str, judge: Judge, record: dict, data: 
             **{f"{criterion}_reason": text for criterion, text in record["reasons"].items()},
             "unsupported_claim": record["unsupported_claim"],
         }
-    evaluator = judge.config() | {"model_used": record["model_used"]}
+    if record.get("usage"):
+        result["usage"] = record["usage"]
+    evaluator = judge.config() | {"model_used": record["model_used"]} | ({"run": run} if run else {})
     conn.execute(
         "INSERT INTO run_evaluations (evaluation_id,request_id,principal_id,method,rubric,rubric_version,evaluator,"
         "config_digest,result,evidence,critical_failures,cost_usd,state,error,created_at,scores,repetition,"

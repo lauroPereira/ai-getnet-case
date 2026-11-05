@@ -4,14 +4,18 @@
   "sources": {
     "openai": "https://developers.openai.com/api/docs/pricing",
     "typesafe": "https://docs.typesafe.ai/models",
-    "deepseek": "https://api-docs.deepseek.com/quick_start/pricing/"
+    "deepseek": "https://api-docs.deepseek.com/quick_start/pricing/",
+    "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   "verified_at": "2026-10-27",
   "models": {
     "gpt-6-luna": {"provider": "openai", "input_per_mtok": 0.10, "cached_input_per_mtok": 0.01, "output_per_mtok": 0.50, "tier": "standard", "note": "Modelo de raciocínio; tokens de raciocínio são cobrados como saída. Acima de 272k tokens de entrada o preço dobra."},
     "text-embedding-3-small": {"provider": "openai", "input_per_mtok": 0.02, "output_per_mtok": 0.0},
     "jev-1.14.0": {"provider": "typesafe", "input_per_mtok": 0.042, "output_per_mtok": 0.0},
-    "deepseek-flash": {"provider": "deepseek", "input_per_mtok": 0.30, "cached_input_per_mtok": 0.006, "output_per_mtok": 1.20, "tier": "peak-conservative", "model_version": "DeepSeek-V4.1-Flash-1017"}
+    "deepseek-flash": {"provider": "deepseek", "input_per_mtok": 0.30, "cached_input_per_mtok": 0.006, "output_per_mtok": 1.20, "tier": "peak-conservative", "model_version": "DeepSeek-V4.1-Flash-1017"},
+    "claude-opus-5-5": {"provider": "anthropic", "input_per_mtok": 4.00, "cached_input_per_mtok": 0.20, "cache_creation_input_per_mtok": 5.00, "output_per_mtok": 20.00, "tier": "standard", "model_version": "claude-opus-5-5", "verified_at": "2026-11-05", "note": "Pensamento cobrado como saída. Cache criado a 1,25x a entrada (5 minutos). Só juiz na v0.9.0."},
+    "claude-sonnet-5-5": {"provider": "anthropic", "input_per_mtok": 2.00, "cached_input_per_mtok": 0.20, "cache_creation_input_per_mtok": 2.50, "output_per_mtok": 10.00, "tier": "standard", "model_version": "claude-sonnet-5-5", "verified_at": "2026-11-05", "note": "Pensamento cobrado como saída. Cache criado a 1,25x a entrada (5 minutos). Referência para o juiz."},
+    "claude-haiku-5-5": {"provider": "anthropic", "input_per_mtok": 0.10, "cached_input_per_mtok": 0.01, "cache_creation_input_per_mtok": 0.125, "output_per_mtok": 0.50, "tier": "standard", "model_version": "claude-haiku-5-5", "verified_at": "2026-11-05", "note": "Pensamento cobrado como saída. Cache criado a 1,25x a entrada (5 minutos). Referência para o juiz."}
   },
   "tools": {
     "web_search": {"provider": "openai", "per_call": 0.01, "note": "US$10 por mil chamadas, mais os tokens do conteúdo pesquisado cobrados como entrada do modelo."}

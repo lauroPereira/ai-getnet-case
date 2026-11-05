@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from merchant_assistant.api.schemas import MessageRequest
 from merchant_assistant.evaluation import aggregate, evidence
-from merchant_assistant.evaluation.judge import CRITERIA, Judge, save_evaluation
+from merchant_assistant.evaluation.judge import CRITERIA, Judge, judge_usage, save_evaluation
 from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import CallSpec, Usage
@@ -381,12 +381,14 @@ def _records(row: dict) -> list[dict]:
     return row.get("judge_runs") or ([row["judge"]] if row.get("judge") else [])
 
 
-def persist_judgements(conn, judge: Judge, rows: list[dict]) -> int:
-    """Writes every judgement of the rows into `run_evaluations`; returns how many."""
+def persist_judgements(conn, judge: Judge, rows: list[dict], run: str | None = None) -> int:
+    """Writes every judgement of the rows into `run_evaluations`, under the execution name `run`; returns how many."""
     count = 0
     for row in rows:
         for record in _records(row):
-            save_evaluation(conn, request_id=row["request_id"], judge=judge, record=record, data=row["judge_input"])
+            save_evaluation(
+                conn, request_id=row["request_id"], judge=judge, record=record, data=row["judge_input"], run=run
+            )
             count += 1
     return count
 
@@ -435,7 +437,22 @@ def summarize(rows: list[dict]) -> dict:
     judged = [record for r in rows for record in _records(r)]
     if judged:
         summary["judge_cost_usd"] = round(sum(record.get("cost_usd") or 0 for record in judged), 5)
+    usage = judge_usage(judged)
+    if usage:
+        summary["judge_usage"] = usage
     return summary
+
+
+def usage_line(usage: dict, cost_usd: float | None = None) -> str:
+    total, mean = usage["total"], usage["mean"]
+    cost = "" if cost_usd is None else f" Custo do juiz: US$ {cost_usd}."
+    return (
+        f"Tokens do juiz ({usage['judgements']} julgamentos com uso registrado; total / média por julgamento): "
+        f"entrada {total['input_tokens']} / {mean['input_tokens']}, da qual cache lido "
+        f"{total['cache_read_tokens']} / {mean['cache_read_tokens']} e cache criado {total['cache_creation_tokens']} "
+        f"/ {mean['cache_creation_tokens']}; saída (com o pensamento) {total['output_tokens']} / "
+        f"{mean['output_tokens']}.{cost}"
+    )
 
 
 CRITERIA_LABELS = {
@@ -459,6 +476,20 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         "",
         f"Gerado em {summary['generated_at']}. Configuração: `{json.dumps(config, ensure_ascii=False)}`.",
         "",
+    ]
+    if "selected_answers" in config:  # eval --judge-repeat with --only-sample or --limit (spec v0.9.0 D1)
+        filtered = (
+            f", filtradas pelos {config['only_sample_ids']} request_id de `{config['only_sample']}`"
+            if "only_sample" in config
+            else ""
+        )
+        limited = f", limitadas a {config['limit']}" if "limit" in config else ""
+        lines += [
+            f"Respostas julgadas: {config['selected_answers']} de {config['recorded_answers']} gravadas"
+            f"{filtered}{limited}.",
+            "",
+        ]
+    lines += [
         "## Resumo",
         "",
         "| Recorte | n | Aprovados | Rota | Status | Ferramentas | Valores | Conteúdo | Fontes | Sem violação | "
@@ -484,6 +515,8 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
             f"{o['unsupported_claim_rate']} das respostas julgadas. "
             f"Custo do juiz: US$ {summary.get('judge_cost_usd', 0)}.",
         ]
+    if "judge_usage" in summary:
+        lines += ["", usage_line(summary["judge_usage"], summary.get("judge_cost_usd", 0))]
     if o.get("judge_failed"):
         lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
     if "judge_web_note" in o:

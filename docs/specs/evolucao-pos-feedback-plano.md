@@ -209,6 +209,8 @@ Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão d
 
 **v0.9.0 — Retrieval híbrido** (Time A, em paralelo com a v0.10.0)
 
+> **Reescopo de 2026-11-05 (responsável):** a v0.9.0 passa a ser "Juiz Claude e retrieval híbrido", um time só, tarefas 79 a 82, spec em [juiz-retrieval-v090.md](juiz-retrieval-v090.md). O experimento do juiz (`claude-opus-5-5` sobre a amostra de calibração da v0.8.0) entra antes do retrieval; o provedor Anthropic nos agentes fica fora da entrega de 2026-11-06. Os itens 74 a 76 abaixo correspondem a 80 e 81; v0.10.0 passa a 83 a 85 e v1.0.0 a 86 a 88.
+
 74. BM25 + RRF, `RETRIEVAL_MODE`, persistência por hash, `search(mode)`.
 75. Reranker configurável; holdout de retrieval; `eval-retrieval --mode --split`; nDCG; decisão registrada.
 76. Regressão, candidato, revisão, QA real, evidência, ADR 0020, tag.

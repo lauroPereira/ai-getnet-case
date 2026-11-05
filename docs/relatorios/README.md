@@ -13,3 +13,4 @@ Cada arquivo se chama `AAAA-MM-DD-<período>.md`, com a data de fim do bloco. O 
 | [2026-11-04-retomada-codex.md](2026-11-04-retomada-codex.md) | 04/11/2026, a partir das 09h09: retomada da v0.8.0 no Codex |
 | [Fechamento de 04/11](2026-11-04-fechamento-supervisor.md) | 04/11/2026 até 00h17 de 05/11: QA real r3, correções T74 e estado local no encerramento |
 | [2026-11-05-madrugada-v080.md](2026-11-05-madrugada-v080.md) | 05/11/2026, 00h18 às 08h30: v0.8.0 com QA técnico apto (r4 a r7, T75 a T78, holdout e CSV); calibração e merge pendentes |
+| [2026-11-05-noite-v090.md](2026-11-05-noite-v090.md) | 05/11/2026, 13h30 às 21h00: v0.8.0 fechada (calibração, merge, tags) e v0.9.0 inteira (juiz Opus × DeepSeek por regra prévia, retrieval híbrido por holdout lacrado, quick wins do README); merge, push e tag pendentes |

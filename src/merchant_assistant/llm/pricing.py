@@ -33,11 +33,25 @@ def web_search_price() -> float:
     return prices()["tools"]["web_search"]["per_call"]
 
 
+ANTHROPIC_CACHE_WRITE_FACTOR = 1.25  # Anthropic bills a 5-minute cache write at 1.25x the input price
+
+
+def cache_creation_price(p: dict) -> float:
+    """Price per million tokens written to the cache: the table's own value, else 1.25x the input for Anthropic and
+    the input price for the others (they do not report cache writes)."""
+    if "cache_creation_input_per_mtok" in p:
+        return p["cache_creation_input_per_mtok"]
+    factor = ANTHROPIC_CACHE_WRITE_FACTOR if p.get("provider") == "anthropic" else 1.0
+    return p["input_per_mtok"] * factor
+
+
 def cost(model: str, usage: Usage) -> float:
+    """`usage.input_tokens` is the whole input; the cached and the cache-written parts are priced apart."""
     p = model_price(model)
-    uncached = max(usage.input_tokens - usage.cached_tokens, 0)
+    uncached = max(usage.input_tokens - usage.cached_tokens - usage.cache_creation_tokens, 0)
     total = uncached * p["input_per_mtok"] / 1e6
     total += usage.cached_tokens * p.get("cached_input_per_mtok", p["input_per_mtok"]) / 1e6
+    total += usage.cache_creation_tokens * cache_creation_price(p) / 1e6
     total += usage.output_tokens * p["output_per_mtok"] / 1e6
     total += usage.web_search_calls * web_search_price() if not model.startswith("scripted") else 0.0
     return round(total, 8)

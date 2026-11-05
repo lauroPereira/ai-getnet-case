@@ -7,23 +7,33 @@ import json
 import threading
 import uuid
 import warnings
+import weakref
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 from qdrant_client import QdrantClient, models
 
+from merchant_assistant.rag import bm25
 from merchant_assistant.rag.chunk import Chunk
 from merchant_assistant.rag.embed import Embedder
 
 _CLIENT_LOCKS: dict[int, threading.Lock] = {}
 _CLIENT_LOCKS_GUARD = threading.Lock()
+# v0.9.0 (task 80): BM25 built per (client, collection). Weak keys: a closed client does not keep, or lend, its cache.
+_BM25_CACHE: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+_BM25_GUARD = threading.Lock()
+_BM25_BUILD_LOCKS: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()  # one builder per (client, collection)
+
+RETRIEVAL_MODES = ("dense", "hybrid")
+RRF_K = 60  # reciprocal rank fusion constant (plan, technical decision 17)
 
 
 @dataclass(frozen=True)
 class Hit:
     score: float
     payload: dict
+    origin: str = "dense"  # which list found it: dense, bm25 or both (hybrid trace)
 
     @property
     def chunk_id(self) -> str:
@@ -51,9 +61,43 @@ def point_digest(chunk_ids) -> str:
     return hashlib.sha256("\n".join(sorted(chunk_ids)).encode()).hexdigest()
 
 
+def rrf(dense: list[Hit], lexical: list[tuple[float, dict]], k: int) -> list[Hit]:
+    """Reciprocal rank fusion of two rankings; on equal score the better dense rank wins, then the BM25 rank."""
+    absent = len(dense) + len(lexical) + 1
+    fused: dict[str, dict] = {}
+    for rank, hit in enumerate(dense, start=1):
+        fused[hit.chunk_id] = {"score": 1 / (RRF_K + rank), "dense": rank, "bm25": absent, "payload": hit.payload}
+    for rank, (_, payload) in enumerate(lexical, start=1):
+        entry = fused.setdefault(
+            str(payload["chunk_id"]), {"score": 0.0, "dense": absent, "bm25": absent, "payload": dict(payload)}
+        )
+        entry["score"] += 1 / (RRF_K + rank)
+        entry["bm25"] = rank
+    ordered = sorted(fused.values(), key=lambda e: (-e["score"], e["dense"], e["bm25"]))[:k]
+    return [
+        Hit(
+            e["score"],
+            e["payload"],
+            "both" if e["dense"] < absent and e["bm25"] < absent else "dense" if e["dense"] < absent else "bm25",
+        )
+        for e in ordered
+    ]
+
+
 class KnowledgeIndex:
-    def __init__(self, client: QdrantClient, collection: str, embedder: Embedder) -> None:
+    def __init__(
+        self,
+        client: QdrantClient,
+        collection: str,
+        embedder: Embedder,
+        *,
+        mode: str = "dense",
+        bm25_dir: Path | None = None,
+    ) -> None:
+        if mode not in RETRIEVAL_MODES:
+            raise ValueError(f"Unknown retrieval mode: {mode!r}")
         self.client, self.collection, self.embedder = client, collection, embedder
+        self.mode, self.bm25_dir = mode, bm25_dir  # search() without `mode` uses this (RETRIEVAL_MODE)
         # Captured and candidate indices can share one local Qdrant client.
         with _CLIENT_LOCKS_GUARD:
             self._lock = _CLIENT_LOCKS.setdefault(id(client), threading.Lock())
@@ -120,6 +164,8 @@ class KnowledgeIndex:
                 self.client.create_payload_index(self.collection, "source_kind", models.PayloadSchemaType.KEYWORD)
             for i in range(0, len(points), 128):
                 self.client.upsert(self.collection, points=points[i : i + 128])
+        with _BM25_GUARD:  # a replaced collection never answers with the BM25 of the previous corpus
+            _BM25_CACHE.get(self.client, {}).pop(self.collection, None)
         manifest = {
             "collection": self.collection,
             "embedding_model": self.embedder.model,
@@ -128,6 +174,8 @@ class KnowledgeIndex:
             "documents": len({c.doc_id for c in chunks}),
             "corpus_hash": corpus_hash(chunks),
             "point_digest": point_digest(c.chunk_id for c in chunks),
+            "bm25_corpus_hash": bm25.corpus_hash([c.payload() for c in chunks]),
+            "retrieval_modes": list(RETRIEVAL_MODES),
             "built_at": datetime.now(UTC).isoformat(timespec="seconds"),
         }
         if manifest_path:
@@ -135,10 +183,78 @@ class KnowledgeIndex:
             manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
         return manifest
 
+    def bm25_index(self) -> bm25.Bm25Index:
+        """The BM25 over this collection's stored chunks, loaded from `bm25_dir` or built once per client. The
+        payloads come from this read of the collection, not from the file; concurrent first searches wait for one
+        builder instead of each building (and writing) its own."""
+        with _BM25_GUARD:
+            cached = _BM25_CACHE.get(self.client, {}).get(self.collection)
+            if cached is not None:
+                return cached
+            build_lock = _BM25_BUILD_LOCKS.setdefault(self.client, {}).setdefault(self.collection, threading.Lock())
+        with build_lock:
+            with _BM25_GUARD:
+                cached = _BM25_CACHE.get(self.client, {}).get(self.collection)
+            if cached is not None:
+                return cached
+            records: list[dict] = []
+            offset = None
+            with self._lock:
+                while True:
+                    page, offset = self.client.scroll(
+                        self.collection, limit=256, offset=offset, with_payload=True, with_vectors=False
+                    )
+                    records += [dict(record.payload or {}) for record in page]
+                    if offset is None:
+                        break
+            index, _ = bm25.load_or_build(records, self.bm25_dir)
+            with _BM25_GUARD:
+                _BM25_CACHE.setdefault(self.client, {})[self.collection] = index
+        return index
+
     def search(
-        self, query: str, *, k: int = 6, source_kinds: list[str] | None = None, min_score: float = 0.0
+        self,
+        query: str,
+        *,
+        k: int = 6,
+        source_kinds: list[str] | None = None,
+        min_score: float = 0.0,
+        mode: str | None = None,
+        reranker=None,
+        meter=None,
+        notes: dict | None = None,
     ) -> list[Hit]:
-        vector = self.embedder.embed([query])[0]
+        """Dense by default. `hybrid` fuses the dense and BM25 top 3k by RRF; `min_score` filters only the dense list
+        and the returned score is the fused one. With a `reranker` (task 81, hybrid only) a second fusion of width
+        `reranker.candidates` (12, so depth 36) gives the candidates, the model reorders them through `meter`, and
+        the first k are returned. When the reranker fails or is skipped (written to `notes`), the result is the
+        hybrid one of width k, identical to searching without the reranker (review P2-1)."""
+        mode = mode or self.mode
+        if mode == "dense":
+            if reranker is not None:
+                raise ValueError("The reranker runs after the hybrid fusion; use mode='hybrid'.")
+            return self._dense(query, k=k, source_kinds=source_kinds, min_score=min_score)
+        if mode != "hybrid":
+            raise ValueError(f"Unknown retrieval mode: {mode!r}")
+        # with the reranker, one embedding serves both fusions; without it, the call is the one of task 80
+        reuse = {} if reranker is None else {"vector": self.embedder.embed([query])[0]}
+
+        def fusion(width: int) -> list[Hit]:
+            dense = self._dense(query, k=3 * width, source_kinds=source_kinds, min_score=min_score, **reuse)
+            return rrf(dense, self.bm25_index().search(query, k=3 * width, source_kinds=source_kinds), width)
+
+        if reranker is None:
+            return fusion(k)
+        wide = fusion(max(k, reranker.candidates))
+        head = reranker.reorder(query, wide[: reranker.candidates], meter, notes)
+        if head is None:
+            return fusion(k)
+        return (head + wide[reranker.candidates :])[:k]
+
+    def _dense(
+        self, query: str, *, k: int, source_kinds: list[str] | None, min_score: float, vector: list[float] | None = None
+    ) -> list[Hit]:
+        vector = self.embedder.embed([query])[0] if vector is None else vector
         query_filter = None
         if source_kinds:
             query_filter = models.Filter(

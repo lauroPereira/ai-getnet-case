@@ -248,18 +248,82 @@ def cmd_index(settings: Settings, args) -> int:
     return 0
 
 
+RERANK_EVAL_CAP_USD = 0.05  # task 81: reranker calls of one paid eval-retrieval run (about 0.0003 each)
+
+
+def _retrieval_reranker(settings: Settings, *, fake: bool, budget):
+    """The reranker of `eval-retrieval --rerank on`: the agent model through the budget meter, or the programmed
+    model offline. Both go through a `CountingMeter` for the report."""
+    from merchant_assistant.evaluation.retrieval import CountingMeter
+    from merchant_assistant.llm.prompts import load_prompt
+    from merchant_assistant.rag.rerank import Reranker
+
+    if fake:
+        from merchant_assistant.evaluation.scripted_policy import handler
+        from merchant_assistant.llm.scripted import ScriptedLLM
+
+        llm, inner = ScriptedLLM(handler), None
+    else:
+        from merchant_assistant.evaluation.runner import BudgetMeter
+        from merchant_assistant.llm.openai_llm import OpenAILLM
+
+        llm = OpenAILLM(_openai_client(settings), settings.agent_model)
+        inner = BudgetMeter(budget, request_id="eval-retrieval-rerank", max_cost_usd=RERANK_EVAL_CAP_USD)
+    return Reranker(llm, load_prompt(settings.prompts_dir, "rerank")), CountingMeter(inner)
+
+
 def cmd_eval_retrieval(settings: Settings, args) -> int:
-    from merchant_assistant.evaluation.retrieval import evaluate, load_cases
+    from datetime import UTC, datetime
+
+    from merchant_assistant.evaluation import retrieval
+    from merchant_assistant.evaluation.retrieval import SealError, evaluate, record_run, render_markdown, split_cases
     from merchant_assistant.rag.chunk import chunk_document
     from merchant_assistant.rag.documents import load_all
     from merchant_assistant.rag.index import KnowledgeIndex, open_qdrant
 
-    embedder = build_embedder(settings, fake=args.fake, budget=None if args.fake else _budget_guard(settings))
+    mode = getattr(args, "mode", None) or settings.retrieval_mode
+    rerank = (getattr(args, "rerank", None) or (settings.rerank if mode == "hybrid" else "off")) == "on"
+    split = getattr(args, "split", None) or "dev"
+    if rerank and mode != "hybrid":
+        raise SystemExit("eval-retrieval: --rerank on runs after the hybrid fusion; use --mode hybrid.")
+    if args.fake and split in retrieval.SEALED_SPLITS and retrieval.SCENARIOS == retrieval.PROJECT_SCENARIOS:
+        # review P3-11: offline runs would show holdout results (the BM25 half is real) outside the measurement
+        raise SystemExit(f"eval-retrieval: --fake does not run on the sealed {split}; it is measured once per mode "
+                         "with the real embeddings (D8).")
+    try:  # before any paid call: a holdout whose content no longer matches its seal is never measured
+        cases, digest = split_cases(split)
+    except SealError as exc:
+        raise SystemExit(f"eval-retrieval: {exc}") from None
+    budget = None if args.fake else _budget_guard(settings)
+    embedder = build_embedder(settings, fake=args.fake, budget=budget)
+    reranker, meter = _retrieval_reranker(settings, fake=args.fake, budget=budget) if rerank else (None, None)
     index = KnowledgeIndex(open_qdrant(":memory:", settings.runtime_path), "eval_retrieval", embedder)
-    index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
-    report = evaluate(index, load_cases(PROJECT_ROOT / "tests" / "scenarios" / "retrieval.jsonl"), k=args.k)
+    manifest = index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
+    report = evaluate(index, cases, k=args.k, mode=mode, reranker=reranker, meter=meter)
+    report["split"] = split
+    report["mode"] = mode
+    report["rerank"] = rerank
+    report["measured_at"] = datetime.now(UTC).isoformat(timespec="seconds")
+    if digest is not None:  # D8: the report says the sealed holdout was used
+        report["holdout"] = {"split": split, "sha256": digest, "seal": "ok", "used": True}
+    if meter is not None:
+        report["rerank_usage"] = meter.summary()
+    report["bm25_corpus_hash"] = manifest["bm25_corpus_hash"]  # BM25 kept in memory, like this Qdrant
     report["embedding_model"] = embedder.model
     report["embedding_tokens"] = getattr(embedder, "tokens_used", 0)
+    out = getattr(args, "out", None)
+    if out:  # accumulated table of every split and configuration measured into this report, plus the D7 line
+        out = Path(out)
+        data_path = out.with_suffix(".json")
+        previous = json.loads(data_path.read_text(encoding="utf-8")) if data_path.is_file() else None
+        try:
+            table = record_run(previous, report)
+        except ValueError as exc:
+            raise SystemExit(f"eval-retrieval: {exc}") from None
+        out.parent.mkdir(parents=True, exist_ok=True)
+        data_path.write_text(json.dumps(table, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        out.write_text(render_markdown(table), encoding="utf-8")
+        print(render_markdown(table), file=sys.stderr)
     print(json.dumps(report, indent=1, ensure_ascii=False))
     return 0
 
@@ -474,12 +538,14 @@ def _report_name(args, answers_split: str | None = None) -> str:
     return "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
 
 
-def _store_judgements(db_path, judge, rows, persist) -> None:
+def _store_judgements(db_path, judge, rows, persist, run: str) -> None:
+    """Stores the judgements under the execution name `run` (the report name), so a comparison can tell one execution
+    of a judge from another on the same answers (spec v0.9.0 D1)."""
     from merchant_assistant.data.db import connect
 
     conn = connect(db_path)
     try:
-        print(f"judgements stored in run_evaluations: {persist(conn, judge, rows)}")
+        print(f"judgements stored in run_evaluations: {persist(conn, judge, rows, run=run)} (execution {run})")
     finally:
         conn.close()
 
@@ -507,6 +573,12 @@ def cmd_eval(settings: Settings, args) -> int:
         raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
     if getattr(args, "judge_repeat", None) is not None:
         return cmd_eval_rejudge(settings, args)
+    if getattr(args, "only_sample", None):
+        print(
+            "eval: --only-sample is ignored without --judge-repeat: this runs the agent over the whole selection of "
+            "cases, not the sample.",
+            file=sys.stderr,
+        )
     repeat = getattr(args, "repeat", 1)
     if repeat < 1:
         raise SystemExit("eval: --repeat must be at least 1.")
@@ -573,10 +645,11 @@ def cmd_eval(settings: Settings, args) -> int:
         else None,
         "cases": len(cases),
     }
-    md, js = write_report(rows, summary, Path(args.out), _report_name(args), config)
+    name = _report_name(args)
+    md, js = write_report(rows, summary, Path(args.out), name, config)
     print(json.dumps(summary["overall"], indent=1))
     if judge is not None:
-        _store_judgements(db_path, judge, rows, persist_judgements)
+        _store_judgements(db_path, judge, rows, persist_judgements, name)
     if not args.no_conversations and args.split != "holdout_v080" and case_limit is None:
         from merchant_assistant.evaluation.runner import append_conversation_report, run_conversations
 
@@ -625,6 +698,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         rows, source = load_recorded_answers(Path(args.answers_from))
     except (OSError, ValueError, KeyError) as exc:
         raise SystemExit(f"eval: {exc}") from None
+    rows, selection = _select_recorded_answers(rows, args)
     splits = {row["split"] for row in rows}
     name = _report_name(args, next(iter(splits)) if len(splits) == 1 else None)
     if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
@@ -663,6 +737,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         "repeat": 1,
         "judge_repeat": args.judge_repeat,
         "answers_from": Path(args.answers_from).name,
+        **selection,
         "campaign": getattr(args, "campaign", None),
         "campaign_cap_usd": getattr(args, "campaign_cap_usd", V080_QA_CAP_USD)
         if getattr(args, "campaign", None)
@@ -671,10 +746,50 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     }
     md, js = write_report(graded, summary, Path(args.out), name, config)
     print(json.dumps(summary["overall"], indent=1))
-    _store_judgements(db_path, judge, graded, persist_judgements)
+    _store_judgements(db_path, judge, graded, persist_judgements, name)
     print(f"report: {md}")
     print(f"results: {js}")
     return 0
+
+
+def _select_recorded_answers(rows: list[dict], args) -> tuple[list[dict], dict]:
+    """`--only-sample <csv>` keeps the recorded answers whose request_id is in the calibration CSV, in the order of the
+    CSV (spec v0.9.0 D1); `--limit K` then keeps the first K (the probe). Returns the rows and what was filtered, which
+    goes into the report's configuration."""
+    only, limit = getattr(args, "only_sample", None), getattr(args, "limit", None)
+    if limit is not None and limit < 1:
+        raise SystemExit("eval: --limit must be at least 1.")
+    if only is None and limit is None:
+        return rows, {}
+    selection: dict = {"recorded_answers": len(rows)}
+    if only is not None:
+        from merchant_assistant.evaluation import calibration
+
+        try:
+            wanted = calibration.sample_request_ids(Path(only))
+        except calibration.CalibrationError as exc:
+            raise SystemExit(f"eval: --only-sample: {exc}") from None
+        by_id = {row["request_id"]: row for row in rows}
+        missing = [request_id for request_id in wanted if request_id not in by_id]
+        if missing:
+            raise SystemExit(
+                f"eval: --only-sample: {len(missing)} of the {len(wanted)} request ids of {Path(only).name} are not "
+                f"among the recorded answers (for example {missing[0]}); use the report the sample was drawn from."
+            )
+        rows = [by_id[request_id] for request_id in wanted]
+        selection |= {"only_sample": Path(only).name, "only_sample_ids": len(wanted)}
+    if limit is not None:
+        rows = rows[:limit]
+        selection["limit"] = limit
+    selection["selected_answers"] = len(rows)
+    print(
+        f"eval: grading {len(rows)} of {selection['recorded_answers']} recorded answers"
+        + (f" ({selection['only_sample_ids']} request ids in {selection['only_sample']})" if only else "")
+        + (f", --limit {limit}" if limit is not None else "")
+        + ".",
+        file=sys.stderr,
+    )
+    return rows, selection
 
 
 def cmd_eval_estimate(settings: Settings, args) -> int:
@@ -859,6 +974,10 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
     size, filled = getattr(args, "sample", None), getattr(args, "import_csv", None)
     if (size is None) == (filled is None):
         raise SystemExit("eval-calibrate: choose --sample N --from <report.json>, or --import <csv>.")
+    if size is not None and getattr(args, "judge", None):
+        raise SystemExit("eval-calibrate: --judge is used with --import (the sample never shows a judge's scores).")
+    if getattr(args, "judge_run", None) and not getattr(args, "judge", None):
+        raise SystemExit("eval-calibrate: --judge-run is used with --judge (it picks the execution of that judge).")
     evidence_dir = PROJECT_ROOT / "docs" / "evidence"
     try:
         if size is not None:
@@ -893,7 +1012,14 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
 
         conn = connect(settings.db_path)
         try:
-            result = calibration.import_filled(conn, Path(filled), rater=args.rater, campaign=args.campaign)
+            result = calibration.import_filled(
+                conn,
+                Path(filled),
+                rater=args.rater,
+                campaign=args.campaign,
+                judge=getattr(args, "judge", None),
+                judge_run=getattr(args, "judge_run", None),
+            )
         finally:
             conn.close()
         out = Path(args.out) if args.out else evidence_dir / "v080-calibracao.md"
@@ -905,6 +1031,13 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
             f"calibrations: {counts['created']} stored, {counts['updated']} updated, {len(result['skipped'])} skipped"
             f"{withdrawn} (campaign {result['meta']['campaign']}, rater {result['rater']})"
         )
+        if result.get("comparison"):
+            compared = result["comparison"]
+            print(
+                f"judges: {compared['judge']} (campaign {compared['campaign']}, execution {compared['judge_run']}) "
+                f"beside {compared['original_judge']} (campaign {compared['original_campaign']}, execution "
+                f"{', '.join(compared['original_runs'])}), {result['analysis']['n']} human ratings"
+            )
         if result["outside"]:
             print(
                 f"eval-calibrate: {len(result['outside'])} rating(s) of this campaign and rater are in the database "
@@ -1090,9 +1223,27 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("ingest", help="Collect public sources into versioned snapshots (network).")
     p_index = sub.add_parser("index", help="Build the vector index from snapshots and the demo corpus.")
     p_index.add_argument("--fake", action="store_true", help="Use the offline hashing embedder.")
-    p_eval = sub.add_parser("eval-retrieval", help="Measure Recall@k on the labeled retrieval set.")
+    p_eval = sub.add_parser(
+        "eval-retrieval", help="Measure Recall@k, MRR, nDCG@k and time per query on a labeled retrieval split."
+    )
     p_eval.add_argument("--fake", action="store_true")
     p_eval.add_argument("-k", type=int, default=6)
+    p_eval.add_argument("--mode", choices=["dense", "hybrid"], default=None, help="Default: RETRIEVAL_MODE.")
+    p_eval.add_argument(
+        "--rerank", choices=["on", "off"], default=None, help="Rerank the hybrid top 12 (default: RERANK)."
+    )
+    p_eval.add_argument(
+        "--split",
+        choices=["dev", "holdout_v090"],
+        default="dev",
+        help="dev (retrieval.jsonl) or the sealed retrieval holdout (refused when its seal does not match).",
+    )
+    p_eval.add_argument(
+        "--out",
+        default=None,
+        help="Markdown report (and .json beside it) that accumulates every split and configuration measured, "
+        "with the D7 suggested default.",
+    )
     p_boot = sub.add_parser("bootstrap", help="Seed synthetic data and build the index if needed.")
     p_boot.add_argument("--force-index", action="store_true")
     p_ask = sub.add_parser("ask", help="Run one message through the real system (paid).")
@@ -1106,8 +1257,8 @@ def main(argv: list[str] | None = None) -> int:
         "--judge",
         action="store_true",
         help="Add the model-graded rubric judge.v3 (paid). The judge is set by JUDGE_PROVIDER and JUDGE_MODEL "
-        "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY. Refused, before any call, when the judge "
-        "equals the agent or its key is missing.",
+        "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY (anthropic/claude-opus-5-5 needs "
+        "ANTHROPIC_API_KEY). Refused, before any call, when the judge equals the agent or its key is missing.",
     )
     p_evalx.add_argument("--split", choices=["all", "dev", "holdout", "holdout_v080"], default="all")
     p_evalx.add_argument(
@@ -1126,10 +1277,16 @@ def main(argv: list[str] | None = None) -> int:
         "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
     )
     p_evalx.add_argument(
+        "--only-sample",
+        default=None,
+        help="With --judge-repeat: grade only the answers whose request_id is in this calibration CSV, in its order.",
+    )
+    p_evalx.add_argument(
         "--limit",
         type=int,
         default=None,
-        help="Run at most N cases for a measured cost sample; follow-up conversations are skipped.",
+        help="Run at most N cases for a measured cost sample; follow-up conversations are skipped. With "
+        "--judge-repeat: grade at most N recorded answers (after --only-sample).",
     )
     p_evalx.add_argument(
         "--campaign",
@@ -1183,6 +1340,20 @@ def main(argv: list[str] | None = None) -> int:
         "sampled.",
     )
     p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
+    p_calibrate.add_argument(
+        "--judge",
+        default=None,
+        help="With --import: compare the ratings with this judge (<provider>/<model>, e.g. anthropic/claude-opus-5-5) "
+        "instead of the first judgement of any judge, under a new --campaign; the report adds the original campaign's "
+        "judge side by side and each judge's consistency between repetitions.",
+    )
+    p_calibrate.add_argument(
+        "--judge-run",
+        default=None,
+        help="With --judge: the execution of that judge to compare (the --name of the eval that graded, e.g. "
+        "v090-juiz-opus-r3). Required when the judge has more than one execution on the sample's answers (the probe "
+        "and the repetitions, say).",
+    )
     p_calibrate.add_argument(
         "--delimiter",
         choices=[";", ","],

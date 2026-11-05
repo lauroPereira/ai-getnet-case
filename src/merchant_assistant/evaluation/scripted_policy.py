@@ -460,6 +460,16 @@ def _personality(call: ScriptedCall) -> dict:
     return {"answer": "\n".join(p for p in parts if p)}
 
 
+def _rerank(call: ScriptedCall) -> dict:
+    """Candidates with more question tokens first (BM25 tokenizer), ties in fusion order."""
+    from merchant_assistant.rag.bm25 import tokenize
+
+    asked = set(tokenize(call.spec.context["query"]))
+    candidates = call.spec.context["candidates"]
+    overlap = {c["label"]: len(asked & set(tokenize(c["text"]))) for c in candidates}
+    return {"order": [c["label"] for c in sorted(candidates, key=lambda c: -overlap[c["label"]])]}
+
+
 def handler(call: ScriptedCall):
     agent = call.spec.agent
     if agent == "router":
@@ -486,6 +496,8 @@ def handler(call: ScriptedCall):
         }
     if agent == "personality":
         return _personality(call)
+    if agent == "rerank":  # task 81: deterministic stand-in for the reranker; says nothing about real quality
+        return _rerank(call)
     if agent == "judge":  # deterministic stand-in for the model judge; says nothing about real quality
         return {"answers_question": 4, "clarity_and_tone": 4, "honesty": 4, "comment": "Scripted judge."}
     raise AssertionError(f"unexpected agent {agent}")
