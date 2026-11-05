@@ -226,7 +226,7 @@ responsável; nada foi apagado. Oportunidades, da maior para a menor:
 | `~/.codex` | 2,1GiB | a verificar | Sessões/logs dos agentes anteriores |
 | `.pytest_cache` do backend | 1,2GiB | ~1GiB | Basetemps v030/v040/v050-dev-r1..r8; manter `v050-freeze-candidate.py`, logs e `.iid` citados em evidências |
 | `~/.vscode` | 1,4GiB | baixo | Extensões |
-| `AppData/Local/Temp` | 1,2GiB | parcial | Inclui o scratchpad desta sessão |
+| `%LOCALAPPDATA%/Temp` | 1,2GiB | parcial | Inclui o scratchpad desta sessão |
 | Imagens/containers Docker v030/v040 parados | ~0,4GiB reais | ~0,4GiB | Citados em evidências históricas; remoção exige decisão |
 | `.venv`/`.venv-v040` | 0,25/0,39GiB | nenhum | Necessários aos testes |
 | Cache pip | 0,35GiB | 0,35GiB | Seguro |
