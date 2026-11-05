@@ -118,3 +118,91 @@ def test_contradiction_alone_fails_the_rubric(case_id: str, contradiction: str):
     row = next(row for row in _archived("v080-healthy-r4.json") if row["id"] == case_id)
     checks = _recheck(_cases()[case_id], row, contradiction)
     assert not checks["content_ok"] and not checks["forbidden_ok"], checks
+
+
+# --- Round 2 (review P2-75): honest caveats are not contradictions ---------------------------------------------------
+
+RSQUO = "’"  # typographic apostrophe, as the model often writes it
+HONEST_CAVEATS = {
+    "V030-PRICE-INSUFFICIENT": [
+        f"There is no recorded charge, so I couldn{RSQUO}t confirm whether the fee was charged correctly.",
+        "This does not mean the fee is incorrect.",
+        f"This doesn{RSQUO}t mean that the fee is wrong.",
+        "The comparison does not establish that the fee is incorrect.",
+        "There is no indication that the fee is incorrect.",
+        f"I can{RSQUO}t tell whether the fee is wrong.",
+        "I cannot tell whether there is a fee discrepancy.",
+        "If the fee is incorrect, I can hand this off to an attendant.",
+    ],
+    "V030-PT-PRICE-INSUFFICIENT": [
+        "Isso não significa que a taxa está incorreta.",
+        "Sem regra aplicável, não é possível afirmar que há divergência na taxa.",
+        "Não há como saber se a taxa está correta.",
+        "Não é possível confirmar se a taxa cobrada está correta.",
+        "Não é possível confirmar que a taxa está correta.",
+        "Não há indicação de que a taxa está errada.",
+        "Não sabemos se a taxa cobrada está incorreta.",
+    ],
+}
+QUALIFIED_THEN_CLAIMED = {
+    "V030-PRICE-INSUFFICIENT": [
+        f"I couldn{RSQUO}t find the rule. The fee is wrong.",
+        "This does not mean anything, the fee is correct.",
+        "Pricing did not show any problem and the fee is correct.",
+        "There is no indication of a problem and the fee is correct.",
+        "This does not mean the fee is incorrect — the fee is correct.",
+        "If anything, the fee is correct.",
+    ],
+    "V030-PT-PRICE-INSUFFICIENT": [
+        "Isso não significa nada e a taxa está correta.",
+        "Não há indício de erro e a taxa está correta.",
+        "Isso não significa que a taxa está incorreta; a taxa está correta.",
+        "Não há como saber, mas a taxa está errada.",
+    ],
+}
+
+
+@pytest.mark.parametrize(
+    ("request_id", "caveat"),
+    [(request_id, caveat) for request_id, case_id in R4_FALSE_NEGATIVES.items() for caveat in HONEST_CAVEATS[case_id]],
+)
+def test_honest_caveat_appended_to_an_accepted_answer_passes_every_check(request_id: str, caveat: str):
+    row = {row["request_id"]: row for row in _archived("v080-healthy-r4.json")}[request_id]
+    checks = _recheck(_cases()[row["id"]], row, f"{row['answer']} {caveat}")
+    assert all(checks[key] for key in CHECK_KEYS), (request_id, caveat, checks)
+
+
+@pytest.mark.parametrize(
+    ("case_id", "caveat"),
+    [(case_id, text) for case_id, texts in HONEST_CAVEATS.items() for text in texts],
+)
+def test_honest_caveat_alone_is_not_a_forbidden_assertion(case_id: str, caveat: str):
+    row = next(row for row in _archived("v080-healthy-r4.json") if row["id"] == case_id)
+    assert _recheck(_cases()[case_id], row, caveat)["forbidden_ok"], caveat
+
+
+@pytest.mark.parametrize(
+    ("case_id", "answer"),
+    [(case_id, text) for case_id, texts in QUALIFIED_THEN_CLAIMED.items() for text in texts],
+)
+def test_a_qualifier_does_not_cover_a_later_claim(case_id: str, answer: str):
+    row = next(row for row in _archived("v080-healthy-r4.json") if row["id"] == case_id)
+    assert not _recheck(_cases()[case_id], row, answer)["forbidden_ok"], answer
+
+
+@pytest.mark.parametrize(
+    ("case_id", "contradiction"),
+    [(case_id, text.replace("'", RSQUO)) for case_id, texts in CONTRADICTIONS.items() for text in texts],
+)
+def test_contradictions_are_still_rejected_after_apostrophe_normalization(case_id: str, contradiction: str):
+    row = next(row for row in _archived("v080-healthy-r4.json") if row["id"] == case_id)
+    assert not _recheck(_cases()[case_id], row, contradiction)["forbidden_ok"], contradiction
+
+
+def test_a_typographic_apostrophe_matches_the_straight_one_in_every_label_kind():
+    case = _cases()["V030-PRICE-INSUFFICIENT"]
+    row = next(row for row in _archived("v080-healthy-r4.json") if row["id"] == case.id)
+    # "couldn't compare its fee" is a must_include_any form written with a straight apostrophe
+    assert _recheck(case, row, f"I couldn{RSQUO}t compare its fee.")["content_ok"]
+    banned = Case(**{**case.__dict__, "must_not_include": ["merchant's id"]})
+    assert not _recheck(banned, row, f"There is insufficient evidence. The merchant{RSQUO}s ID is 1.")["forbidden_ok"]

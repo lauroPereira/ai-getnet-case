@@ -41,36 +41,71 @@ class Case:
 
 
 _CLAUSE_BOUNDARIES = re.compile(
-    r"[.!?;,:\n]+|\b(?:but|however|whereas|although|yet|mas|porém|contudo|entretanto|todavia)\b",
+    r"[.!?;,:\n\u2013\u2014]+|\b(?:but|however|whereas|although|yet|mas|porém|contudo|entretanto|todavia)\b",
     re.IGNORECASE,
 )
+# Typographic apostrophes and look-alikes (U+2018, U+2019, U+02BC, U+2032, U+00B4, U+0060) compare as "'".
+_APOSTROPHES = str.maketrans(dict.fromkeys("\u2018\u2019\u02bc\u2032\u00b4\u0060", "'"))
 _QUALIFIED_ASSERTION_PREFIXES = (
     re.compile(
-        r"\b(?:cannot|can't|could not|couldn't|am not able to|is not able to|unable to)\s+"
-        r"(?:confirm|verify|determine|tell)\s+(?:whether|if)\b[^.!?;,]{0,100}$",
+        r"\b(?:cannot|can not|can't|could not|couldn't|am not able to|is not able to|are not able to|"
+        r"was not able to|wasn't able to|unable to|(?:not possible|impossible|no way) to)\s+"
+        r"(?:confirm|verify|determine|tell|know|say|establish)\s+(?:whether|if|that)\b[^.!?;,]{0,100}$",
         re.IGNORECASE,
     ),
-    re.compile(r"\b(?:not sure|uncertain|not clear)\s+(?:whether|if|that)\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\b(?:not sure|uncertain|unclear|not clear)\s+(?:whether|if|that)\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(
+        r"\b(?:do not|don't|does not|doesn't|did not|didn't)\s+know\s+(?:whether|if)\b[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(?:cannot|can't|couldn't)\s+say\b[^.!?;,]{0,100}$", re.IGNORECASE),
     re.compile(
-        r"\b(?:não foi possível|não é possível|não consigo|não podemos|não pude|não dá para)\s+"
-        r"(?:confirmar|verificar|determinar|saber)\s+se\b[^.!?;,]{0,100}$",
+        r"\b(?:does not|doesn't|do not|don't|did not|didn't|would not|wouldn't|will not|won't)\s+"
+        r"(?:necessarily\s+)?(?:mean|establish|indicate|show|prove|imply|confirm)\s+(?:that\s+)?$",
         re.IGNORECASE,
     ),
-    re.compile(r"\b(?:não sei|não tenho certeza|incerto|não está claro)\s+se\b[^.!?;,]{0,100}$", re.IGNORECASE),
-    re.compile(r"\b(?:não posso|não dá para)\s+dizer\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(r"\bno\s+(?:indication|evidence|sign|proof)\s+that\s+$", re.IGNORECASE),
+    # "Does not mean", "no indication" and an open conditional only qualify the assertion that follows them
+    # directly, so a later, unqualified claim in the same clause is still caught.
+    re.compile(r"\b(?:if|in case)\s+(?:you\s+(?:think|believe|suspect|feel)\s+(?:that\s+)?)?$", re.IGNORECASE),
+    re.compile(
+        r"\b(?:não foi possível|não é possível|não consigo|não conseguimos|não podemos|não pude|não dá para|"
+        r"não há como|não tem como)\s+(?:confirmar|verificar|determinar|saber|afirmar|dizer|garantir)\s+"
+        r"(?:se|que)\b[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:não sei|não sabemos|não se sabe|não tenho certeza|não temos certeza|incerto|não está claro)\s+se\b"
+        r"[^.!?;,]{0,100}$",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(?:não posso|não podemos|não dá para)\s+(?:dizer|afirmar)\b[^.!?;,]{0,100}$", re.IGNORECASE),
+    re.compile(
+        r"\bnão\s+(?:necessariamente\s+)?(?:significa|quer dizer|indica|mostra|prova|implica|comprova|confirma)"
+        r"\s+que\s+$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bnão há\s+(?:indicação|indício|indícios|evidência|evidências|sinal|sinais|prova|provas)\s+de\s+que\s+$",
+        re.IGNORECASE,
+    ),
 )
+
+
+def _normalize(text: str) -> str:
+    return text.translate(_APOSTROPHES).casefold()
 
 
 def _assertion_is_present(answer: str, assertion: str) -> bool:
     """Match a forbidden EN/PT assertion, allowing only a small set of scoped uncertainty forms.
 
-    This intentionally handles a bounded set of English and Portuguese constructions; it is not
-    a general-purpose natural-language negation detector. Clause boundaries prevent an earlier
-    lack-of-evidence statement from qualifying a later assertion.
+    This intentionally handles a bounded set of English and Portuguese constructions (doubt, "does not mean that",
+    "no indication that", "não significa que", "não há como saber se", a directly preceding conditional); it is not
+    a general-purpose natural-language negation detector. Typographic apostrophes are compared as "'". Clause
+    boundaries prevent an earlier lack-of-evidence statement from qualifying a later assertion.
     """
-    normalized_assertion = assertion.casefold()
-    for clause in _CLAUSE_BOUNDARIES.split(answer.casefold()):
+    normalized_assertion = _normalize(assertion)
+    for clause in _CLAUSE_BOUNDARIES.split(_normalize(answer)):
         start = 0
         while (index := clause.find(normalized_assertion, start)) >= 0:
             prefix = clause[:index]
@@ -149,7 +184,7 @@ def judge_spec(judge_prompt, evidence: dict) -> CallSpec:
 
 def _checks(case: Case, body: dict, trace: dict) -> dict:
     answer = body["answer"]
-    lower = answer.lower()
+    lower = answer.translate(_APOSTROPHES).lower()
     tools = [s["step"].removeprefix("tool:") for s in trace["steps"] if s["step"].startswith("tool:")]
     found_amounts = amounts(answer)
     return {
@@ -158,8 +193,10 @@ def _checks(case: Case, body: dict, trace: dict) -> dict:
         "language_ok": body["language"] == case.language,
         "tools_ok": set(case.expected_tools) <= set(tools),
         "amounts_ok": set(case.must_include_amounts) <= found_amounts,
-        "content_ok": all(any(t.lower() in lower for t in group) for group in case.must_include_any),
-        "forbidden_ok": not any(t.lower() in lower for t in case.must_not_include)
+        "content_ok": all(
+            any(t.translate(_APOSTROPHES).lower() in lower for t in group) for group in case.must_include_any
+        ),
+        "forbidden_ok": not any(t.translate(_APOSTROPHES).lower() in lower for t in case.must_not_include)
         and not any(_assertion_is_present(answer, assertion) for assertion in case.must_not_assert),
         "sources_ok": bool(body["sources"]) if case.expect_sources else True,
         "grounded_ok": not trace["detail"].get("output_violations"),
