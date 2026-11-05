@@ -275,6 +275,7 @@ def _retrieval_reranker(settings: Settings, *, fake: bool, budget):
 def cmd_eval_retrieval(settings: Settings, args) -> int:
     from datetime import UTC, datetime
 
+    from merchant_assistant.evaluation import retrieval
     from merchant_assistant.evaluation.retrieval import SealError, evaluate, record_run, render_markdown, split_cases
     from merchant_assistant.rag.chunk import chunk_document
     from merchant_assistant.rag.documents import load_all
@@ -285,6 +286,10 @@ def cmd_eval_retrieval(settings: Settings, args) -> int:
     split = getattr(args, "split", None) or "dev"
     if rerank and mode != "hybrid":
         raise SystemExit("eval-retrieval: --rerank on runs after the hybrid fusion; use --mode hybrid.")
+    if args.fake and split in retrieval.SEALED_SPLITS and retrieval.SCENARIOS == retrieval.PROJECT_SCENARIOS:
+        # review P3-11: offline runs would show holdout results (the BM25 half is real) outside the measurement
+        raise SystemExit(f"eval-retrieval: --fake does not run on the sealed {split}; it is measured once per mode "
+                         "with the real embeddings (D8).")
     try:  # before any paid call: a holdout whose content no longer matches its seal is never measured
         cases, digest = split_cases(split)
     except SealError as exc:

@@ -13,8 +13,10 @@ from pathlib import Path
 
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.rag.index import KnowledgeIndex
+from merchant_assistant.rag.rerank import RERANK_CANDIDATES
 
 SCENARIOS = PROJECT_ROOT / "tests" / "scenarios"
+PROJECT_SCENARIOS = SCENARIOS  # the versioned sets; tests point SCENARIOS at synthetic ones
 SPLITS = {"dev": "retrieval.jsonl", "holdout_v090": "retrieval_holdout_v090.jsonl"}
 SEALED_SPLITS = frozenset({"holdout_v090"})
 CONFIGURATIONS = ("dense", "hybrid", "hybrid+rerank")
@@ -198,8 +200,18 @@ def suggest_default(report: dict) -> str:
     numbers = "; ".join(
         f"{s}: " + ", ".join(f"{c} {nd(s, c):.3f}" for c in CONFIGURATIONS) for s in splits
     )
-    choice = f"RETRIEVAL_MODE={'hybrid' if hybrid else 'dense'}, RERANK={'on' if rerank else 'off'}"
-    return f"{choice} (nDCG@{report['k']}: {numbers})"
+    failures, queries = rerank_failures(report)
+    # review P2-2: a query where the reranker failed was answered by the hybrid search, so its number is not the
+    # reranker's and the rule cannot suggest it
+    suggested = "indisponível" if failures else ("on" if rerank else "off")
+    choice = f"RETRIEVAL_MODE={'hybrid' if hybrid else 'dense'}, RERANK={suggested}"
+    return f"{choice} (reranker com {failures} falhas em {queries} consultas; nDCG@{report['k']}: {numbers})"
+
+
+def rerank_failures(report: dict) -> tuple[int, int]:
+    """Reranker failures and queries over every split measured with hybrid+rerank."""
+    entries = [r["hybrid+rerank"] for r in report.get("results", {}).values() if "hybrid+rerank" in r]
+    return sum(e.get("rerank_failures", 0) for e in entries), sum(e["overall"]["n"] for e in entries)
 
 
 def render_markdown(report: dict) -> str:
@@ -211,8 +223,13 @@ def render_markdown(report: dict) -> str:
         "rotulados; nDCG com um alvo só), `holdout_v090` por chunk com grau (2 a passagem correta, 1 também "
         "relevante).",
         "",
-        f"| Split | Configuração | n | Recall@{k} | MRR | nDCG@{k} | Tempo médio (ms) | Execuções |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        f"`hybrid+rerank`: o modelo reordena os {RERANK_CANDIDATES} primeiros de uma fusão de profundidade "
+        f"{3 * max(k, RERANK_CANDIDATES)}, contra {3 * k} do `hybrid`; numa consulta em que o reranker falha, a "
+        "resposta é a do `hybrid`.",
+        "",
+        f"| Split | Configuração | n | Recall@{k} | MRR | nDCG@{k} | Tempo médio (ms) | Execuções "
+        "| Falhas do reranker |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for split in SPLITS:
         for config in CONFIGURATIONS:
@@ -221,9 +238,10 @@ def render_markdown(report: dict) -> str:
                 continue
             o = entry["overall"]
             runs = str(entry["runs"]) + (" (holdout já visto)" if split in SEALED_SPLITS and entry["runs"] > 1 else "")
+            failed = f"{entry.get('rerank_failures', 0)} de {o['n']}" if config == "hybrid+rerank" else "—"
             lines.append(
                 f"| {split} | {config} | {o['n']} | {o['recall_at_k']:.3f} | {o['mrr']:.3f} | {o['ndcg_at_k']:.3f} "
-                f"| {o['mean_ms']:.1f} | {runs} |"
+                f"| {o['mean_ms']:.1f} | {runs} | {failed} |"
             )
     holdout = next(
         (e["holdout"] for e in report["results"].get("holdout_v090", {}).values() if "holdout" in e), None

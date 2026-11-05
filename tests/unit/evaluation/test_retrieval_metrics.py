@@ -142,11 +142,12 @@ def run(split: str, mode: str, rerank: bool, ndcg: float, model: str = "text-emb
             "by_language": {}, "measured_at": "2026-11-05T12:00:00+00:00", **extra}
 
 
-def table(dev: tuple[float, float, float], holdout: tuple[float, float, float]) -> dict:
+def table(dev: tuple[float, float, float], holdout: tuple[float, float, float], failures: dict | None = None) -> dict:
     report = None
     for split, values in (("dev", dev), ("holdout_v090", holdout)):
         for (mode, rerank), value in zip((("dense", False), ("hybrid", False), ("hybrid", True)), values, strict=True):
-            report = record_run(report, run(split, mode, rerank, value))
+            extra = {"rerank_failures": (failures or {}).get(split, 0)} if rerank else {}
+            report = record_run(report, run(split, mode, rerank, value, **extra))
     return report
 
 
@@ -162,7 +163,27 @@ def table(dev: tuple[float, float, float], holdout: tuple[float, float, float]) 
 )
 def test_d7_suggestion(dev, holdout, expected):
     line = suggest_default(table(dev, holdout))
-    assert line.startswith(expected + " (nDCG@6: dev: dense ")
+    assert line.startswith(expected + " (reranker com 0 falhas em 40 consultas; nDCG@6: dev: dense ")
+
+
+@pytest.mark.parametrize("failures", [{"dev": 1}, {"holdout_v090": 3}])
+def test_reranker_failures_make_its_suggestion_unavailable_and_show_in_the_table(failures):
+    """Review P2-2: a failed query was answered by the hybrid search, so the hybrid+rerank number is not the
+    reranker's; the hybrid suggestion still follows its own rule."""
+    report = table((0.5, 0.6, 0.7), (0.5, 0.6, 0.7), failures)
+    (split, count), = failures.items()
+    line = suggest_default(report)
+    assert line.startswith(f"RETRIEVAL_MODE=hybrid, RERANK=indisponível (reranker com {count} falhas em 40 consultas")
+    text = render_markdown(report)
+    assert f"| {split} | hybrid+rerank | 20 | 0.900 | 0.700 | 0.700 | 12.5 | 1 | {count} de 20 |" in text
+    assert "| dev | hybrid | 20 | 0.900 | 0.700 | 0.600 | 12.5 | 1 | — |" in text
+    assert f"Modo padrão sugerido (regra D7, a decisão é do Supervisor): {line}" in text
+
+
+def test_markdown_states_the_fusion_depth_of_the_reranker():
+    text = render_markdown(table((0.5, 0.6, 0.7), (0.5, 0.6, 0.7)))
+    assert "reordena os 12 primeiros de uma fusão de profundidade 36, contra 18 do `hybrid`" in text
+    assert "| dev | hybrid+rerank | 20 | 0.900 | 0.700 | 0.700 | 12.5 | 1 | 0 de 20 |" in text
 
 
 def test_suggestion_waits_for_every_split_and_configuration():
@@ -179,7 +200,7 @@ def test_record_run_counts_repeats_and_refuses_other_embeddings():
     entry = report["results"]["holdout_v090"]["dense"]
     assert entry["runs"] == 2 and entry["overall"]["ndcg_at_k"] == 0.5 and entry["holdout"] == holdout
     text = render_markdown(report)
-    assert "| holdout_v090 | dense | 20 | 0.900 | 0.700 | 0.500 | 12.5 | 2 (holdout já visto) |" in text
+    assert "| holdout_v090 | dense | 20 | 0.900 | 0.700 | 0.500 | 12.5 | 2 (holdout já visto) | — |" in text
     assert "Holdout de retrieval: usado, lacre `ffffffffffff…` conferido." in text
     assert "Modo padrão sugerido (regra D7, a decisão é do Supervisor): indisponível" in text
     with pytest.raises(ValueError, match="another --out"):

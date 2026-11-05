@@ -110,6 +110,48 @@ def test_holdout_with_a_broken_seal_is_refused_before_any_paid_call(tmp_path, sy
     assert not (tmp_path / "runtime" / "budget.sqlite3").exists()
 
 
+def test_fake_runs_refuse_the_real_holdout(tmp_path):
+    """Review P3-11: offline (the BM25 half is real) it would show holdout results outside the measurement; refused
+    before the file is opened. The synthetic holdouts of these tests are elsewhere and still run."""
+    with pytest.raises(SystemExit, match="--fake does not run on the sealed holdout_v090"):
+        cli.cmd_eval_retrieval(offline_settings(tmp_path), eval_args(split="holdout_v090"))
+    assert not (tmp_path / "runtime").exists()
+
+
+class Unpaid:
+    """OpenAI client stand-in that must never be called."""
+
+    @property
+    def responses(self):
+        raise AssertionError("no model call in this test")
+
+
+def test_paid_reranker_of_eval_retrieval_has_the_cap_per_run(tmp_path, monkeypatch):
+    """Review P2-3 (C2): the paid eval-retrieval reranker goes through the project ledger with a US$0.05 cap per run;
+    past the cap the meter refuses (and the reranker counts a failure). No call is made."""
+    from merchant_assistant.llm.base import Usage
+    from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard
+
+    monkeypatch.setattr(cli, "_openai_client", lambda settings: Unpaid())
+    settings = offline_settings(tmp_path)
+    budget = BudgetGuard(tmp_path / "budget.sqlite3", 1.0)
+    reranker, meter = cli._retrieval_reranker(settings, fake=False, budget=budget)
+    assert reranker.llm.model == settings.agent_model and cli.RERANK_EVAL_CAP_USD == 0.05
+    call = {"agent": "rerank", "model": settings.agent_model, "est_input_tokens": 4000, "max_output_tokens": 150}
+    spent = 0
+    while True:
+        try:
+            reservation = meter.reserve(**call)
+        except BudgetExceeded as exc:
+            assert exc.scope == "evaluation"
+            break
+        meter.settle(reservation, Usage(input_tokens=4000, output_tokens=150))
+        spent += 1
+        assert spent < 10_000, "no cap"
+    assert 0.04 < meter.summary()["cost_usd"] <= 0.05 and meter.calls == spent
+    assert 0.04 < budget.spent() <= 0.05  # every reranker call reached the project ledger
+
+
 def test_rerank_needs_hybrid_in_the_cli_and_in_settings(tmp_path):
     with pytest.raises(SystemExit, match="--mode hybrid"):
         cli.cmd_eval_retrieval(offline_settings(tmp_path), eval_args(mode="dense", rerank="on"))
@@ -138,7 +180,7 @@ def test_the_parser_offers_split_rerank_and_out(monkeypatch):
 QUESTION = "Apareceu ADQ 4-91 na maquininha, o que significa?"
 
 
-def ask(settings, handler=None):
+def ask(settings, handler=None, *, with_trace: bool = False):
     from fastapi.testclient import TestClient
 
     from merchant_assistant.api.app import create_app
@@ -149,8 +191,9 @@ def ask(settings, handler=None):
     response = client.post("/messages", json={"message": QUESTION, "user_id": "cliente1988"}, headers=headers)
     assert response.status_code == 200, response.text
     body = response.json()
-    step = next(s for s in orchestrator.trace(body["request_id"])["steps"] if s["step"] == "knowledge")
-    return body, step["detail"], llm
+    trace = orchestrator.trace(body["request_id"])
+    step = next(s for s in trace["steps"] if s["step"] == "knowledge")
+    return (body, step["detail"], llm, trace) if with_trace else (body, step["detail"], llm)
 
 
 def test_knowledge_reranks_when_rerank_is_on(settings):
@@ -173,7 +216,24 @@ def test_knowledge_keeps_the_fusion_order_when_the_reranker_fails(settings):
     _, plain, _ = ask(settings.model_copy(update={"retrieval_mode": "hybrid"}))
     assert body["status"] == "answered" and detail["rerank"]["status"] == "failed"
     assert "rerank provider down" in detail["rerank"]["error"]
-    assert [h["chunk_id"] for h in detail["hits"]][:3] == [h["chunk_id"] for h in plain["hits"]][:3]
+    assert detail["hits"] == plain["hits"]  # review P2-1: the whole top k of RERANK=off, scores included
+
+
+def test_the_knowledge_reranker_is_metered_by_the_request(settings):
+    """Review P2-3 (K2): the reranker call goes through the request's Meter, so it counts in max_model_calls, in the
+    request cost and in the ledger; with a NullMeter it would be a paid call outside every guard."""
+    import sqlite3
+
+    on, plain = (
+        ask(settings.model_copy(update={"retrieval_mode": "hybrid", **extra}), with_trace=True)
+        for extra in ({"rerank": "on"}, {})
+    )
+    (body, _, llm, trace), (_, _, plain_llm, plain_trace) = on, plain
+    assert trace["model_calls"] == len(llm.calls) == len(plain_llm.calls) + 1 == plain_trace["model_calls"] + 1
+    assert trace["detail"]["models_by_agent"]["rerank"]["calls"] == 1  # the request's usage_by_agent
+    with sqlite3.connect(settings.runtime_path / "budget.sqlite3") as conn:
+        agents = [a for (a,) in conn.execute("SELECT agent FROM ledger WHERE request_id = ?", (body["request_id"],))]
+    assert agents.count("rerank") == 1
 
 
 def test_rerank_off_by_default_makes_no_call(settings):
