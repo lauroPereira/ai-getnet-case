@@ -250,12 +250,140 @@ def test_a_negated_new_form_is_rejected(case_id: str, answer: str):
 
 
 def test_request_to_cancel_alone_is_not_enough_for_the_cancellation_journey():
-    # "requested" alone is still accepted (as before); "request to cancel" needs "not (been) processed" with it.
+    # "requested" alone is still accepted (as before); "request to cancel" needs both "received" and
+    # "not (been) processed" with it (review round 1, P2-1).
     case = _cases()["V030-SALE-CANCELLATION"]
     row = _r5_row("req_eval932e426373de")
     assert not _recheck(case, row, "Your request to cancel yesterday's sale has been received.")["content_ok"]
-    assert _recheck(case, row, "Your request to cancel yesterday's sale has not been processed yet.")["content_ok"]
+    assert not _recheck(case, row, "Your request to cancel yesterday's sale has not been processed yet.")["content_ok"]
+    received_not_processed = "Your request to cancel yesterday's sale has been received, but it has not been processed."
+    assert _passed(case, row, received_not_processed)
     assert _recheck(case, row, "Yesterday's sale cancellation is marked as requested.")["content_ok"]
+
+
+# --- (c2) review round 1 probes (P2-1 to P2-4, P3-1): alone and appended to every accepted answer -------------------
+
+RSQ = chr(0x2019)
+REVIEW_PROBES = {
+    "V030-SALE-CANCELLATION": [  # P2-1
+        "Your request to cancel yesterday's sale was rejected, so it has not been processed.",
+        "Your request to cancel yesterday's sale was denied, so it has not been processed.",
+        "Your request to cancel yesterday's sale was declined, so it has not been processed.",
+        "Your request to cancel yesterday's sale was refused, so it has not been processed.",
+        "The status of your request to cancel yesterday's sale is unknown, so it has not been processed.",
+        "There isn't a request to cancel yesterday's sale, so it has not been processed.",
+        f"There isn{RSQ}t a request to cancel yesterday{RSQ}s sale, so it has not been processed.",
+        "There is not a request to cancel yesterday's sale, so it has not been processed.",
+        "We have no record of a request to cancel yesterday's sale, so it has not been processed.",
+        "Your request to cancel yesterday's sale has been received, but it was rejected and has not been processed.",
+        "Your request to cancel yesterday's sale has not been received, so it has not been processed.",
+        f"Your request to cancel yesterday{RSQ}s sale wasn{RSQ}t received, so it has not been processed.",
+        "Your request to cancel yesterday's sale was not received, so it has not been processed.",
+        "Your request to cancel yesterday's sale was not yet received, so it has not been processed.",
+        "Your request to cancel yesterday's sale has not yet been received, so it has not been processed.",
+        "Your request to cancel yesterday's sale hasn't been received, so it has not been processed.",
+        "Your request to cancel yesterday's sale hasn't yet been received, so it has not been processed.",
+        "We haven't yet received a request to cancel yesterday's sale, so it has not been processed.",
+        "There are no records of a request to cancel yesterday's sale, so it has not been processed.",
+        "Your request to cancel has been received; its status is not known and it has not been processed.",
+    ],
+    "V030-PRICE-CONDITIONS": [  # P2-2
+        "No different pricing plans were used.",
+        "Different pricing plans were not used.",
+        "The charge wasn't made under different pricing plans.",
+        "The charge was not made under different pricing plans.",
+        "There were no different pricing plans.",
+        "The charge and expected conditions never used different pricing plans.",
+        "The charge and expected conditions have not used different pricing plans.",
+        "Different pricing plans weren't used.",
+        "Different plans were not used.",
+        "Different plans weren't used.",
+        "Different conditions were not used.",
+        "Different conditions weren't used.",
+    ],
+    "V030-PT-PRICE-CONDITIONS": [  # P2-3
+        "Não encontrei diferença entre as condições.",
+        "Não identifiquei diferença entre as condições.",
+        "Não vejo diferença entre as condições.",
+        "Não constatei diferença entre as condições.",
+        "Não foi encontrada diferença entre as condições.",
+        "Não há diferença entre as condições.",
+        "Não encontrei diferença.",
+        "Não foi encontrada diferença.",
+        "Não há diferença.",
+        "Não encontrei essa diferença entre as condições.",
+        "Não há essa diferença entre as condições.",
+        "Nenhuma diferença foi encontrada.",
+        "A cobrança foi feita sem diferença de condições.",
+        "Não houve diferença entre as condições.",
+        "Não existe diferença entre as condições.",
+        "Não há qualquer diferença entre as condições.",
+        "Não foi identificada diferença entre as condições.",
+        "Não foi constatada diferença entre as condições.",
+        "Não foram encontradas diferenças entre as condições.",
+        "Não foram identificadas diferenças entre as condições.",
+        "Não houve essa diferença entre as condições.",
+        "Não existe essa diferença entre as condições.",
+        "Não identifiquei essa diferença entre as condições.",
+        "Não vejo essa diferença entre as condições.",
+        "Não constatei essa diferença entre as condições.",
+    ],
+    "V030-PRICE-DIVERGENCE": [  # P2-4 and P3-1
+        "The pricing rule shows a fee of R$ 0,75, but the recorded charge is R$ 0,75.",
+        "The pricing rule shows a fee of R$ 0,75, but the recorded charge was R$ 0,75.",
+        "The rule doesn't show a difference.",
+        f"The rule doesn{RSQ}t show a difference.",
+        "The comparison didn't show a difference.",
+    ],
+}
+
+
+@pytest.mark.parametrize(
+    ("case_id", "probe"),
+    [(case_id, text) for case_id, texts in REVIEW_PROBES.items() for text in texts],
+)
+def test_review_probe_alone_fails_the_rubric(case_id: str, probe: str):
+    row = next(row for row in _archived("v080-healthy-r5.json") if row["id"] == case_id)
+    assert not _passed(_cases()[case_id], row, probe), probe
+
+
+@pytest.mark.parametrize(
+    ("request_id", "probe"),
+    [
+        (request_id, probe)
+        for request_id, case_id in sorted(R5_FALSE_NEGATIVES.items())
+        for probe in REVIEW_PROBES.get(case_id, [])
+    ],
+)
+def test_review_probe_appended_to_an_accepted_answer_is_rejected(request_id: str, probe: str):
+    row = _r5_row(request_id)
+    checks = _recheck(_cases()[row["id"]], row, f"{row['answer']} {probe}")
+    assert checks["content_ok"]  # the accepted wording is still there
+    assert not checks["forbidden_ok"], (request_id, probe)
+
+
+@pytest.mark.parametrize(
+    ("request_id", "statement"),
+    [
+        # The negations of P2-2 are bound to "different ...": a correct remark about which plan was not used passes.
+        ("req_eval64b06f9b7f24", "The expected conditions were not used for this charge."),
+        ("req_eval64b06f9b7f24", "The demo_standard plan was not used for this charge."),
+        ("req_eval932e426373de", "No processed date is shown."),
+    ],
+)
+def test_correct_statements_near_the_new_prohibitions_still_pass(request_id: str, statement: str):
+    row = _r5_row(request_id)
+    assert _passed(_cases()[row["id"]], row, f"{row['answer']} {statement}"), statement
+
+
+def test_the_divergence_form_is_bound_to_the_case_amounts():
+    # P2-4: "but the recorded charge is R$" alone is no longer a form; only the case's R$ 0,00 x R$ 0,75 divergence.
+    case = _cases()["V030-PRICE-DIVERGENCE"]
+    row = _r5_row("req_evalb84c1106aea3")
+    forms = [form for group in case.must_include_any for form in group]
+    assert "but the recorded charge is R$" not in forms and "but the recorded charge was R$" not in forms
+    assert _recheck(case, row, "The rule shows R$ 0,00, but the recorded charge is R$ 0,75.")["content_ok"]
+    assert not _recheck(case, row, "The rule shows R$ 0,50, but the recorded charge is R$ 0,75.")["content_ok"]
 
 
 # --- (d) CA-51 recomputed offline on the r5 composition --------------------------------------------------------------

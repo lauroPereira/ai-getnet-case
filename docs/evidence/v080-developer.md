@@ -1118,3 +1118,74 @@ Contradições reforçadas (as que já existiam ficaram):
 ### Próxima ação
 
 Revisão do commit desta rodada (rótulos e teste). Depois, reteste pago das seis jornadas pelo QA: três repetições, no mesmo dia da seed.
+
+## Tarefa 78, rodada 2 (correções da revisão)
+
+Developer nativo, 2026-11-05. Branch `codex/v0.8.0-replan`; base `57b37ab` (produto em `2b62993`). Despacho: [parecer da rodada 1](v080-reviewer-t78.md), com P2-1 a P2-4 obrigatórios e P3-1 como regressão. Identidade conferida (`lauroPereira` / `lauro.s.pereira@gmail.com`). Um commit: `tests/scenarios/business_journeys.jsonl`, `tests/unit/evaluation/test_t78_ca51_archived.py`, esta passagem e a tarefa 78.
+
+`runner.py`, Router, CLI, script, catálogo e holdout não mudaram.
+
+### Mudança por jornada
+
+- **P2-1, `SALE-CANCELLATION` (linha 6).** O rótulo agora tem três grupos, combinados por E: `[["requested", "request to cancel"], ["requested", "been received", "was received"], ["requested", "not processed", "not been processed", "not yet processed", "not yet been processed"]]`. Na prática, aceita "requested" sozinho, como antes, ou "request to cancel" + "received" + "não processado". A resposta 932e… diz "has been received, but … has not been processed yet". Proibições novas em `must_not_include`:
+  - "rejected", "denied", "declined", "refused" e "unknown";
+  - "status is not known";
+  - "isn't a request to cancel" e "is not a request to cancel";
+  - "no record of" e "no records of";
+  - "not / n't (yet) (been) received".
+- **P2-2, `PRICE-CONDITIONS` (linha 2).** A forma `different pricing plans` virou `used different pricing plans`, a forma afirmativa da resposta 64b06…. Proibições novas:
+  - "no different";
+  - "different pricing plans / plans / conditions were not used" e as variantes com "weren't";
+  - "not / n't made under different";
+  - "not used different" e "never used different".
+- **P2-3, `PT-PRICE-CONDITIONS` (linha 9).** A forma `diferença entre as condições` foi restrita a `essa diferença entre as condições`, como aparece na resposta 45e58…: o demonstrativo retoma uma diferença já afirmada. As cinco proibições "… diferença entre as condições" deram lugar às formas gerais, que valem com e sem o complemento:
+  - "não há / não houve / não existe / nenhuma / sem diferença";
+  - "não há qualquer diferença";
+  - "não encontrei / identifiquei / vejo / constatei diferença";
+  - "não foi encontrada / identificada / constatada diferença";
+  - "não foram encontradas / identificadas diferenças";
+  - as variantes com "essa diferença" ("não há / houve / existe / encontrei / identifiquei / vejo / constatei essa diferença").
+- **P2-4, `PRICE-DIVERGENCE` (linha 3).** Retirei `but the recorded charge is/was R$`. A resposta b84c1… fica coberta pela forma presa ao fato do caso: `R$ 0,00, but the recorded charge is R$ 0,75` (e a variante com "was"). Proibi `R$ 0,75, but the recorded charge is/was R$ 0,75`, a regra igual à cobrança. Sozinha, essa sonda já reprova por `content_ok`; colada a uma resposta aceita, reprova pela proibição. Não há na resposta b84c1… outra proposição geral de divergência: "requires human review" não basta.
+
+### Decisões além do despacho
+
+- **`were not used`.** O despacho pede para proibir "were not used". Proibir a frase solta recusaria uma observação correta, como "The expected conditions were not used for this charge" ou "The demo_standard plan was not used". Por isso prendi a negação a "different …", e há teste que aceita essas duas frases coladas à resposta 64b06….
+- **"unknown" e "rejected".** Ficaram soltos, sem prender a um contexto. Uma resposta correta para o estado `requested` não tem motivo para dizê-los. O custo é uma falsa recusa se o modelo escrever "not processed or rejected" ou "it is unknown when it will be processed". Nenhuma resposta arquivada cai nisso.
+- **Redundâncias.** Tirei as proibições que outra forma já cobre, como "no different pricing plans", já coberta por "no different", e as cinco variantes de "no record of …". Assim cada proibição nova tem sonda própria que a mata.
+
+### Prova (`runner._checks` real, arquivos só lidos)
+
+`tests/unit/evaluation/test_t78_ca51_archived.py` tem 304 testes: os 166 da rodada 1 e 138 novos.
+
+- **Sondas da revisão (P3-1).** São 62: 20 de cancelamento, 12 de condições EN, 25 de condições PT e 5 de divergência, entre elas `doesn't` / `doesn’t` / `didn't show a difference`.
+  - Sozinhas, todas reprovam.
+  - Coladas a cada resposta aceita da jornada, são 72 combinações. Em todas, `content_ok` segue verdadeiro e `forbidden_ok` cai.
+  - Sob o rótulo `2b62993`, 45 das 62 passavam sozinhas e 60 das 72 passavam coladas. Agora são 0 e 0.
+- **Outros testes novos.**
+  - 3 frases corretas perto das proibições novas continuam aceitas.
+  - Um teste prende a forma de divergência aos valores do caso: "R$ 0,50, but the recorded charge is R$ 0,75" não é aceita.
+  - O teste de "request to cancel" sozinho passou a exigir também "received".
+- **Mutação em memória.** Retirei, uma por vez, cada proibição nova das quatro jornadas e também `n't show a difference`: são 54 mutantes, e todos morrem. O sobrevivente da revisão morre pelas sondas coladas.
+- **Pontuação cruzada `2b62993` × novo.** Foram 111 respostas arquivadas das 13 jornadas e 999 checagens, e **nenhuma checagem mudou**.
+  - Aprovadas: r3 39 → 39, r4 14 → 14, r5 33 → 33.
+  - Nenhuma aprovada passou a reprovar.
+  - As 10 respostas da tarefa seguem aprovadas.
+- **CA-51 na composição da r5.** Com o rótulo r7 (`658c70a`): 11, 8 e 10 de 13. Com o r8 (`2b62993`): 13, 13 e 13. Com o novo: **13/13, 13/13 e 13/13**.
+
+### Evidência
+
+- Testes focados: `tests/unit/evaluation/test_t78_ca51_archived.py`, **304 passed**. Ruff check e format ok.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` (venv 3.13.3), com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t78-r2-suite-basetemp -p no:cacheprovider"`: **1683 passed** em 661,61 s (1.545 + 138, sem skip). Ruff `All checks passed!`, skills válidas, exit 0. Log em `.pytest_cache/t78-r2-suite.log`, SHA-256 `1c345053…a93d`.
+
+### Limites
+
+- A régua continua literal. As formas novas são mais estreitas, e a próxima execução real pode trazer uma redação que não casa. É o caso de "the plans used were different" sem "used different pricing plans", ou de "a diferença entre as condições" sem o demonstrativo. Isso vira falsa recusa no reteste, não falsa aprovação.
+- Seguem abertos os P3-2, P3-3 e P3-5 da revisão. Não os tratei, por estarem fora do despacho:
+  - o "não" solto não qualifica;
+  - há lacunas de lista que só aparecem com texto colado;
+  - o assunto de commit em `v080-candidato-r8.json` está errado.
+- Nenhuma chamada paga, rede ou `.env`.
+
+### Próxima ação
+
+Revisão curta deste commit. Depois, o Supervisor fixa o novo candidato e o QA faz o reteste pago das seis jornadas, em três repetições, no mesmo dia da seed.

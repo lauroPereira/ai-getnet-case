@@ -68,6 +68,21 @@ Developer, rodada 1 (2026-11-05), passagem em [v080-developer.md](../evidence/v0
 - Suíte estrita: 1545 passed (1.379 + 166), Ruff e skills ok, exit 0.
 - Pendente: revisão e reteste pago das seis jornadas pelo QA.
 
+Developer, rodada 2 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-2-correções-da-revisão). Responde ao [parecer da rodada 1](../evidence/v080-reviewer-t78.md), P2-1 a P2-4 e P3-1. As mudanças ficaram nos rótulos de quatro jornadas:
+
+- `SALE-CANCELLATION`: "request to cancel" agora exige também "received" e "não processado". Passam a ser recusadas as formas rejeitado, negado, desconhecido, "isn't a request", "no record of" e "not received".
+- `PRICE-CONDITIONS`: a forma aceita passou a ser `used different pricing plans`. As negações de "different …" são recusadas.
+- `PT-PRICE-CONDITIONS`: a forma aceita passou a ser `essa diferença entre as condições`. Negações como "não encontrei / não há / não foi encontrada diferença" são recusadas, com e sem o complemento.
+- `PRICE-DIVERGENCE`: a forma aceita ficou presa ao caso, `R$ 0,00, but the recorded charge is R$ 0,75`. A regra igual à cobrança é recusada.
+
+Resultados:
+
+- O teste tem 304 casos. As 62 sondas da revisão reprovam sozinhas e também nas 72 combinações coladas a respostas aceitas. Sob o rótulo `2b62993`, passavam 45 sozinhas e 60 coladas.
+- Mutação em memória: 54 mutantes das proibições novas, todos mortos.
+- Pontuação cruzada `2b62993` × novo: 999 checagens e nenhuma mudou. Aprovadas: r3 39, r4 14, r5 33.
+- CA-51 na composição da r5: 13/13, 13/13 e 13/13.
+- Suíte estrita: 1683 passed (1.545 + 138), Ruff e skills ok, exit 0.
+
 ## Status
 
-Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05; aguarda revisão.
+Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05; aguarda revisão.
