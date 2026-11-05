@@ -67,8 +67,9 @@ class Settings(BaseSettings):
 
     retrieval_top_k: int = 6
     retrieval_min_score: float = 0.30
-    # v0.9.0 (task 80, D7): `hybrid` fuses dense and BM25 by RRF; the default stays `dense` until the D7 measurement.
-    retrieval_mode: Literal["dense", "hybrid"] = "dense"
+    # v0.9.0 (task 80, D7): `hybrid` fuses dense and BM25 by RRF. Default `hybrid` since task 82: by the D7 rule it
+    # beat `dense` on nDCG@6 in dev (0.974 > 0.868) and in the sealed holdout (0.921 > 0.880). `dense` is v0.8.0.
+    retrieval_mode: Literal["dense", "hybrid"] = "hybrid"
     # v0.9.0 (task 81, D7): the agent model reorders the first 12 results of the hybrid fusion (prompt rerank.v1).
     # Off until it improves nDCG@6 in dev and in the retrieval holdout; it requires RETRIEVAL_MODE=hybrid.
     rerank: Literal["on", "off"] = "off"

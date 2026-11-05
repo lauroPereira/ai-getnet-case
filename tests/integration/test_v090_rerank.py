@@ -156,8 +156,9 @@ def test_rerank_needs_hybrid_in_the_cli_and_in_settings(tmp_path):
     with pytest.raises(SystemExit, match="--mode hybrid"):
         cli.cmd_eval_retrieval(offline_settings(tmp_path), eval_args(mode="dense", rerank="on"))
     with pytest.raises(ValidationError, match="RERANK=on requires RETRIEVAL_MODE=hybrid"):
-        offline_settings(tmp_path, rerank="on")
+        offline_settings(tmp_path, rerank="on", retrieval_mode="dense")
     assert offline_settings(tmp_path).rerank == "off"
+    assert offline_settings(tmp_path, rerank="on").rerank == "on"  # task 82: the default mode is hybrid
     assert offline_settings(tmp_path, rerank="on", retrieval_mode="hybrid").rerank == "on"
 
 
