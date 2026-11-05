@@ -161,3 +161,66 @@ A falha é `tests/integration/test_v090_judge.py::test_moment_3_both_judges_agai
 ### Próxima ação
 
 Reviewer: revisar `5d82fd0` e `c99aa90` e rodar a suíte estrita no HEAD final. Supervisor: decidir sobre `origin` no trace e sobre o piso do BM25 (decisão 1).
+
+## Tarefa 80 — rodada 2 (correções da revisão)
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único), rodada de correção da mesma tarefa.
+- **Objetivo e critérios:** fechar P2-1, P2-2 e P2-3 do [parecer da rodada 1](v090-reviewer-t80.md) com as decisões do Supervisor; `RETRIEVAL_MODE` no `.env.example` (P3-5); demais P3 só registrados.
+- **Escopo:** `rag/bm25.py`, `rag/index.py`, `tests/unit/rag/test_bm25_hybrid.py`, `tests/integration/test_v090_hybrid.py`, `.env.example`, Validação e Status da tarefa 80 e esta seção. `agents/knowledge.py`, `main.py`, `cli.py`, `llm/` e `evaluation/` não mudaram; nenhum prompt, rótulo, cenário, migração, snapshot ou ledger mudou.
+- **Estado:** corrigido; aguarda nova rodada do Reviewer.
+- **Branch e base:** `codex/v0.9.0-juiz-retrieval`, base da rodada `8db183a`. Commits: `60ab2c8` (correções e testes), `687895c` (`.env.example`) e o commit desta passagem. Identidade conferida: `lauroPereira <lauro.s.pereira@gmail.com>`. Arquivos adicionados por nome. Sem push.
+- **Independência:** não se aplica (implementação).
+
+### Como cada P2 foi fechado
+
+- **P2-1 (pickle com metadados velhos).** Opção preferida do Supervisor. O arquivo `bm25-<hash>.pkl` guarda agora só `{"format": 2, "corpus_hash", "chunk_ids", "bm25"}`, ou seja, os ids e as estatísticas do `BM25Okapi` (frequências de termos por chunk, idf), sem payload. `Bm25Index.from_persisted(state, records, digest)` junta essas estatísticas aos payloads dos registros que `bm25_index()` acabou de ler da coleção ativa no Qdrant. Por isso URL, `collected_at`, `procedure_id` e o `source_kind` do filtro vêm sempre da coleção atual. O arquivo é recusado e reconstruído quando o formato, o hash ou o conjunto de ids não confere, ou quando o objeto não é um `BM25Okapi` do mesmo tamanho. Arquivos da rodada 1 (objeto `Bm25Index` com payloads) caem nesse caso e são regravados. Sonda 9 do parecer virou teste: `v1` e `v2` com mesmo id e texto, metadados diferentes, mesmo diretório e mesmo cliente; um único arquivo; `v2.search("E-1023", mode="hybrid", source_kinds=["public_official"], min_score=0.99)` dá `[]`, e com `simulated_internal` dá `("bm25", "https://new.example", "simulated_internal")`. Outro teste confere que o arquivo não contém a URL.
+  - Interpretação de "no momento da busca": os payloads vêm da leitura da coleção feita quando o BM25 entra no cache do processo (por cliente e coleção), não de uma releitura a cada busca. A coleção publicada é imutável, e `rebuild(replace_existing=True)` descarta o cache, como na rodada 1. Ler o payload no Qdrant a cada busca exigiria buscar mais de `3×k` candidatos para o filtro de `source_kind`. Fica registrado caso o Reviewer veja diferença.
+- **P2-2 (construção concorrente).** Três mudanças:
+  - Temporário `bm25-<hash>.pkl.<pid>-<thread id>-<uuid>.tmp` e `os.replace` atômico.
+  - Trava em processo por arquivo de destino em `load_or_build`. Quem espera relê o arquivo pronto e não reconstrói.
+  - Trava por (cliente, coleção) em `bm25_index()`, guardada em `WeakKeyDictionary` como o cache. Ela cobre também o caso sem diretório (`testing.py`, `eval-retrieval`).
+
+  Se a escrita falhar (`OSError`: arquivo preso por outro processo no Windows, disco cheio), o temporário é apagado e o índice em memória é devolvido. A busca não cai em `knowledge_unavailable`. Testes no Windows, com 4 threads e `threading.Barrier`, num corpus de 3000 chunks:
+  - `load_or_build`: 0 erro, 1 construção, um só arquivo, nenhum `.tmp` restante.
+  - `_write` simultâneo sem a trava (simula processos diferentes): 0 erro.
+  - Primeira busca híbrida simultânea pelo índice, com e sem `bm25_dir`: 1 construção.
+  - `os.replace` falhando: a busca responde da memória e não sobra arquivo.
+- **P2-3 (mutantes).** Testes novos:
+  - `rrf` com números fixos `1/62 + 1/61` e `1/61`, não lidos de `RRF_K`.
+  - Profundidade `3×k`: com `k=2`, `e` está em 5º no denso e em 3º no BM25. Ela só sai em 1º, como `both` e com `1/65 + 1/63`, se as duas listas forem até 6. O teste confere também as profundidades pedidas (`dense` 6, `bm25` 6).
+  - `min_score` só na lista densa: com `min_score=0.99`, o denso dá `[]` e o híbrido dá `[("d2#0", "bm25")]` com `1/61`. Sem limiar, a lista densa participa.
+  - `main.build_orchestrator` com `retrieval_mode` `dense` e `hybrid`, LLM programado e embedder de hash: o índice do orquestrador (o mesmo do `KnowledgeBase`) tem o modo e `bm25_dir == runtime_path`. Uma busca sem `mode` grava um `bm25-*.pkl` no runtime e traz `origin` não denso no híbrido; no denso, não grava nada e tudo é `dense`.
+  - `cmd_eval_retrieval` nos dois modos: as 5 `EXACT-TERM` têm rank no híbrido e pelo menos 3 sem rank no denso; o MRR do híbrido é maior.
+
+  Mutação manual numa cópia do HEAD em `<scratchpad da sessão>` (`git archive` + os 4 arquivos), com `PYTHONPATH` para o `src/` da cópia (conferido) e os dois arquivos de teste da tarefa. **12 mutantes, 12 mortos**:
+  - M01 (híbrido ignora `min_score`), M02 (profundidade `k`), M03 (`RRF_K=1`).
+  - M10 (`main.py` sem `mode=` e `bm25_dir=`), M10b (só sem `bm25_dir=`), M12 (`cmd_eval_retrieval` não passa `mode`).
+  - Payloads lidos do arquivo, junto com o arquivo guardando payloads; e o arquivo guardando payloads, sozinho.
+  - Temporário só com o pid.
+  - Sem a trava de `load_or_build`; sem a trava de `bm25_index()`. Esta sobreviveu na primeira tentativa, porque a construção de 2 chunks cabia numa fatia do GIL; o teste ganhou uma construção lenta (`sleep` de 0,2 s no espião) e o caso sem `bm25_dir`.
+  - Escrita que falha propaga a exceção.
+
+  M15 (hash interno do arquivo) fica como estava: hoje o hash é conferido, junto com o formato e os ids.
+
+### Limitação para a decisão D7 (Supervisor leva ao relatório; o Knowledge não mudou)
+
+No modo híbrido, o `min_score` (`RETRIEVAL_MIN_SCORE`, 0,30 no serviço) corta só a lista densa. Em `agents/knowledge.py:168`, o atalho `no_evidence` (`if not hits`) só dispara quando nenhuma das duas listas devolve nada. Na prática, isso acontece quando a pergunta não tem nenhum token da base depois das stopwords e o denso também não passa do limiar. Uma pergunta fora do domínio que compartilhe uma palavra com algum chunk ("taxa", "cartão") chega ao modelo com passagens só do BM25, e o portão de evidência passa a depender do prompt e do juiz da evidência, não do limiar. O `score` do passo `knowledge` no trace muda de escala, de cosseno (cerca de 0,3 a 0,6) para RRF (no máximo cerca de 0,033): quem lê o trace ou compara scores entre modos precisa saber o modo. A campanha real do QA (tarefa 82) deve olhar `NOEV` e as perguntas fora do domínio no híbrido antes de a D7 trocar o padrão. Alternativas, se o Supervisor quiser: piso de score no BM25 ou exigir ao menos um item denso acima do limiar para responder.
+
+### P3 (registrados)
+
+- **P3-1** `origin` fora do trace e das linhas do `eval-retrieval`: continua para a tarefa 81 ou 82 (campo aditivo em `hits`, no `knowledge.py`).
+- **P3-2** versão do tokenizador e parâmetros fora da chave: o campo `format` do arquivo existe agora (2), mas não muda com o tokenizador. Mudança de `tokenize`, `STOPWORDS`, `k1` ou `b` precisa subir esse número ou entrar no hash. Não implementado.
+- **P3-3** hífen não ASCII e `E1023`/`E 1023`: não tratado.
+- **P3-4** arquivos `bm25-*.pkl` nunca podados; cache e travas por coleção crescem com as coleções consultadas pelo cliente (as travas por arquivo em `bm25._BUILD_LOCKS` também). Volume pequeno, uma entrada por versão da base.
+- **P3-5** `RETRIEVAL_MODE` agora está no `.env.example`, comentado, com padrão `dense`. Falta alinhar no ADR 0020 o nome `bm25-<hash>.pkl` (decisão 17 do plano diz `bm25.pkl`) e registrar o manifesto aditivo (`bm25_corpus_hash`, `retrieval_modes`).
+- **P3-6** `pickle.load` lê só o runtime do próprio serviço. Agora o conteúdo é um dicionário com um `BM25Okapi`, conferido por tipo, mas o `pickle.load` em si continua confiando no diretório. Registrar no ADR.
+
+### Evidência
+
+- Testes novos: **14** (11 em `test_bm25_hybrid.py`, que passa de 15 para 26 itens, e 3 em `test_v090_hybrid.py`, de 2 para 5). Os dois arquivos: 31 passed. Com `tests/unit/rag`, `test_identity.py` e `test_v070_identity_r2.py` (os que leem `.env.example`): verdes (1 skip esperado do `test_v070_identity_r2.py`).
+- Referência com embeddings de hash (`cmd_eval_retrieval` com `Settings(_env_file=None, openai_api_key=None)`, runtime no scratchpad), igual à rodada 1: denso R@6 0,632 e MRR 0,500; híbrido 1,000 e 0,789; ranks das 5 `EXACT-TERM` `[None ×5]` contra `[2, 4, 1, 4, 2]`; `bm25_corpus_hash` `ca4109c8ccf9…`; 0 token de embedding.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t80r2-suite-basetemp -p no:cacheprovider"`, sobre `687895c` (só a Validação da tarefa 80 modificada na árvore; durante a execução outro escritor commitou `80a0853` e `97b8141`, só documentação, fora dos meus arquivos): **2050 passed** em 836,31 s, 0 failed, 0 skipped (2036 da rodada 1 com o skip do basetemp resolvido + 14 novos); ruff `All checks passed!`; caminhos pessoais limpos (728 arquivos); exit 0. Log `.pytest_cache/t80r2-suite.log`, SHA-256 `00260f3a…be48`. Esperei a suíte estrita do outro agente terminar antes de começar a minha.
+
+### Próxima ação
+
+Reviewer, em contexto novo: re-verificar `rag/bm25.py`, `rag/index.py` e os testes; repetir as sondas 9, 10 e 11 e os mutantes M01, M02, M03, M10 e M12. Supervisor: levar a limitação do `min_score` à decisão D7 e decidir o destino de P3-1 e P3-2.

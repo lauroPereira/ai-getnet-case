@@ -42,6 +42,15 @@ Developer, 2026-11-05, commits `5d82fd0` e `c99aa90` na `codex/v0.9.0-juiz-retri
 - `lint_and_tests.py --strict`: 2028 passed e 1 failed, 2029 no total (2012 da tarefa 79 + 17 novos). A falha é `test_v090_judge.py::test_moment_3_both_judges_against_the_same_human_ratings`, área da tarefa 79, causada por edição em andamento de outro escritor em `cli.py` durante a execução. Ruff sem achados; caminhos pessoais limpos (727 arquivos). No HEAD `7d1039f`, depois dos commits da rodada 2 da tarefa 79, esse arquivo e os testes da tarefa 80 passam (53 passed). Detalhe na passagem.
 - Decisões além do texto e limites (`min_score` só na lista densa; `origin` não aparece no trace do Knowledge, que não mudou): na passagem.
 
+**Rodada 2** (correções do [parecer da rodada 1](../evidence/v090-reviewer-t80.md), P2-1 a P2-3), Developer, 2026-11-05, commits `60ab2c8` e `687895c`. Passagem: seção "Tarefa 80 — rodada 2".
+
+- P2-1: o arquivo do BM25 guarda só ids e estatísticas (formato 2); payload, URL, `collected_at` e `source_kind` vêm da leitura atual da coleção ativa; arquivos da rodada 1 são reconstruídos.
+- P2-2: temporário único por processo, thread e chamada, com `os.replace`; um construtor por arquivo e por (cliente, coleção) no processo; escrita que falha responde da memória.
+- P2-3: testes fixam `k=60`, os `3×k`, o `min_score` só na lista densa, a fiação do `main.py` e que `eval-retrieval --mode hybrid` mede o híbrido. `RETRIEVAL_MODE` comentado no `.env.example`.
+- Testes novos: 14 (11 em `test_bm25_hybrid.py`, 3 em `test_v090_hybrid.py`); 12 mutantes manuais numa cópia, todos mortos (M01, M02, M03, M10, M10b, M12 e 6 das regressões de P2-1 e P2-2).
+- Referência com hash inalterada: denso R@6 0,632 e MRR 0,500; híbrido 1,000 e 0,789; hash `ca4109c8ccf9…`.
+- Suíte estrita: `lint_and_tests.py --strict` com 2050 passed, 0 failed, ruff limpo, caminhos limpos (728 arquivos), exit 0 (detalhe na passagem).
+
 ## Status
 
-Implementada pelo Developer em 2026-11-05; aguarda revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+Rodada 2 implementada pelo Developer em 2026-11-05 (P2-1 a P2-3 fechados; P3 registrados na passagem); aguarda nova rodada de revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
