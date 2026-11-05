@@ -75,3 +75,20 @@ Developer corrige P2-5 e P2-6, de preferência com P3-6 e P3-8 na mesma passada 
 
 ### Decisão do Supervisor (2026-11-05, 06h30)
 O cotejo por substring não expressa negação, e cada rodada encontra paráfrases novas; as três rodadas mostraram que o problema é estrutural (P3-2, P3-9). Para fechar a tarefa 78 sem reduzir o CA-51: (1) o Developer corrige o P2-7 e os acréscimos de "concluído" com as sondas como regressão; (2) a partir da rodada 4, o critério "sem aceitar contradições" fica limitado à lista de contradições já registrada nas rodadas 1 a 3 e no teste da tarefa; (3) paráfrase errada nova fora dessa lista é P3, registrada como limitação da régua literal, com o juiz independente como controle adicional (como a tarefa 74 já estabelece); (4) é P2 apenas se uma proibição recusar resposta correta arquivada ou óbvia, ou se uma forma aceita casar contradição da lista. A decisão sobre a régua a partir da v0.9.0 continua com o responsável.
+
+## Rodada 4 — candidato `1baa7b31ed28724a2536ae33a12f11a4d41c4cf8` (r11)
+
+**Parecer: apto para QA.** P2-7 fechado; nenhum P1 ou P2 pelo critério fechado; um P3 novo.
+
+- **Hashes:** tree `d7447564…`, 99 blobs e fingerprint `d8e536fe…2eb` conferem antes e depois; holdout blob `22dfee8b…af9d` em `658c70a`, `33d18d1`, `1baa7b3` e HEAD; `src/`, `prompts/`, `data/`, `tools/` sem mudança. Delta só na linha 6 do `business_journeys.jsonl` (+28 `must_not_include`, −1 trocada por `no record of the request to cancel`; +25 `must_not_assert`) e no teste da tarefa.
+- **Suíte** em cópia `git archive 1baa7b3`: 1.996 passed e 1 skipped em 688 s (skip isolado e passado: 1.997); Ruff e skills ok; exit 0. Teste da tarefa: 618.
+- **P2-7:** as oito sondas erradas da rodada 3 reprovam sozinhas e coladas (também com apóstrofo tipográfico); formas de "concluído" reprovam; as 12 redações corretas de pendência passam sozinhas e coladas; sondas P2-1 continuam reprovando.
+- **Invariantes:** 10/10; pontuação cruzada `33d18d1` × `1baa7b3` em 111 respostas: 0 mudanças (r3 39/39, r4 14/14, r5 33/33); CA-51 na composição da r5: 13/13 ×3.
+- **Mutações:** 10 em cópia isolada, 10 mortas.
+- **P3-10** `business_journeys.jsonl:6`: formas presas literalmente recusam redações corretas pouco usuais ("has not yet approved or rejected it", "if it is later rejected", "the outcome of your request to cancel is unknown", "the review is complete, and it is still pending", "will have been refunded"); inconsistência preexistente: `is rejected` nu em `must_not_include` contra `it's rejected` em `must_not_assert` ("if it is rejected" reprova, "if it's rejected" passa). Classe conservadora do P3-7.
+
+### Lista P3-7 final para o QA (falsas recusas conhecidas; conferir cada `content_ok`/`forbidden_ok` falho)
+Cancelamento: "You will be notified if it is rejected", "no one has rejected it", "no record of the request to cancel being processed", "not marked as rejected", "nothing has been rejected", "you have not received a confirmation", "will not be processed before settlement", "has not yet approved or rejected it", "if it is later/then rejected/declined", "the outcome of … is unknown", "is complete"/"has been completed" de outro sujeito, "will have been refunded". Condições EN: "The installments were not different", "Different pricing plans were used", "used a different pricing plan". Condições PT: "Não houve diferença no canal", "Há uma diferença entre as condições", "Os planos diferem". Divergência: "R$ 0.00 / R$ 0.75", "R$0,00", espaço não separável, "they differ".
+
+### Próxima ação
+Reteste pago das seis jornadas, três repetições, no mesmo dia da seed, com a lista P3-7 em mãos.
