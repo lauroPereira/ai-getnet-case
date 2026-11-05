@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.8.0, validated by independent reviews and a real-model QA ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)); the [human calibration](docs/evidence/v080-calibracao.md) of the judge is done (24 answers: agreement within one point 0.83–1.00, the judge stricter than the owner). Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
+**Status:** v0.8.0, validated by independent reviews and a real-model QA ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)); the [human calibration](docs/evidence/v080-calibracao.md) of the judge is done (24 answers: agreement within one point 0.83–1.00, the judge stricter than the owner). The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence. Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
 
 ### Where each part of the challenge lives
 
@@ -35,11 +35,26 @@ Since v0.7.0 `POST /messages` requires a token: the merchant comes from the toke
 
 Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `Dockerfile` and `docker-compose.yml` are at the repository root. Features built beyond the challenge (an interface, model profiles, an alternative Router engine, a versioned knowledge base, MCP) are described in [Beyond the challenge](#beyond-the-challenge).
 
+## Response to the evaluator's feedback
+
+The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the top of the ranking. Versions 0.7.0 and 0.8.0 answer the four largest remarks; the rest is listed under [next steps](#next-steps) with what is in progress. Each version went through the same cycle: a specification, tasks, an independent review in a fresh context, QA with real models under a fixed budget cap, and a candidate sealed by hashes before QA ([reports](docs/relatorios/README.md)).
+
+| Dimension (weight, V4 score) | Remark | What changed | Version | Evidence |
+| --- | --- | --- | --- | --- |
+| Human Oversight & Risk Management (7%, 4.0) | Handoff simulated: a local case with a `SIM-` protocol; no operator queue, no human reply back to the agent, no interrupt and resume | On a handoff the graph pauses at `human_review` (LangGraph `interrupt()`, SQLite checkpoint). A persistent operator queue with claim and idempotent `approve`, `reply` and `reject`; the action resumes the graph and the human reply reaches the merchant in the same conversation, by API and by webhook. A separate ticketing service talks to the assistant only through signed webhooks in both directions | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), [result](docs/evidence/v070-resultado.md), [story QA](docs/evidence/v070-qa.md) |
+| Security & Identity (13%, 7.8) | `user_id` was the authority of the payload; no credential → principal → authorization → merchant chain; tool calls not authorized | RS256 JWTs from an own issuer with JWKS; roles and scopes; the merchant comes from the token (`403 identity_mismatch` otherwise); every tool call checks scope and merchant and writes an audit row; revocation, rate limit per principal, MCP with a key | v0.7.0 | [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [result](docs/evidence/v070-resultado.md), [API contract](docs/contracts/api-v040.md) |
+| Agentic Reasoning & Orchestration (15%, 8.5) | A predefined combined route; no observe → reconsider → replan → another agent → review loop with a hop limit | A `replan` node after Knowledge, web and Support: named rules first, the model only on ambiguity, a three-hop budget, each specialist at most once, and the origin of every decision in the trace. The four replanning scenarios pass 3/3 with real models and at most 2 hops | v0.8.0 | [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), [pre-holdout QA](docs/evidence/v080-d12-pre-holdout-r6.md) |
+| Evaluation & Quality Engineering (14%, 9.0) | No aggregated groundedness, correctness, relevance and usefulness; no independent judge, repeated runs, human calibration or holdout; journeys 7/13 by the literal rubric | `judge.v3` (four criteria plus `unsupported_claim`) by a DeepSeek judge over an OpenAI agent; three agent runs and three judge runs with the agreement reported; dev and holdout separated; the sealed holdout run once (62/75); a 24-answer human calibration (agreement within one point 0.83–1.00, the judge stricter than the human). Journeys 13/13, 12/13 and 12/13 by the deterministic floor and 13/13 by the judge | v0.8.0 | [campaign](docs/evidence/v080-all-r3.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md) |
+| Context, Knowledge & RAG (10%, 9.4) | Recall@6 = 1.00 on a small set used during development; no hybrid BM25 + dense, RRF or reranker | Not changed yet. Hybrid retrieval measured against a sealed retrieval holdout is the next step (v0.9.0) | — | [next steps](#next-steps) |
+| Production Engineering (5%, 9.0) | `/messages` without auth; handoff without human integration; comparison in a thread of the process; external access untested; demo credentials to be configured | `/messages` authenticated and the handoff integrated (v0.7.0); `docker compose up` works without editing `.env.example` (fictitious demo keys); a CI workflow runs the strict suite on every push and pull request. Still open: the comparison thread and the external access test | v0.7.0, CI | [workflow](.github/workflows/validate.yml), [result](docs/evidence/v070-resultado.md) |
+| Memory, State & Resilience (8%, 9.0) | A comparison lost on restart is marked failed | The review graph checkpoint and the outbox survive an API restart (v0.7.0); a resumable comparison and a rolling summary of long conversations are next steps | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md) |
+| Observability, Reliability & Cost (6%, 9.2) | Production next steps only described (OTel, dashboards, alerts) | Unchanged: cost ledger with campaign caps and a budget guard, and a trace with the origin of every decision; `/metrics`, OTLP and alert rules are next steps | — | [Observability](#observability) |
+
 ---
 
 ## Contents
 
-1. [Run it](#run-it) · 2. [Configuration](#configuration) · 3. [Architecture](#architecture) ·
+[Response to the feedback](#response-to-the-evaluators-feedback) · 1. [Run it](#run-it) · 2. [Configuration](#configuration) · 3. [Architecture](#architecture) ·
 4. [Message workflow](#message-workflow) · 5. [RAG pipeline](#rag-pipeline) · 6. [Support tools and data](#support-tools-and-synthetic-data) ·
 7. [How the LLM tools are used](#how-the-llm-tools-are-used) · 8. [Guardrails and reliability](#guardrails-and-reliability) ·
 9. [Observability](#observability) · 10. [Testing and evaluation](#testing-and-evaluation) · 11. [Design decisions](#design-decisions) ·
@@ -504,17 +519,29 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 ## Limitations and next steps
 
 - The ticketing service is the project's own (Zendesk/Freshdesk-style contract); a commercial ticketing system would be a mapping and configuration change. A delivery that exhausts its three attempts, or that the receiver refuses, has no automatic or manual resend yet and holds the later events of the same case and destination. If the API dies in the middle of the turn that opens a case, the case is completed when the merchant sends the same message again; otherwise it stays open without a ticket. The ticket id appears on the case after the first operator event from the ticketing; it is empty while the ticket is still in reception. The cross-process locks were exercised on Windows only.
-- Business journeys are measured by a literal rubric: real runs bring correct paraphrases it refuses (v0.8.0 passed 13/13, 12/13 and 12/13; the judge 13/13 each). The handoff sentence and the journey labels were fixed in v0.8.0. The judge does not see the web search text, so `general_web` answers score lower and vary more. The human calibration of the judge is [done](docs/evidence/v080-calibracao.md) (24 answers: the judge is the stricter rater, and the two never flag the same answer as unsupported), and the v0.8.0 holdout has been seen once.
+- Business journeys are measured by a literal rubric that works as a deterministic floor (route, status, tools, values, forbidden assertions): real runs bring correct paraphrases it refuses (v0.8.0 passed 13/13, 12/13 and 12/13; the judge 13/13 each), and a wrong paraphrase outside the registered list can pass it. Content is checked by the calibrated judge. The handoff sentence and the journey labels were fixed in v0.8.0. The judge does not see the web search text, so `general_web` answers score lower and vary more, and the calibration shows it misses generic claims that a human flags. The human calibration of the judge is [done](docs/evidence/v080-calibracao.md) (24 answers: the judge is the stricter rater, and the two never flag the same answer as unsupported), and the v0.8.0 holdout has been seen once.
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
-- v0.6.0 closes the functional scope (ADR 0015): no Evaluation Agent, no improvement-proposal workflow and no experiment platform. Model evaluation is an on-demand judge over persisted replies and is not human review.
+- The functional scope was reopened after the feedback ([ADR 0016](docs/architecture/decisions/0016-reabertura-pos-feedback.md)); there is still no Evaluation Agent, improvement-proposal workflow or experiment platform. Model evaluation is a judge over persisted replies, calibrated against a human sample, not human review.
 - Profile comparisons are small and run in a thread of the API process; restarting the API marks a running comparison as failed. The comparison estimate is an upper bound (request cost cap per new execution).
 - The Results area lists the runs of the current browser session; there is no general run listing.
 - Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.
 - Sale cancellation is read-only: the assistant reports the status of an existing request; asking it to cancel a
   new sale is not covered.
 - Identity uses the assistant's own issuer and synthetic demo users; there is no authorization-code flow, refresh token or external OIDC provider running in the demo.
+
+### Next steps
+
+In order of value for the open remarks. Items 1 and 2 are the scope of v0.9.0; the rest is written down so the direction is clear even if it ships later.
+
+1. **Judge model.** Rate the same 24-answer calibration sample with `claude-opus-5-5` as the judge (same rubric, same evidence, three runs) and compare its agreement with the human scores to DeepSeek's. The calibration suggests the gap is partly the input (no web text recorded) and partly the model or the rubric; this test separates the two.
+2. **Hybrid retrieval.** BM25 + dense with RRF, a configurable reranker, and a sealed retrieval holdout measured once with Recall@6, MRR and nDCG@6; the default mode is decided by the numbers.
+3. **Journey rubric.** Keep the deterministic checks for what is binary (route, status, tools, values, sources, forbidden assertions) and let the judge decide content; add a rubric line for generic claims without a source; record the web search text so the judge sees it.
+4. **Calibration tooling.** `eval-calibrate --sample` must carry the full evidence the judge saw (the v0.8.0 CSV truncated it; the full text was supplied in a companion file).
+5. **Operation.** `/metrics`, optional OTLP, versioned alert rules; a comparison that resumes after a restart; a rolling summary for long conversations (planned v0.10.0).
+6. **Optional Anthropic agent provider** with a per-provider ledger and a paired comparison against the OpenAI profile (specification drafted, not merged).
+7. **Production.** External access test through a tunnel; mapping to a commercial ticketing system; resend of exhausted webhook deliveries.
 
 ## Repository layout
 
