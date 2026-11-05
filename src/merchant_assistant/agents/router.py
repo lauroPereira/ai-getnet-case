@@ -21,15 +21,18 @@ _ISOLATED_RESOLUTION = re.compile(
 )
 # Task 76: an explicit request to end the whole contract goes to a human. Full-message matches only, so a message that
 # names a service or product ("cancel the Payment Link contract"), asks how, or says anything else stays with the model.
+# "Close", "fechar", "finalizar" and "terminar" also mean signing or completing a contract ("fechar contrato com a
+# Getnet"), so they count only with a possessive (my/our, meu/nosso).
 _TERMINATE_EN = (
     r"(?:please\s*,?\s*)?(?:i(?:\s+(?:want|need|wish|would\s+like)|['’]d\s+like)\s+to\s+)?(?:please\s+)?"
-    r"(?:close|end|terminate|cancel)\s+(?:my|the|our)\s+(?:getnet\s+)?contract(?:\s+with\s+getnet)?"
+    r"(?:(?:end|terminate|cancel)\s+(?:my|the|our)|close\s+(?:my|our))\s+(?:getnet\s+)?contract(?:\s+with\s+getnet)?"
     r"(?:\s*,?\s*please)?"
 )
 _TERMINATE_PT = (
     r"(?:por\s+favor\s*,?\s*)?(?:(?:eu\s+)?(?:quero|preciso|desejo|gostaria\s+de)\s+)?"
-    r"(?:encerrar|cancelar|rescindir|fechar|terminar|finalizar|encerre|cancele|rescinda|feche|termine|finalize)"
-    r"\s+(?:o\s+)?(?:meu\s+|nosso\s+)?contrato(?:\s+(?:com\s+a|da|na)\s+getnet)?(?:\s*,?\s*por\s+favor)?"
+    r"(?:(?:encerrar|cancelar|rescindir|encerre|cancele|rescinda)\s+(?:o\s+)?(?:meu\s+|nosso\s+)?"
+    r"|(?:fechar|terminar|finalizar|feche|termine|finalize)\s+(?:o\s+)?(?:meu|nosso)\s+)"
+    r"contrato(?:\s+(?:com\s+a|da|na)\s+getnet)?(?:\s*,?\s*por\s+favor)?"
 )
 _CONTRACT_TERMINATION = re.compile(rf"\s*(?:{_TERMINATE_EN}|{_TERMINATE_PT})\s*[.!]*\s*", re.IGNORECASE)
 
@@ -90,6 +93,8 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         decision = enforce(
             result, new_conversation=not state.history, message=state.message, case_state=state.case.get("state", "")
         )
+        if decision.route == "human_handoff" and result.route != "human_handoff":
+            ctx.step_notes["rule"] = "contract_termination"  # the only rule in `enforce` that makes a handoff
     except (LLMError, ValidationError, LimitExceeded, BudgetExceeded) as exc:
         errors.append(f"router: {exc}")
         ctx.step_notes["router_unavailable"] = True

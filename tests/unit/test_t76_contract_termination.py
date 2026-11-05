@@ -51,6 +51,9 @@ EXPLICIT = [
     "Por favor, encerre meu contrato.",
     "Cancele meu contrato, por favor.",
     "Encerrar contrato.",
+    "I want to close our contract.",
+    "Quero fechar meu contrato.",
+    "Quero finalizar o nosso contrato com a Getnet.",
 ]
 
 NOT_EXPLICIT = [
@@ -73,6 +76,15 @@ NOT_EXPLICIT = [
     "Quero encerrar meu contrato e cancelar a venda de ontem.",
     "What happens if I close my contract?",
     "I want to close my account.",
+    # review P2-76: "fechar/finalizar/close the contract" also means signing or completing one
+    "Quero fechar contrato com a Getnet.",
+    "Gostaria de fechar contrato.",
+    "Quero finalizar o contrato.",
+    "Preciso fechar o contrato da Getnet.",
+    "I want to close the contract.",
+    "Close the contract.",
+    "Feche o contrato.",
+    "Quero terminar o contrato.",
 ]
 
 
@@ -145,6 +157,7 @@ def test_contract_termination_journey_hands_off_in_every_repetition(settings):
         assert body["route"] == "human_handoff" and body["status"] == "handoff"
         assert "HO-" in body["answer"]
         protocols.add(body["answer"].split("HO-", 1)[1][:15])
+        assert _router_step(trace)["detail"]["rule"] == "contract_termination"  # the trace says the rule acted
     assert len(protocols) == 3  # a new conversation, a new handoff case each time
 
 
@@ -153,6 +166,35 @@ def test_portuguese_termination_hands_off_and_a_service_cancellation_still_clari
     body, _ = _ask(orchestrator, "Quero encerrar meu contrato.")
     assert (body["route"], body["status"]) == ("human_handoff", "handoff")
     assert "HO-" in body["answer"] and "atendente" in body["answer"].lower()
-    body, _ = _ask(orchestrator, "Quero cancelar o serviço X.")
+    body, trace = _ask(orchestrator, "Quero cancelar o serviço X.")
     assert (body["route"], body["status"]) == ("clarify", "needs_clarification")
     assert "HO-" not in body["answer"]
+    assert "rule" not in _router_step(trace)["detail"]
+
+
+def _router_step(trace):
+    return next(step for step in trace["steps"] if step["step"] == "router")
+
+
+def test_the_trace_has_no_rule_note_when_the_model_already_handed_off(settings):
+    def handing_off_router(call):
+        if call.spec.agent == "router":
+            return decision(route="human_handoff", topic="contract").model_dump()
+        return scripted_handler(call)
+
+    orchestrator, _ = offline_orchestrator(settings, handler=handing_off_router)
+    body, trace = _ask(orchestrator, CASE.message)
+    assert (body["route"], body["status"]) == ("human_handoff", "handoff")
+    assert "rule" not in _router_step(trace)["detail"]
+
+
+def test_signing_a_contract_keeps_the_model_decision_end_to_end(settings):
+    def signup_router(call):
+        if call.spec.agent == "router":
+            return decision(route="knowledge", language="pt").model_dump()
+        return scripted_handler(call)
+
+    orchestrator, _ = offline_orchestrator(settings, handler=signup_router)
+    body, trace = _ask(orchestrator, "Quero fechar contrato com a Getnet.")
+    assert body["route"] == "knowledge" and body["status"] != "handoff"
+    assert "rule" not in _router_step(trace)["detail"]

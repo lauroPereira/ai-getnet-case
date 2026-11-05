@@ -47,6 +47,13 @@ Developer (2026-11-05), branch `codex/v0.8.0-replan`:
 - Travas de D18: história, webhooks, retomada e encaminhamentos da v0.7.0, jornadas, replanejamento e história da v0.8.0 e testes do Router: 429 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 ([passagem](../evidence/v080-developer.md)).
 - Pendente: revisão independente e QA (campanha real).
 
+Developer, rodada 2 (2026-11-05), correção do P2-76 e do P3-76 da [revisão](../evidence/v080-reviewer-t75-77.md):
+
+- Regex em `src/merchant_assistant/agents/router.py`: `fechar`, `finalizar`, `terminar` e os imperativos `feche`, `finalize` e `termine` só contam com `meu` ou `nosso` antes de `contrato`; "close" só conta com `my` ou `our`. `encerrar`, `cancelar`, `rescindir` (e imperativos) e "end/terminate/cancel the contract" continuam aceitos sem possessivo. `terminar` entrou no grupo restrito por decisão do Developer: também significa concluir ("terminar o contrato" = acabar de preenchê-lo).
+- Trace: quando a regra troca a rota do modelo por `human_handoff`, o passo `router` registra `rule = "contract_termination"`; sem a regra (modelo já encaminhou ou mensagem fora do padrão), a nota não aparece.
+- `tests/unit/test_t76_contract_termination.py`: 93 testes (74 + 19). Novos positivos: "I want to close our contract.", "Quero fechar meu contrato.", "Quero finalizar o nosso contrato com a Getnet.". Novos negativos (mantêm a decisão do modelo): "Quero fechar contrato com a Getnet.", "Gostaria de fechar contrato.", "Quero finalizar o contrato.", "Preciso fechar o contrato da Getnet.", "I want to close the contract.", "Close the contract.", "Feche o contrato.", "Quero terminar o contrato." (todos casavam a regex de `94bf7b3`). Ponta a ponta: a jornada registra a nota no trace; "Quero fechar contrato com a Getnet." com o Router programado em `knowledge` segue `knowledge`, sem protocolo e sem nota; encaminhamento do próprio modelo não ganha nota.
+- Travas de D18 (T76, Router e orçamento, todas as integrações v0.7.0 e v0.8.0): ver passagem.
+
 ## Status
 
-implementada; aguarda revisão
+implementada (rodada 2); aguarda revisão
