@@ -40,8 +40,19 @@ O lojista não vê o replanejamento: vê uma resposta só, honesta sobre o que n
 
 ## Resultado da rodada
 
-A preencher pelo QA.
+Registrado pelo Supervisor em 2026-11-05 a partir dos pareceres do QA (r3 a r7), candidato final `1baa7b3` (r11).
+
+| Momento | Resultado | Evidência |
+| --- | --- | --- |
+| 1 a 6 (replanejamento) | CA-49 apto: os quatro cenários com modelos reais, origem em toda decisão, no máximo 2 saltos; `REPLAN-TOOL-DOWN` com falha real da ferramenta de preços e protocolo `HO-` | [r5](../evidence/v080-d12-pre-holdout-r5.md) |
+| 7 (campanha com juiz independente) | Juiz DeepSeek sem falha; `--judge-repeat 3` sobre as 44 primeiras respostas com concordância exata 0,76 a 0,86 e ±1 ≥ 0,985 | [r6](../evidence/v080-d12-pre-holdout-r6.md) |
+| 8 (jornadas) | CA-51 pela régua determinística 13/13, 12/13 e 12/13 (as duas recusas são redações corretas, limitação da régua literal); pelo `judge.v3`, 13/13 nas três | [r6](../evidence/v080-d12-pre-holdout-r6.md), [tarefa 78](../tasks/78-regua-literal-ca51-recusa-respostas-corretas-v080.md) |
+| 9 (Docker) | Smoke 10/10; pergunta mista replaneja (`rule:procedure_gap`) com o caminho no trace; `down` limpo | [r6](../evidence/v080-d12-pre-holdout-r6.md) |
+| 10 (holdout) | Execução única: 62/75 (0,827) pela régua, juiz 4,6 a 4,8, concordância do juiz 0,81 a 0,88; reportado à parte, sem decidir aprovação; `holdout_v080` passa a "já visto" | [r7](../evidence/v080-holdout-r7.md) |
+| 11 (calibração) | CSV de 24 respostas gerado, sem notas do juiz; preenchimento e `--import` pendentes do responsável | [amostra](../evidence/v080-calibracao-amostra.csv) |
+
+Rodadas anteriores: r3 reprovou CA-51 (9, 11 e 10 de 13) e invalidou `REPLAN-TOOL-DOWN` por mock saudável; r4 ficou inválida em 8 jornadas por seed de outro dia; r5 reprovou CA-51 só por redação. A rubrica determinística continua o critério desta versão; a régua para a v0.9.0 é decisão do responsável.
 
 ## Como terminou
 
-A preencher pelo QA.
+O lojista recebeu uma resposta só em cada pergunta, inclusive quando o assistente precisou mudar de caminho; quando a ferramenta de preços caiu, ganhou um protocolo em vez de um número inventado. O avaliador técnico viu, em cada trace, por que o assistente mudou de rota e quanto o juiz concorda consigo mesmo. O responsável tem o CSV para dizer quanto confiar no juiz; o relatório da versão sai com essa resposta.

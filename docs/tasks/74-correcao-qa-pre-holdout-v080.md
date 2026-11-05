@@ -35,8 +35,8 @@ Prompts, testes focados, rótulos de desenvolvimento em `tests/scenarios/busines
 
 ## Validação
 
-[Triagem do QA](../evidence/v080-qa-triagem-r4.md) e [traces recuperadas](../evidence/v080-d12-traces-recuperadas-r3.md). A validação do candidato corrigido está pendente. Validações locais não chamam APIs pagas. O QA pago usa a guarda existente e a mesma campanha.
+[Triagem do QA](../evidence/v080-qa-triagem-r4.md), [traces recuperadas](../evidence/v080-d12-traces-recuperadas-r3.md). Retestes pagos no Claude Code em 2026-11-05: [r4](../evidence/v080-d12-pre-holdout-r4.md) (reprovado; 8 jornadas inválidas por seed de outro dia; tarefas 75 e 76), [r5](../evidence/v080-d12-pre-holdout-r5.md) (CA-49 apto; CA-51 reprovado só por redação; tarefa 78), [r6](../evidence/v080-d12-pre-holdout-r6.md) (apto para o holdout: CA-51 13/12/12, juiz repetido, smoke Docker), [r7](../evidence/v080-holdout-r7.md) (holdout único e CSV). Candidato final `1baa7b3` ([manifesto r11](../evidence/v080-candidato-r11.json)). Custo da revalidação: US$0,48592451 (ledger US$0,45747628 mais US$0,02844823 do volume Docker). Contingência de US$0,30 aplicada ao cap e não consumida.
 
 ## Status
 
-Em andamento. Triagem do QA e reprodução local.
+Concluída em 2026-11-05 (QA técnico). Calibração humana e merge local pendentes do responsável.
