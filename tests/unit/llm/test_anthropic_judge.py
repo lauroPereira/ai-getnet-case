@@ -151,3 +151,93 @@ def test_the_claude_judge_has_room_for_thinking_and_a_refusal_is_a_failed_judgem
     assert "refusal" in record["error"]
     # the other judges keep the v0.8.0 parameters
     assert judge_module.max_output_tokens_for("deepseek") == judge_module.MAX_OUTPUT_TOKENS == 400
+
+
+# --- task 79 round 2 ------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("stop", ["refusal", "max_tokens", "model_context_window_exceeded"])
+def test_a_failed_stop_is_never_a_score_even_with_a_valid_judgement_in_the_text(stop):
+    """P2-1: the stop reason alone decides; a well-formed judgement under a refusal or a cut answer is not used."""
+    provider = ScriptedAnthropic(lambda body: message(json.dumps(FIXED_JUDGEMENT), stop_reason=stop))
+    meter = RecordingMeter()
+    with pytest.raises(LLMError, match=rf"stop_reason={stop}\)$") as caught:
+        AnthropicLLM(provider.client, MODEL).parse(spec(), JudgeScoreV3, meter)
+    assert meter.settled == [Usage(3000, 500, 0, 0, 0)]
+    assert caught.value.usage == Usage(3000, 500, 0, 0, 0)  # billed all the same: the judgement records it
+
+
+@pytest.mark.parametrize("stop", ["refusal", "max_tokens"])
+def test_a_judge_refusal_with_a_valid_body_is_a_failed_judgement_with_its_tokens(settings, stop):
+    provider = ScriptedAnthropic(
+        lambda body: message(json.dumps(FIXED_JUDGEMENT), stop_reason=stop, cache_read=100, cache_creation=20)
+    )
+    meter = RecordingMeter()
+    judge = judge_module.resolve_judge(
+        judge_settings(settings), agent=AGENT, meter=meter, factory=lambda p, m: AnthropicLLM(provider.client, m)
+    )
+    record = judge.evaluate({"merchant_message": "Oi", "reply": "Olá", "evidence": []})
+    assert record["state"] == "failed" and record["scores"] == {} and record["unsupported_claim"] is None
+    assert f"stop_reason={stop}" in record["error"]
+    assert record["usage"] == {
+        "input_tokens": 3120,
+        "cache_read_tokens": 100,
+        "cache_creation_tokens": 20,
+        "output_tokens": 500,
+    }
+    assert record["cost_usd"] == pytest.approx((3000 * 4 + 100 * 0.2 + 20 * 5 + 500 * 20) / 1e6)
+
+
+def test_each_judgement_records_its_tokens_and_the_execution_that_wrote_it(settings, tmp_path):
+    """P2-2 and P2-3: the tokens go into `result`, the execution name into `evaluator`; no column is added."""
+    from merchant_assistant.data.db import connect
+
+    provider = ScriptedAnthropic(judging(cache_read=1000, cache_creation=500))
+    judge = judge_module.resolve_judge(
+        judge_settings(settings), agent=AGENT, factory=lambda p, m: AnthropicLLM(provider.client, m)
+    )
+    data = {"merchant_message": "Oi", "reply": "Olá", "evidence": []}
+    done = judge.evaluate(data)
+    assert done["usage"] == {
+        "input_tokens": 4500,
+        "cache_read_tokens": 1000,
+        "cache_creation_tokens": 500,
+        "output_tokens": 500,
+    }
+    provider.handler = lambda body: OSError("connection reset")
+    lost = judge.evaluate(data, repetition=2)
+    assert lost["state"] == "failed" and lost["usage"] is None  # usage unknown: only the reservation stands
+    conn = connect(tmp_path / "campaign.sqlite3")
+    try:
+        judge_module.save_evaluation(conn, request_id="req_a", judge=judge, record=done, data=data, run="sonda")
+        judge_module.save_evaluation(conn, request_id="req_a", judge=judge, record=lost, data=data, run="sonda")
+        judge_module.save_evaluation(
+            conn, request_id="req_b", judge=judge, record=done | {"evaluation_id": "e"}, data=data
+        )
+        rows = {
+            r["evaluation_id"]: r for r in conn.execute("SELECT evaluation_id, evaluator, result FROM run_evaluations")
+        }
+    finally:
+        conn.close()
+    first, second, legacy = rows[done["evaluation_id"]], rows[lost["evaluation_id"]], rows["e"]
+    assert json.loads(first["evaluator"])["run"] == "sonda" and json.loads(second["evaluator"])["run"] == "sonda"
+    assert "run" not in json.loads(legacy["evaluator"])  # no name given: the v0.8.0 record, unchanged
+    assert json.loads(first["result"])["usage"] == done["usage"]
+    assert json.loads(second["result"]) == {"repetition": 2}
+
+
+def test_the_tokens_of_the_judgements_are_summed_with_a_mean_per_judgement():
+    usage = {"input_tokens": 4500, "cache_read_tokens": 1000, "cache_creation_tokens": 500, "output_tokens": 500}
+    other = {"input_tokens": 3500, "cache_read_tokens": 0, "cache_creation_tokens": 0, "output_tokens": 1500}
+    records = [{"usage": usage}, {"usage": other}, {"usage": None}, {}]
+    assert judge_module.judge_usage(records) == {
+        "judgements": 2,
+        "total": {"input_tokens": 8000, "cache_read_tokens": 1000, "cache_creation_tokens": 500, "output_tokens": 2000},
+        "mean": {
+            "input_tokens": 4000.0,
+            "cache_read_tokens": 500.0,
+            "cache_creation_tokens": 250.0,
+            "output_tokens": 1000.0,
+        },
+    }
+    assert judge_module.judge_usage([{"usage": None}]) is None

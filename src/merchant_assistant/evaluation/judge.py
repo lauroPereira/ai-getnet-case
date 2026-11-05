@@ -92,6 +92,37 @@ def judge_spec_v3(prompt: Prompt, data: dict, max_output_tokens: int = MAX_OUTPU
     )
 
 
+def tokens(usage) -> dict | None:
+    """The tokens of one judgement (spec v0.9.0, task 79 round 2): the input is the whole input, of which the cache
+    reads and the cache writes are parts; the output includes the thinking. `None` when the provider's usage is unknown
+    (a network failure: the reservation stands as the cost)."""
+    if usage is None:
+        return None
+    return {
+        "input_tokens": usage.input_tokens,
+        "cache_read_tokens": usage.cached_tokens,
+        "cache_creation_tokens": usage.cache_creation_tokens,
+        "output_tokens": usage.output_tokens,
+    }
+
+
+TOKEN_KEYS = ("input_tokens", "cache_read_tokens", "cache_creation_tokens", "output_tokens")
+
+
+def judge_usage(records: list[dict]) -> dict | None:
+    """Tokens of the judgements that recorded them (spec v0.9.0, task 79 round 2): total and mean per judgement. A
+    failed judgement the provider billed counts; one whose usage is unknown (network failure) does not."""
+    known = [record["usage"] for record in records if record.get("usage")]
+    if not known:
+        return None
+    total = {key: sum(int(usage.get(key) or 0) for usage in known) for key in TOKEN_KEYS}
+    return {
+        "judgements": len(known),
+        "total": total,
+        "mean": {key: round(value / len(known), 1) for key, value in total.items()},
+    }
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -143,6 +174,7 @@ class Judge:
                 "reasons": {},
                 "unsupported_claim": None,
                 "cost_usd": round(getattr(self.meter, "cost_usd", 0.0) - spent_before, 8),
+                "usage": tokens(getattr(exc, "usage", None)),  # a refusal or a cut answer was billed all the same
                 "error": short_error(exc),
             }
         score = result.value
@@ -153,6 +185,7 @@ class Judge:
             "reasons": {criterion: getattr(score, f"{criterion}_reason") for criterion in CRITERIA},
             "unsupported_claim": score.unsupported_claim,
             "cost_usd": round(getattr(self.meter, "cost_usd", 0.0) - spent_before, 8),
+            "usage": tokens(result.usage),
             "error": None,
         }
 
@@ -259,9 +292,14 @@ def resolve_judge(
 # --- persistence ----------------------------------------------------------------------------------------------------
 
 
-def save_evaluation(conn, *, request_id: str, judge: Judge, record: dict, data: dict) -> None:
+def save_evaluation(
+    conn, *, request_id: str, judge: Judge, record: dict, data: dict, run: str | None = None
+) -> None:
     """Writes one judgement into `run_evaluations` (the columns 0011 added hold the queryable parts; `result` holds
-    the whole judgement). Campaign judgements belong to the principal `cli:eval`, so no API session ever lists them."""
+    the whole judgement). Campaign judgements belong to the principal `cli:eval`, so no API session ever lists them.
+    `run` is the name of the execution that wrote it (the report name of `eval`, spec v0.9.0 D1), kept in `evaluator`
+    so a comparison can tell the probe from the repetitions; `result` also keeps the judgement's tokens. No column is
+    added for either."""
     completed = record["state"] == "completed"
     # `result` carries everything the columns of 0011 hold (scores, verdict, repetition), so a rollback and a new
     # upgrade rebuild them from it.
@@ -272,7 +310,9 @@ def save_evaluation(conn, *, request_id: str, judge: Judge, record: dict, data: 
             **{f"{criterion}_reason": text for criterion, text in record["reasons"].items()},
             "unsupported_claim": record["unsupported_claim"],
         }
-    evaluator = judge.config() | {"model_used": record["model_used"]}
+    if record.get("usage"):
+        result["usage"] = record["usage"]
+    evaluator = judge.config() | {"model_used": record["model_used"]} | ({"run": run} if run else {})
     conn.execute(
         "INSERT INTO run_evaluations (evaluation_id,request_id,principal_id,method,rubric,rubric_version,evaluator,"
         "config_digest,result,evidence,critical_failures,cost_usd,state,error,created_at,scores,repetition,"

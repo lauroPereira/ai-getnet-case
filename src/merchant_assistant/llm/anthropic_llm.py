@@ -42,6 +42,13 @@ def output_format(schema: type[T]) -> dict:
     return {"type": "json_schema", "schema": transform_schema(schema)}
 
 
+def _error(message: str, usage: Usage | None) -> LLMError:
+    """An answer that gives no score was still billed: the error carries the usage so the judgement records it."""
+    error = LLMError(message)
+    error.usage = usage
+    return error
+
+
 def _usage(response: Any) -> Usage:
     """Anthropic reports the uncached input, the cache reads and the cache writes apart; `Usage.input_tokens` is their
     sum, as for OpenAI, with the two cached parts kept so `pricing.cost` prices each at its rate."""
@@ -84,16 +91,16 @@ class AnthropicLLM:
         meter.settle(reservation, usage)
         stop = getattr(response, "stop_reason", None)
         if stop in FAILED_STOPS:
-            raise LLMError(f"{spec.agent}: no structured output (stop_reason={stop})")
+            raise _error(f"{spec.agent}: no structured output (stop_reason={stop})", usage)
         text = "".join(
             getattr(block, "text", "") for block in response.content if getattr(block, "type", "") == "text"
         )
         if not text.strip():
-            raise LLMError(f"{spec.agent}: no structured output (stop_reason={stop}, empty text)")
+            raise _error(f"{spec.agent}: no structured output (stop_reason={stop}, empty text)", usage)
         try:
             value = schema.model_validate_json(text)
         except ValueError as exc:  # pydantic.ValidationError is a ValueError
-            raise LLMError(f"{spec.agent}: structured output does not match the schema: {exc}") from exc
+            raise _error(f"{spec.agent}: structured output does not match the schema: {exc}", usage) from exc
         return LLMResult(value, usage, getattr(response, "model", None) or self.model)
 
     def run_tools(
