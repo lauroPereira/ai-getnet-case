@@ -224,3 +224,93 @@ No modo híbrido, o `min_score` (`RETRIEVAL_MIN_SCORE`, 0,30 no serviço) corta 
 ### Próxima ação
 
 Reviewer, em contexto novo: re-verificar `rag/bm25.py`, `rag/index.py` e os testes; repetir as sondas 9, 10 e 11 e os mutantes M01, M02, M03, M10 e M12. Supervisor: levar a limitação do `min_score` à decisão D7 e decidir o destino de P3-1 e P3-2.
+
+## Tarefa 81 — Reranker, holdout de retrieval e `eval-retrieval` com nDCG (rodada 1)
+
+- **Papel e responsável:** Developer (subagente), 2026-11-05.
+- **Objetivo e critérios:** tarefa 81; spec `juiz-retrieval-v090.md` D7, D8, D10 e CA-52 (prova determinística); história, momentos 5 e 6.
+- **Escopo:** holdout de retrieval lacrado, nDCG@6, reranker `rerank.v1`, `RERANK`, `eval-retrieval --mode --rerank --split --out`.
+- **Estado:** apto para revisão.
+- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR, sem push.
+- **Base e versão final:** base `41fb745`. Commits `8c1970b` (holdout e lacre), `2856be1` (reranker), `37dfbf6` (avaliação e CLI) e `4c27e4a` (`.env.example`). Entre a base e o meu primeiro commit, outro escritor commitou `dd804d3` e `fad0eb2`, só documentação do juiz.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos
+
+- `tests/scenarios/retrieval_holdout_v090.jsonl` e `.sha256`, mais `tests/unit/test_retrieval_holdout_v090.py` (novos, no mesmo commit `8c1970b`).
+- `prompts/rerank.v1.md` e `src/merchant_assistant/rag/rerank.py` (novos).
+- `rag/index.py`: `search(..., reranker=, meter=, notes=)`, aplicado depois da fusão.
+- `config.py`: `rerank: Literal["on", "off"] = "off"` e um validador (`RERANK=on` exige `RETRIEVAL_MODE=hybrid`), só por acréscimo.
+- `agents/knowledge.py`: 6 linhas. Com `RERANK=on`, passa o reranker, o `ctx` como `Meter` e `ctx.step_notes` (trace). Com `off`, a chamada a `search` é a mesma de antes, sem argumentos novos.
+- `evaluation/scripted_policy.py`: reranker programado (agente `rerank`).
+- `evaluation/retrieval.py`: nDCG, splits, lacre, tempo por consulta, relatório acumulado e linha D7.
+- `cli.py`: só o bloco `eval-retrieval` (função, parser e `_retrieval_reranker`). Os blocos `eval --judge-repeat` e `eval-calibrate` não mudaram.
+- `.env.example`: `# RERANK=off` comentado.
+- Testes novos: `tests/unit/rag/test_rerank.py`, `tests/unit/evaluation/test_retrieval_metrics.py` e `tests/integration/test_v090_rerank.py`.
+
+### Holdout
+
+São 25 perguntas, 13 em português e 12 em inglês: 6 de taxas, 6 de produtos, 6 de procedimentos e 7 de termos exatos (ADQ 1-50, ADQ 4-83, gravame, "Qr Code Expirado", código 51 da demonstração, Dock IP, conciliador Auttar).
+
+Escrevi as perguntas lendo o texto dos chunks (`load_all` e `chunk_document` sobre `data/`). Cada uma tem a passagem correta com grau 2 e, em 12 delas, uma segunda passagem relevante com grau 1, nos casos em que o mesmo fato aparece no chunk vizinho. Não rodei nenhum modo de busca sobre essas perguntas, nem antes nem depois do lacre, nem com embeddings de hash. Evitei os assuntos do `dev` (SP630, ADQ 4-91, D30, Wi-Fi, parcelas do crediário, WhatsApp).
+
+O lacre é o sha256 do conteúdo com fim de linha LF (`d8381ddd7d7f…0d12d`), como no `holdout_v080`. O teste confere:
+
+- o lacre, inclusive com CRLF e com edição;
+- a forma: no mínimo 20 perguntas, metade em pt, as 4 categorias, exatamente um grau 2 por pergunta;
+- que todo `chunk_id` existe no corpus versionado;
+- ids e perguntas novos;
+- que nenhum outro arquivo de `tests/` cita o holdout.
+
+### Decisões tomadas além do texto do plano (todas reversíveis)
+
+1. **Relevância e métricas.** No holdout, a relevância é por chunk, com grau. Recall@6 e MRR contam a primeira passagem com grau de pelo menos 1. O nDCG@6 usa ganho linear (`g / log2(posição + 1)`) e o ideal é o dos graus rotulados. No `dev`, os rótulos são por documento e "qualquer um serve". Lá o nDCG usa um alvo só (ideal `[1]`, ganho só no primeiro relevante), o que equivale a `1 / log2(1 + rank)`. Recall e MRR do `dev` não mudaram.
+2. **Regra D7 operacional.** "Melhorar" quer dizer nDCG@6 estritamente maior nos dois splits: híbrido contra denso e, depois, híbrido+reranker contra híbrido. O reranker só é sugerido se o híbrido for. Enquanto faltar alguma das 6 combinações, a linha diz "indisponível: faltam …". A linha é só sugestão; a decisão é do Supervisor na 82.
+3. **Reranker.**
+   - Rótulos curtos `P1`…`P12` no lugar dos `chunk_id` longos, para caber em 150 tokens de saída. `effort` fica `none`, e cada passagem é cortada em 700 caracteres.
+   - Rótulo desconhecido, lista vazia, saída que não valida, `LLMError`, `BudgetExceeded` e `LimitExceeded` contam como falha. A falha mantém a ordem da fusão e grava `rerank.status = failed` com o erro nas notas.
+   - Rótulos deixados de fora vão para o fim, na ordem da fusão, e um rótulo repetido conta uma vez. Com menos de 2 candidatos não há chamada (`skipped`).
+4. **Com reranker, a fusão é calculada para 12** (profundidade 36) e devolve os 6 primeiros depois da nova ordem. Por isso, a base do híbrido+reranker pode diferir do híbrido com `k=6` (profundidade 18) em posições baixas.
+5. **`RERANK=on` exige o híbrido**, no `Settings`, na CLI e em `search(mode="dense", reranker=…)`.
+6. **No serviço**, o reranker usa `ctx.llm_for("rerank")`, que é o modelo do agente (`gpt-6-luna`) quando nenhum perfil o substitui. A chamada é medida pelo `RunContext`: entra no orçamento da requisição, em `max_model_calls` e em `usage_by_agent["rerank"]`. O trace do passo `knowledge` ganha `rerank` com prompt, candidatos, status e ordem (posições da fusão).
+7. **`eval-retrieval` pago com `--rerank on`.** O modelo do agente passa por `BudgetMeter` no ledger do projeto (`request_id` `eval-retrieval-rerank`), com teto de US$0,05 por execução (`RERANK_EVAL_CAP_USD`). A estimativa é de cerca de US$0,0003 por chamada. Se o teto estourar, o reranker falha nas consultas que faltam, e `rerank_failures` mostra quantas foram.
+8. **`--out <arquivo>.md`.**
+   - Acumula num `.json` ao lado uma linha por split e configuração e gera a tabela com Recall@6, MRR, nDCG@6, tempo médio e execuções. Gera também a frase do lacre e a linha "Modo padrão sugerido".
+   - Medir de novo a mesma configuração no holdout marca "holdout já visto".
+   - Recusa misturar embeddings ou `k` no mesmo relatório.
+   - Sem `--out`, a saída continua sendo o JSON no stdout (com os campos novos `split`, `rerank`, `holdout`, `rerank_usage`, `ndcg_at_k` e `mean_ms`).
+9. **P3-1 da tarefa 80, parcial.** As linhas do `eval-retrieval` ganham `origins` (os 3 primeiros). O trace do Knowledge não ganhou `origin`, para não mexer além do necessário. O `evaluation/evidence.py` só lê `doc` e `excerpt`, então a mudança seria inofensiva para o juiz se o Supervisor quiser.
+
+### Evidência
+
+- Testes novos: **47 itens**.
+  - `test_retrieval_holdout_v090.py`: 6.
+  - `test_rerank.py`: 16. Sucesso; corte de entrada; ordem parcial e repetida; 4 falhas do modelo; orçamento e limite da requisição; menos de 2 candidatos; limite de tokens com `OpenAILLM` sobre um cliente falso que devolve `incomplete`, com `max_output_tokens=150` conferido no pedido e a chamada truncada liquidada no `Meter`; e, no índice, os 12 da fusão, a ordem mantida na falha, a nota do trace e o modo denso recusado.
+  - `test_retrieval_metrics.py`: 17. nDCG com números fixos: ideal 1,0; invertido `[1, 2]` contra `[2, 1]` = 0,859719; relevante em 6º = 0,356207; em 2º = 0,630930; 7º fora do @6 = 0. Também o `evaluate`, o lacre, a regra D7 em 5 casos, "indisponível", "já visto" e embeddings misturados.
+  - `test_v090_rerank.py`: 8. Os 3 modos nos 2 splits pela CLI com hash, sem rede. O holdout é sintético e lacrado num diretório temporário, e o real não é lido. Também: lacre quebrado recusado antes de qualquer caminho pago, `--mode dense --rerank on` recusado, o parser, e o Knowledge com `RERANK=on` (ok e falha) e com `off` (nenhuma chamada).
+- Testes focados (os novos, `tests/unit/rag`, `test_v090_hybrid.py`, `test_holdout_v080.py` e `test_v080_journeys.py`): 193 passed.
+- Referência com embeddings de hash, **só `dev`** (19 perguntas; o holdout não foi medido por mim): denso R@6 0,632, MRR 0,500, nDCG@6 0,534, 0,6 ms; híbrido 1,000, 0,789, 0,843, 3,0 ms; híbrido+reranker programado 1,000, 0,765, 0,825, 5,9 ms, 19 chamadas medidas, 0 falha; 0 token de embedding. O reranker programado (sobreposição de tokens) não mede qualidade: serve para provar o caminho, e o número dele não decide nada.
+- Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` no HEAD `4c27e4a`, sem alterações locais nos meus arquivos: **2096 passed, 1 skipped** em 735,80 s, 0 failed. São 2050 da tarefa 80 mais 47 novos. O skip é o `test_v070_identity_r2.py:277`, que só roda com basetemp dentro de `.pytest_cache`; rodei sem `--basetemp`. Ruff `All checks passed!`, caminhos pessoais limpos (746 arquivos), estrutura e skills válidas, exit 0. Antes de começar, conferi que nenhuma outra suíte estava rodando
+
+### Achados e limitações
+
+- O holdout não foi medido em nenhum modo. A primeira medição é do QA, com embeddings reais, por último e uma vez por configuração (D8).
+- O "já visto" só é registrado dentro do mesmo relatório `--out`. Uma execução sem `--out`, ou com outro arquivo, não é contada. A regra continua operacional para o QA, como no `holdout_v080`.
+- A limitação do `min_score` registrada na tarefa 80 vale também para o reranker. Ele reordena o que a fusão trouxe e não corta nada, então não muda o portão `no_evidence`.
+- Com `RERANK=on` no serviço, cada pergunta de conhecimento faz uma chamada a mais. Ela conta no `max_model_calls` (8) e no custo por requisição, sem limite de latência novo.
+- Os rótulos grau 1 dos vizinhos e as categorias são julgamento meu. Se o Reviewer achar um rótulo errado, registro como nota e não altero o arquivo lacrado: qualquer edição quebra o lacre e exige novo holdout.
+
+### Roteiro do QA (momentos 5 e 6; embeddings reais, ledger do projeto)
+
+Rodar na ordem, sempre com o mesmo `--out`:
+
+1. `eval-retrieval --mode dense --split dev --out docs/evidence/v090-retrieval.md`.
+2. O mesmo com `--mode hybrid`.
+3. O mesmo com `--mode hybrid --rerank on`.
+4. Por último, uma vez cada: os três com `--split holdout_v090`.
+
+O relatório traz a tabela, o lacre e a linha D7. Custo estimado: embeddings de 145 chunks mais 19 ou 25 perguntas por execução (frações de centavo), mais 19 + 25 chamadas curtas do reranker (cerca de US$0,015).
+
+### Próxima ação
+
+Reviewer, em contexto novo: o reranker (falhas e limite), o lacre e a ordem dos commits (holdout em `8c1970b`, antes do código que mede), a regra D7 e o `eval-retrieval`. Depois, o QA (momentos 5 e 6) e a decisão D7 na tarefa 82 (Supervisor).

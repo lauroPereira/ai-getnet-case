@@ -33,8 +33,17 @@ Tarefa 80 commitada na branch. O holdout é escrito **antes** de medir qualquer 
 
 ## Validação
 
-(Preenchida pelo Developer.)
+Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer código que mede), `2856be1` (reranker), `37dfbf6` (`eval-retrieval`) e `4c27e4a` (`.env.example`), na `codex/v0.9.0-juiz-retrieval`. Passagem: [v090-developer.md](../evidence/v090-developer.md), seção "Tarefa 81".
+
+- **Holdout:** `tests/scenarios/retrieval_holdout_v090.jsonl` tem 25 perguntas (13 pt, 12 en) de taxas, produtos, procedimentos e termos exatos. Cada uma tem a passagem correta por `chunk_id` com grau 2 e, em 12, uma segunda com grau 1. O lacre é `d8381ddd7d7f…` (sha256 com LF). O teste confere o lacre, a forma, os `chunk_id` no corpus, ids e perguntas novos e que nenhum outro teste cita o arquivo. Nenhum modo foi medido nele, nem com hash.
+- **nDCG@6:** ganho linear e desconto `log2`. No `dev`, rótulo por documento com um alvo só. Testes com números fixos: ideal 1,0, invertido 0,859719, relevante em 6º 0,356207, 7º fora.
+- **Reranker:** prompt `rerank.v1`, saída estruturada com a ordem dos rótulos `P1`…`P12`, 150 tokens de saída, modelo do agente e medido pelo `Meter`. Fica em `RERANK=on|off`, padrão `off`, e exige `RETRIEVAL_MODE=hybrid`. Falha, ordem inválida, orçamento, limite da requisição e limite de tokens mantêm a ordem da fusão e ficam anotados no trace. O Knowledge só o usa com `on`.
+- **CLI:** `eval-retrieval --mode dense|hybrid --rerank on|off --split dev|holdout_v090 [--out x.md]` mede Recall@6, MRR, nDCG@6 e o tempo médio. O holdout com lacre inválido é recusado antes de qualquer chamada paga. O relatório registra o holdout usado e o sha. `--out` acumula as 6 combinações, marca "holdout já visto" quando uma é repetida e escreve a linha "Modo padrão sugerido" pela regra D7.
+- **Testes novos:** 47. Os 3 modos nos 2 splits rodam sem rede pela CLI, e o holdout desse teste é sintético e lacrado num diretório temporário.
+- **Referência com hash, só `dev` (19 perguntas):** denso nDCG@6 0,534; híbrido 0,843; híbrido+reranker programado 0,825 (Recall e MRR do denso e do híbrido iguais aos da tarefa 80).
+- **`lint_and_tests.py --strict`:** 2096 passed, 1 skipped (o do basetemp), ruff limpo, caminhos limpos (746 arquivos), exit 0.
+- Decisões além do texto (regra D7 por nDCG@6 estritamente maior, fusão a 12 com reranker, rótulos curtos, teto de US$0,05 por execução paga do reranker) e o roteiro do QA estão na passagem.
 
 ## Status
 
-Pendente. Aberta pelo Supervisor em 2026-11-05.
+Aberta pelo Supervisor em 2026-11-05. Rodada 1 implementada pelo Developer em 2026-11-05; aguarda revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
