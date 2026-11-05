@@ -82,6 +82,28 @@ def test_a_single_expected_amount_does_not_prove_fee_consistency():
 
 
 @pytest.mark.parametrize(
+    ("answer", "content_ok"),
+    [
+        ("Não é verdade que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("É falso que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("É mentira que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("Não é correto dizer que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("Não é correto afirmar que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("Não procede que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("Não procede afirmar que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("Não é o caso de que a taxa prevista e a registrada foram ambas de R$ 1,94.", True),
+        ("A taxa prevista e a registrada não foram ambas de R$ 1,94.", False),
+        ("A taxa prevista e a registrada não são ambas de R$ 1,94.", False),
+        ("A taxa prevista e a registrada nunca foram ambas de R$ 1,94.", False),
+    ],
+)
+def test_direct_negations_of_fee_equality_are_rejected(answer: str, content_ok: bool):
+    checks = _scenario_checks(_cases()["V030-PT-PRICE-CONSISTENT"], answer)
+    assert checks["content_ok"] is content_ok
+    assert not checks["forbidden_ok"]
+
+
+@pytest.mark.parametrize(
     ("scenario_id", "answer"),
     [
         ("V030-PRICE-CONDITIONS", "I cannot confirm that."),

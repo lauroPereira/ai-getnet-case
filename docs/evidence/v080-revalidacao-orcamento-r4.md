@@ -15,3 +15,13 @@ A [estimativa r3](v080-custo-estimativa-r3.json) reserva US$0,07709880 para as n
 Os valores são projeções, não autorização de gasto. Usam os custos gravados de agente e juiz por caso e das quatro conversas. O cenário de indisponibilidade rodou com o mock saudável na r3, então seu custo não prova o custo sob falha. O escopo de reteste depende do diff, da revisão de impacto e da saúde do mock. O ledger é a fonte dos gastos realizados.
 
 Uma reavaliação offline de rótulos pode usar respostas arquivadas, com vínculo explícito ao SHA de origem. Uma mudança no comportamento da aplicação exige nova inferência nos fluxos afetados. Um novo bloco pago fica condicionado à margem para terminar a campanha com o cap atual. [Campanha r3](v080-d12-pre-holdout-r3.md) [Tarefa 74](../tasks/74-correcao-qa-pre-holdout-v080.md)
+
+## Recorte definido após o diff
+
+As 132 traces da r3 mostram cinco IDs com nó de fallback web: `EX04`, `NOEV`, `REPLAN-ACCOUNT`, `REPLAN-PROCEDURE` e `REPLAN-WEB`. `EX02` fez busca na rota web direta e nunca executou o nó de fallback. O único ID com Knowledge após Support foi `REPLAN-PROCEDURE`. Nenhum dos 44 casos avulsos enviou histórico ao Router. A correção de confirmação precisa ser revalidada nas quatro conversas.
+
+As traces registram protocolo de escalada em `UC14`, `V030-CONTRACT-TERMINATION`, `V030-PRICE-DIVERGENCE` e `V030-PT-PRICE-DIVERGENCE`. Os casos reaproveitados fora do recorte não têm esse caminho. O juiz recebe evidência nova dos protocolos nos retestes.
+
+O reteste cobre **22 IDs**, três vezes cada. São as 13 jornadas, os quatro cenários de replanejamento e `EX04`, `EX08`, `NOEV`, `UC13` e `UC14`. `EX08` e `UC13` são controles dos sinais isolados da r3. Os três testes de `REPLAN-TOOL-DOWN` rodam em subprocesso separado, com loopback recusando conexão para o mock de preços. O QA também refaz as quatro conversas.
+
+O recorte custou US$0,20388584 na r3, incluindo os dez turnos. O máximo incremental proposto é **US$0,25**, via limite cumulativo de processo no ledger primário e mantendo o cap fixo. Esse limite ainda deixa US$0,02943366 para smoke e margem após a reserva de US$0,43772873. O QA reconfere o saldo a cada etapa e registra os dois deltas.
