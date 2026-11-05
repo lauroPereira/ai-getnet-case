@@ -19,6 +19,19 @@ _RESOLUTION_CLAUSE = r"(?:deu certo|(?:voltou a |j[aá] )?funcionar|funcionou|it
 _ISOLATED_RESOLUTION = re.compile(
     rf"\s*{_RESOLUTION_CLAUSE}(?:\s*[,;.!]+\s*{_RESOLUTION_CLAUSE})*\s*[.!]*\s*", re.IGNORECASE
 )
+# Task 76: an explicit request to end the whole contract goes to a human. Full-message matches only, so a message that
+# names a service or product ("cancel the Payment Link contract"), asks how, or says anything else stays with the model.
+_TERMINATE_EN = (
+    r"(?:please\s*,?\s*)?(?:i(?:\s+(?:want|need|wish|would\s+like)|['’]d\s+like)\s+to\s+)?(?:please\s+)?"
+    r"(?:close|end|terminate|cancel)\s+(?:my|the|our)\s+(?:getnet\s+)?contract(?:\s+with\s+getnet)?"
+    r"(?:\s*,?\s*please)?"
+)
+_TERMINATE_PT = (
+    r"(?:por\s+favor\s*,?\s*)?(?:(?:eu\s+)?(?:quero|preciso|desejo|gostaria\s+de)\s+)?"
+    r"(?:encerrar|cancelar|rescindir|fechar|terminar|finalizar|encerre|cancele|rescinda|feche|termine|finalize)"
+    r"\s+(?:o\s+)?(?:meu\s+|nosso\s+)?contrato(?:\s+(?:com\s+a|da|na)\s+getnet)?(?:\s*,?\s*por\s+favor)?"
+)
+_CONTRACT_TERMINATION = re.compile(rf"\s*(?:{_TERMINATE_EN}|{_TERMINATE_PT})\s*[.!]*\s*", re.IGNORECASE)
 
 
 def enforce(
@@ -30,6 +43,8 @@ def enforce(
         data["case_signal"] = "none"
         if data["route"] == "acknowledgement":
             data["route"] = "clarify"
+        if decision.safety == "none" and data["route"] != "human_handoff" and _CONTRACT_TERMINATION.fullmatch(message):
+            data |= {"route": "human_handoff", "topic": "contract", "clarification_question": None}
     elif (
         case_state == "awaiting_customer"
         and decision.safety == "none"
