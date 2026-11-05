@@ -45,6 +45,8 @@ Orientação: preferir formas semanticamente equivalentes e específicas (plural
 
 **Pendente do responsável (não bloqueia a v0.8.0):** se, a partir da v0.9.0, CA-51 e equivalentes passam a ser medidos pelo `judge.v3` (critérios ≥ 4 e sem `unsupported_claim`), pela checagem determinística, ou pela combinação. O relatório da versão traz os dois números de cada repetição.
 
+**Complemento do Supervisor (2026-11-05, 06h30):** depois de três rodadas de revisão, o critério "sem aceitar contradições" fica limitado à lista de contradições registrada nas rodadas 1 a 3 de [v080-reviewer-t78.md](../evidence/v080-reviewer-t78.md) e no teste da tarefa. Paráfrase errada nova fora da lista é limitação estrutural da régua literal (P3), com o juiz independente como controle adicional; é P2 só se uma proibição recusar resposta correta arquivada ou óbvia, ou se uma forma aceita casar contradição da lista.
+
 ## Arquivos prováveis
 
 Rótulos dev em `tests/scenarios/business_journeys.jsonl` e, se a decisão for de cotejo, `src/merchant_assistant/evaluation/runner.py`. Não tocar no holdout.
