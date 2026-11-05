@@ -14,4 +14,4 @@
 - Próxima ação e responsável:
 - Decisão humana pendente e por que é necessária:
 
-Descreva fatos observados. Relato não confirma estado remoto, parecer não significa aprovação na plataforma e aprovação não significa integração.
+Descreva fatos observados. Relato não confirma estado remoto, parecer não significa aprovação na plataforma e aprovação não significa integração. Caminhos: relativos ao repositório ou um marcador (`<scratchpad da sessão>`); nunca home, nome de usuário ou `AppData` (AGENTS.md, "Caminhos pessoais", crítico).
