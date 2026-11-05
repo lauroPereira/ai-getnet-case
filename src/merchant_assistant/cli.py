@@ -248,23 +248,77 @@ def cmd_index(settings: Settings, args) -> int:
     return 0
 
 
+RERANK_EVAL_CAP_USD = 0.05  # task 81: reranker calls of one paid eval-retrieval run (about 0.0003 each)
+
+
+def _retrieval_reranker(settings: Settings, *, fake: bool, budget):
+    """The reranker of `eval-retrieval --rerank on`: the agent model through the budget meter, or the programmed
+    model offline. Both go through a `CountingMeter` for the report."""
+    from merchant_assistant.evaluation.retrieval import CountingMeter
+    from merchant_assistant.llm.prompts import load_prompt
+    from merchant_assistant.rag.rerank import Reranker
+
+    if fake:
+        from merchant_assistant.evaluation.scripted_policy import handler
+        from merchant_assistant.llm.scripted import ScriptedLLM
+
+        llm, inner = ScriptedLLM(handler), None
+    else:
+        from merchant_assistant.evaluation.runner import BudgetMeter
+        from merchant_assistant.llm.openai_llm import OpenAILLM
+
+        llm = OpenAILLM(_openai_client(settings), settings.agent_model)
+        inner = BudgetMeter(budget, request_id="eval-retrieval-rerank", max_cost_usd=RERANK_EVAL_CAP_USD)
+    return Reranker(llm, load_prompt(settings.prompts_dir, "rerank")), CountingMeter(inner)
+
+
 def cmd_eval_retrieval(settings: Settings, args) -> int:
-    from merchant_assistant.evaluation.retrieval import evaluate, load_cases
+    from datetime import UTC, datetime
+
+    from merchant_assistant.evaluation.retrieval import SealError, evaluate, record_run, render_markdown, split_cases
     from merchant_assistant.rag.chunk import chunk_document
     from merchant_assistant.rag.documents import load_all
     from merchant_assistant.rag.index import KnowledgeIndex, open_qdrant
 
-    embedder = build_embedder(settings, fake=args.fake, budget=None if args.fake else _budget_guard(settings))
     mode = getattr(args, "mode", None) or settings.retrieval_mode
+    rerank = (getattr(args, "rerank", None) or (settings.rerank if mode == "hybrid" else "off")) == "on"
+    split = getattr(args, "split", None) or "dev"
+    if rerank and mode != "hybrid":
+        raise SystemExit("eval-retrieval: --rerank on runs after the hybrid fusion; use --mode hybrid.")
+    try:  # before any paid call: a holdout whose content no longer matches its seal is never measured
+        cases, digest = split_cases(split)
+    except SealError as exc:
+        raise SystemExit(f"eval-retrieval: {exc}") from None
+    budget = None if args.fake else _budget_guard(settings)
+    embedder = build_embedder(settings, fake=args.fake, budget=budget)
+    reranker, meter = _retrieval_reranker(settings, fake=args.fake, budget=budget) if rerank else (None, None)
     index = KnowledgeIndex(open_qdrant(":memory:", settings.runtime_path), "eval_retrieval", embedder)
     manifest = index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
-    report = evaluate(
-        index, load_cases(PROJECT_ROOT / "tests" / "scenarios" / "retrieval.jsonl"), k=args.k, mode=mode
-    )
+    report = evaluate(index, cases, k=args.k, mode=mode, reranker=reranker, meter=meter)
+    report["split"] = split
     report["mode"] = mode
+    report["rerank"] = rerank
+    report["measured_at"] = datetime.now(UTC).isoformat(timespec="seconds")
+    if digest is not None:  # D8: the report says the sealed holdout was used
+        report["holdout"] = {"split": split, "sha256": digest, "seal": "ok", "used": True}
+    if meter is not None:
+        report["rerank_usage"] = meter.summary()
     report["bm25_corpus_hash"] = manifest["bm25_corpus_hash"]  # BM25 kept in memory, like this Qdrant
     report["embedding_model"] = embedder.model
     report["embedding_tokens"] = getattr(embedder, "tokens_used", 0)
+    out = getattr(args, "out", None)
+    if out:  # accumulated table of every split and configuration measured into this report, plus the D7 line
+        out = Path(out)
+        data_path = out.with_suffix(".json")
+        previous = json.loads(data_path.read_text(encoding="utf-8")) if data_path.is_file() else None
+        try:
+            table = record_run(previous, report)
+        except ValueError as exc:
+            raise SystemExit(f"eval-retrieval: {exc}") from None
+        out.parent.mkdir(parents=True, exist_ok=True)
+        data_path.write_text(json.dumps(table, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        out.write_text(render_markdown(table), encoding="utf-8")
+        print(render_markdown(table), file=sys.stderr)
     print(json.dumps(report, indent=1, ensure_ascii=False))
     return 0
 
@@ -1164,10 +1218,27 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("ingest", help="Collect public sources into versioned snapshots (network).")
     p_index = sub.add_parser("index", help="Build the vector index from snapshots and the demo corpus.")
     p_index.add_argument("--fake", action="store_true", help="Use the offline hashing embedder.")
-    p_eval = sub.add_parser("eval-retrieval", help="Measure Recall@k on the labeled retrieval set.")
+    p_eval = sub.add_parser(
+        "eval-retrieval", help="Measure Recall@k, MRR, nDCG@k and time per query on a labeled retrieval split."
+    )
     p_eval.add_argument("--fake", action="store_true")
     p_eval.add_argument("-k", type=int, default=6)
     p_eval.add_argument("--mode", choices=["dense", "hybrid"], default=None, help="Default: RETRIEVAL_MODE.")
+    p_eval.add_argument(
+        "--rerank", choices=["on", "off"], default=None, help="Rerank the hybrid top 12 (default: RERANK)."
+    )
+    p_eval.add_argument(
+        "--split",
+        choices=["dev", "holdout_v090"],
+        default="dev",
+        help="dev (retrieval.jsonl) or the sealed retrieval holdout (refused when its seal does not match).",
+    )
+    p_eval.add_argument(
+        "--out",
+        default=None,
+        help="Markdown report (and .json beside it) that accumulates every split and configuration measured, "
+        "with the D7 suggested default.",
+    )
     p_boot = sub.add_parser("bootstrap", help="Seed synthetic data and build the index if needed.")
     p_boot.add_argument("--force-index", action="store_true")
     p_ask = sub.add_parser("ask", help="Run one message through the real system (paid).")
