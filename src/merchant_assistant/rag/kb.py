@@ -567,6 +567,13 @@ class KnowledgeBase:
             ).fetchone()
             if row is None:
                 return self.index, None
-            return KnowledgeIndex(self.index.client, row["collection_name"], self.index.embedder), row["version_id"]
+            active = KnowledgeIndex(
+                self.index.client,
+                row["collection_name"],
+                self.index.embedder,
+                mode=self.index.mode,
+                bm25_dir=self.index.bm25_dir,
+            )
+            return active, row["version_id"]
         finally:
             conn.close()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -66,6 +67,8 @@ class Settings(BaseSettings):
 
     retrieval_top_k: int = 6
     retrieval_min_score: float = 0.30
+    # v0.9.0 (task 80, D7): `hybrid` fuses dense and BM25 by RRF; the default stays `dense` until the D7 measurement.
+    retrieval_mode: Literal["dense", "hybrid"] = "dense"
 
     budget_limit_usd: float = Field(default=1.00, ge=0, le=ABSOLUTE_BUDGET_LIMIT_USD, allow_inf_nan=False)
     max_request_cost_usd: float = 0.05

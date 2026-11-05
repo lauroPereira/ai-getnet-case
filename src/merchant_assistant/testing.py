@@ -42,7 +42,10 @@ def offline_orchestrator(
     budget = BudgetGuard(settings.runtime_path / "budget.sqlite3", settings.budget_limit_usd)
     if with_index:
         index = KnowledgeIndex(
-            open_qdrant(":memory:", settings.runtime_path), settings.qdrant_collection, HashEmbedder()
+            open_qdrant(":memory:", settings.runtime_path),
+            settings.qdrant_collection,
+            HashEmbedder(),
+            mode=settings.retrieval_mode,
         )
         index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
     from merchant_assistant.rag.kb import KnowledgeBase

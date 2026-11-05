@@ -92,7 +92,11 @@ def build_orchestrator(
     llm = llm or OpenAILLM(client, settings.agent_model)
     embedder = embedder or OpenAIEmbedder(client, settings.embedding_model, settings.embedding_dim, budget=budget)
     index = KnowledgeIndex(
-        open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant"), settings.qdrant_collection, embedder
+        open_qdrant(settings.qdrant_url, settings.runtime_path / "qdrant"),
+        settings.qdrant_collection,
+        embedder,
+        mode=settings.retrieval_mode,
+        bm25_dir=settings.runtime_path,
     )
 
     from merchant_assistant.rag.kb import KnowledgeBase
