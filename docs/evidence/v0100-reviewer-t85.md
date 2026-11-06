@@ -161,3 +161,139 @@ Observações sem achado:
 ## Próxima ação
 
 Developer corrige P2-1 e, de preferência, P3-1 e P3-2, que são acréscimos baratos de teste. Os demais P3 ficam a critério, registrados aqui. Depois, nova rodada do Reviewer, restrita a `metrics.py`, ao teste e ao README. Nenhuma decisão humana pendente.
+
+---
+
+# Rodada 2
+
+- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-06.
+- **Objetivo e critérios:** confirmar as correções da rodada 1 (P2-1, P3-1 a P3-6) contra as decisões do Supervisor para a rodada 2. A tarefa 85 foi lida só até "## Validação". Spec `rubrica-operacao-v0100.md`, D4, D5 e CA-59.
+- **Escopo:** `bed7fe0` (`observability/metrics.py`, `tests/integration/test_v0100_metrics.py`, `alerts/rules.yml`) e `b9bb1ed` (README, seção Observability). Base revisada na rodada 1: `2a561db`.
+- **Estado:** **apto para QA**. Nenhum P1 e nenhum P2. P2-1, P3-1, P3-2, P3-3, P3-5 e P3-6 estão resolvidos, P3-4 continua registrado e há 3 P3 novos (P3-7 a P3-9), nenhum bloqueante.
+- **Branch e PR:** `codex/v0.10.0-rubrica-operacao`, sem PR.
+- **Base e versão final:** revisei o export limpo de `0b1a637` (`git archive`). Os blobs são:
+  - `metrics.py 55eaf60`;
+  - `test_v0100_metrics.py 3fc6fe1`;
+  - `rules.yml 3c1590f`;
+  - `README.md f46b22e`;
+  - `app.py 978e2c2`, igual à rodada 1.
+
+  Durante a revisão, o HEAD avançou para `0dc2770` (`c1042a5`, `92230de`, `0dc2770`). Esses commits só mexem em `docs/`: `git diff --stat 0b1a637 HEAD -- src alerts tests README.md` sai vazio. O manifesto `v0100-candidato-r1.json` (fixado em `92230de`, com head `c1042a5`) traz sha256 de `rules.yml`, `app.py`, `metrics.py` e do teste que batem com os blobs de `0b1a637`. Ele hasheia o conteúdo LF do blob; o `git archive` desta máquina sai em CRLF por causa do `autocrlf` global, e `git hash-object` devolve os mesmos blobs. O README não está no manifesto e foi conferido pelo blob. No fim da revisão, os blobs eram os mesmos.
+- **Independência:** independente. Não implementei nada e não li `v0100-developer.md` nem a Validação ou o Status da tarefa 85. Do manifesto, li cabeçalho e hashes só depois de ter os meus números.
+
+## Comandos e números (rodada 2)
+
+Tudo rodou em cópias de leitura em `<scratchpad da sessão>`: um export para a suíte e outro export para mutações e sondas. Usei o Python do `.venv` com `PYTHONPATH` no `src/` de cada cópia, conferindo que o módulo carregado era o da cópia, e `--basetemp` em forma Windows passado como argumento, com `.pytest_cache` criado antes. Não houve chamada paga, rede, Docker nem Git de escrita. Não toquei em `data/runtime/`, `.pytest_cache/qa-*` nem `.env`.
+
+| Verificação | Resultado |
+| --- | --- |
+| `pytest` (export de `0b1a637`) | **2147 passed, 1 skipped, 0 failed**, 1014 s, rc 0. O skip é anterior à tarefa: `test_v070_identity_r2.py:277` só roda com o `--basetemp` do projeto |
+| `ruff check` (os 168 arquivos que `lint_and_tests.py` lista) | All checks passed |
+| `validate_structure` e `validate_skills` | válidas |
+| `checar-caminhos-pessoais.py` (os 780 arquivos rastreados de `0b1a637`, passados como argumento) | rc 0, nenhuma ocorrência |
+| Mutação manual (23 mutantes mais 1 controle, contra `test_v0100_metrics.py`) | **23 mortos, 0 sobreviventes**. O controle passou |
+| Sondas próprias (3 testes, só na cópia de mutação) | passaram. Detalhes abaixo |
+
+As quatro etapas do `--strict` rodaram separadas, porque o export não tem `.git`. É o mesmo motivo da rodada 1.
+
+## O que re-derivei e como (rodada 2)
+
+1. **Escopo.** `git show --stat` confirma que `bed7fe0` toca só `metrics.py`, `rules.yml` e o teste, e que `b9bb1ed` toca só o README. Os demais arquivos de `2a561db..b9bb1ed` são das tarefas 83 e 84. `app.py` não mudou. Não entrou dependência nova: os imports novos são `logging`, `typing.get_args` e `api.schemas`, e a suíte e o app sobem sem import circular.
+2. **Conjuntos fechados contra a fonte.**
+   - Agentes: os 11 `CallSpec(` de `src/` têm `agent=` literal e dão 9 nomes: `router`, `knowledge`, `customer_support`, `escalation`, `personality`, `replan`, `judge`, `rerank` e `embeddings`, este último via `reserve` direto e também no `AGENT` do MCP. Todos estão em `AGENTS`.
+   - Origens: só `agents/replanner.py` produz origem: `rule:planner_unavailable`, `rule:{name}` das recusas, `rule:nothing_to_review` e `rule:{m.rule}`. As 16 regras são iguais a `REPLAN_RULES`.
+   - Rota, status, ferramenta e provedor: `ROUTES = get_args(Route) + human_reply`, `STATUSES = get_args(Status)`, `TOOLS`, e `prices.json` mais `scripted` e `unknown`.
+   - Desvio: `_closed` devolve o membro do conjunto ou `other`, nunca o valor cru.
+3. **Injeção pelo `TraceStore`, lida pela rota HTTP.** Gravei 7 identificadores (`cliente1988`, `op_ana`, `req_feedbeefcafe0001`, `conv_9b2d`, `lojista42`, `Ana Souza`, `op-joao`) como rota, status, chave de `models_by_agent`, origem, `rule:<id>` e `tool:<id>`, além de uma linha do ledger com modelo `cliente1988`.
+   - `GET /metrics` respondeu 200 e **nenhum identificador apareceu**.
+   - Tudo isso virou `other`: `requests_total{route="other",status="other"} 7`, `model_calls_total{agent="other"} 7`, `tool_failures_total{tool="other"} 14` e `replan_total{origin="other"} 14`. O custo foi para `provider="unknown"`.
+   - Os valores legítimos se mantiveram: `knowledge`/`answered` 1 e `origin="model"` 7.
+4. **Banco travado por outro processo.** Um subprocesso abriu `BEGIN EXCLUSIVE` e segurou a transação por 6 s, depois de um `POST /messages` real com o modelo programado.
+   - Trace travado: 200 em 1,47 s, com texto idêntico à última leitura completa.
+   - Ledger travado: 200 em 1,52 s, também idêntico.
+   - Trace travado antes da primeira leitura: 200 com as famílias zeradas e válidas (`handoffs_total 0`).
+   - Ledger travado antes da primeira leitura: ver P3-8.
+5. **Banco vazio ou corrompido.** Arquivo vazio, 8 KiB aleatórios e só o cabeçalho SQLite responderam 200, com `text/plain; version=0.0.4` e as 33 linhas de todas as famílias. Uma linha com tipo inválido gerou exceção: ver P3-7.
+6. **Regras.** As `expr` não mudaram. Uma checagem por tokens, no lugar do `promtool`, confirmou:
+   - parênteses balanceados;
+   - todo `rate(` com intervalo;
+   - intervalos só depois de nome de métrica;
+   - métricas citadas existentes.
+
+   O `runbook_url` é absoluto nas 4 regras (`https://github.com/lauroPereira/ai-getnet-case#observability`). O repositório ainda é privado, então o link só resolve para quem tem acesso.
+7. **README.** Documenta os conjuntos fechados com `other`, o banco ilegível (última leitura completa, zerado antes da primeira) e os denominadores que incluem `human_reply` e as retomadas.
+8. **Mutação**, com os arquivos restaurados ao blob original depois de cada mutante:
+
+| Mutante | Resultado (teste que matou) |
+| --- | --- |
+| M01 `+Inf` = último bucket finito | morto (`test_histogram_inf_bucket_counts_requests_above_the_last_bound`) |
+| M19 `scripted` → `unknown` | morto (`test_values_match_the_recorded_traces`, via `present`) |
+| M03 `_closed` devolve o valor cru (rótulo sem sanitizar) | morto (identificadores e texto livre) |
+| M21 a M25 rota, status, agente, origem ou ferramenta fora do conjunto fechado, um por vez | todos mortos (`test_identifier_shaped_values_in_the_traces_come_out_as_other`) |
+| M26 e M27 `except` estreitado no trace e no ledger | mortos (banco vazio e endpoint 200) |
+| M28 nunca servir a última leitura completa | morto |
+| M29 leitura incompleta marcada como completa | morto |
+| M30 timeout de abertura de 30 s | morto (limite de tempo do teste) |
+| M31 `ROUTES` sem `human_reply` | morto (teste de deriva) |
+| M32 `REPLAN_RULES` sem `procedure_gap` | morto (teste de deriva) |
+| M33 `AGENTS` sem `rerank` | morto (teste de deriva) |
+| M34 `AGENTS` sem `router` | morto |
+| M35 todo resultado de ferramenta `ok` | morto |
+| M37 última leitura completa nunca guardada | morto |
+| M39 custo incluindo as reservas | morto |
+| D1 regra renomeada numa cópia de `replanner.py` | morto (teste de deriva) |
+| D2 agente renomeado numa cópia de `rerank.py` | morto (teste de deriva) |
+| D3 regra nova acrescentada em `replanner.py` | morto (teste de deriva) |
+| M00 controle sem mudança | passou |
+
+## Achados (rodada 2)
+
+### P1
+
+Nenhum.
+
+### P2
+
+Nenhum. **P2-1 resolvido:** a camada de métricas fecha os sete conjuntos. Os mutantes M03 e M21 a M25 morrem, e a sonda 3 não vaza nenhum identificador.
+
+### Situação dos P3 da rodada 1
+
+- **P3-1 resolvido.** M01 morre.
+- **P3-2 resolvido.** M19 morre, com `present`.
+- **P3-3 resolvido.** Ver as sondas 4 e 5 e os mutantes M26 a M30 e M37. Os resíduos estão em P3-7 e P3-8.
+- **P3-4 continua registrado.** O README diz "public like `/ready`", mas não traz a linha sobre restringir em produção. Não bloqueia; cabe na leitura final do README (bloco E).
+- **P3-5 resolvido.** A URL é absoluta e só resolve para quem tem acesso enquanto o repositório for privado.
+- **P3-6 resolvido** por documentação (`README.md:461-463`).
+
+### P3 novos
+
+- **P3-7. Linha com tipo inválido derruba o scrape.**
+  - **Condição:** `seconds = duration_ms / 1000` (`metrics.py:171`) recebe texto, e só `sqlite3.Error` é capturado (`metrics.py:119` e `:192`).
+  - **Impacto:** `TypeError` e 500. O `TraceStore` grava sempre inteiro, então o caso só aparece com adulteração manual do banco. O README promete "empty or locked", o que é exato, mas a docstring do módulo diz "empty, corrupt or locked".
+  - **Reprodução:** gravar o texto `abc` em `requests.duration_ms` (`UPDATE` direto no banco) e chamar `GET /metrics`, que levanta `TypeError`, divisão de `str` por `int`. O mesmo com `calls` em texto não falha, porque o `SUM` do SQLite devolve 0.
+  - **Sugestão:** `CAST(duration_ms AS REAL)` no SQL, ou registrar.
+- **P3-8. Ledger ilegível antes da primeira leitura completa mostra o orçamento inteiro.**
+  - **Condição:** `_build_ledger_families(None)` emite `budget_remaining_usd = limit` (`metrics.py:213`).
+  - **Impacto:** nessa janela, o gauge mostra o orçamento cheio e `BudgetNearLimit` não dispara. É transitório: o busy timeout é de 1 s, as transações do `BudgetGuard` são curtas, uma nova tentativa vem a cada 5 s, e depois da primeira leitura completa vale a última. A sonda não distingue os valores porque o modelo programado custa 0.
+  - **Sugestão:** omitir a amostra de remaining quando o ledger não foi lido, ou documentar.
+- **P3-9. `AGENTS` tem dois nomes que não são agentes, e o teste de deriva compara só numa direção.**
+  - **Condição:** `web` e `support` (`metrics.py:37`) são chaves de seleção de modelo (`llm_for("support")`, `SPECIALISTS`), e nenhum `CallSpec` usa esses nomes. O teste de deriva confere `agents <= metrics.AGENTS` (`test_v0100_metrics.py:255`), não igualdade, como o Supervisor pediu.
+  - **Impacto:** inofensivo para a privacidade, porque o conjunto continua fechado. Mas entradas mortas e agentes removidos não são detectados.
+  - **Sugestão:** remover os dois nomes e usar igualdade, ou registrar.
+
+Observação sem achado: o teste de banco travado do repositório usa uma segunda conexão no mesmo processo (`test_v0100_metrics.py:294`). Repeti o cenário com outro processo (sonda 4) e o comportamento foi o mesmo.
+
+## Critérios (rodada 2)
+
+- **Comprovados:**
+  - CA-59: texto 0.0.4 válido com as famílias exigidas, coerente com o trace;
+  - D4, "sem rótulo com id de lojista", agora garantido pela camada de métricas, não só pela API;
+  - banco vazio, corrompido ou travado sem 500, servindo a última leitura completa ou o zerado antes da primeira;
+  - D5: quatro regras sobre métricas existentes, com `runbook_url` absoluto;
+  - teste de deriva efetivo (D1 a D3 morrem);
+  - suíte estrita verde e caminhos pessoais limpos.
+- **Não verificado:** `promtool check rules` e Prometheus real, por falta de binário e de rede. O `/metrics` ao vivo fica para o QA (tarefa 86).
+
+## Próxima ação (rodada 2)
+
+QA da tarefa 85, com `/metrics` ao vivo, no fechamento (tarefa 86). P3-4 e P3-7 a P3-9 ficam a critério do Developer e do Supervisor, registrados aqui; nenhum bloqueia. Nenhuma decisão humana pendente.
