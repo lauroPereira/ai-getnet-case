@@ -18,3 +18,14 @@ Teto do projeto: US$5,00. Este registro é manual até a guarda de orçamento da
 | 2026-10-27 | v0.3.0: revalidação HTTP das quatro conversas com Router 5, 4/4; replay dos 40 casos sem nova API | Mesmo teto persistente de validação (US$0,15) | US$0,00538690 | US$0,59283583 |
 
 Os custos e latências do relatório de replay são históricos da rodada HTTP r2; o reprocessamento determinístico não fez novas chamadas e não soma gasto ao acumulado. Os JSONs do ledger preservam a precisão; o teto adicional da validação permaneceu em US$0,15.
+
+## Transições de teto da v0.8.0
+
+Consolidação dos dois registros de transição da campanha `v080-qa`. Em ambas, entradas, último ID e SHA-256 lógico das entradas dos ledgers ficaram iguais antes e depois, sem reservas abertas e sem processo do projeto ativo; backups e registros de auditoria ficaram locais.
+
+| Aplicada em | Autorização do responsável | Teto primário persistido | Cap fixo `v080-qa` | Comprometido no primário (antes = depois) | Folga depois |
+| --- | --- | ---: | ---: | ---: | --- |
+| 2026-11-04 19h26 (São Paulo), candidato `f8daab03` | 2026-11-04: transição local do teto primário para US$1,70 e faixa excepcional de até US$1,10 para `v080-qa` | US$1,00 → US$1,70 | até US$1,10 | US$0,55947501 | primário US$1,14052499 |
+| 2026-11-05 03h44 (São Paulo), candidato r7 `658c70ad` | 2026-11-05: contingência de até US$0,30 adicionais para `v080-qa`, debitada da linha "Contingência" da reserva | US$1,70 → US$2,00 | US$1,10 → US$1,40 | US$1,14385079 (campanha US$0,58164655) | primário US$0,85614921, campanha US$0,81835345 |
+
+Na segunda transição, a CLI passou a aceitar `--campaign-cap-usd 1.40` só para continuar a campanha montada, com a estimativa revalidada ([v080-custo-estimativa-r3.json](v080-custo-estimativa-r3.json)); `1.10` passou a ser recusado. A contingência não foi consumida: a campanha fechou em US$0,84 (CHANGELOG 0.8.0).
