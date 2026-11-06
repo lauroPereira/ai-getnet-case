@@ -34,7 +34,7 @@ O núcleo responde bem a uma mensagem isolada, mas não acompanha uma conversa, 
 ## Usuário afetado
 
 - **Lojista** (sintético): conversa em vários turnos e espera continuidade.
-- **Recrutador ou avaliador**: experimenta cenários e perfis autorizados pela interface, com limite de consumo.
+- **Recrutador ou revisor técnico**: experimenta cenários e perfis autorizados pela interface, com limite de consumo.
 - **Responsável (administrador)**: configura perfis, edita documentos, executa experimentos, aprova propostas e ativa versões.
 
 ## Resultado desejado

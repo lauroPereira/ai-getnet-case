@@ -1,4 +1,4 @@
-<!-- Papel: tarefa da etapa 0 da evolução pós-feedback; adota no ai-getnet-case as práticas de fluxo do ampeli-sdd. -->
+<!-- Papel: tarefa da etapa 0 da evolução para produção; adota no ai-getnet-case as práticas de fluxo do ampeli-sdd. -->
 
 # Tarefa 62: preparação do fluxo (etapa 0)
 

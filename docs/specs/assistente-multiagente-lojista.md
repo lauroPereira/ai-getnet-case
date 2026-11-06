@@ -15,7 +15,7 @@ O desafio pede um serviço com pelo menos três agentes cooperando para interpre
 ## Usuário afetado
 
 - **Lojista** (usuário principal): envia mensagens pelo endpoint ou pela demonstração e espera resposta útil, fundamentada e no seu idioma.
-- **Avaliador do desafio**: constrói e executa o serviço com comandos Docker padrão, envia os exemplos do enunciado, lê o README e assiste ao vídeo.
+- **Quem executa o serviço**: constrói e executa o serviço com comandos Docker padrão, envia os exemplos do enunciado e lê o README.
 - **Atendente humano (simulado)**: recebe o pacote de encaminhamento quando o autoatendimento não resolve.
 
 ## Resultado desejado
@@ -24,7 +24,7 @@ O desafio pede um serviço com pelo menos três agentes cooperando para interpre
 - Perguntas de produto citam fontes oficiais ingeridas; quando não há evidência, o assistente diz isso em vez de inventar.
 - Perguntas sobre o negócio do lojista usam somente dados sintéticos do cliente da requisição.
 - Pedidos inseguros, sensíveis ou fora de escopo são recusados ou redirecionados; pedidos de atendimento humano geram encaminhamento com contexto.
-- O avaliador sobe o sistema com `docker compose up --build` e apenas uma chave de API.
+- Quem executa sobe o sistema com `docker compose up --build` e apenas uma chave de API.
 - Qualidade, custo e latência são medidos e relatados, separando medição de meta.
 
 ## Escopo
@@ -212,8 +212,8 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 | Página com conteúdo renderizado por JavaScript | Extração vazia ou incompleta | Verificar o texto extraído; navegador headless só se necessário |
 | Modelos candidatos indisponíveis na conta ou com preço diferente | Bloqueio ou custo acima do previsto | Verificação na fatia 0; modelo configurável |
 | Recuperação fraca de inglês para português | Respostas sem evidência nos exemplos | Medir cedo; consulta reescrita ou bilíngue |
-| Avaliador executa em outra data | "Ontem" sem dados | Seed relativo ao dia da execução |
-| Busca web paga e avaliador usando a própria chave | Custo inesperado | Limites por requisição e aviso no README |
+| Execução em outra data | "Ontem" sem dados | Seed relativo ao dia da execução |
+| Busca web paga com a chave de quem executa | Custo inesperado | Limites por requisição e aviso no README |
 | Contexto privado no repositório público | Exposição indevida | `discovery/` ignorado; revisão antes do primeiro push |
 
 ## Questões em aberto

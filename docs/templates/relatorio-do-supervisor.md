@@ -1,6 +1,6 @@
 # Modelo: Relatório do Supervisor
 
-O Supervisor usa este relatório para contar a Lauro o que aconteceu num período de trabalho, em blocos de horário. Adaptado do `ampeli-sdd` (formato aprovado por Lauro em 01/11/2026) na etapa 0 da evolução pós-feedback, em 2026-11-03.
+O Supervisor usa este relatório para contar a Lauro o que aconteceu num período de trabalho, em blocos de horário. Adaptado do `ampeli-sdd` (formato aprovado por Lauro em 01/11/2026) na etapa 0 da evolução para produção, em 2026-11-03.
 
 ## Quando fazer
 
@@ -15,7 +15,7 @@ O Supervisor usa este relatório para contar a Lauro o que aconteceu num períod
    - Complete com a hora de merges, campanhas reais e builds Docker, quando importar.
    - O início sem commit fica como "até HHhMM", nunca como hora inventada.
 2. **Agrupe em blocos de assunto** (de 30 min a 3 h cada) e dê um nome curto a cada bloco.
-3. **Escreva cada bloco pelo resultado para o avaliador.**
+3. **Escreva cada bloco pelo resultado para quem lê.**
    - Diga o que passou a funcionar e onde: branch da versão, `main` local ou Docker.
    - Cite a tarefa (`T63`, `T65`) entre parênteses, nunca como sujeito da frase.
    - SHAs, `request_id` e nomes de classe ficam na tarefa e na evidência, não no relatório.

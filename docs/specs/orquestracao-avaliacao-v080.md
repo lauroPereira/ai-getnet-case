@@ -1,4 +1,4 @@
-<!-- Papel: especificação complementar curta da v0.8.0 (orquestração adaptativa e avaliação semântica), derivada da evolução pós-feedback. -->
+<!-- Papel: especificação complementar curta da v0.8.0 (orquestração adaptativa e avaliação semântica), derivada da evolução para produção. -->
 
 # Especificação: v0.8.0 — orquestração adaptativa e avaliação semântica
 
@@ -10,7 +10,7 @@ Esta spec não repete a 0.2: fixa o que o plano deixou aberto e as pré-condiç�
 
 ## Problema
 
-O avaliador apontou que o grafo segue um plano fixo, sem observar o resultado de um especialista e decidir o próximo passo, e que a avaliação por IA é literal: juiz do mesmo modelo, uma execução, sem evidência, sem revisão humana e sem holdout. As jornadas de negócio fecharam a v0.6.0 em 7/13 pela rubrica literal.
+O grafo seguia um plano fixo, sem observar o resultado de um especialista e decidir o próximo passo, e a avaliação por IA era literal: juiz do mesmo modelo, uma execução, sem evidência, sem revisão humana e sem holdout. As jornadas de negócio fecharam a v0.6.0 em 7/13 pela rubrica literal.
 
 ## Resultado desejado
 

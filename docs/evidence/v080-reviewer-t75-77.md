@@ -49,7 +49,7 @@ Developer corrige P2-75 e P2-76 com testes novos; P3 a critério. Revisão curta
 HEAD `eee8348`; diferença para `663ce09` só em `documentation_only_after_pin`. Tree `eedbb12e…6aff`, 97 blobs e fingerprint `6e3d6c20…9c42` conferem antes e depois. Holdout blob `22dfee8b…af9d` em `94bf7b3`, `663ce09` e HEAD. Sem mudança em `tests/scenarios/*.jsonl`, `prompts/`, `data/` e `cli.py`.
 
 ### Suíte
-`lint_and_tests.py --strict` em cópia `git archive 663ce09`: 1.340 passed e 1 skipped em 781 s (o skip exige basetemp dentro de `.pytest_cache`; isolado, passou: total 1.341, igual ao manifesto); Ruff e skills ok; exit 0. Uma execução com basetemp POSIX foi descartada (erros de ambiente).
+`lint_and_tests.py --strict` em cópia `git archive 663ce09`: 1.340 passed e 1 skipped em 781 s (o skip exige basetemp dentro de `.pytest_cache`; isolado, passou: total 1.341, igual ao manifesto); Ruff e skills ok; exit 0. Uma execução com basetemp POSIX não foi contada (erros de ambiente).
 
 ### Achados da rodada 1
 | Achado | Situação | Re-derivação |
