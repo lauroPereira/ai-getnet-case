@@ -37,7 +37,7 @@ Base criada pelo Supervisor após aprovação: template 0.2.0, commit limpo
 54 arquivos iniciais e 18 cópias geradas (9 skills). `validate-project.ps1`,
 `validate-agent-flow.ps1` e validação Python estrutural padrão aprovados.
 Não são testes do produto. Fonte reconferida sem mudança, sem Git ou .env
-no destino. [Manifesto de base](../evidence/v040-base-web.json).
+no destino. Manifesto de base.
 
 ## Status
 

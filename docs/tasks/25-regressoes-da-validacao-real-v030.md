@@ -6,7 +6,7 @@ Corrigir falhas observadas com o modelo real e tornar as verificações de conte
 
 ## Especificação relacionada
 
-RF-08, RF-15, RF-16, RF-32 e RF-46; CA-21, CA-28 e CA-31. Complementa a tarefa 24. Evidência original preservada em [v030-real-r1.json](../evidence/v030-real-r1.json), candidato de origem r1.
+RF-08, RF-15, RF-16, RF-32 e RF-46; CA-21, CA-28 e CA-31. Complementa a tarefa 24. Evidência original preservada em v030-real-r1.json (na tag `v0.3.0`), candidato de origem r1.
 
 ## Pré-condições
 

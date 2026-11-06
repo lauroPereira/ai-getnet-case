@@ -108,7 +108,7 @@ Lado do produto: as duas respostas dizem o que a jornada espera, com valores e d
 
 ## CA-49: replanejamento (rota pelo plano inicial, D16)
 
-Composição da r5 (quatro cenários válidos, sem reexecução nesta rodada), com o comportamento conferido em [v080-d12-pre-holdout-r5.md](v080-d12-pre-holdout-r5.md#ca-49--replanejamento-rota-pelo-plano-inicial-d16-caminho-executado-à-parte):
+Composição da r5 (quatro cenários válidos, sem reexecução nesta rodada), com o comportamento conferido em v080-d12-pre-holdout-r5.md:
 
 | ID | Origem | `request_id` (1–3) | Check |
 |---|---|---|---|
@@ -227,4 +227,4 @@ Na pasta de evidência, nos logs da rodada e nos logs do compose, a varredura po
 
 ## Como terminou
 
-O lojista que perguntou se a taxa do Pix de ontem estava divergente ouviu que a regra previa zero e foram cobrados R$ 0,75, e recebeu um protocolo de atendimento nas três vezes. Quem perguntou se o crédito de ontem usou condições diferentes ouviu que sim, que a cobrança usou outro plano, com os valores de referência e os cobrados. Quem perguntou pela taxa em duas parcelas ouviu, sem invenção, que não havia como comparar. Quem pediu o status do cancelamento ouviu que ele foi pedido e ainda não foi processado. No Docker, o lojista entrou com token, perguntou quando caía o dinheiro de ontem e como antecipar, e recebeu numa resposta só os valores e as datas da conta e o caminho no app. O avaliador viu no trace o assistente ir ao Suporte, perceber que faltava o procedimento e buscá-lo no Conhecimento, por regra e com um salto. O smoke de dez perguntas passou. O juiz independente reavaliou três vezes as 44 respostas, foi estável fora das buscas web e não falhou nenhuma vez. A rodada termina apta para o holdout, com o mock e o Docker desligados, os três ledgers conferidos, US$0,69526679 livres no cap e o holdout intacto.
+O lojista que perguntou se a taxa do Pix de ontem estava divergente ouviu que a regra previa zero e foram cobrados R$ 0,75, e recebeu um protocolo de atendimento nas três vezes. Quem perguntou se o crédito de ontem usou condições diferentes ouviu que sim, que a cobrança usou outro plano, com os valores de referência e os cobrados. Quem perguntou pela taxa em duas parcelas ouviu, sem invenção, que não havia como comparar. Quem pediu o status do cancelamento ouviu que ele foi pedido e ainda não foi processado. No Docker, o lojista entrou com token, perguntou quando caía o dinheiro de ontem e como antecipar, e recebeu numa resposta só os valores e as datas da conta e o caminho no app. O auditor viu no trace o assistente ir ao Suporte, perceber que faltava o procedimento e buscá-lo no Conhecimento, por regra e com um salto. O smoke de dez perguntas passou. O juiz independente reavaliou três vezes as 44 respostas, foi estável fora das buscas web e não falhou nenhuma vez. A rodada termina apta para o holdout, com o mock e o Docker desligados, os três ledgers conferidos, US$0,69526679 livres no cap e o holdout intacto.

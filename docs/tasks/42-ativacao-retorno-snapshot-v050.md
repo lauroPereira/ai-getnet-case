@@ -25,10 +25,18 @@ Registro/serviço KB, grafo/RunContext, trace/snapshot e API.
 
 ## Critérios de conclusão
 
-- [ ] Conflito409; demo não ativa; estado inválido não muda ponteiro.
-- [ ] Uma versão por run, registrada; nova execução vê a nova ativa.
-- [ ] Rollback e legado/MCP preservados, sem remoção de dados.
+- [x] Conflito409; demo não ativa; estado inválido não muda ponteiro.
+- [x] Uma versão por run, registrada; nova execução vê a nova ativa.
+- [x] Rollback e legado/MCP preservados, sem remoção de dados.
 
 ## Validação e status
 
 Implementada pelo Developer r1. CAS de ativação/retorno, ator e evento exercitados; teste mantém índice antigo utilizável após ativação e confirma a versão capturada no trace. Conflito obsoleto retorna `409`. Nenhum banco ou ledger do responsável foi aberto.
+
+## Status
+
+```text
+concluída (v0.5.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

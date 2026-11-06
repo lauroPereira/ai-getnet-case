@@ -6,7 +6,7 @@
 
 Os testes novos usam saldo primário de US$1,70 e cobrem arquivo de teto órfão em US$1,10 e US$1,15 e banco inválido com arquivo de teto. Eles verificam que a recusa preserva os arquivos e o saldo. A prova anterior continua cobrindo saldo insuficiente, reabertura após consumo, reservas em ambos os ledgers e as faixas de US$0,50 e US$1,00. O Reviewer não abriu o holdout, executou testes ou acessou o ledger real.
 
-A extensão operacional r3 permanece apta sob quiescência conferida antes e depois da aplicação. O procedimento e o comportamento de parada estão descritos no [parecer anterior](v080-reviewer-cap.md).
+A extensão operacional r3 permanece apta sob quiescência conferida antes e depois da aplicação. O procedimento e o comportamento de parada estão descritos no parecer anterior (`v080-reviewer-cap.md`, na tag `v0.8.0`).
 
 | Arquivo do pacote | SHA-256 |
 | --- | --- |

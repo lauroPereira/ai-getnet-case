@@ -5,7 +5,7 @@ V2 the procedure requires `get_contract_snapshot` before offering Payment Link a
 offers it when the product is in the contract facts. Zero cost: a programmed policy stands in for the models (it
 follows whatever procedure the Knowledge step retrieved) and the hashing embedder replaces paid embeddings. It proves
 the data path (document -> retrieved passage -> procedure -> tool -> facts -> reply, with the version in the trace);
-real model behaviour is checked by the QA run described in docs/evidence/v060-qa-preparacao.md."""
+real model behaviour is checked by the QA run described in docs/evidence/v060-qa-preparacao.md (tag v0.6.0)."""
 
 from __future__ import annotations
 

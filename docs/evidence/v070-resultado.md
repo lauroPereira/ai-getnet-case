@@ -10,9 +10,9 @@ Identidade e HITL real. Spec: [identidade-hitl-v070.md](../specs/identidade-hitl
 
 | Etapa | Resultado | Evidência |
 | --- | --- | --- |
-| T63 identidade, T64 fila, T65 interrupção e retomada (Time A) | Aptas para QA (duas rodadas cada) | [Reviewer](v070-reviewer.md), [Developer](v070-developer.md) |
+| T63 identidade, T64 fila, T65 interrupção e retomada (Time A) | Aptas para QA (duas rodadas cada) | [Reviewer](v070-reviewer.md), Developer |
 | T66b serviço de ticketing (Time B) | Apta para QA (quatro rodadas) | [Reviewer Time B](v070-reviewer-time-b.md) |
-| T66 webhooks (Time A) | Cinco rodadas de revisão: assinatura malformada e deduplicação concorrente (retomada); recusa repetida virando sucesso, perda de `handoff.closed` após queda, janela de retomada e arquivo por id (r2); descida da 0010 apagando pendências (r3); `handoff.created` não recuperável após queda e teto sem teste (r4); apta na r5, lacunas de teste levadas à T68 | [retomada](v070-reviewer-t66-retomada.md), [r2](v070-reviewer-t66-r2.md), [r3](v070-reviewer-t66-r3.md), [r4](v070-reviewer-t66-r4.md), [r5](v070-reviewer-t66-r5.md) |
+| T66 webhooks (Time A) | Cinco rodadas de revisão: assinatura malformada e deduplicação concorrente (retomada); recusa repetida virando sucesso, perda de `handoff.closed` após queda, janela de retomada e arquivo por id (r2); descida da 0010 apagando pendências (r3); `handoff.created` não recuperável após queda e teto sem teste (r4); apta na r5, lacunas de teste levadas à T68 | retomada, r2, r3, r4, [r5](v070-reviewer-t66-r5.md) |
 | T67 interface web (Time B) | Seis rodadas: sincronização do OpenAPI confirmada; estado de um usuário herdado pelo seguinte no mesmo navegador (conversa, campos do operador, widgets sem chave) e recuperação da resposta humana na ordem real; apta na r6 | `ai-getnet-case-web/docs/evidence/v070-reviewer-web.md` |
 | T68 regressão e fechamento (Time A) | Teste da história com ticketing real e dois processos; `content_ok` programado de volta ao nível da v0.6.0; cenário `SC-HANDOFF` do catálogo com o protocolo novo; apta na r2 | [Reviewer T68](v070-reviewer-t68.md) |
 | QA real r1 | **Apto com ressalvas**; nenhum defeito reproduzido | [QA](v070-qa.md), [história](v070-qa-historia.md), [regressão](v070-qa-regressao-real.md) |
@@ -49,7 +49,7 @@ Acumulado do projeto: cerca de US$0,79 de US$5,00. O custo da ferramenta de dese
 
 ## Limitações
 
-Ver CHANGELOG 0.7.0 e README "Limitations": entrega esgotada ou recusada sem reenvio e prendendo os eventos seguintes do mesmo caso e destino; recuperação de um turno interrompido dependente do reenvio da mesma mensagem; bloqueios entre processos exercitados só no Windows; identidade com emissor próprio e usuários sintéticos. Atritos e observações do QA (A-1 a A-3, O-4 a O-9) estão em [v070-qa.md](v070-qa.md).
+Ver CHANGELOG 0.7.0 e README (seção "Limitations" na tag `v0.7.0`): entrega esgotada ou recusada sem reenvio e prendendo os eventos seguintes do mesmo caso e destino; recuperação de um turno interrompido dependente do reenvio da mesma mensagem; bloqueios entre processos exercitados só no Windows; identidade com emissor próprio e usuários sintéticos. Atritos e observações do QA (A-1 a A-3, O-4 a O-9) estão em [v070-qa.md](v070-qa.md).
 
 ## Como voltar à v0.6.0
 

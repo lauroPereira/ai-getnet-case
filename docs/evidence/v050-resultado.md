@@ -14,19 +14,19 @@ confirmados na [evidência Docker r7](v050-docker-r7.json).
 
 - Backend: [revisão r2](v050-reviewer-r2.md) apta com293 testes; código de
   runtime preservado durante as correções web.
-- [QA r1](v050-qa-r1.md) reprovou confirmações UI e apresentação da resposta
+- QA r1 reprovou confirmações UI e apresentação da resposta
   após falha de transporte. Build/teste/ativação backend, inferências OpenAI
   e comparação DeepSeek/JEV tiveram evidências conforme o relatório.
 - Correções49/50/51 implementadas por Developer gpt-6-luna/high autorizado.
   Suíte web20/Ruff externo passaram; script estrito retornou2 por Ruff ausente
   no venv web, com pytest/estrutura/skills aprovados.
-- [Reviewer UI r1](v050-reviewer-ui-r1.md) encontrou confirmação de teto
-  desatualizada; [Reviewer UI r2](v050-reviewer-ui-r2.md) confirmou sua correção
+- Reviewer UI r1 encontrou confirmação de teto
+  desatualizada; Reviewer UI r2 confirmou sua correção
   no r6. Revisão independente reutilizou o mesmo agente gpt-6-luna/high.
 - Mesmo QA gpt-6-luna/high reativado para jornada no navegador, recuperação
   manual GET, concorrência/retorno/rerun e regressão pertinente restante.
   Não foram repetidos bootstrap ou smokes pagos já válidos.
-- [QA r2](v050-qa-r2.md) comprovou confirmações, build/teste/ativação/retorno
+- QA r2 comprovou confirmações, build/teste/ativação/retorno
   pela UI e captura consistente durante troca de versão. GET200 encontrou
   resposta persistida, mas a UI permaneceu pendente; [defeito52](../tasks/52-recuperar-conversa-get-ui-v050.md)
   e [correção53](../tasks/53-consumir-contrato-real-conversa-v050.md) usam o
@@ -63,7 +63,7 @@ Primário885entradas/US$0,34852844, mesmo delta acumulado da campanha desde o
 baseline. Acumulado reconciliado do projeto: **US$0,59837466 de US$5**.
 Zero reservas abertas e saldo de campanhaUS$0,24446117; nenhum cap renovado.
 
-[Auditoria final do Supervisor](v050-auditoria-final-supervisor.json) conferiu
+Auditoria final do Supervisor conferiu
 46/85arquivos de fonte,128runtime/129build sem divergências, os dois ledgers
 em somente leitura e ausência de listeners nas quatro portas próprias de QA.
 Serviços encerrados; dados, logs, fixture e controles persistentes preservados.
@@ -80,4 +80,4 @@ push, PR, merge, tag ou publicação v0.5 foi executado neste conjunto.
 Integrada em 2026-10-27 com autorização do responsável: PRs backend #6 e web #2,
 merges locais com a identidade do projeto (`c3a9027`, `4192169`) e tags `v0.4.0`
 e `v0.5.0`. A tarefa 46 foi incorporada à tarefa 54. Detalhes, conferência dos
-blobs e o incidente de identidade corrigido estão em [supervisão v0.6.0](v060-supervisao.md).
+blobs e o incidente de identidade corrigido estão em supervisão v0.6.0.

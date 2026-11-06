@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
+All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, notes and how to return to the previous version.
 
 ## [Unreleased]
 
@@ -15,7 +15,7 @@ Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rule
 
 ### Added
 - **Rubric `judge.v4`** (`prompts/judge.v4.md`, v3 untouched): an unsupported claim also covers a general claim stated as fact with no source in the evidence. `--rubric v3|v4` in `eval --judge-repeat` and `eval-calibrate --import`, resolved once (`--rubric` > configured default > v3); each judgement records the rubric it used. `eval-calibrate` accepts several `--judge`/`--judge-run`/`--rubric` triples and renders one block per (judge, execution, rubric) against the same human ratings, with the generic-claim table and the decision-rule line.
-- **Resumable comparison.** A running comparison whose process dies becomes `interrupted` on startup or on read, keeping finished cells and recording the in-flight attempt's cost; `POST /v1/comparisons/{id}/resume[?retry_failed=true]` runs only the missing cells, reserves only what is left, accumulates `cost_usd` and answers `409 comparison_running | comparison_completed | nothing_to_resume | fixed_factors_changed`. The thread registry is claimed before `running` is visible and each thread releases only itself, so concurrent resumes run each cell once.
+- **Resumable comparison.** A running comparison whose process dies becomes `interrupted` on startup or on read, keeping finished cells and recording the in-flight attempt at its reserved cost (`cost_is_estimate: true`, no trace row); `POST /v1/comparisons/{id}/resume[?retry_failed=true]` runs only the missing cells, reserves only what is left, accumulates `cost_usd` and answers `409 comparison_running | comparison_completed | nothing_to_resume | fixed_factors_changed`. The thread registry is claimed before `running` is visible and each thread releases only itself, so concurrent resumes run each cell once.
 - **`GET /metrics`** in Prometheus text (exposition 0.0.4, no new dependency), computed on demand from `traces.sqlite3` and the ledger with a 5 s cache: `requests_total{route,status}`, `model_calls_total{agent}`, `tool_calls_total{tool,outcome}`, `tool_failures_total{tool}`, `handoffs_total`, `replan_total{origin}`, `request_duration_seconds` (histogram), `cost_usd_total{provider}`, `budget_remaining_usd`, `budget_limit_usd`. Every label comes from a closed set in the code (anything else is `other`; a drift test pins the sets); an empty, corrupt or locked store never returns 500 (the last complete reading is served).
 - **`alerts/rules.yml`**: four Prometheus rules (budget below 10% of the cap, tool failure rate above 5% in 15 min, handoff rate above 30% in 1 h, p95 duration above 20 s in 15 min) with absolute runbook links; a test checks that every metric they cite exists.
 
@@ -32,11 +32,9 @@ Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rule
 - **Rubric experiment** ([report](docs/evidence/v0100-juiz-v4.md), [QA](docs/evidence/v0100-qa-juiz-r1.md)): the same 24 human-rated answers re-judged 3× under `judge.v4` by DeepSeek (US$0.025) and by `claude-opus-5-5` (US$1.37 on the separate Anthropic ledger), 144/144 valid. Decision rule written beforehand (spec D2): DeepSeek v4 vs v3: `unsupported_claim` agreement 0.667 → 0.792, criteria within 0.05, but 0 of 4 generic claims flagged, so v4 is **not** promoted; Opus v4 vs v3: 0.875 → 0.917 and 2 of 4 generic claims flagged (S01, S21) with no criterion worse than 0.05. The gap is rubric and model together.
 - **Operation** ([QA](docs/evidence/v0100-qa-ops-r1.md)): real comparison of 2 profiles × 3 scenarios; the API process killed with `taskkill` after 1 of 6 cells; after restart the comparison read `interrupted` with the finished cell intact and the in-flight attempt's reserved cost recorded; `resume` answered `202 {resumed_cells: 5}` and the comparison reached `completed` with one ledger line per cell and `cost_usd` equal to the sum of cells plus the attempt; a second `resume` got `409 comparison_completed`. `/metrics` matched the traces and the ledger (6 requests, 24 model calls, `+Inf` = `_count`, costs per provider equal to the settled ledger, `budget_remaining_usd` equal to `/ready`); no label carried an identifier. Cost US$0.006 in an isolated ledger.
 
-### Limitations
-- `judge.v3` still does not flag generic claims; `judge.v4` does so only with a stronger model (next step: Sonnet 5.5 under v4 as a cost middle ground).
-- The comparison thread registry is per process: run the API with a single worker (the compose does). A narrow ABA race in the resume claim needs a pause longer than a whole paid execution between check and claim; documented in ADR 0022, not fixed.
-- The interrupted attempt's cost is the reserved amount (`cost_is_estimate: true`), kept as reserved in the ledger; the attempt leaves no trace row, so it is absent from `requests_total`.
-- `/metrics` is public like `/ready` (counts only); restrict by network or token in production. Operator replies and resumes enter the rate denominators.
+### Notes
+- Run the API with one worker (the compose does): the comparison thread registry is per process.
+- `/metrics` is public like `/ready` (counts only); restrict it by network or token in production.
 
 ### Return to 0.9.0
 - Stop the stack, run `merchant-assistant migrate --to 11` against the runtime (any `interrupted` comparison becomes `failed`) and check out the 0.9.0 release. `judge.v4` and `/metrics` leave no data behind that 0.9.0 cannot read.
@@ -74,11 +72,11 @@ Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v0
 
   Hybrid is strictly better on both splits, so it became the default. Cost of the six measurements: US$0.016.
 
-### Limitations
-- The reranker also improves both splits, but its measured gain includes the effect of the deeper fusion (36 instead of 18 candidates), and it quadruples the time per query; it stays `off` until a future version adds a no-model control at the same depth (ADR 0020). The report's suggestion line says `on`; the ADR explains why the default is `off`.
-- In hybrid mode the Knowledge agent's "no evidence" shortcut fires only when BM25 also finds nothing, and the trace `score` is on the RRF scale; hits found only by BM25 have no score floor.
-- The retrieval holdout was labeled by the Developer and checked by an independent reviewer, not by a person; it has 25 questions and was re-sealed once after the label review, before any measurement. It has now been measured: later runs must mark it as seen.
-- `judge.v3` still lacks the generic-claim line and the judge still does not see the web search text (next steps). Repeating an execution name in `eval --judge-repeat` overwrites its report and merges executions; the QA rule is to copy the report first and never repeat a full round under the same name.
+### Notes
+- `RERANK` stays `off` by default (ADR 0020): the measured gain includes the effect of the deeper fusion (36 instead of 18 candidates), and the reranker quadruples the time per query.
+- In hybrid mode the trace `score` is on the RRF scale, and the Knowledge agent's "no evidence" shortcut fires only when BM25 also finds nothing.
+- The retrieval holdout (25 questions) was labeled by the Developer, checked by an independent reviewer and sealed before any measurement (re-sealed once after the label review); it has now been measured: later runs must be marked as seen, and the CLI counts runs within the same report file.
+- Use a new execution name for each `eval --judge-repeat` round: a repeated name overwrites its report.
 - The Opus judge costs 54× more per judgement than DeepSeek (US$0.0178 vs US$0.00033).
 
 ### Return to 0.8.0
@@ -96,7 +94,7 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 - **Human calibration**: `eval-calibrate --sample 24 --from <report>` writes a CSV stratified by route and split, with instructions and without the judge's scores (never from `holdout_v080`); `eval-calibrate --import <csv>` computes exact and ±1 agreement and quadratic weighted kappa per criterion into `docs/evidence/v080-calibracao.md`. No model call.
 - `eval-estimate --from <sample>` projects the campaign cost from a measured real sample of at least five cases (agent ×3, judge ×3 over the first run, follow-up conversations), revalidating the source; no model call.
 - Migration 0011 (see below); prompts `router.v6` (the interrogative English pricing-conditions question) and `personality.v5` (states the declared gap clearly).
-- **Campaign `v080-qa`**: `eval --campaign v080-qa` reserves every paid call against a fixed one-time campaign ledger and the installation ledger together. Caps above US$0.50 require a verified estimate (`--campaign-estimate`); US$1.40 only continues the mounted campaign after the reviewed contingency transition and never mounts a new one.
+- **Campaign `v080-qa`**: `eval --campaign v080-qa` reserves every paid call against a fixed one-time campaign ledger and the installation ledger together. Caps above US$0.50 require a verified estimate (`--campaign-estimate`).
 - Deterministic contract-termination rule in the Router: an explicit request to end the contract (English or Portuguese, new conversation, no service named) goes to `human_handoff` with an `HO-` protocol, recorded as `rule = contract_termination` in the trace.
 - `tests/scenarios/replan.jsonl` (four replanning scenarios, `SC-REPLAN-*` in the catalog) and the sealed `holdout_v080` split (25 new cases, about half in Portuguese), checked by hash in the suite.
 
@@ -119,13 +117,12 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 - **Human calibration** ([report](docs/evidence/v080-calibracao.md)): the owner rated 24 answers (balanced by route and split) with the judge's rubric and imported them with `eval-calibrate --import`. Exact agreement per criterion 0.58–0.75, within one point 0.83–1.00; the judge is the stricter rater (bias −0.17 to −0.42). `unsupported_claim`: exact agreement 0.67. Evidence localization per claim was AI-assisted in unversioned support material; every score is human.
 - Campaign cost **US$0.84** in the campaign ledger (cap US$1.40 after the approved US$0.30 contingency, which was not consumed), plus **US$0.03** in the Docker volume ledger.
 
-### Limitations
-- The deterministic journey rubric is literal: each real run brings correct paraphrases it refuses (known false refusals are listed in the task 78 review), and a new wrong paraphrase outside the registered list can pass; the independent judge is the extra control. How CA-51 is measured from v0.9.0 is open with the owner.
-- The judge does not see the web search text, so `general_web` answers get lower and less stable scores.
-- `holdout_v080` has now been seen: any later QA run must mark it as such, and no change may be guided by its result.
-- Human calibration rests on 24 answers rated by one person: agreement and kappa are an indication, not proof, and the quadratic kappa is near zero because almost every human score is 5 (ceiling). The judge and the owner never flag the same answer as `unsupported_claim`: the owner flags generic claims inside knowledge answers, the judge flags web answers whose text was not recorded. The sample CSV truncates the evidence the judge saw in full; the full passages were provided in a companion file this time.
-- On mixed questions the Router's initial plan varies between runs (Support followed by replanning, or `knowledge_and_support` directly); both give the right answer. Replanning does not run in the operator resume graph.
-- The seed dates "yesterday" by the day it ran: a paid QA run needs `bootstrap` on the same local day.
+### Notes
+- The deterministic journey rubric is literal: it refuses some correct paraphrases and can accept a wrong one outside the registered list; the independent judge is the extra control.
+- `holdout_v080` has now been seen: any later QA run must be marked as seen, and no change may be guided by its result.
+- Human calibration rests on 24 answers rated by one person; the quadratic kappa is near zero because almost every human score is 5 (ceiling), so the within-one-point agreement is the usable figure.
+- Replanning does not run in the operator resume graph.
+- The seed dates "yesterday" by the day it runs: run `bootstrap` the same local day before a paid QA run.
 
 ### Return to 0.7.0
 - Stop the stack, make sure `calibrations` holds no human scores (or recreate the runtime), run `merchant-assistant migrate --to 10` against the runtime and check out the 0.7.0 release. The prompt loader takes the latest file of each prompt, so 0.7.0 uses `router.v5`, `personality.v4` and `judge.v2` again; `MAX_PLAN_HOPS` and the judge settings are ignored. The budget ledgers stay as they are.
@@ -135,7 +132,7 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md), [story](docs/historias/identidade-hitl-v070.md), [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), tasks 63–68 and 66b).
 
 ### Breaking changes
-- **`POST /messages` requires `Authorization: Bearer <token>`.** The merchant comes from the token; `user_id` in the body is optional and, if it differs, the answer is `403 identity_mismatch`. The evaluator's calls become two: `POST /v1/auth/token` (form encoded, `grant_type=password`, demo user `cliente1988` with the fictitious password of `.env.example`, `client_id=merchant-assistant-cli`) and `POST /messages` with the token. `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
+- **`POST /messages` requires `Authorization: Bearer <token>`.** The merchant comes from the token; `user_id` in the body is optional and, if it differs, the answer is `403 identity_mismatch`. Calls to `POST /messages` become two: `POST /v1/auth/token` (form encoded, `grant_type=password`, demo user `cliente1988` with the fictitious password of `.env.example`, `client_id=merchant-assistant-cli`) and `POST /messages` with the token. `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
 - **`POST /v1/sessions` and `DELETE /v1/sessions/current` were replaced** by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The web client was migrated in the same release.
 - MCP and the `operator` CLI take the token from `MERCHANT_ASSISTANT_TOKEN`; `mcp --customer` was removed. `GET /traces/{id}` and `GET /conversations/{id}` require a token (owner only, operators for conversations with a case, admin everything).
 
@@ -150,59 +147,40 @@ Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md),
 
 ### Changed (contracts and data)
 - Handoff protocol `HO-…` instead of `SIM-…`; `simulated` left the payload and the reply no longer says the handoff is simulated. Replies carry `via`.
-- Migration 0009 (widened during the release) and migration 0010 (outbox), both reversible; 0010 refuses to roll back while the outbox holds undelivered events. Schema version 10.
+- Migration 0009 and migration 0010 (outbox), both reversible; 0010 refuses to roll back while the outbox holds undelivered events. Schema version 10.
 - `/v1` OpenAPI: `/v1/auth/*` and `/v1/handoffs*` added, `/v1/sessions*` removed; the web snapshot was regenerated from the backend.
 - Compose: `ticketing` service; `api` waits for a healthy `ticketing`; fictitious demo secrets are filled in so `docker compose up` works without editing `.env.example`.
 - The audit table survives the seed that runs on every container start.
 
 ### Validation
-- Backend strict script **640 tests passed**, web **92 tests passed**, Ruff and skill checks passed. Independent reviews per task (task 66 in five rounds, task 67 in six, task 68 in two), with mutation runs and real cross-process and crash probes. Real QA (candidate r1) apt on the 18 moments of the story through `curl`, the CLI, the web interface, two abrupt API restarts and Docker (smoke with token, ticket cycle and container restart between handoff and action). Real regression: challenge and core cases 27/27, conversations 4/4, business journeys 6/13. QA campaign cost **US$0.10140195** of its US$0.20 cap; project total about US$0.79 of US$5. See the [result record](docs/evidence/v070-resultado.md).
+- Backend strict script **640 tests passed**, web **92 tests passed**, Ruff and skill checks passed. Independent reviews per task, with mutation runs and real cross-process and crash probes. Real QA (candidate r1) apt on the 18 moments of the story through `curl`, the CLI, the web interface, two abrupt API restarts and Docker (smoke with token, ticket cycle and container restart between handoff and action). Real regression: challenge and core cases 27/27, conversations 4/4, business journeys 6/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). QA campaign cost **US$0.10140195** of its US$0.20 cap; project total about US$0.79 of US$5. See the [result record](docs/evidence/v070-resultado.md).
 
-### Limitations
-- A delivery that exhausts its three attempts or is refused has no resend yet and holds the later events of the same case and destination. After a crash in the middle of the turn that opens a case, recovery depends on the merchant resending the same message. Cross-process locks were exercised on Windows only.
-- The case shows `ticket_id` only after the first operator event from the ticketing (empty while the ticket is in reception). The `reject` resume with a real model can take longer than the ticketing's 3 s wait: the screen shows "envio pendente" and the retry with the same key completes it.
-- Business journeys 6/13 by the literal rubric (7/13 in v0.6.0): the English handoff sentence lost the word "human" that one label requires. Planned for v0.8.0 together with the other journey fixes.
-- Identity uses the assistant's own issuer and synthetic users; no authorization-code flow, refresh token or external provider runs in the demo.
+### Notes
+- A delivery that exhausts its three attempts or is refused holds the later events of the same case and destination.
+- The case shows `ticket_id` after the first operator event from the ticketing.
+- Identity uses the assistant's own issuer and synthetic demo users.
 
 ### Return to 0.6.0
-- Stop the stack, make sure the outbox has no undelivered events (or recreate the runtime), run `merchant-assistant migrate --to 8` against the runtime and check out `v0.6.0`; remove `checkpoints.sqlite3`, the lock files and the ticketing database. Databases created during the release while migration 0009 was being widened must be recreated.
+- Stop the stack, make sure the outbox has no undelivered events (or recreate the runtime), run `merchant-assistant migrate --to 8` against the runtime and check out `v0.6.0`; remove `checkpoints.sqlite3`, the lock files and the ticketing database.
 
 ## [0.6.0] — 2026-10-28 (validated: review and real QA apt)
 
-Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md), [plan](docs/specs/fechamento-v060-plano.md), [ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md), tasks 54–58). After acceptance, functional expansion ends.
+Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md), [plan](docs/specs/fechamento-v060-plano.md), [ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md), tasks 54–58). After acceptance, functional expansion ends (reopened in v0.7.0, ADR 0016).
 
 ### Added
 - Short catalog of ten labeled synthetic scenarios (`data/scenarios/catalog.json`), derived from the evaluation cases and including the documentation-effect question; `GET /v1/scenarios` and optional `scenario_id` in `POST /v1/messages` (validated, message must match, stored in the run snapshot).
 - Results data in `GET /v1/runs/{id}`: steps with retrieved passages (chunk id and excerpt), route, prompts used, deterministic checks reusing the existing evaluation checks (scenario labels when present; otherwise only grounding, errors and cross-customer markers, the rest "not evaluated") with critical failures listed one by one, and recorded evaluations.
 - On-demand model evaluation of a persisted reply (`POST /v1/runs/{id}/evaluations/estimate` and `POST /v1/runs/{id}/evaluations`): existing `judge` rubric and `JudgeScore`, fixed evaluator from the backend settings, confirmed estimate, budget reservation and separate cost, idempotent unless `repeat=true`, failed attempts recorded without scores. No Evaluation Agent and no new attendance.
 - Small profile comparison (`POST /v1/comparisons/estimate`, `POST /v1/comparisons`, `GET /v1/comparisons/{id}`): 2–3 profiles, up to 3 scenarios and 2 repetitions (18 cells), reuse of compatible recorded runs, one captured knowledge-base version, execution in a thread of the API process, domain effects in a temporary copy of the synthetic database, traces and snapshots marked `purpose=comparison`, budget denial stops the remaining cells, interrupted comparisons become `failed` on the next read, exploratory flag when profiles differ in more than one agent, model-judge quality only when every run of a profile was judged with one evaluator.
-- Documentation-effect demonstration prepared without cost: V2 text of the fictitious devices document (`data/scenarios/kb-demo-devices-v2.md`), expected difference recorded before editing ([QA preparation](docs/evidence/v060-qa-preparacao.md)) and an integration test V1 → V2 → V1 with a programmed policy.
+- Documentation-effect demonstration prepared without cost: V2 text of the fictitious devices document (`data/scenarios/kb-demo-devices-v2.md`), expected difference recorded before editing and an integration test V1 → V2 → V1 with a programmed policy.
 - Demo session limit of paid actions (`DEMO_SESSION_MESSAGE_LIMIT`, default 20), enforced by the backend with `429 demo_message_limit_reached`: messages, new comparison executions, Router comparisons and AI evaluations count; refusals without a model call (for example a stale comparison `409`, a budget refusal before the first call, or comparison cells skipped by a knowledge-base change, the confirmed cap or a budget refusal) do not count or are given back.
 - Web: three areas (Atendimento, Resultados, Administração only for admin), catalog scenarios, Results with checks, evaluations and the two comparison charts plus a table, error messages with the recovery action, optional `LOCK_BACKEND_URL` for a shared interface. Reference, Hybrid and Adjusted are published on new databases.
-- Single [demonstration guide](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/guia-demonstracao.md), [manual test script](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-teste-manual.md) and [video script](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md). Removed from the repository after integration by the owner's decision and replaced by local presentation material; the links point to the integrated version.
+- Single [demonstration guide](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/guia-demonstracao.md), [manual test script](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-teste-manual.md) and [video script](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md). The links point to the version integrated in v0.6.0.
 
-### Fixed (task 54)
-- R2-01: the persistent ceiling is written with an exact round-trip representation; the first mount never refuses its own value.
-- R2-02: the ceiling file is published atomically (temporary file and hard link) and never overwritten.
-- R2-03: readiness and per-request capture are read-only once the knowledge-base registry exists.
-- R2-05: explicit 30 s timeout in the CLI OpenAI client; R2-08 regressions for `max_retries == 0` in the three real clients and for a legacy manifest with an empty collection.
-- R2-07: `BudgetGuard.record` and `record_embedding` (no callers, no reservation) removed.
-- Web timeout: 105 s (backend `MAX_REQUEST_SECONDS` 90 + margin) for operations that wait for paid work, 20 s for reads, both configurable; GET recovery preserved. Unstructured gateway errors no longer break the client.
-- `BudgetMeter` accepts the `effective_parameters` argument sent by the OpenAI adapter (the paid judge path of `eval --judge` would otherwise fail).
-- Strict validation scripts skip `.pytest_cache` and `_tmp`; the web script also skips `.venv*` environments and Ruff is a web test dependency.
-
-### Fixed (review r1, task 60)
-- A comparison read never overwrites a final state recorded at the same time (conditional update while `running`).
-- On-demand evaluation claims a `running` row atomically: simultaneous requests with the same configuration make one paid call (`409 evaluation_running`); stale claims expire after 10 minutes.
-- Comparisons reuse only independent runs (`history_turns = 0`); missing costs stay unknown instead of zero; an agent that used several models in one run keeps one combined cost.
-- The catalog covers card-scheme enablement and sale cancellation (10 scenarios).
-- Web: transport failures in Administração (build, test, activation, rollback and loads) show the recovery action and discard estimate and confirmations; chart points and table cells (including failed ones) open their runs by GET; Simulado offers only the demo role when `LOCK_BACKEND_URL` is on.
-
-### Fixed (QA r1, task 61)
-- The JEV toggle runs the TypeSafe adapter in direct messages and profile comparisons; before, the Router was served by the default LLM while the snapshot said JEV. Snapshot, trace, ledger and Results now agree on the effective Router model.
-- The demo-limit refund is decided by the ledger rows of the request and never happens when they cannot be read.
-- `/ready` reports the active knowledge-base version and collection (`knowledge_base`).
-- Web: amounts in reais are shown literally (no formula), the case state follows a recovered reply, the profile selector starts on Referência with Portuguese names, the candidate test cap is pre-filled with the build estimate and the cost × quality chart keeps its labels in the legend.
+### Fixed
+- Budget ceiling written with an exact round-trip value and published atomically; readiness and per-request capture read-only once the knowledge-base registry exists; explicit timeouts (CLI OpenAI client 30 s; web 105 s for paid work, 20 s for reads); `BudgetMeter` accepts `effective_parameters`; strict scripts skip `.pytest_cache` and `_tmp` (task 54).
+- A comparison read never overwrites a final state; on-demand evaluation claims its row atomically (one paid call per configuration); comparisons reuse only independent runs and keep unknown costs unknown; the catalog covers enablement and sale cancellation; web recovery actions in Administração and drill-down from charts (task 60).
+- The JEV toggle runs the TypeSafe adapter in messages and comparisons, with snapshot, trace, ledger and Results agreeing on the effective Router model; demo-limit refunds are decided by the ledger; `/ready` reports the active knowledge base; web display fixes (task 61).
 
 ### Changed (contracts and data)
 - Additive `/v1` routes above; the OpenAPI snapshot in the web project is regenerated (31 paths, 28 client operations). Legacy `POST /messages`, MCP and existing `/v1` behaviour are unchanged.
@@ -212,15 +190,11 @@ Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md)
 - R2-04 (Qdrant I/O inside `BEGIN IMMEDIATE` during activation) is an accepted risk, without code change.
 
 ### Validation
-- Backend strict script: **349 tests passed**, Ruff and skill checks passed. Web: **42 tests passed**, Ruff passed, strict script exit 0. Migration 0007 → 0008 → 0007 tested on a synthetic SQLite database. Independent review apt in five rounds; real QA (two rounds, candidate r5) apt on the ten acceptance items through the real UI, ledgers and the packaged Docker stack (API only on loopback, schema 8). Highlights: the edited document changed tool use with a real model (V2 retrieved the new passage first and called `get_contract_snapshot`; the restored V1 did not); JEV toggle confirmed by `jev-1.14.0` ledger rows; recovery with one POST and one GET; on-demand evaluation reused without cost. Real regression: core and challenge cases 27/27, conversations 4/4. QA campaign cost **US$0.08800487** of its US$0.50 cap; project total US$0.68637953 of US$5. See the [result record](docs/evidence/v060-resultado.md).
+- Backend strict script: **349 tests passed**, Ruff and skill checks passed. Web: **42 tests passed**, Ruff passed, strict script exit 0. Migration 0007 → 0008 → 0007 tested on a synthetic SQLite database. Independent review and real QA (candidate r5) apt on the ten acceptance items through the real UI, ledgers and the packaged Docker stack (API only on loopback, schema 8). Highlights: the edited document changed tool use with a real model (V2 retrieved the new passage first and called `get_contract_snapshot`; the restored V1 did not); JEV toggle confirmed by `jev-1.14.0` ledger rows; recovery with one POST and one GET; on-demand evaluation reused without cost. Real regression: core and challenge cases 27/27, conversations 4/4, business journeys 7/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). QA campaign cost **US$0.08800487** of its US$0.50 cap; project total US$0.68637953 of US$5. See the [result record](docs/evidence/v060-resultado.md).
 
-### Limitations
-- Model evaluation is a judge over the persisted reply, not human review. The comparison estimate is an upper bound; comparisons depend on the API process staying up.
-- Results shows the runs of the current browser session; no general run listing (`GET /v1/runs` was not approved).
-- Public sharing depends on the owner's router, firewall and the absence of CGNAT; the docs describe a tunnel as an alternative. Access from another network was not tested yet.
-- Business journeys in the real regression: 7/13 by the literal rubric. Four pricing cases miss only literal wording (tool, amounts and status are right); the English price-conditions question goes to `clarify` with the real Router (the Portuguese one passes). Router and prompts were not changed in v0.6.0.
-- The cost × quality chart legend shows profile identifiers (`reference`, `hybrid`, `adjusted`) instead of the Portuguese names.
-- `/v1` login against the Docker stack requires `API_DEMO_ACCESS_KEY` and `API_ADMIN_ACCESS_KEY` in `.env`.
+### Notes
+- The comparison estimate is an upper bound. A comparison whose process stops is marked `failed` (superseded in v0.10.0: `interrupted` and resumable).
+- Results shows the runs of the current browser session; there is no general run listing.
 
 ### Return to 0.5.0
 - Stop the stack and run `merchant-assistant migrate --to 7` against the synthetic runtime before checking out `v0.5.0`; evaluations, comparisons and the session message counter are dropped, all earlier data is kept. Compose of 0.5.0 publishes the API on all interfaces again.
@@ -248,11 +222,6 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 - Real QA covered embeddings, baseline build, the full draft → candidate → test → activation → rollback cycle in the UI, 403/409/429 protections, concurrent version capture, a real DeepSeek/JEV Router comparison and conversation recovery with a single POST.
 - Paid calls in this version: **US$0.00553883**; project total US$0.59837466 of US$5.
 
-### Limitations
-- An optional probe of the edited fictitious text did not reach Knowledge and remains inconclusive; it was not a published criterion and is not claimed as demonstrated.
-- Low-severity review findings (task 46) remain open. The web strict script exits 2 because Ruff is not installed in the web virtual environment; Ruff passed when run externally.
-- Real inferences ran in the native environment; the canonical Docker image built for r3 was inspected but not used for provider calls.
-
 ### Return to 0.4.0
 - Stop the stack and run `merchant-assistant migrate --to 6` against the synthetic runtime before checking out `v0.4.0`. Knowledge base tables are dropped; Qdrant collections are kept and the reference collection keeps working.
 
@@ -273,15 +242,13 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 - `/v1` endpoints and Bearer security are described by `ai-getnet-case-web/openapi-v1.json`. Session revocation returns an empty 204 response; subsequent unauthorized requests on the same keep-alive connection receive a complete 401 response. Legacy `POST /messages` remains unchanged.
 
 ### Validation
-- Backend strict script: **216 tests passed**, Ruff and skill checks passed; see the Developer r5 passage.
+- Backend strict script: **216 tests passed**, Ruff and skill checks passed.
 - Web Ruff check/format passed; web pytest: **14 passed**. Independent Reviewer and QA rechecked both directions of Router selection changes; earlier QA covered Simulated/Recorded labels, compatible profile publication, effective parameters and rejection without a version change.
-- Synthetic HTTP client flow passed login, profile read, two-router comparison, selected message, run inspection, one-time consumption and authorization/revocation checks. No model-provider HTTP inference was sent.
-- Candidate r6, independent passages, installed-image checks and limits are linked from `docs/evidence/v040-resultado.md`.
+- Synthetic HTTP client flow passed login, profile read, two-router comparison, selected message, run inspection, one-time consumption and authorization/revocation checks.
+- Candidate r6, review and QA are linked from the [result record](docs/evidence/v040-resultado.md).
 
-### Limitations
-- CA-32 live JEV request remains pending; no paid/provider inference API call was made. The catalog follows dated official documentation; no provider-account `GET /models` was sent because a free call could not be established from official pricing evidence.
-- The owner authorized private PRs and merges with these limits retained. Paid QA is authorized starting in v0.5.0 within the persistent US$5 project ceiling; v0.4.0 did not use that authorization retroactively.
-- Docker validation used an incremental installed image and identical backend inputs; a fresh canonical Docker rebuild is not claimed.
+### Notes
+- Validated with scripted models; real-model QA starts in 0.5.0.
 
 ## [0.3.0] — 2026-10-27 (validated; approved for release)
 
@@ -301,12 +268,11 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 - Independent synthetic service fixtures live in `data/mock-services/`.
 
 ### Validation
-- The owner approved v0.3.0 for release. Integration and tag execution are tracked in the [central validation record](docs/evidence/v030-resultado.md); this changelog does not claim that PR, merge or tag actions have already occurred.
-- The final [Developer r6 passage](docs/evidence/v030-developer-r6.md) records the strict validation: **191 tests**. Independent [Reviewer r6](docs/evidence/v030-reviewer-r6.md) and [QA r6](docs/evidence/v030-qa-r6.md) are apt.
-- **40 recorded real HTTP responses** were re-evaluated by deterministic replay of the corrected rubric, with no new model calls; the original answers and holdouts were preserved ([replay report](docs/evidence/v030-real-http-r2-replay.md)). Separately, **4 multi-turn conversations** were repeated live through HTTP and passed **4/4** ([conversation report](docs/evidence/v030-real-conversations-r3.md)).
-- The [r1 real evaluation](docs/evidence/v030-real-r1.md) is preserved as historical evidence and is not the final release result.
+- The owner approved v0.3.0 for release ([central validation record](docs/evidence/v030-resultado.md)).
+- Strict validation: **191 tests**. Independent [Reviewer r6](docs/evidence/v030-reviewer-r6.md) and [QA r6](docs/evidence/v030-qa-r6.md) are apt.
+- **40 recorded real HTTP responses** scored with the corrected rubric, with no new model calls ([report](docs/evidence/v030-real-http-r2-replay.md)). Separately, **4 multi-turn conversations** were repeated live through HTTP and passed **4/4** ([conversation report](docs/evidence/v030-real-conversations-r3.md)).
 
-### Limitations
+### Notes
 - Pricing values, rules, protocols and cancellation statuses are fictitious and not Getnet terms.
 - No fee adjustment, refund, enablement, sale cancellation or contract termination is executed.
 
@@ -347,7 +313,7 @@ Memory, follow-up and MCP ([increments spec](docs/specs/incrementos-pos-nucleo.m
   ([report](docs/evidence/2026-10-26-regressao-v020.md)).
 - Docker clean start healthy in 18 s; smoke 10/10; MCP demo inside the container.
 
-### Limitations
+### Notes
 - Troubleshooting steps are identified by the short label the model gives, not by a procedure step id.
 - Informational answers stay `awaiting_customer` until the merchant confirms (no automatic informational
   resolution).
@@ -371,5 +337,5 @@ Core delivery of the challenge (slices 0 and 1). Tag `v0.1.0` on commit `29a0088
 ### Validation
 - 112 offline tests; Recall@6 = 1.0 (English and Portuguese); real evaluation 27/27 automated checks; Docker clean build and smoke 10/10.
 
-### Limitations
-- One message per request (no conversation memory); simulated handoff; snapshots fixed on 2026-10-26.
+### Notes
+- One message per request (conversation memory since v0.2.0); simulated handoff (human in the loop since v0.7.0); snapshots fixed on 2026-10-26.

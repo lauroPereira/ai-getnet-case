@@ -8,7 +8,7 @@ As versões 0.1 a 0.5 entregaram atendimento multiagente, jornadas, perfis, JEV 
 
 ## Usuário afetado
 
-- **Recrutador ou avaliador:** experimenta cenários e perfis pela interface, sem acesso administrativo, dentro de um limite de consumo.
+- **Recrutador ou revisor técnico:** experimenta cenários e perfis pela interface, sem acesso administrativo, dentro de um limite de consumo.
 - **Responsável (administrador):** prepara perfis e documentos, demonstra a mudança da base e compartilha a demonstração.
 - **Lojista sintético:** recebe atendimento consistente, na versão da base capturada no início.
 

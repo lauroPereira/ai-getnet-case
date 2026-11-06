@@ -10,7 +10,7 @@ Emitir e validar JWT (RS256, JWKS) no assistente, derivar o lojista do principal
 
 ## Contexto
 
-Até a v0.6.0, `POST /messages` aceitava o `user_id` do payload como autoridade; a sessão `/v1` existia só para `demo` e `admin`, com token opaco e um lojista fixo da configuração. As ferramentas recebiam o lojista do servidor, nunca do modelo, mas não sabiam quem as chamava nem com que permissão. O avaliador pediu a cadeia credencial → principal autenticado → autorização → lojista e a autorização de cada tool call (RF-76 a RF-79). O responsável escolheu tokens JWT, reconhecíveis como padrão de mercado, em vez de chave sintética trocada por sessão opaca.
+Até a v0.6.0, `POST /messages` aceitava o `user_id` do payload como autoridade; a sessão `/v1` existia só para `demo` e `admin`, com token opaco e um lojista fixo da configuração. As ferramentas recebiam o lojista do servidor, nunca do modelo, mas não sabiam quem as chamava nem com que permissão. Faltavam a cadeia credencial → principal autenticado → autorização → lojista e a autorização de cada tool call (RF-76 a RF-79). O responsável escolheu tokens JWT, reconhecíveis como padrão de mercado, em vez de chave sintética trocada por sessão opaca.
 
 ## Decisão
 
@@ -38,7 +38,7 @@ flowchart LR
 ## Alternativas consideradas
 
 - **Chave sintética trocada por sessão opaca** (versão 1 desta ADR): atendia a cadeia pedida, mas é menos reconhecível como autenticação e não demonstra a troca por um provedor externo.
-- **Keycloak (OIDC real) no compose:** cerca de 1 GB de RAM a mais, subida lenta e mais um ponto de falha para o avaliador; o verificador por emissor e JWKS já permite usá-lo por configuração.
+- **Keycloak (OIDC real) no compose:** cerca de 1 GB de RAM a mais, subida lenta e mais um ponto de falha para quem sobe a demonstração; o verificador por emissor e JWKS já permite usá-lo por configuração.
 - **HS256 com segredo compartilhado:** sem JWKS, o ticketing precisaria do segredo de assinatura para validar tokens.
 - **Authorization code + PKCE na demo:** exige redirecionamento e tela de login do provedor; é o caminho de produção, documentado.
 - **Escopo só por rota:** não atende "autorizar cada tool call".

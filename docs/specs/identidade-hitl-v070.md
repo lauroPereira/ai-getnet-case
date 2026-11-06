@@ -1,14 +1,14 @@
-<!-- Papel: especificação complementar curta da v0.7.0 (identidade e HITL real), derivada da evolução pós-feedback. -->
+<!-- Papel: especificação complementar curta da v0.7.0 (identidade e HITL real), derivada da evolução para produção. -->
 
 # Especificação: v0.7.0 — identidade e HITL real
 
-Versão 2 — 2026-11-03 — aberta pelo Supervisor sob a "Autorização por versão" do AGENTS.md; versão 2 com duas decisões do responsável no mesmo dia: **JWT com emissor próprio** no lugar de chave sintética com sessão opaca, e **serviço de ticketing próprio com tela no projeto web** no lugar do receptor passivo. Deriva da [especificação 0.2](evolucao-pos-feedback.md) (RF-76 a RF-85, RF-100; CA-46 a CA-48) e do [plano](evolucao-pos-feedback-plano.md) (decisões técnicas 1 a 8). História em [identidade-hitl-v070.md](../historias/identidade-hitl-v070.md); decisões em [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md) e [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+Versão 2 — 2026-11-03 — aberta pelo Supervisor sob a "Autorização por versão" do AGENTS.md; versão 2 com duas decisões do responsável no mesmo dia: **JWT com emissor próprio** no lugar de chave sintética com sessão opaca, e **serviço de ticketing próprio com tela no projeto web** no lugar do receptor passivo. Deriva da [especificação 0.2](evolucao-producao-v070-v0100.md) (RF-76 a RF-85, RF-100; CA-46 a CA-48) e do [plano](evolucao-producao-v070-v0100-plano.md) (decisões técnicas 1 a 8). História em [identidade-hitl-v070.md](../historias/identidade-hitl-v070.md); decisões em [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md) e [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 Esta spec não repete a 0.2: fixa o que o plano deixou aberto, o que mudou com as decisões do responsável e o **contrato entre os dois times**.
 
 ## Problema
 
-Hoje `POST /messages` aceita qualquer `user_id` do payload, as ferramentas não sabem quem é o principal e o encaminhamento grava um caso `SIM-…` que nenhum humano responde. O avaliador deu 4,0 em HITL e 7,8 em identidade por isso, e pediu integração operacional com humano/ticketing que devolva a resposta ao agente.
+Hoje `POST /messages` aceita qualquer `user_id` do payload, as ferramentas não sabem quem é o principal e o encaminhamento grava um caso `SIM-…` que nenhum humano responde. Uma operação real precisa de integração com humano/ticketing que devolva a resposta ao agente.
 
 ## Resultado desejado
 
@@ -122,7 +122,7 @@ Todas reversíveis; registradas também no relatório do Supervisor.
 | D13 | **Rotas de demo `GET /traces/{id}` e `GET /conversations/{id}` exigem token:** lojista e demo só o que é seu; operador só conversas com caso; admin tudo | Hoje abertas com `DEMO_MODE=true`, o padrão do compose | — |
 | D14 | **Estados depois da ação:** `approve`/`reply` → fila `answered`, caso `awaiting_customer`; `reject` → fila `rejected`, caso conforme o Support reexecutado, nunca de volta a `handoff` no mesmo ciclo; `ticket.solved` → fila `closed`. A máquina de estados ganha a saída de `handoff` só por ação de operador | RF-80, RF-84 | — |
 | D15 | **Rascunho do operador** vem do Escalation (`escalation.v2`: resumo, pergunta pendente e rascunho no idioma do lojista); falha do modelo → rascunho determinístico a partir das contribuições | Plano, item 4 | — |
-| D16 | **Serviço de ticketing dentro do pacote** (`merchant_assistant.ticketing`, como o `mocks`), isolado por teste de arquitetura e banco próprio | Mesma imagem e mesmo compose; o avaliador sobe tudo com um comando | Extrair para repositório próprio |
+| D16 | **Serviço de ticketing dentro do pacote** (`merchant_assistant.ticketing`, como o `mocks`), isolado por teste de arquitetura e banco próprio | Mesma imagem e mesmo compose; tudo sobe com um comando | Extrair para repositório próprio |
 | D18 | **Token de lojista em `/v1`** vê os mesmos perfis que a demo (publicados e liberados para demo) e **toda ação paga dele** (`/v1/messages`, `/v1/comparisons`, `/v1/router/compare`, `/v1/runs/{id}/evaluations`) conta no mesmo limite de ações por token da demo e passa pelo rate limit do D5 *(ampliada após a revisão da 63)* | Lojista não ganha perfis administrativos nem uso pago sem limite com as senhas fictícias públicas | Liberar por papel |
 | D20 | **Admin:** sem lojista próprio no token; nas rotas `/v1` que precisam de lojista (mensagens, comparações, comparação de Routers, avaliações, conversas) age sobre o lojista sintético da demo (`API_DEMO_CUSTOMER_ID`), como na v0.6.0; `POST /messages` aceita só `merchant` e `demo`, e a recusa diz isso sem citar papéis *(revista após a entrega da 63 r2: a primeira redação tirava do admin comparações e conversas da demonstração da v0.6.0)* | Preserva a demonstração da v0.6.0 e deixa o contrato coerente | Dar lojista ao admin |
 | D21 | **Mínimo privilégio nas leituras:** `/v1/profiles`, `/v1/kb/*`, `/v1/catalog/models`, `/v1/scenarios`, `/v1/runs/*` e `/v1/comparisons/*` só para `merchant`, `demo` e `admin`; `operator` e `service` recebem `403 insufficient_scope` | O serviço só tem `handoff:integrate`; o operador trabalha na fila e no ticketing | Abrir por escopo |
@@ -133,7 +133,7 @@ Todas reversíveis; registradas também no relatório do Supervisor.
 | D25 | **Dois grafos com as mesmas funções de nó** (entrega da 65): o de atendimento segue sem checkpointer; quando o Escalation abre um caso, o estado do fim do turno entra num grafo de revisão com `SqliteSaver`, que para em `human_review` com `interrupt()` depois da resposta ao lojista; `Command(resume)` continua esse grafo. A ADR 0018 é ajustada no fechamento | Mantém "o caminho sem encaminhamento não lê checkpoint" e a resposta HTTP do lojista termina como antes | Um grafo só com checkpointer em todo turno |
 | D26 | **Retomada que falha** responde `503 resume_failed`, fica `resume_status=failed` visível na fila e é repetível pela mesma chave (turno gravado uma vez); a caixa de saída do ticketing trata `503` como falha temporária e repete | Caso nunca fica mudo depois do commit da ação | — |
 | D27 | **Auditoria persiste entre subidas:** `audit_events` sai das tabelas recriadas pelo `seed`/`bootstrap`; os dados sintéticos de domínio continuam sendo recriados | O reinício do container (CA-48) não pode apagar a prova de segurança (CA-46, D23) | Voltar à lista anterior |
-| D28 | **Checkpoint que não grava** na abertura do caso deixa o caso marcado (`resume_status=checkpoint_failed`) e visível na fila desde o início; ação nele responde `503 checkpoint_missing`; caminho sem grafo fica como limitação | Operador não descobre a falha só ao agir | — |
+| D28 | **Checkpoint que não grava** na abertura do caso deixa o caso marcado (`resume_status=checkpoint_failed`) e visível na fila desde o início; ação nele responde `503 checkpoint_missing`; não há caminho de retomada sem o grafo | Operador não descobre a falha só ao agir | — |
 | D29 | **`conversation.replied` ao lojista sem `operator_id`**: a cópia para `CONVERSATION_WEBHOOK_URL` omite o identificador do operador (a do ticketing o mantém), como a conversa já faz | Minimização: o lojista não precisa do identificador interno do atendente | Enviar o mesmo envelope aos dois |
 | D17 | **Ordem do Time B:** 72a já entregue; depois 66b (serviço, worktree próprio na v0.7.0) e 67 (tela). Nenhum dos dois depende do código do Time A, só deste contrato | Paralelismo real | — |
 
@@ -150,7 +150,7 @@ Regressão: 40 casos (`challenge_examples` 10, `core_cases` 17, `business_journe
 ## Requisitos não funcionais
 
 - Teto da campanha `v070-qa`: US$0,20, montada uma vez, combinada com o ledger primário (acumulado do projeto antes da versão: US$0,69 de US$5,00).
-- Testes sem chamada paga e sem rede externa; chaves RSA de teste geradas no teste; migração 0009 reversível; quebras de `POST /messages` e `/v1/sessions` no CHANGELOG com as chamadas do avaliador (token + mensagem).
+- Testes sem chamada paga e sem rede externa; chaves RSA de teste geradas no teste; migração 0009 reversível; quebras de `POST /messages` e `/v1/sessions` no CHANGELOG com as duas chamadas (token + mensagem).
 - O caminho sem encaminhamento não lê checkpoint.
 - Nenhum segredo real; senhas, segredos de webhook e client secret do exemplo nomeados como fictícios; chave privada de assinatura nunca no Git.
 - Dependências novas: `pyjwt[crypto]` (63 e 66b, mesma linha) e `langgraph-checkpoint-sqlite` (65).
@@ -160,6 +160,6 @@ Regressão: 40 casos (`challenge_examples` 10, `core_cases` 17, `business_journe
 | Risco | Mitigação |
 | --- | --- |
 | Estado do grafo não serializável pelo `SqliteSaver` | Teste de serialização primeiro na 65; plano B na ADR 0018 |
-| Quebra do `curl` do avaliador | README com token + mensagem; smoke e `/docs` com o fluxo de token; senhas fictícias no `.env.example` |
+| Quebra do `curl` do README | README com token + mensagem; smoke e `/docs` com o fluxo de token; senhas fictícias no `.env.example` |
 | Contrato entre times divergir | Contrato nesta seção; teste de contrato dos dois lados com os mesmos exemplos; integração na 68 |
 | Arquivos compartilhados entre times (`pyproject.toml`, compose, `.env.example`) | Só acréscimos em blocos próprios; o Supervisor integra a branch do B na da versão e resolve |

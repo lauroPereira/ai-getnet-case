@@ -6,7 +6,7 @@ Provar, com modelo programado, a história inteira de ponta a ponta sobre as tar
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (critérios e prova), [história](../historias/identidade-hitl-v070.md), [plano](../specs/evolucao-pos-feedback-plano.md) tarefa 68 e "Estratégia de testes".
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (critérios e prova), [história](../historias/identidade-hitl-v070.md), [plano](../specs/evolucao-producao-v070-v0100-plano.md) tarefa 68 e "Estratégia de testes".
 
 ## Pré-condições
 
@@ -25,13 +25,13 @@ Tarefas 63 a 66 e 66b com parecer apto; branch do Time B integrada pelo Supervis
 
 ## Critérios de conclusão
 
-- [ ] CA-46, CA-47 e CA-48 cobertos pelo teste da história, além dos testes de cada tarefa.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
-- [ ] Campanha `v070-qa` montável com US$0,20 (teste).
+- [x] CA-46, CA-47 e CA-48 cobertos pelo teste da história, além dos testes de cada tarefa.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Campanha `v070-qa` montável com US$0,20 (teste).
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 68". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). A passagem está em v070-developer.md, seção "Tarefa 68". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística |
 | --- | --- |
@@ -49,5 +49,7 @@ Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evi
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 2: SC-HANDOFF do catálogo e P3 da revisão)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

@@ -10,7 +10,7 @@ Acrescentar busca lexical ao índice de conhecimento, fundi-la com a busca densa
 
 ## Contexto
 
-O avaliador (feedback V4) apontou que o retrieval era só denso (`text-embedding-3-small` + Qdrant, top-6 por cosseno), medido num conjunto de 14 perguntas usado durante o desenvolvimento, sem holdout, sem BM25 + denso, sem RRF e sem reranker (RF-94 a RF-96). Busca densa é boa em paráfrase e fraca em termo exato (código, sigla, nome raro); busca lexical é o oposto. A escolha do modo padrão precisa ser feita com número, num conjunto que ninguém usou para ajustar.
+O retrieval era só denso (`text-embedding-3-small` + Qdrant, top-6 por cosseno), medido num conjunto de 14 perguntas usado durante o desenvolvimento, sem holdout, sem BM25 + denso, sem RRF e sem reranker (RF-94 a RF-96). Busca densa é boa em paráfrase e fraca em termo exato (código, sigla, nome raro); busca lexical é o oposto. A escolha do modo padrão precisa ser feita com número, num conjunto que ninguém usou para ajustar.
 
 Restrições: o modo denso atual é o que todas as respostas avaliadas da v0.8.0 usaram e não pode mudar de resultado; o Knowledge não muda de comportamento com o padrão; nenhum dado real; custo de avaliação em centavos.
 
@@ -20,22 +20,22 @@ Restrições: o modo denso atual é o que todas as respostas avaliadas da v0.8.0
 - **Fusão:** RRF com `k=60` sobre os `3×k` primeiros de cada lista, desempate pelo denso, `origin` por item (`dense`, `bm25`, `both`). `min_score` vale só para a lista densa.
 - **Modo:** `RETRIEVAL_MODE=dense|hybrid`; `search()` sem modo usa a configuração; `mode="dense"` é idêntico à v0.8.0 (175/175 resultados iguais na revisão).
 - **Reranker:** `rerank.v1` (prompt versionado) no modelo do agente sobre os 12 primeiros de uma fusão a 36, saída estruturada com a ordem; `RERANK=on|off`, padrão `off`, só com `hybrid`; qualquer falha devolve exatamente o resultado de `off`; medido pelo `Meter` da requisição e contado em `max_model_calls`.
-- **Holdout de retrieval:** `tests/scenarios/retrieval_holdout_v090.jsonl`, 25 perguntas (13 pt), passagem correta por `chunk_id` com grau 2 e vizinhas com grau 1, escrito antes de medir qualquer modo e lacrado por `sha256` (relacrado uma vez após a revisão dos rótulos, ainda sem medição). Medido uma vez por configuração, por último; depois disso é "já visto".
+- **Holdout de retrieval:** `tests/scenarios/retrieval_holdout_v090.jsonl`, 25 perguntas (13 pt), passagem correta por `chunk_id` com grau 2 e vizinhas com grau 1, escrito antes de medir qualquer modo e lacrado por `sha256` antes de qualquer medição (relacrado uma vez após a revisão dos rótulos, ainda sem medição). Medido uma vez por configuração, por último; depois disso é "já visto".
 - **Métricas:** Recall@6, MRR e nDCG@6 (ganho linear no holdout; alvo único em `dev`), tempo por consulta, falhas do reranker.
 - **Regra do padrão (D7, escrita antes da medição):** `hybrid` vira padrão se o nDCG@6 for estritamente maior que o denso em `dev` e no holdout. A linha "modo padrão sugerido" do relatório aplica a regra; a decisão é registrada aqui com os números.
 - **Reranker nesta versão (P3-16 da revisão r2 da tarefa 81):** a comparação híbrido+reranker × híbrido mistura o efeito do modelo com o da profundidade da fusão (36 contra 18): sem reordenar nada, a profundidade sozinha muda o top 6 em 29 de 64 perguntas com `min_score` 0. Por isso `RERANK` permanece `off` nesta versão **independentemente da medição**, que é reportada como diagnóstico; ligar o reranker exige, em versão futura, uma linha de controle `hybrid@36` sem modelo e a regra comparando contra ela.
 
 ## Alternativas consideradas
 
-- **Só denso com embedding maior:** não resolve termo exato e custa mais por consulta; descartado.
-- **BM25 no Qdrant (sparse vectors):** exigiria reindexar e mudar o cliente; o índice em processo é suficiente para 145 chunks e reprodutível; descartado nesta versão.
-- **Reranker ligado por padrão:** adiciona uma chamada de modelo por pergunta de conhecimento; só se justifica com ganho medido nos dois conjuntos (RF-96); descartado como padrão.
-- **Medir no conjunto `dev` apenas:** é o que o avaliador criticou; descartado.
+- **Só denso com embedding maior:** não resolve termo exato e custa mais por consulta; não adotado.
+- **BM25 no Qdrant (sparse vectors):** exigiria reindexar e mudar o cliente; o índice em processo é suficiente para 145 chunks e reprodutível; não adotado nesta versão.
+- **Reranker ligado por padrão:** adiciona uma chamada de modelo por pergunta de conhecimento; só se justifica com ganho medido nos dois conjuntos (RF-96); não adotado como padrão.
+- **Medir no conjunto `dev` apenas:** não adotado; o `dev` foi usado no desenvolvimento e não mede generalização.
 
 ## Consequências
 
 - Positivas: termo exato passa a ser encontrado (com embeddings de hash, 5/5 contra 0/5 do denso); decisão do padrão com holdout e regra prévia; modo denso preservado byte a byte.
-- Negativas e limitações: no modo híbrido o atalho "sem evidência" do Knowledge só dispara quando o BM25 também não acha nada, e o `score` do trace muda de escala (RRF); itens achados só pelo BM25 não têm piso de score; os rótulos do holdout foram escritos pelo Developer (IA) e revisados em contexto frio, não por pessoa; 25 perguntas é um conjunto pequeno; o "já visto" só é contado no mesmo arquivo de relatório.
+- Negativas: no modo híbrido o atalho "sem evidência" do Knowledge só dispara quando o BM25 também não acha nada, e o `score` do trace muda de escala (RRF); itens achados só pelo BM25 não têm piso de score; os rótulos do holdout foram escritos pelo Developer (IA) e revisados em contexto frio, não por pessoa; 25 perguntas é um conjunto pequeno; o "já visto" é contado dentro do mesmo arquivo de relatório.
 - Resultado da medição real ([relatório](../../evidence/v090-retrieval.md)): nDCG@6 denso 0,868 / híbrido 0,974 / híbrido+reranker 0,981 em `dev`; 0,880 / 0,921 / 0,961 no holdout; MRR no holdout 0,871 / 0,920 / 0,980; tempo por consulta 584 / 534 / 2.392 ms. Pela regra D7, `RETRIEVAL_MODE=hybrid` é o padrão; `RERANK=off` pela limitação acima. Custo das seis medições US$0,016.
 
 ## Data

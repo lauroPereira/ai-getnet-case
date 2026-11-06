@@ -6,7 +6,7 @@ O encaminhamento interrompe o grafo com estado durável; a ação do operador re
 
 ## Especificação relacionada
 
-[Spec v0.7.0](../specs/identidade-hitl-v070.md) (D4, D6, D8, D15, D16), [spec 0.2](../specs/evolucao-pos-feedback.md) RF-82, RF-84, [plano](../specs/evolucao-pos-feedback-plano.md) decisões 4 a 6, [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+[Spec v0.7.0](../specs/identidade-hitl-v070.md) (D4, D6, D8, D15, D16), [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-82, RF-84, [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões 4 a 6, [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 ## Pré-condições
 
@@ -28,17 +28,17 @@ O encaminhamento interrompe o grafo com estado durável; a ação do operador re
 
 ## Critérios de conclusão
 
-- [ ] CA-47: com modelo programado, `approve`, `reply` e `reject` produzem turno `via=operator` com a marca de atendente e o estado de caso de D15; `reject` chama a ferramenta indicada pela instrução uma única vez e não reencaminha.
-- [ ] CA-48: retomada após reinício: o teste encaminha num processo, encerra-o e retoma num processo novo sobre o mesmo checkpoint.
-- [ ] CA-48: segunda retomada recusada (`409 already_resumed`) sem tocar o grafo.
-- [ ] CA-46: na retomada `reject`, a auditoria registra o principal do operador e o lojista do caso; o lojista B não recebe nem vê o turno.
-- [ ] Rota `human_reply` não gera chamada a modelo (contagem do modelo programado).
-- [ ] Nova mensagem do lojista com o caso aberto não colide com a interrupção pendente.
-- [ ] Suíte estrita com código 0; prompts novos como arquivos novos, sem editar versões anteriores.
+- [x] CA-47: com modelo programado, `approve`, `reply` e `reject` produzem turno `via=operator` com a marca de atendente e o estado de caso de D15; `reject` chama a ferramenta indicada pela instrução uma única vez e não reencaminha.
+- [x] CA-48: retomada após reinício: o teste encaminha num processo, encerra-o e retoma num processo novo sobre o mesmo checkpoint.
+- [x] CA-48: segunda retomada recusada (`409 already_resumed`) sem tocar o grafo.
+- [x] CA-46: na retomada `reject`, a auditoria registra o principal do operador e o lojista do caso; o lojista B não recebe nem vê o turno.
+- [x] Rota `human_reply` não gera chamada a modelo (contagem do modelo programado).
+- [x] Nova mensagem do lojista com o caso aberto não colide com a interrupção pendente.
+- [x] Suíte estrita com código 0; prompts novos como arquivos novos, sem editar versões anteriores.
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 65, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md, seção "Tarefa 65, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística (`tests/integration/test_v070_resume.py`, salvo indicação) |
 | --- | --- |
@@ -55,7 +55,7 @@ Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v0
 
 ### Rodada 2 (2026-11-03)
 
-Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D27 e D28. Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 65, rodada 2".
+Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D27 e D28. Passagem em v070-developer.md, seção "Tarefa 65, rodada 2".
 
 | Achado ou decisão | Evidência |
 | --- | --- |
@@ -69,5 +69,7 @@ Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 2)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

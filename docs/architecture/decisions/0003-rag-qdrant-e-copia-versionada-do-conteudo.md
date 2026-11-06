@@ -14,7 +14,7 @@ Aceita pelo responsável em 2026-10-26.
 
 ## Contexto
 
-O desafio pede um pipeline RAG funcional que ingira as URLs indicadas e procure outras fontes. O site pode mudar ou ficar indisponível durante a avaliação, páginas dinâmicas podem gerar extração vazia e o avaliador precisa subir o sistema só com Docker. Os exemplos estão em inglês e boa parte do conteúdo brasileiro está em português. Cada fragmento precisa carregar origem e tipo de fonte para citação.
+O desafio pede um pipeline RAG funcional que ingira as URLs indicadas e procure outras fontes. O site pode mudar ou ficar indisponível, páginas dinâmicas podem gerar extração vazia e o sistema precisa subir só com Docker. Os exemplos estão em inglês e boa parte do conteúdo brasileiro está em português. Cada fragmento precisa carregar origem e tipo de fonte para citação.
 
 ## Decisão
 
@@ -31,7 +31,7 @@ O desafio pede um pipeline RAG funcional que ingira as URLs indicadas e procure 
 
 ## Consequências
 
-Build e avaliação reproduzíveis e independentes do site. A primeira inicialização consome embeddings (custo pequeno e registrado). O repositório passa a conter texto público coletado, o que exige revisar o volume e manter só o necessário. A recuperação inglês → português precisa ser medida.
+Build e avaliação reproduzíveis e independentes do site. A primeira inicialização consome embeddings (custo pequeno e registrado). O repositório passa a conter texto público coletado, o que exige revisar o volume e manter só o necessário. A recuperação inglês → português foi medida na v0.1.0 (Recall@6 = 1,0 em inglês e em português) e no holdout de retrieval da v0.9.0.
 
 ## Data
 

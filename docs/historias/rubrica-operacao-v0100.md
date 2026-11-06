@@ -6,7 +6,7 @@ Versão 1, 2026-11-05; roteiro aprovado com a spec. Spec: [rubrica-operacao-v010
 
 - **Responsável** (Lauro): quer saber se a lacuna encontrada na v0.9.0 era mesmo da rubrica, com as mesmas 24 notas que já deu.
 - **Operador da plataforma** (papel vivido pelo QA): inicia uma comparação de perfis, perde a API no meio, e quer retomar sem pagar de novo pelo que já rodou; quer ver as métricas que um alerta usaria.
-- **Avaliador técnico**: procura `/metrics` e regras de alerta versionadas, e uma comparação que não morre no reinício.
+- **Auditor técnico**: procura `/metrics` e regras de alerta versionadas, e uma comparação que não morre no reinício.
 
 ## Critérios e candidato
 
@@ -54,4 +54,4 @@ Custo: projeto US$0,025 (juiz) + US$0,006 (operação, ledger isolado); Anthropi
 
 ## Como terminou
 
-O responsável não deu nota nova e mesmo assim soube que a frase que faltava na rubrica funciona, mas só com um juiz que a entende. O operador perdeu a API no meio de uma comparação e a retomou sem pagar de novo pelo que já tinha rodado. O avaliador técnico encontrou `/metrics` e as regras de alerta no lugar onde antes havia só uma frase dizendo que viriam.
+O responsável não deu nota nova e mesmo assim soube que a frase que faltava na rubrica funciona, mas só com um juiz que a entende. O operador perdeu a API no meio de uma comparação e a retomou sem pagar de novo pelo que já tinha rodado. O auditor técnico encontrou `/metrics` e as regras de alerta no lugar onde antes havia só uma frase dizendo que viriam.

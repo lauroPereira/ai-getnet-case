@@ -40,5 +40,7 @@ independentes aptos. Evidências e limites no [resultado](../evidence/v030-resul
 ## Status
 
 ```text
-concluída e validada; integração da entrega depende de autorização humana
+concluída (v0.3.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v030-resultado.md)).

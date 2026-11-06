@@ -6,7 +6,7 @@ Acrescentar busca lexical (BM25) ao índice de conhecimento e fundi-la com a bus
 
 ## Especificação relacionada
 
-[Juiz Claude e retrieval híbrido v0.9.0](../specs/juiz-retrieval-v090.md): D7, D10, CA-52; especificação 0.2 RF-94. Plano: decisões técnicas 17 a 19 em [evolucao-pos-feedback-plano.md](../specs/evolucao-pos-feedback-plano.md).
+[Juiz Claude e retrieval híbrido v0.9.0](../specs/juiz-retrieval-v090.md): D7, D10, CA-52; especificação 0.2 RF-94. Plano: decisões técnicas 17 a 19 em [evolucao-producao-v070-v0100-plano.md](../specs/evolucao-producao-v070-v0100-plano.md).
 
 ## Pré-condições
 
@@ -34,7 +34,7 @@ Tarefa 79 commitada na branch (não precisa estar revisada). `rank-bm25` adicion
 
 ## Validação
 
-Developer, 2026-11-05, commits `5d82fd0` e `c99aa90` na `codex/v0.9.0-juiz-retrieval`. Passagem: [v090-developer.md](../evidence/v090-developer.md), seção "Tarefa 80".
+Developer, 2026-11-05, commits `5d82fd0` e `c99aa90` na `codex/v0.9.0-juiz-retrieval`. Passagem: v090-developer.md, seção "Tarefa 80".
 
 - `rank-bm25>=0.2.2` em `pyproject.toml` (dependência normal) e instalado na `.venv` (`rank-bm25 0.2.2`, via `uv pip install`).
 - Testes novos: 17 (`tests/unit/rag/test_bm25_hybrid.py`, 15; `tests/integration/test_v090_hybrid.py`, 2). Cobrem tokenização (acentos, stopwords, `MDR`, `E-1023`, `ADQ 4-91`), equivalência do denso (`search()` e `search(mode="dense")` contra a busca da v0.8.0, nas 19 perguntas, três combinações de `k`, filtro e `min_score`), modo vindo do índice e modo inválido recusado, `RETRIEVAL_MODE` com padrão `dense`, RRF (pontuação, `origin`, desempate pelo denso), filtro de fonte no híbrido, as perguntas de termo exato, BM25 reconstruído só quando o hash muda (nos dois sentidos, por `load_or_build` e pelo índice com `Bm25Index.build` proibido na segunda carga), cache descartado quando a coleção é substituída, `eval-retrieval --mode` sem rede, e o Knowledge respondendo no grafo nos dois modos com o modo mantido na versão ativa.
@@ -53,7 +53,11 @@ Developer, 2026-11-05, commits `5d82fd0` e `c99aa90` na `codex/v0.9.0-juiz-retri
 
 ## Status
 
-Rodada 2 implementada pelo Developer em 2026-11-05 (P2-1 a P2-3 fechados; P3 registrados na passagem); aguarda nova rodada de revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+```text
+concluída (v0.9.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v090-qa-retrieval-r1.md)).
 
 ## Fechamento (Supervisor, 2026-11-06)
 

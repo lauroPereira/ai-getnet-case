@@ -32,7 +32,7 @@ Branch `codex/v0.10.0-rubrica-operacao` criada da `main` com a v0.9.0. Nenhuma c
 
 ## Validação
 
-Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (árvore igual à de `ce011b5`), commits `1655e80` e `9e66d20` ([passagem](../evidence/v0100-developer.md#tarefa-83--rubrica-judgev4-e-remedição-dos-dois-juízes-rodada-1)).
+Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (árvore igual à de `ce011b5`), commits `1655e80` e `9e66d20` (passagem).
 
 - `judge.v3.md` intocado (SHA-256 igual ao da v0.9.0, conferido em teste). `judge.v4.md` difere só pelo trecho inserido na definição de `unsupported_claim` e pela linha `version: 4`; o diff está na passagem.
 - `--rubric v3|v4` (padrão `v3`) em `eval --judge-repeat` (e `eval --judge`) e em `eval-calibrate --import`. Cada julgamento grava `rubric_version` e `evaluator.prompt` da rubrica pedida.
@@ -41,7 +41,7 @@ Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (
 - `python tools/scripts/lint_and_tests.py --strict`: 2115 passed, 1 skipped, ruff limpo, `checar-caminhos-pessoais.py` sem ocorrências em 764 arquivos, exit 0.
 - Não verificado aqui: o rejulgamento real (momentos 1 e 2, pagos) e o relatório real do momento 3, que são do QA.
 
-**Rodada 2** (correções da [revisão, rodada 1](../evidence/v0100-reviewer-t83.md)), Developer, 2026-11-05, commit `34d7f6a` ([passagem](../evidence/v0100-developer.md#tarefa-83--rodada-2)).
+**Rodada 2** (correções da [revisão, rodada 1](../evidence/v0100-reviewer-t83.md)), Developer, 2026-11-05, commit `34d7f6a` (passagem).
 
 - P2-1: `eval --rubric` sem padrão próprio no parser (`default=None`); os dois comandos resolvem por `judge.rubric_version` (`--rubric` explícito, senão `judge.RUBRIC_VERSION`, hoje v3), e `calibration._rubric` delega a ela. Teste por `cli.main([...])`: padrão gravado sem `--rubric`, `--judge`/`--judge-run`/`--rubric` repetidos e, com `RUBRIC_VERSION` trocado no teste, os dois comandos seguem o novo padrão.
 - P2-2: teste em que o Opus só tem julgamentos v3 e `eval-calibrate --judge anthropic/claude-opus-5-5 --rubric v4` sem `--judge-run` é recusado, sem calibração gravada e sem relatório.
@@ -51,7 +51,11 @@ Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (
 
 ## Status
 
-Rodada 2 implementada pelo Developer em 2026-11-05; aguarda a rodada 2 da revisão. Rodada 1 revisada com correções necessárias (P2-1, P2-2). Aberta pelo Supervisor em 2026-11-05.
+```text
+concluída (v0.10.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v0100-qa-juiz-r1.md)).
 
 ## Fechamento (Supervisor, 2026-11-06)
 

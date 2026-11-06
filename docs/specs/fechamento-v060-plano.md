@@ -71,7 +71,7 @@ No máximo três subagentes, em sequência e com contexto novo: Developer, Revie
 
 ## Riscos técnicos e retorno
 
-Retorno de código pela tag `v0.5.0`; dados pela migração 0008 → 0007 em banco sintético. Comparação interrompida fica `partial`, com gastos e falhas registrados. Thread de comparação perdida em reinício fica `failed` na próxima leitura. Disco: monitorar antes de builds; nenhuma limpeza autorizada por este plano.
+Retorno de código pela tag `v0.5.0`; dados pela migração 0008 → 0007 em banco sintético. Comparação interrompida fica `partial`, com gastos e falhas registrados. Thread de comparação perdida em reinício fica `failed` na próxima leitura (desde a v0.10.0, `interrupted` e retomável; [ADR 0022](../architecture/decisions/0022-rubrica-v4-operacao-retomavel.md)). Disco: monitorar antes de builds; nenhuma limpeza autorizada por este plano.
 
 ## Plano de implementação
 

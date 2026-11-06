@@ -6,7 +6,7 @@ As jornadas de negócio passam de 7/13 para pelo menos 12/13 pela rubrica: as qu
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D15; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-93, CA-51; [plano](../specs/evolucao-pos-feedback-plano.md) decisão técnica 16; limitações em `docs/evidence/v060-resultado.md`.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D15; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-93, CA-51; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão técnica 16; limitações em `docs/evidence/v060-resultado.md`.
 
 ## Pré-condições
 
@@ -24,14 +24,14 @@ Spec v0.8.0 aprovada; tarefa 69 integrada na branch `codex/v0.8.0-replan` (o rep
 
 ## Critérios de conclusão
 
-- [ ] Cada rótulo alterado tem justificativa por caso; nenhum check afrouxado sem motivo.
-- [ ] Regressão programada do Router com a pergunta em inglês e variações.
-- [ ] 40 casos e 4 conversas sem piora no eval programado.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Cada rótulo alterado tem justificativa por caso; nenhum check afrouxado sem motivo.
+- [x] Regressão programada do Router com a pergunta em inglês e variações.
+- [x] 40 casos e 4 conversas sem piora no eval programado.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
 
-Passagem, com a tabela caso a caso (rótulo ou prompt, antes e depois, justificativa), em [v080-developer.md](../evidence/v080-developer.md), seção "Tarefa 72b". Candidato: `046cb73` (commits `b1b4951`, `46e5600`, `046cb73`), base `5da3de5`.
+Passagem, com a tabela caso a caso (rótulo ou prompt, antes e depois, justificativa), em v080-developer.md, seção "Tarefa 72b". Candidato: `046cb73` (commits `b1b4951`, `46e5600`, `046cb73`), base `5da3de5`.
 
 - **Re-pontuação das respostas reais gravadas** (v0.7.0, sem modelo): 6/13 com os rótulos de antes, **10/13** com os de agora; os três que faltam são os que só prompt resolve e que só a campanha real mede (`V030-PRICE-CONDITIONS`, `V030-PT-PRICE-CONDITIONS` na primeira execução, `V030-CONTRACT-TERMINATION`). A repetição real do `V030-PT-PRICE-CONDITIONS` (resposta de Support, redigida "condições distintas") passa no rótulo novo. Com o `router.v6` resolvendo as duas perguntas de condições, 12/13; com o `personality.v5` dizendo "human agent", 13/13.
 - **Rótulos alterados (5), prompts novos (3):** `router.v6`, `personality.v5` e `replan.v2` (arquivos anteriores intactos). Valores, ferramentas, status, rota e fontes dos rótulos não mudaram; cada grupo de redação ampliado ganhou frases-guarda do sentido oposto.
@@ -46,5 +46,7 @@ Passagem, com a tabela caso a caso (rótulo ou prompt, antes e depois, justifica
 ## Status
 
 ```text
-Rodada 4 apta na revisão independente de bba6e04. A suíte integrada e a campanha real ainda vão validar o conjunto.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

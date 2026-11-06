@@ -124,7 +124,7 @@ Ledger Anthropic (`data/runtime/anthropic`): não foi tocado nesta fase.
 
 ## Achados e limitações
 
-- **Observação 1.** A linha "Modo padrão sugerido" do relatório diz `RERANK=on`. O ADR 0020 fixa `off` nesta versão. Quem ler só [v090-retrieval.md](v090-retrieval.md) (por exemplo, o avaliador) vê uma sugestão que a versão não segue. A aceitação do ADR, o README ou o CHANGELOG da tarefa 82 devem explicar a divergência. Não é defeito: a linha cumpre o que a spec pede (aplicar a regra escrita antes) e diz que a decisão é do Supervisor.
+- **Observação 1.** A linha "Modo padrão sugerido" do relatório diz `RERANK=on`. O ADR 0020 fixa `off` nesta versão. Quem ler só [v090-retrieval.md](v090-retrieval.md) (por exemplo, quem audita) vê uma sugestão que a versão não segue. A aceitação do ADR, o README ou o CHANGELOG da tarefa 82 devem explicar a divergência. Não é defeito: a linha cumpre o que a spec pede (aplicar a regra escrita antes) e diz que a decisão é do Supervisor.
 - **Observação 2.** Com embeddings reais, o denso acha 3 das 5 perguntas `EXACT` de `dev`, não 0 de 5 como com hash. No holdout, a categoria `exact_term` empata entre denso e híbrido (0,991). O ganho do híbrido no holdout vem de `procedure` (0,666 → 0,809) e `product` (0,865 → 0,898). Se o README ou o ADR repetirem "5/5 contra 0/5", deve ficar claro que esse número é do hash.
 - **Observação 3.** O `.json` acumulado guarda só os agregados por split e idioma, sem resultado por pergunta e sem categoria do holdout. A tabela por pergunta acima saiu da saída padrão de cada execução.
 - **Limitações:**
@@ -137,7 +137,7 @@ Tarefas de defeito: nenhuma.
 
 ## Como terminou
 
-O avaliador técnico pediu à CLI três maneiras de buscar, primeiro nas perguntas de desenvolvimento e depois, uma única vez, no conjunto lacrado. A busca híbrida achou as cinco perguntas de código e sigla, e a densa perdeu duas delas. No conjunto que ninguém tinha usado, a híbrida ficou à frente da densa no nDCG@6 (0,921 contra 0,880). Pela regra escrita antes, isso aponta o híbrido como modo padrão. O reranker melhorou um pouco mais, mas quadruplicou o tempo por consulta e fica desligado nesta versão por decisão já tomada. Tudo custou cerca de 1,6 centavo de dólar. Para o lojista nada mudou: o padrão continua denso até o Supervisor decidir.
+O auditor técnico pediu à CLI três maneiras de buscar, primeiro nas perguntas de desenvolvimento e depois, uma única vez, no conjunto lacrado. A busca híbrida achou as cinco perguntas de código e sigla, e a densa perdeu duas delas. No conjunto que ninguém tinha usado, a híbrida ficou à frente da densa no nDCG@6 (0,921 contra 0,880). Pela regra escrita antes, isso aponta o híbrido como modo padrão. O reranker melhorou um pouco mais, mas quadruplicou o tempo por consulta e fica desligado nesta versão por decisão já tomada. Tudo custou cerca de 1,6 centavo de dólar. Para o lojista nada mudou: o padrão continua denso até o Supervisor decidir.
 
 ## Próxima ação e responsável
 

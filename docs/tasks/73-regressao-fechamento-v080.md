@@ -6,7 +6,7 @@ Provar a história da v0.8.0 com modelo programado sobre as tarefas 69, 70, 71 e
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md), critérios e requisitos não funcionais; [história](../historias/orquestracao-avaliacao-v080.md); [plano](../specs/evolucao-pos-feedback-plano.md) tarefa 73 e "Estratégia de testes".
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md), critérios e requisitos não funcionais; [história](../historias/orquestracao-avaliacao-v080.md); [plano](../specs/evolucao-producao-v070-v0100-plano.md) tarefa 73 e "Estratégia de testes".
 
 ## Pré-condições
 
@@ -26,13 +26,13 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 
 ## Critérios de conclusão
 
-- [ ] CA-49, CA-50 (parte determinística) e CA-51 (parte programada) cobertos pelo teste da história.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
-- [ ] Campanha `v080-qa` montável com US$0,50 e estimativa reproduzível (teste).
+- [x] CA-49, CA-50 (parte determinística) e CA-51 (parte programada) cobertos pelo teste da história.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Campanha `v080-qa` montável com US$0,50 e estimativa reproduzível (teste).
 
 ## Roteiro do QA (D17)
 
-**Retomada após a amostra inicial.** O responsável aprovou até US$0,10 adicionais para completar a medição em `dev` com as rotas sub-representadas. Preserve a amostra inicial, fixe o limite cumulativo no ledger primário antes de novas chamadas e registre as medições separadamente da campanha. Use a projeção revisada para decidir a montagem. A campanha depende de prova válida da estimativa e de saldo efetivo. [Decisão e limites](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
+**Retomada após a amostra inicial.** O responsável aprovou até US$0,10 adicionais para completar a medição em `dev` com as rotas sub-representadas. Preserve a amostra inicial, fixe o limite cumulativo no ledger primário antes de novas chamadas e registre as medições separadamente da campanha. Use a projeção revisada para decidir a montagem. A campanha depende de prova válida da estimativa e de saldo efetivo. [Decisão e limites](../specs/evolucao-producao-v070-v0100-plano.md#decisão-aprovada-em-2026-11-04)
 
 1. Antes da amostra paga, confirme que `BUDGET_RUNTIME_DIR` aponta para o diretório persistente de orçamento do projeto; a imagem Docker mantém `/app/runtime` nesse papel mesmo quando `RUNTIME_DIR` é isolado para o QA. Fora desse padrão, configure o caminho persistente explicitamente: a CLI recusa antes de chamar o provedor se `RUNTIME_DIR` for novo e `BUDGET_RUNTIME_DIR` estiver ausente. Com as validações determinísticas, o smoke Docker e os demais momentos aptos, meça cinco casos de `dev` com `eval --judge --include-replan --split dev --limit 5 --no-conversations --name v080-custo-amostra`.
 2. Gere a estimativa sem nova chamada de modelo: `merchant-assistant eval-estimate --from docs/evidence/v080-custo-amostra.json --out docs/evidence/v080-custo-estimativa.json`. Mantenha o relatório e a estimativa no mesmo diretório: o artefato referencia a amostra e a CLI revalida a origem e recalcula toda a projeção antes de aceitar o teto de US$1,00. A CLI só aceita relatório `mode=real`, com pelo menos cinco casos distintos, custo positivo de agente e juiz e todos os juízos completos e consistentes com o modelo independente configurado; amostra scripted, custo zero ou juiz incompleto não podem recomendar um teto pago. A projeção inclui os splits `dev`, `holdout` e `holdout_v080` (25 casos conforme a tarefa 72a), sem abrir o JSONL lacrado; separa as três execuções do agente e as três avaliações do juiz sobre cada primeira resposta; usa a média global quando o sample não contém um split; e acrescenta as quatro conversas de acompanhamento, somando os turnos de `followup.jsonl` uma vez cada ao custo médio medido do agente por resposta, sem chamadas de juiz.
@@ -47,12 +47,13 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 - A revisão independente da rodada 3 foi apta em contexto novo. [Parecer](../evidence/v080-reviewer-t73.md)
 - O lacre foi conferido pelo hash normalizado. [Manifesto do candidato](../evidence/v080-candidato-r1.json)
 - QA técnico concluído em 2026-11-05 sobre o candidato final `1baa7b3` ([manifesto r11](../evidence/v080-candidato-r11.json)), suíte estrita com 1.997 testes. Pré-holdout ([r6](../evidence/v080-d12-pre-holdout-r6.md)): CA-49 com os quatro cenários 3/3 e no máximo 2 saltos; CA-51 13/13, 12/13 e 12/13 pela checagem determinística e 13/13 nas três pelo juiz; juiz repetido sobre 44 respostas (132 julgamentos, sem falha); smoke Docker 10/10. Holdout `holdout_v080` uma única vez ([r7](../evidence/v080-holdout-r7.md)): 62/75 (0,827), reportado à parte. CSV de calibração com 24 respostas gerado. Custo da campanha US$0,84 no ledger de US$1,40, mais US$0,03 do volume Docker.
-- Fechamento documental: entrada 0.8.0 no `CHANGELOG.md` e README atualizado (status, comandos de avaliação e calibração, regra da seed no mesmo dia, limitações). [Passagem](../evidence/v080-developer.md)
+- Fechamento documental: entrada 0.8.0 no `CHANGELOG.md` e README atualizado (status, comandos de avaliação e calibração, regra da seed no mesmo dia, limitações). Passagem
 - Calibração humana importada em 2026-11-05 no runtime de QA (`eval-calibrate --import`, 24 gravadas, 0 puladas): 24 respostas avaliadas pelo responsável e importadas em 2026-11-05: concordância exata 0,58 a 0,75 por critério, ±1 de 0,83 a 1,00; kappa perto de zero porque quase todas as notas humanas são 5; juiz mais severo que o humano (viés de −0,17 a −0,42). No veredito de afirmação sem suporte, exata 0,67 e nenhum "sim" em comum: o humano apontou afirmações genéricas em 4 respostas de conhecimento; o juiz, 3 buscas web sem texto gravado e 1 encaminhamento. [Relatório](../evidence/v080-calibracao.md)
 
 ## Status
 
 ```text
-QA técnico da v0.8.0 concluído em 2026-11-05; CHANGELOG e README da v0.8.0 escritos.
-Calibração humana importada em 2026-11-05 (docs/evidence/v080-calibracao.md). Merge local na main feito em 2026-11-05 (d3740d0). Pendentes do responsável: push e tag v0.8.0.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

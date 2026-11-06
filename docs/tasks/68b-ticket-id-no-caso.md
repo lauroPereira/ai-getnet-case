@@ -24,9 +24,9 @@ v0.7.0 integrada. Feita no começo da v0.8.0, pelo Time A, antes da tarefa 69 (d
 
 ## Critérios de conclusão
 
-- [ ] Reprodução registrada e teste que falhava antes da correção.
-- [ ] `ticket_id` visível na fila e no detalhe depois do primeiro evento aceito; recusa não grava.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Reprodução registrada e teste que falhava antes da correção. *Defeito não reproduzido; o teste falha numa cópia sem a gravação.*
+- [x] `ticket_id` visível na fila e no detalhe depois do primeiro evento aceito; recusa não grava.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
 
@@ -55,5 +55,7 @@ Suíte estrita completa fica com o Supervisor.
 ## Status
 
 ```text
-feito pelo Developer em 2026-11-04 (sem alteração de código; defeito não reproduzido); aguarda revisão
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)). Sem alteração de código: o defeito não se reproduziu; o teste novo cobre o `ticket_id` na fila e no detalhe.

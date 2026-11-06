@@ -18,7 +18,7 @@ Os incrementos pedem perfis de modelos por agente, comparação entre perfis, av
 
 ## Decisão
 
-- Tabelas de versões para perfis, prompts e rubricas; uma versão publicada nunca muda; a ativa é um ponteiro.
+- Tabelas de versões para perfis, prompts e rubricas; uma versão publicada nunca muda; a ativa é um ponteiro. A tabela de rubricas não foi criada ([decisão 0015](0015-recorte-final-v060.md)).
 - Os arquivos em `prompts/` continuam sendo a semente versionada no Git; edições pela interface criam versões candidatas no banco.
 - Cada execução grava o snapshot (perfil, versões de prompts, versão da base) e o usa do início ao fim.
 - Catálogo de modelos com capacidades (ferramentas, saída estruturada, busca web) validado contra a API dos provedores; combinações incompatíveis são recusadas.

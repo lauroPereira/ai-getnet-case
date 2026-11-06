@@ -30,4 +30,4 @@ Mains com a v0.5.0 integrada; candidato v0.6.0 fixado por hashes dos dois reposi
 
 ## Evidência e limites
 
-QA usa a interface normal, HTTP, traces, snapshots e ledgers. Resultados reais, simulados e gravados ficam separados. Regressão real limitada e reuso explícito de evidências anteriores válidas. Esta história ainda não foi executada.
+QA usa a interface normal, HTTP, traces, snapshots e ledgers. Resultados reais, simulados e gravados ficam separados. Regressão real limitada e reuso explícito de evidências anteriores válidas. Executada no QA real da v0.6.0 ([QA](../evidence/v060-qa.md), [resultado](../evidence/v060-resultado.md)).

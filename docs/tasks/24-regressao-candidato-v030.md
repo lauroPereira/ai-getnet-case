@@ -46,5 +46,7 @@ Detalhes, hashes e limitações no [resultado](../evidence/v030-resultado.md).
 ## Status
 
 ```text
-validação concluída; candidato pronto para aceite e integração autorizada
+concluída (v0.3.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v030-resultado.md)).

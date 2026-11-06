@@ -6,7 +6,7 @@ Gerar uma amostra de respostas para o responsável avaliar com a mesma rubrica d
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D10; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-91, CA-50; [plano](../specs/evolucao-pos-feedback-plano.md) decisão técnica 14.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D10; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-91, CA-50; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão técnica 14.
 
 ## Pré-condições
 
@@ -24,14 +24,14 @@ Tarefa 70 com parecer apto (rubrica, migração 0011 e tabela `calibrations`). M
 
 ## Critérios de conclusão
 
-- [ ] CSV gerado sem nenhum score do juiz (teste procura os valores).
-- [ ] Kappa e concordâncias conferidos com números fixos em teste, inclusive casos de borda (todos iguais, uma linha).
-- [ ] CSV malformado → erro claro com a linha.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] CSV gerado sem nenhum score do juiz (teste procura os valores).
+- [x] Kappa e concordâncias conferidos com números fixos em teste, inclusive casos de borda (todos iguais, uma linha).
+- [x] CSV malformado → erro claro com a linha.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
 
-Developer (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, base `3598a48` (a rodada P3 da tarefa 70, commit anterior a este). Passagem em [v080-developer.md](../evidence/v080-developer.md), seção "Tarefa 71" (os P3 da revisão da 70 estão na seção "Tarefa 70, P3 da rodada 2").
+Developer (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, base `3598a48` (a rodada P3 da tarefa 70, commit anterior a este). Passagem em v080-developer.md, seção "Tarefa 71" (os P3 da revisão da 70 estão na seção "Tarefa 70, P3 da rodada 2").
 
 - **`eval-calibrate --sample 24 --from <relatório>`:** `evaluation/calibration.py` (novo) e o subcomando em `cli.py` (só acréscimo). Amostra balanceada por (rota, split): uma resposta de cada estrato por vez, em ordem decidida só pela semente (hash, não o gerador do Python), até completar 24; todo estrato aparece antes de algum aparecer duas vezes. Semente padrão `20261104`, `--seed` muda; a semente, a campanha, o relatório de origem, as quantidades e a rubrica vão numa linha `# amostra:` do cabeçalho. CSV em UTF-8 com BOM (a planilha lê os acentos), separador `;` (o Excel pt-BR abre; `--delimiter ,` troca), 10 linhas `#` de instruções em português com a rubrica dos quatro critérios 1-5 e o veredito, e as colunas `sample_id`, `route`, `split`, `status`, `message`, `answer`, `sources`, `evidence`, as seis do avaliador (vazias) e `request_id`, `case_id`. Mensagem e resposta passam de novo por `mask_sensitive`; a evidência é um resumo de 2 000 caracteres; célula que começaria com `=`, `+`, `-` ou `@` ganha um espaço.
 - **Sem nenhum score do juiz:** o gerador só lê `judge_input` (a mesma entrada do juiz) e os rótulos da linha; nunca o registro `judge`. O teste monta um relatório cujo juiz tem notas distintas (2, 3, 1, 4), justificativas, `evaluation_id`, modelo e provedor com marcas inconfundíveis e procura cada valor, em JSON, `chave=valor`, `chave: valor` e `chave;valor`, além de conferir que as colunas do avaliador estão vazias e que o cabeçalho é exatamente o esperado. Três mutantes que passam o juiz para a nota livre, para uma coluna do avaliador ou para o `case_id` morrem.
@@ -41,7 +41,7 @@ Developer (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, bas
 - **Contagens:** `tests/unit` 368 aprovados em 117 s (eram 304 na rodada 2 da tarefa 70; mais 7 dos P3 e 57 desta tarefa); integração, um pytest por vez: `test_eval_campaign` (22), `test_calibration_flow` (5), `test_evaluation_runner`, `test_evaluator_settings`, `test_v060_api` e `test_v060_r2` em um só grupo de 88 aprovados em 135 s. ruff `check src tests` sem achados. Lacre do holdout `91aa5158…4f1bac` inalterado (`sha256sum` e `test_holdout_v080.py` verdes; o conteúdo não foi aberto). A suíte estrita completa fica com o Supervisor.
 - **Não verificado:** o fluxo com o responsável numa planilha real (Excel pt-BR, LibreOffice); uma amostra de campanha real; o juiz real. Uma campanha `--scripted` grava os julgamentos num banco temporário que se perde, então só a campanha real do QA, no banco do runtime, pode ser importada.
 
-Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080-reviewer-t71.md) (candidato `31aac33`, apto para QA; base `d11c503`). Passagem: seção "Tarefa 71, rodada 2" de [v080-developer.md](../evidence/v080-developer.md).
+Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080-reviewer-t71.md) (candidato `31aac33`, apto para QA; base `d11c503`). Passagem: seção "Tarefa 71, rodada 2" de v080-developer.md.
 
 - **P3-1:** a amostra sai só de `dev` + `holdout`; linhas `holdout_v080` do relatório de origem são excluídas com aviso (e a amostra recusada se só restarem elas); `--split {development,dev,holdout}` só estreita, e o `holdout_v080` não é opção. A linha `# amostra:` registra `splits=`.
 - **P3-2:** reimportar um `sample_id` já gravado com outra `request_id` é recusado antes de qualquer escrita, com a saída `--campaign <outro nome>`.
@@ -54,7 +54,7 @@ Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080
 ## Status
 
 ```text
-Rodada 2 apta na revisão independente de af16869, com 79 testes focados.
-Calibração real importada em 2026-11-05 (campanha v080-all-r3, 24 linhas): docs/evidence/v080-calibracao.md.
-Defeito para a v0.9.0: a coluna evidence do CSV corta as passagens que o juiz viu inteiras; a amostra precisa trazer a evidência completa ou um arquivo companheiro.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([calibração](../evidence/v080-calibracao.md)).

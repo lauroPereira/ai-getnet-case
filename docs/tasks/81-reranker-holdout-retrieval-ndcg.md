@@ -33,7 +33,7 @@ Tarefa 80 commitada na branch. O holdout é escrito **antes** de medir qualquer 
 
 ## Validação
 
-Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer código que mede), `2856be1` (reranker), `37dfbf6` (`eval-retrieval`) e `4c27e4a` (`.env.example`), na `codex/v0.9.0-juiz-retrieval`. Passagem: [v090-developer.md](../evidence/v090-developer.md), seção "Tarefa 81".
+Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer código que mede), `2856be1` (reranker), `37dfbf6` (`eval-retrieval`) e `4c27e4a` (`.env.example`), na `codex/v0.9.0-juiz-retrieval`. Passagem: v090-developer.md, seção "Tarefa 81".
 
 - **Holdout:** `tests/scenarios/retrieval_holdout_v090.jsonl` tem 25 perguntas (13 pt, 12 en) de taxas, produtos, procedimentos e termos exatos. Cada uma tem a passagem correta por `chunk_id` com grau 2 e, em 12, uma segunda com grau 1. O lacre é `d8381ddd7d7f…` (sha256 com LF). O teste confere o lacre, a forma, os `chunk_id` no corpus, ids e perguntas novos e que nenhum outro teste cita o arquivo. Nenhum modo foi medido nele, nem com hash.
 - **nDCG@6:** ganho linear e desconto `log2`. No `dev`, rótulo por documento com um alvo só. Testes com números fixos: ideal 1,0, invertido 0,859719, relevante em 6º 0,356207, 7º fora.
@@ -66,7 +66,11 @@ Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer có
 
 ## Status
 
-Aberta pelo Supervisor em 2026-11-05. Rodada 1 implementada pelo Developer em 2026-11-05 e revisada (correções necessárias: P2-1 a P2-3). Rodada 2 implementada pelo Developer em 2026-11-05, com o holdout relacrado; aguarda nova revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+```text
+concluída (v0.9.0)
+```
+
+Revisão independente e QA real aptos ([relatório](../evidence/v090-retrieval.md)).
 
 ## Fechamento (Supervisor, 2026-11-06)
 

@@ -6,7 +6,7 @@ Fazer a medição de CA-51 reconhecer as respostas corretas das jornadas de pre�
 
 ## Especificação relacionada
 
-[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), CA-51 e D15. Parecer: [v080-d12-pre-holdout-r5.md](../evidence/v080-d12-pre-holdout-r5.md). Mesma classe da [tarefa 75](75-rotulo-literal-price-insufficient-v080.md), agora em mais jornadas.
+[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), CA-51 e D15. Parecer: v080-d12-pre-holdout-r5.md. Mesma classe da [tarefa 75](75-rotulo-literal-price-insufficient-v080.md), agora em mais jornadas.
 
 ## Pré-condições
 
@@ -59,7 +59,7 @@ Rótulos dev em `tests/scenarios/business_journeys.jsonl` e, se a decisão for d
 
 ## Validação
 
-Developer, rodada 1 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-1-régua-literal-do-ca-51). Mudaram só os rótulos das seis jornadas em `tests/scenarios/business_journeys.jsonl`, com justificativa por caso. `runner.py` e o catálogo ficaram como estavam: nenhum `source_case` espelha essas jornadas.
+Developer, rodada 1 (2026-11-05), passagem em v080-developer.md. Mudaram só os rótulos das seis jornadas em `tests/scenarios/business_journeys.jsonl`, com justificativa por caso. `runner.py` e o catálogo ficaram como estavam: nenhum `source_case` espelha essas jornadas.
 
 - Prova offline com `runner._checks` real, em `tests/unit/evaluation/test_t78_ca51_archived.py` (166 testes):
   - As 10 respostas passam em todas as checagens.
@@ -70,7 +70,7 @@ Developer, rodada 1 (2026-11-05), passagem em [v080-developer.md](../evidence/v0
 - Suíte estrita: 1545 passed (1.379 + 166), Ruff e skills ok, exit 0.
 - Pendente: revisão e reteste pago das seis jornadas pelo QA.
 
-Developer, rodada 2 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-2-correções-da-revisão). Responde ao [parecer da rodada 1](../evidence/v080-reviewer-t78.md), P2-1 a P2-4 e P3-1. As mudanças ficaram nos rótulos de quatro jornadas:
+Developer, rodada 2 (2026-11-05), passagem em v080-developer.md. Responde ao [parecer da rodada 1](../evidence/v080-reviewer-t78.md), P2-1 a P2-4 e P3-1. As mudanças ficaram nos rótulos de quatro jornadas:
 
 - `SALE-CANCELLATION`: "request to cancel" agora exige também "received" e "não processado". Passam a ser recusadas as formas rejeitado, negado, desconhecido, "isn't a request", "no record of" e "not received".
 - `PRICE-CONDITIONS`: a forma aceita passou a ser `used different pricing plans`. As negações de "different …" são recusadas.
@@ -85,7 +85,7 @@ Resultados:
 - CA-51 na composição da r5: 13/13, 13/13 e 13/13.
 - Suíte estrita: 1683 passed (1.545 + 138), Ruff e skills ok, exit 0.
 
-Developer, rodada 3 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-3-p2-5-p2-6-e-p3-baratos-da-revisão). Responde ao [parecer da rodada 2](../evidence/v080-reviewer-t78.md), P2-5 e P2-6, com P3-6, P3-8 e os acréscimos baratos do P3-9. As mudanças ficaram nos rótulos de três jornadas:
+Developer, rodada 3 (2026-11-05), passagem em v080-developer.md. Responde ao [parecer da rodada 2](../evidence/v080-reviewer-t78.md), P2-5 e P2-6, com P3-6, P3-8 e os acréscimos baratos do P3-9. As mudanças ficaram nos rótulos de três jornadas:
 
 - `SALE-CANCELLATION`: as proibições nuas (rejeitado, negado, desconhecido, "no record of") viraram formas presas a uma afirmação sobre o pedido ("has been / is / got rejected", "status: rejected", "as rejected", "status is unknown", "no record of a / the / your / any request"). Entraram "was not approved / accepted", "will not / won't / cannot be processed" e contrações.
 - `PRICE-CONDITIONS`: entraram `n't used different` e `n't / not have used different`; `no different` ficou presa a planos e condições.
@@ -99,7 +99,7 @@ Resultados:
 - CA-51 na composição da r5: 13/13, 13/13 e 13/13.
 - Suíte estrita: 1859 passed (1.683 + 176), Ruff e skills ok, exit 0.
 
-Developer, rodada 4 (2026-11-05), passagem em [v080-developer.md](../evidence/v080-developer.md#tarefa-78-rodada-4-p2-7-e-acréscimos-de-concluído). Responde ao [parecer da rodada 3](../evidence/v080-reviewer-t78.md), P2-7 e acréscimos de "concluído", sob o complemento do Supervisor das 06h30. Mudou só a linha 6, `SALE-CANCELLATION`:
+Developer, rodada 4 (2026-11-05), passagem em v080-developer.md. Responde ao [parecer da rodada 3](../evidence/v080-reviewer-t78.md), P2-7 e acréscimos de "concluído", sob o complemento do Supervisor das 06h30. Mudou só a linha 6, `SALE-CANCELLATION`:
 
 - Proibidas, para cada estado X (rejected, denied, declined, refused): `'s been X`, `now / later / then / ended up X` e `X it`.
 - Proibidas também `cancel / cancellation / request is unknown`.
@@ -118,4 +118,8 @@ Resultados:
 
 ## Status
 
-Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05. Revisão da rodada 2 pediu correções. Correções aplicadas na rodada 3, 2026-11-05. Revisão da rodada 3 pediu correções (P2-7); o Supervisor limitou o critério à lista registrada. Correções aplicadas na rodada 4, 2026-11-05; aguarda revisão.
+```text
+concluída (v0.8.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

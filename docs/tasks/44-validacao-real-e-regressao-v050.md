@@ -30,12 +30,20 @@ Testes, evidências, harness de QA, controles persistentes e docs dos dois repos
 
 ## Critérios de conclusão
 
-- [ ] Testes determinísticos passam; QA de aceite usa provedores reais nos caminhos pagos.
-- [ ] CA-32/modelos pendentes da v0.4 têm evidência real ou bloqueio concreto registrado.
-- [ ] Cada chamada paga reservada; gastos/tentativas agregados sem zerar ledger.
-- [ ] CA-41 e captura de versão demonstrados na interface; fonte/ambiente fixados.
-- [ ] Sem publicação/commit/push da v0.5 sem autorização própria da entrega.
+- [x] Testes determinísticos passam; QA de aceite usa provedores reais nos caminhos pagos.
+- [x] CA-32/modelos pendentes da v0.4 têm evidência real ou bloqueio concreto registrado.
+- [x] Cada chamada paga reservada; gastos/tentativas agregados sem zerar ledger.
+- [x] CA-41 e captura de versão demonstrados na interface; fonte/ambiente fixados.
+- [x] Sem publicação/commit/push da v0.5 sem autorização própria da entrega.
 
 ## Validação e status
 
 Validação determinística do Developer r1 concluída: backend estrito com 221 testes; web com 15 testes, Ruff e estrutura. O Developer não fez chamadas pagas. Cap persistente e injeção do guard foram preparados; QA real continua pendente após revisão independente e candidato fixado. A autorização paga não compra crédito nem autoriza remover dados.
+
+## Status
+
+```text
+concluída (v0.5.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

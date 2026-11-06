@@ -1,4 +1,4 @@
-<!-- Papel: tarefa da etapa 0 da evolução pós-feedback; adota no ai-getnet-case as práticas de fluxo do ampeli-sdd. -->
+<!-- Papel: tarefa da etapa 0 da evolução para produção; adota no ai-getnet-case as práticas de fluxo do ampeli-sdd. -->
 
 # Tarefa 62: preparação do fluxo (etapa 0)
 
@@ -8,7 +8,7 @@ Adotar as práticas de execução do `ampeli-sdd` que reduzem a espera entre pas
 
 ## Especificação relacionada
 
-[evolucao-pos-feedback.md](../specs/evolucao-pos-feedback.md), seção "Eficiência de execução" (Q19); [plano](../specs/evolucao-pos-feedback-plano.md), seção "Preparação do fluxo".
+[evolucao-producao-v070-v0100.md](../specs/evolucao-producao-v070-v0100.md), seção "Eficiência de execução" (Q19); [plano](../specs/evolucao-producao-v070-v0100-plano.md), seção "Preparação do fluxo".
 
 ## Pré-condições
 
@@ -34,8 +34,8 @@ Adotar as práticas de execução do `ampeli-sdd` que reduzem a espera entre pas
 - [x] `medir-agentes.py` roda sem erro neste projeto e reconhece `tarefa 63`, `T64` e `65-assunto`.
 - [x] `checar-memoria.ps1` devolve veredito; `limpar-ambiente.ps1` roda em simulação sem listar processos de outros projetos e sem tocar em `data/runtime/` nem nos controles de campanha.
 - [x] Validação estrita local passa.
-- [ ] CI verde no GitHub depois do push (depende do push, que é do responsável).
-- [ ] Agentes visíveis numa sessão nova do Claude Code aberta na raiz (o carregamento só acontece no início da sessão).
+- [ ] CI verde no GitHub depois do push (depende do push, que é do responsável). *A conferir pelo responsável no GitHub.*
+- [x] Agentes visíveis numa sessão nova do Claude Code aberta na raiz (o carregamento só acontece no início da sessão).
 
 ## Validação
 
@@ -52,7 +52,7 @@ Adotar as práticas de execução do `ampeli-sdd` que reduzem a espera entre pas
 ## Status
 
 ```text
-em andamento
+concluída (etapa 0, `f314205`)
 ```
 
-Implementado; falta o commit (pedido ao responsável), o push e a confirmação do CI e dos agentes numa sessão nova.
+Agentes nativos em uso desde a v0.7.0; a execução do CI no GitHub é conferida pelo responsável.

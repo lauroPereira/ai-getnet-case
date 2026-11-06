@@ -10,7 +10,7 @@ Interromper o grafo no encaminhamento com checkpoint SQLite e retomá-lo pela a�
 
 ## Contexto
 
-O Escalation da v0.6.0 gravava um caso `SIM-…` e terminava. O avaliador deu 4,0 em HITL e pediu interrupt → human → reply → agent resumes, `approve`/`reply`/`reject`, proteção contra retomada dupla e integração operacional com humano/ticketing que devolva a resposta ao agente (RF-80 a RF-85, RF-100). Q15 escolheu a interrupção nativa do LangGraph. O responsável pediu o ciclo completo de um ticket (recepção, atendimento, envio, finalização), como num cenário real, em vez de um receptor que só guarda o caso.
+O Escalation da v0.6.0 gravava um caso `SIM-…` e terminava. O fluxo precisava de interrupt → human → reply → agent resumes, `approve`/`reply`/`reject`, proteção contra retomada dupla e integração operacional com humano/ticketing que devolva a resposta ao agente (RF-80 a RF-85, RF-100). Q15 escolheu a interrupção nativa do LangGraph. O responsável pediu o ciclo completo de um ticket (recepção, atendimento, envio, finalização), como num cenário real, em vez de um receptor que só guarda o caso.
 
 ## Decisão
 
@@ -49,9 +49,9 @@ sequenceDiagram
 
 - **Receptor passivo de ticketing** (versão 1 desta ADR): mostrava a ida, mas a ação do operador não passava pelo ticketing; não atende "ticketing que devolva a resposta".
 - **Só uma tela no projeto web sobre a API de fila do assistente:** o Streamlit não recebe webhooks, e a tela seria a própria fila do assistente com outro nome; sem integração entre sistemas.
-- **Retomada em nível de aplicação, sem checkpointer:** não demonstra a interrupção do grafo; fica como plano B se o estado não serializar.
+- **Retomada em nível de aplicação, sem checkpointer:** não adotada; não interrompe o grafo.
 - **Um grafo só, com checkpointer em todo turno:** mais simples de ler, mas todo turno passaria a gravar e ler checkpoint, inclusive sem encaminhamento.
-- **Entrega em thread curta sem persistir a intenção** (desenho inicial da tarefa 66): uma queda entre a mudança de domínio e o envio perdia o evento, inclusive o `handoff.closed`; a revisão reproduziu a perda.
+- **Entrega em thread curta sem persistir a intenção** (desenho inicial da tarefa 66): não adotada: uma queda entre a mudança de domínio e o envio perderia o evento, inclusive o `handoff.closed`; persistir a intenção na mesma transação evita a perda.
 - **`id` repetido sempre `200`:** uma recusa cuja resposta se perdesse viraria sucesso no ticketing.
 - **`thread_id` = conversa:** uma nova mensagem com o caso aberto colidiria com a interrupção pendente.
 - **Ticketing comercial (Zendesk, Freshdesk):** conta e credenciais externas na demo; o contrato de eventos segue o estilo deles, e o adaptador real é mapeamento e configuração.
@@ -60,7 +60,7 @@ sequenceDiagram
 
 Dependências `langgraph-checkpoint-sqlite` e `pyjwt[crypto]`; um arquivo de checkpoints e arquivos de bloqueio no runtime; tabelas novas nas migrações 0009 (fila, eventos, inbox, entregas) e 0010 (outbox); um serviço a mais no compose (`ticketing`, publicado só em `127.0.0.1`), do qual a `api` depende. O caminho sem encaminhamento não lê checkpoint. Webhooks para fora do compose ficam desligados por padrão (URLs vazias); a API avisa na subida quando um destino tem URL e não tem segredo.
 
-Limitações aceitas na v0.7.0: intenção esgotada (`failed`) ou recusada (`rejected`) não tem reenvio automático nem comando, e prende os eventos seguintes do mesmo caso e destinatário, que ficam pendentes sem tentativa visível; depois de uma queda no meio do turno do encaminhamento, a recuperação depende de o lojista reenviar a mesma mensagem; colisão de faixa de bloqueio com uma retomada longa devolve `503` repetível depois de 5 s; os bloqueios foram exercitados no Windows; a 0009 foi ampliada no lugar durante a versão, então bancos anteriores na versão 9 precisam ser recriados.
+Comportamento na v0.7.0: intenção esgotada (`failed`) ou recusada (`rejected`) prende os eventos seguintes do mesmo caso e destinatário (reenvio previsto no [roadmap](../../specs/roadmap-v0110-v100.md), RF-124); depois de uma queda no meio do turno do encaminhamento, o caso se completa quando o lojista reenvia a mesma mensagem (recuperação na subida prevista, RF-125). Uma colisão de faixa de bloqueio com uma retomada longa devolve `503`, repetível depois de 5 s; os bloqueios entre processos foram exercitados no Windows.
 
 Retorno: tag v0.6.0, migrações 0010 e 0009 descendentes (a 0010 só desce com a outbox vazia ou só com entregues) e remoção de `checkpoints.sqlite3`, dos arquivos de bloqueio e do banco do ticketing.
 

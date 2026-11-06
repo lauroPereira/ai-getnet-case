@@ -6,7 +6,7 @@ A avaliação real passa a usar quatro critérios com evidência e um veredito d
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D9, D11, D12, D13, D14; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-89, RF-90, CA-50; [plano](../specs/evolucao-pos-feedback-plano.md) decisões técnicas 12 e 13 e "Modelo de dados" (migração 0011).
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D9, D11, D12, D13, D14; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-89, RF-90, CA-50; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões técnicas 12 e 13 e "Modelo de dados" (migração 0011).
 
 ## Pré-condições
 
@@ -27,15 +27,15 @@ Spec v0.8.0 aprovada; a branch `codex/v0.8.0-avaliacao` (worktree `time-b`, `.ve
 
 ## Critérios de conclusão
 
-- [ ] Agregação e concordância conferidas com números fixos em teste.
-- [ ] `judge.v3` com modelo programado devolve os quatro critérios e o veredito; evidência longa é truncada e o truncamento aparece.
-- [ ] Juiz igual ao agente ou sem chave → recusa clara antes de qualquer chamada.
-- [ ] Migração 0011 sobe e desce com dados sintéticos.
-- [ ] Suíte estrita com código 0 no worktree; nenhuma chamada paga; lacre do holdout verde.
+- [x] Agregação e concordância conferidas com números fixos em teste.
+- [x] `judge.v3` com modelo programado devolve os quatro critérios e o veredito; evidência longa é truncada e o truncamento aparece.
+- [x] Juiz igual ao agente ou sem chave → recusa clara antes de qualquer chamada.
+- [x] Migração 0011 sobe e desce com dados sintéticos.
+- [x] Suíte estrita com código 0 no worktree; nenhuma chamada paga; lacre do holdout verde.
 
 ## Validação
 
-Developer, rodada 1 (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, base `8f2baa6` (a `main` com a v0.7.0). Commits: `75edaf2` (migração), `dbb9d5b` (`judge.v3`, evidência e juiz independente), `8897809` (repetições, agregação e caminho executado), `c974e2c` (afirmações sem suporte listadas). Passagem em [v080-developer.md](../evidence/v080-developer.md), seção "Tarefa 70".
+Developer, rodada 1 (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, base `8f2baa6` (a `main` com a v0.7.0). Commits: `75edaf2` (migração), `dbb9d5b` (`judge.v3`, evidência e juiz independente), `8897809` (repetições, agregação e caminho executado), `c974e2c` (afirmações sem suporte listadas). Passagem em v080-developer.md, seção "Tarefa 70".
 
 - **Migração 0011 (D13):** `run_evaluations.scores`, `repetition`, `unsupported_claim` e a tabela `calibrations`. `rubric_version` e o provedor/modelo do avaliador (`evaluator`) já existiam desde a 0008. A descida mantém todas as avaliações (o `result` guarda o julgamento inteiro) e recusa enquanto houver nota humana em `calibrations`. `tests/unit/data/test_migrations.py` (22 testes, 5 novos): subida e descida com dados sintéticos, defaults das linhas antigas, `CHECK` do veredito, avaliador único por amostra, recusa da descida sem alterar nada e pelo `migrate` da CLI.
 - **`judge.v3` (D9):** `prompts/judge.v3.md`; quatro critérios 1-5 com justificativa e `unsupported_claim`. Evidência mascarada (trechos citados e resultados de ferramenta), até 6 000 caracteres: os itens longos dividem o limite e os curtos ficam inteiros; o registro de truncamento (`limit_chars`, `original_chars`, `kept_chars`, `items_cut`, `truncated`) vai na entrada do juiz e na linha do relatório. `judge.v2` carrega por `load_prompt(dir, "judge", "2")` e a avaliação sob demanda de `/v1` continua nele.
@@ -51,10 +51,12 @@ Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080
 
 - **P2-01:** o avaliador sob demanda do `/v1` volta a `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` = `openai`/`gpt-6-luna`; o juiz da campanha usa `JUDGE_PROVIDER`/`JUDGE_MODEL` = `deepseek`/`deepseek-flash`, com a checagem de independência. Teste com a fábrica real de modelos e cliente simulado: instalação só com `OPENAI_API_KEY` estima e confirma a avaliação; `eval --judge` sem a chave da DeepSeek recusa antes de qualquer chamada.
 - **P3-01 a P3-07:** `repetition` no `result` e colunas reconstruídas na subida da 0011; observadores de ferramenta por `ContextVar`, sem contaminação entre execuções e sem exceção atravessando `execute()`; par provedor/modelo conferido na tabela de preços; erro do provedor curto e mascarado; testes para M11, M12, M28, M32 e M34; `judge.v3` com as notas de evidência (efeito a medir na campanha); tabelas com escape, nomes de relatório que não se sobrescrevem e aviso de `--split` ignorado.
-- **Contagens:** `tests/unit` 304 aprovados; `tests/integration` 414 aprovados nos 25 arquivos (161 + 21 + 88 + 144); total 718, sem falha. ruff sem achados; lacre do holdout `91aa5158…` intacto. Passagem: seção "Tarefa 70, rodada 2" de [v080-developer.md](../evidence/v080-developer.md).
+- **Contagens:** `tests/unit` 304 aprovados; `tests/integration` 414 aprovados nos 25 arquivos (161 + 21 + 88 + 144); total 718, sem falha. ruff sem achados; lacre do holdout `91aa5158…` intacto. Passagem: seção "Tarefa 70, rodada 2" de v080-developer.md.
 
 ## Status
 
 ```text
-Rodada 2 apta na revisão independente. Segue para a suíte integrada e o QA da v0.8.0.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

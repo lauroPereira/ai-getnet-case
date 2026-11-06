@@ -8,7 +8,7 @@ numérico efetivamente enviado.
 ## Especificação relacionada
 
 [Tarefa49](49-correcao-confirmacoes-qa-v050.md), plano aprovado e
-[Reviewer UI r1](../evidence/v050-reviewer-ui-r1.md). Correção dentro do escopo
+Reviewer UI r1. Correção dentro do escopo
 de controles já autorizado, mesmos Developer → Reviewer → QA gpt-6-luna/high.
 
 ## Pré-condições
@@ -44,8 +44,8 @@ Web `app.py` e teste direcionado em `tests/test_interface.py`.
 
 ## Validação
 
-Regressão sintética e validação web completas em [evidência Developer UI r3](../evidence/v050-developer-ui-r3.md). O script estrito executou 20/20 testes, estrutura e skills, mas retornou código 2 devido à ausência do Ruff no venv web; Ruff externo passou. Sem chamadas reais. A revisão independente foca no delta a congelar como r6.
+Regressão sintética e validação web completas em evidência Developer UI r3. O script estrito executou 20/20 testes, estrutura e skills, mas retornou código 2 devido à ausência do Ruff no venv web; Ruff externo passou. Sem chamadas reais. A revisão independente foca no delta a congelar como r6.
 
 ## Status
 
-Concluída — [Reviewer UI r2](../evidence/v050-reviewer-ui-r2.md) apto e teto reconfirmado na UI no [QA r2](../evidence/v050-qa-r2.md); integrada na v0.5.0.
+Concluída — Reviewer UI r2 apto e teto reconfirmado na UI no QA r2; integrada na v0.5.0.

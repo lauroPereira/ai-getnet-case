@@ -9,7 +9,7 @@ ao provedor, preservando a estimativa e a guarda de orçamento do JEV.
 
 RF-47, RF-49, RF-51 e CA-34/CA-36; plano
 `docs/specs/perfis-interface-v040-plano.md`; tarefa 36 e
-[Reviewer r4](../evidence/v040-reviewer-r4.md).
+Reviewer r4.
 
 ## Pré-condições
 
@@ -48,7 +48,7 @@ Teste unitário do adaptador JEV confirmou reserva `max_output_tokens=80`, ausê
 
 ## Status
 
-Concluída no escopo sem custo: [Reviewer r5](../evidence/v040-reviewer-r5.md)
-e [QA r5](../evidence/v040-qa-r5.md) confirmaram metadados JEV/LLM coerentes;
+Concluída no escopo sem custo: Reviewer r5
+e QA r5 confirmaram metadados JEV/LLM coerentes;
 revalidação r6 preservou o comportamento. Sem migração ou mudança incompatível
 de contrato. Integração Git autorizada posteriormente pelo responsável.

@@ -22,7 +22,7 @@ Pareceres do Reviewer independente do Time B sobre as tarefas da v0.8.0 adiantad
 
 ### P1-1 — casos de encaminhamento exigem `SIM-`, mas a versão avaliada usa `HO-…`
 
-Linhas 22 e 23 (`HV080-PT-HANDOFF-CALLBACK`, `HV080-EN-HANDOFF-END-AGREEMENT`) têm `must_include_any [["SIM-"]]`. O plano (`evolucao-pos-feedback-plano.md`, decisão 7) e a spec v0.7.0 (D7) trocam o protocolo para `HO-AAAAMMDD-XXXXXX` e tiram "simulação" do texto; o holdout roda na v0.8.0, depois da v0.7.0. Toda passagem correta reprova em `content_ok` (2 de 25 falsos de propósito). Reprodução: resposta "Encaminhei seu caso para um atendente. Protocolo: HO-20261026-A1B2C3." → `pass=False content_ok=False`. Correção: grupo `["HO-"]`, sem manter `SIM-`.
+Linhas 22 e 23 (`HV080-PT-HANDOFF-CALLBACK`, `HV080-EN-HANDOFF-END-AGREEMENT`) têm `must_include_any [["SIM-"]]`. O plano (`evolucao-producao-v070-v0100-plano.md`, decisão 7) e a spec v0.7.0 (D7) trocam o protocolo para `HO-AAAAMMDD-XXXXXX` e tiram "simulação" do texto; o holdout roda na v0.8.0, depois da v0.7.0. Toda passagem correta reprova em `content_ok` (2 de 25 falsos de propósito). Reprodução: resposta "Encaminhei seu caso para um atendente. Protocolo: HO-20261026-A1B2C3." → `pass=False content_ok=False`. Correção: grupo `["HO-"]`, sem manter `SIM-`.
 
 ### P2-1 — rótulos aprovam a conclusão oposta à das ferramentas
 

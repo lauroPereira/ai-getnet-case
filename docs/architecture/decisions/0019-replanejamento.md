@@ -6,11 +6,11 @@ Substituir as arestas fixas que saem de `knowledge` e de `support` por um nó `r
 
 ## Status
 
-**Proposta** (v0.8.0, 2026-11-04; implementada na tarefa 69 da branch `codex/v0.8.0-replan`, a aceitar depois da revisão e do QA real da campanha `v080-qa`).
+**Aceita** (v0.8.0, 2026-11-05, depois da revisão e do QA real apto da campanha `v080-qa`; proposta em 2026-11-04 e implementada na tarefa 69).
 
 ## Contexto
 
-O avaliador apontou que o grafo segue um plano fixo: o Router escolhe a rota e os especialistas rodam na ordem da rota, sem observar o que um deles devolveu para decidir o passo seguinte (RF-86, RF-87). Em v0.7.0 a única decisão depois de um especialista era `_after_knowledge` (ir ao Support só na rota `knowledge_and_support`) e `_after_support` (ir ao Escalation se `escalate`). Perguntas cuja resposta não está onde o Router mandou procurar primeiro (produto sem evidência nas páginas oficiais, conta que pede também um "como faço", produto que depende do plano do lojista) terminavam com uma resposta incompleta ou com a lacuna escondida.
+O grafo seguia um plano fixo: o Router escolhe a rota e os especialistas rodam na ordem da rota, sem observar o que um deles devolveu para decidir o passo seguinte (RF-86, RF-87). Em v0.7.0 a única decisão depois de um especialista era `_after_knowledge` (ir ao Support só na rota `knowledge_and_support`) e `_after_support` (ir ao Escalation se `escalate`). Perguntas cuja resposta não está onde o Router mandou procurar primeiro (produto sem evidência nas páginas oficiais, conta que pede também um "como faço", produto que depende do plano do lojista) terminavam com uma resposta incompleta ou com a lacuna escondida.
 
 Restrições: o grafo de retomada do operador (ADR 0018) acaba de ser validado e não pode mudar; as rotas avaliadas e lacradas (holdout) foram rotuladas sem replanejamento; o gasto por pergunta simples não pode subir; os limites de chamadas, tempo e custo da requisição continuam valendo.
 
@@ -43,7 +43,7 @@ Restrições: o grafo de retomada do operador (ADR 0018) acaba de ser validado e
 
 ## Alternativas consideradas
 
-- **Modelo em toda decisão:** mais flexível, mas dobra a latência e acrescenta uma chamada a toda pergunta, inclusive as simples; o requisito é não gastar mais no caminho claro. Fica como plano B para medir se as regras estão perdendo casos.
+- **Modelo em toda decisão:** mais flexível, mas dobra a latência e acrescenta uma chamada a toda pergunta, inclusive as simples; o requisito é não gastar mais no caminho claro; não adotado.
 - **Reescrever o Router para planejar a sequência inteira:** o Router decide sem ver resultado; não resolve o problema de reagir ao que voltou, e reabre o prompt avaliado.
 - **Laço ReAct livre (o modelo chama especialistas como ferramentas):** dificulta o limite de custo e a explicação por regra; o orçamento de saltos e "uma vez por especialista" ficariam por conta do modelo.
 - **Manter as arestas fixas:** é o estado da v0.7.0 e o motivo do apontamento.
@@ -57,9 +57,8 @@ Restrições: o grafo de retomada do operador (ADR 0018) acaba de ser validado e
 - Mais um nó e mais um conceito no estado (`plan`, um dicionário simples, para não ampliar os tipos registrados nos checkpoints). A fila de revisão e o formato dos checkpoints não mudam.
 - Duas regras usam marcadores lexicais da mensagem (plano, contrato, conta, taxas do lojista; "como faço") e do `missing` do Knowledge. Servem para os casos claros; ambiguidade fica com o modelo. Falso positivo custa um especialista a mais e é limitado pelo orçamento; falso negativo mantém o comportamento da v0.7.0. Os marcadores não cobrem outros idiomas além de português e inglês.
 - `evidence_insufficient_web` busca informação fora das páginas oficiais da Getnet para uma pergunta sobre produto Getnet; a resposta mostra a fonte web. O índice fora do ar (`knowledge_unavailable`) não aciona a web, para não mascarar uma falha de infraestrutura com fonte não oficial.
-- O roteiro do cenário de falha de ferramenta exige o serviço de preços fora do ar (parar o `mocks` no QA; falha injetada nos testes); sem isso a mesma pergunta é respondida normalmente.
-- Em modelos reais o Router pode mandar o cenário "suporte com lacuna de procedimento" para `knowledge_and_support`, caso em que o replanejamento não é exercitado; o rótulo aceita as duas rotas.
-- Plano B: o nó é isolado (`agents/replanner.py`, o nó e três arestas em `graph.py`); voltar às arestas `_after_knowledge` e `_after_support` da v0.7.0 desliga o replanejamento sem tocar na fila, nos checkpoints ou nos contratos. `MAX_PLAN_HOPS=0` impede qualquer especialista extra mantendo o resumo no trace.
+- Comportamento: quando o Router manda o cenário "suporte com lacuna de procedimento" direto para `knowledge_and_support`, o replanejamento não roda nesse caso; o rótulo aceita as duas rotas.
+- Retorno: o nó é isolado (`agents/replanner.py`, o nó e três arestas em `graph.py`); voltar às arestas `_after_knowledge` e `_after_support` da v0.7.0 desliga o replanejamento sem tocar na fila, nos checkpoints ou nos contratos. `MAX_PLAN_HOPS=0` impede qualquer especialista extra mantendo o resumo no trace.
 
 ## Data
 

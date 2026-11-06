@@ -41,7 +41,7 @@ Teste de integração API verificou configuração, publicação v2, digest/snap
 ## Status
 
 Concluída no escopo implementado sem custo, com ajuste de metadados na tarefa
-37: revisão r5 e [QA r5](../evidence/v040-qa-r5.md) confirmaram publicação,
+37: revisão r5 e QA r5 confirmaram publicação,
 valor efetivo e rejeição preservando versão. Validação de provedores reais
 e parâmetros de Evaluation continuam fora desta evidência.
 

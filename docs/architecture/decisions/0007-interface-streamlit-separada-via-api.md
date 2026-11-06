@@ -18,9 +18,9 @@ O responsável pediu Streamlit e um projeto separado. A interface precisa de cha
 
 ## Decisão
 
-- Projeto próprio em `C:\workspace\ai-getnet-case-web`, com repositório próprio no GitHub, criado a partir do ai-dev-template (decisão do responsável em 2026-10-26), com Streamlit e um cliente HTTP gerado a partir do OpenAPI do backend.
+- Projeto próprio, [ai-getnet-case-web](https://github.com/lauroPereira/ai-getnet-case-web), com repositório próprio no GitHub, criado a partir do ai-dev-template (decisão do responsável em 2026-10-26), com Streamlit e um cliente HTTP gerado a partir do OpenAPI do backend.
 - Nenhum acesso direto a arquivos, SQLite ou Qdrant; nenhuma regra de negócio na interface.
-- API `/v1` versionada; `POST /v1/sessions` emite token de papel `demo` ou `admin`; o backend verifica o papel em cada rota.
+- API `/v1` versionada; `POST /v1/sessions` emite token de papel `demo` ou `admin`; o backend verifica o papel em cada rota. Na v0.7.0 a sessão deu lugar a `POST /v1/auth/token` com JWT ([decisão 0017](0017-identidade-principal-escopos.md)).
 - Modo de respostas simuladas na interface para desenvolver as telas sem o backend.
 - Toda chamada paga só por ação explícita do usuário; resultados gravados são reaproveitados nos reruns.
 

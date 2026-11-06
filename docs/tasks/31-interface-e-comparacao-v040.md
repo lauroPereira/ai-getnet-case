@@ -30,7 +30,7 @@ Pacote Streamlit, cliente HTTP gerado, fixtures, dependências, testes AppTest e
 - [x] Navegação/rerun não faz novo envio ou publicação; cliente de rede é reutilizado e fechado no logout/troca de modo.
 - [x] Comparação executa só Routers e atendimento usa uma única vez a decisão explicitamente selecionada.
 - [x] Editor admin configura `max_output_tokens` apenas para os modelos/agentes compatíveis; JEV não aceita parâmetro e Evaluation permanece reservado para v0.6.0.
-- [ ] AppTest e HTTP integrado passam; execução real de JEV ainda não foi validada apenas por mock.
+- [x] AppTest e HTTP integrado passam; execução real de JEV ainda não foi validada apenas por mock. *JEV real na v0.5.0.*
 
 ## Validação
 
@@ -38,4 +38,8 @@ Cliente gerado idempotentemente do OpenAPI atualizado, incluindo catálogo e par
 
 ## Status
 
-Interface implementada e validada por fixtures e backend sintético. A verificação real do JEV (CA-32) e revisão independente continuam pendentes.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0.

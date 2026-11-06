@@ -1,11 +1,11 @@
 # Juiz Claude e retrieval híbrido — v0.9.0
 
-Versão 0.2 — 2026-11-05 — escrita pelo Supervisor e **aprovada pelo responsável em 2026-11-05** (escopo, ordem e modelo do juiz; o teto Anthropic está em "Orçamento"). Substitui a proposta 0.1 ("Retrieval híbrido e provedor Anthropic", branch `docs/spec-v090`, não integrada): o provedor Anthropic nos agentes e a comparação pareada saem desta entrega e ficam em "Próximos passos" do README. Deriva da [especificação 0.2](evolucao-pos-feedback.md) (RF-90, RF-91, RF-94 a RF-96, CA-52) e do [plano](evolucao-pos-feedback-plano.md). Vale a "Autorização por versão" do AGENTS.md. Prazo externo: a entrega ao avaliador é em 2026-11-06 às 08h (horário de São Paulo); o README é o que ele lê.
+Versão 0.2 — 2026-11-05 — escrita pelo Supervisor e **aprovada pelo responsável em 2026-11-05** (escopo, ordem e modelo do juiz; o teto Anthropic está em "Orçamento"). Substitui a proposta 0.1 ("Retrieval híbrido e provedor Anthropic", branch `docs/spec-v090`, não integrada): o provedor Anthropic nos agentes e a comparação pareada saem desta entrega e ficam em "Próximos passos" do README. Deriva da [especificação 0.2](evolucao-producao-v070-v0100.md) (RF-90, RF-91, RF-94 a RF-96, CA-52) e do [plano](evolucao-producao-v070-v0100-plano.md). Vale a "Autorização por versão" do AGENTS.md. Prazo: a entrega é em 2026-11-06 às 08h (horário de São Paulo).
 
 ## Problema
 
 1. A calibração humana da v0.8.0 ([relatório](../evidence/v080-calibracao.md)) mostrou um juiz DeepSeek consistente consigo mesmo e mais severo que o humano, mas que nunca marca as mesmas afirmações sem suporte: o humano apontou frases genéricas em quatro respostas de conhecimento; o juiz, três respostas web sem texto gravado e um encaminhamento. O responsável quer saber se um modelo mais forte como juiz concorda mais com ele, antes de o juiz passar a decidir conteúdo nas jornadas (D8 abaixo).
-2. O retrieval é só denso, medido numa amostra pequena usada no desenvolvimento, sem holdout, sem BM25, sem fusão e sem reranker (feedback do avaliador; RF-94 a RF-96).
+2. O retrieval é só denso, medido numa amostra pequena usada no desenvolvimento, sem holdout, sem BM25, sem fusão e sem reranker (RF-94 a RF-96).
 
 ## Resultado desejado
 
@@ -79,7 +79,7 @@ Todas reversíveis; vão também para o relatório do Supervisor.
 | Esquema JSON do `JudgeScoreV3` não aceito como `strict` | Teste de contrato do esquema; ajuste só no adaptador, nunca no modelo Pydantic |
 | Comparação viciada por ordem ou cache | Mesmo `judge_input` serializado dos dois lados; cache lido reportado à parte |
 | Reranker piora latência sem melhorar nDCG | `RERANK=off` por padrão até a medição mostrar ganho nos dois splits |
-| Prazo das 08h | Ordem fixa: 79 → QA do juiz → 80 → 81 → 82; se 81 não couber, 80 fecha sozinho com `eval-retrieval` em `dev` e o holdout fica declarado como não medido |
+| Prazo das 08h | Ordem fixa: 79 → QA do juiz → 80 → 81 → 82; o holdout de retrieval foi medido ([relatório](../evidence/v090-retrieval.md)) |
 
 ## Tarefas
 

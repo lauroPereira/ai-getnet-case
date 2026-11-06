@@ -78,10 +78,10 @@ f4258c78d90cf5372af05cfa9a55049a830042a3ac23ec2c8b512a9f1b6f598f  tools/scripts/
 
 | Item da fonte | Motivo |
 | --- | --- |
-| `.git` | Snapshot independente; Git do projeto ainda não inicializado |
+| `.git` | Snapshot independente; o Git do projeto foi inicializado depois, com histórico próprio |
 | `README.md` do template | O projeto tem README próprio |
 | `.claude/settings.json` | Fora dos caminhos gerenciados; preferências e permissões não são herdadas |
-| `.github/` (workflow e CODEOWNERS) | Fora dos caminhos gerenciados; CI do projeto será definido quando houver repositório |
+| `.github/` (workflow e CODEOWNERS) | Fora dos caminhos gerenciados; o projeto tem CI próprio (`.github/workflows/validate.yml`, desde a etapa 0 de 2026-11-03) |
 | `.obsidian/` | Configuração pessoal de editor |
 | `docs/raw/` | Nunca copiado por regra do template |
 | `docs/evidence/2026-09-30-template-flow-validation.md` | Evidência real do template, não do projeto |

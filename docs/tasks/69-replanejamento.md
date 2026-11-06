@@ -6,7 +6,7 @@ Depois de `knowledge` e de `support`, um nó `replan` observa o resultado e deci
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D1 a D8; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-86 a RF-88, CA-49, UC-23; [plano](../specs/evolucao-pos-feedback-plano.md) decisões técnicas 9 a 11.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D1 a D8; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-86 a RF-88, CA-49, UC-23; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões técnicas 9 a 11.
 
 ## Pré-condições
 
@@ -27,17 +27,17 @@ Spec v0.8.0 aprovada pelo responsável; v0.7.0 na `main`; branch `codex/v0.8.0-r
 
 ## Critérios de conclusão
 
-- [ ] Cada regra tem teste; o modelo só é chamado na ambiguidade (teste conta as chamadas).
-- [ ] Laço forçado (especialistas que nunca resolvem) termina em ≤ 3 saltos sem repetir especialista.
-- [ ] Os quatro cenários passam com modelo programado; o trace mostra `next`, `reason`, `review`, `hops` e `origin`.
-- [ ] Pergunta simples não ganha chamada a mais (ledger e trace).
-- [ ] 40 casos e 4 conversas sem piora contra a v0.7.0 no eval programado, salvo diferença justificada caso a caso; `route_ok` medido pelo plano inicial e `executed_path` registrado (D16).
-- [ ] Trava da v0.7.0 (D18): `tests/integration/test_v070_story.py`, `test_v070_webhooks.py`, `test_v070_resume*.py` e `test_v070_ticketing_integration.py` verdes sem alteração; o nó `escalation` e o grafo de retomada não mudam.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Cada regra tem teste; o modelo só é chamado na ambiguidade (teste conta as chamadas).
+- [x] Laço forçado (especialistas que nunca resolvem) termina em ≤ 3 saltos sem repetir especialista.
+- [x] Os quatro cenários passam com modelo programado; o trace mostra `next`, `reason`, `review`, `hops` e `origin`.
+- [x] Pergunta simples não ganha chamada a mais (ledger e trace).
+- [x] 40 casos e 4 conversas sem piora contra a v0.7.0 no eval programado, salvo diferença justificada caso a caso; `route_ok` medido pelo plano inicial e `executed_path` registrado (D16).
+- [x] Trava da v0.7.0 (D18): `tests/integration/test_v070_story.py`, `test_v070_webhooks.py`, `test_v070_resume*.py` e `test_v070_ticketing_integration.py` verdes sem alteração; o nó `escalation` e o grafo de retomada não mudam.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
 
-Developer (Time A), 2026-11-04, branch `codex/v0.8.0-replan`, base `5134eff` (68b em `c1dd2d5`; código em `686d545`; testes e cenários em `1ba296f`). Scripted, sem chamada paga e sem rede. Passagem completa em [v080-developer.md](../evidence/v080-developer.md).
+Developer (Time A), 2026-11-04, branch `codex/v0.8.0-replan`, base `5134eff` (68b em `c1dd2d5`; código em `686d545`; testes e cenários em `1ba296f`). Scripted, sem chamada paga e sem rede. Passagem completa em v080-developer.md.
 
 | Critério | Prova |
 | --- | --- |
@@ -66,5 +66,7 @@ Não verificado aqui: modelos reais (os cenários com `gpt-6-luna` e a taxa de `
 ## Status
 
 ```text
-Revisão independente apta. Segue para a suíte integrada e o QA da v0.8.0.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

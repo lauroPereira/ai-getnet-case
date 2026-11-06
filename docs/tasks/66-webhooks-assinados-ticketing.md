@@ -6,7 +6,7 @@ O assistente envia os eventos do caso ao ticketing e ao lojista e recebe do tick
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times / Webhooks" e D11; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-84, RF-100; [plano](../specs/evolucao-pos-feedback-plano.md) decisão 6; [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times / Webhooks" e D11; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-84, RF-100; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão 6; [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 ## Pré-condições
 
@@ -27,16 +27,16 @@ Tarefa 65 com a retomada funcionando. O serviço de ticketing é a 66b (Time B, 
 
 ## Critérios de conclusão
 
-- [ ] CA-47: com receptor falso de ticketing em processo, `handoff.created` chega assinado e com corpo mascarado; `ticket.action` assinado com token de serviço retoma o grafo e gera `conversation.replied` para o ticketing e para o lojista; `ticket.solved` fecha o caso e gera `handoff.closed`.
-- [ ] CA-48: `ticket.action` repetido (mesmo `id` ou mesma `idempotency_key`) sem efeito novo; caso já retomado → `409 already_resumed`.
-- [ ] Assinatura errada, `t` fora da janela, token sem `handoff:integrate` ou token de operador na entrada → `401`/`403`; nada muda no caso.
-- [ ] Receptor fora do ar → três tentativas registradas e nenhuma exceção na requisição do lojista.
-- [ ] Corpo de webhook sem segredo, token nem dado de outro lojista (teste).
-- [ ] `docker compose config` válido; suíte estrita com código 0.
+- [x] CA-47: com receptor falso de ticketing em processo, `handoff.created` chega assinado e com corpo mascarado; `ticket.action` assinado com token de serviço retoma o grafo e gera `conversation.replied` para o ticketing e para o lojista; `ticket.solved` fecha o caso e gera `handoff.closed`.
+- [x] CA-48: `ticket.action` repetido (mesmo `id` ou mesma `idempotency_key`) sem efeito novo; caso já retomado → `409 already_resumed`.
+- [x] Assinatura errada, `t` fora da janela, token sem `handoff:integrate` ou token de operador na entrada → `401`/`403`; nada muda no caso.
+- [x] Receptor fora do ar → três tentativas registradas e nenhuma exceção na requisição do lojista.
+- [x] Corpo de webhook sem segredo, token nem dado de outro lojista (teste).
+- [x] `docker compose config` válido; suíte estrita com código 0.
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 66, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). A passagem está em v070-developer.md, seção "Tarefa 66, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística (`tests/integration/test_v070_webhooks.py`, salvo indicação) |
 | --- | --- |
@@ -50,7 +50,7 @@ Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evi
 | URL vazia | `test_turn_without_handoff_sends_nothing_and_empty_urls_send_nothing` |
 | Receptor do lojista no `mocks` | `test_mocks_merchant_receiver_checks_the_signature_and_ignores_repeated_ids`; `test_assistant_delivers_to_the_mocks_merchant_receiver` (assinatura de um lado validada pelo outro) |
 | Migração 0009 | `tests/unit/data/test_migrations.py`: `webhook_inbox` e as colunas `event_id`/`error` sobem e descem com a 0009 |
-| Migração 0010 (rodada 4) | `tests/unit/data/test_migrations.py`: a descida recusa com erro claro e sem alterar nada enquanto a outbox tiver linha não entregue (`pending`, `rejected`, `failed`); com tabela vazia ou só `delivered` a descida segue e a 0010 sobe de novo. Passagem: [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 66, rodada 4 (descida da 0010)" |
+| Migração 0010 (rodada 4) | `tests/unit/data/test_migrations.py`: a descida recusa com erro claro e sem alterar nada enquanto a outbox tiver linha não entregue (`pending`, `rejected`, `failed`); com tabela vazia ou só `delivered` a descida segue e a 0010 sobe de novo. Passagem: v070-developer.md, seção "Tarefa 66, rodada 4 (descida da 0010)" |
 | Queda no meio do turno, rodada 5 (P2-1) | `tests/integration/test_v070_webhooks.py`: `test_case_of_a_turn_that_died_is_completed_when_the_message_is_sent_again[before_checkpoint\|after_checkpoint]` (subprocesso encerrado entre o `INSERT` do caso e a transação final; o reenvio da mesma mensagem salva o fluxo, enfileira e entrega `handoff.created` uma vez e a ação do operador é aceita) e `test_case_of_a_turn_whose_outbox_write_failed_is_completed_when_the_message_is_sent_again`. Teto de tentativas (P2-2): `tests/unit/test_webhook_outbox.py::test_pending_row_with_every_attempt_used_fails_without_a_request`. P3: exclusão entre processos (caso e entrega), `enqueue` sem substituir, destino sem URL, recuperação que não impede a subida, `api` depende do `ticketing` no compose. Passagem: seção "Tarefa 66, rodada 5" |
 | `docker compose config` | Válido (código 0) numa cópia do compose sem `.env` |
 | Suíte estrita | Antes do commit: 1 falha de teste meu (sombreamento de variável), corrigida; 523 passed. Suíte completa com código 0 na passagem (rodada 2 da 65, mesma base) |
@@ -58,5 +58,7 @@ Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evi
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 5: queda no meio do turno e P3)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

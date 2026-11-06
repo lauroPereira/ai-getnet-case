@@ -14,7 +14,7 @@ Tarefas 54 a 58 concluídas e passagem do Developer entregue. Candidato fixado p
 
 ## Arquivos prováveis
 
-`docs/evidence/v060-candidato-rN.json`, `v060-reviewer.md`, `v060-qa.md`, `v060-qa-preparacao.md`, `v060-resultado.md`; controle `.pytest_cache/v060-qa-control/`.
+`docs/evidence/v060-candidato-rN.json`, `v060-reviewer.md`, `v060-qa.md`, `v060-qa-preparacao.md` (na tag `v0.6.0`), `v060-resultado.md`; controle `.pytest_cache/v060-qa-control/`.
 
 ## Passos
 
@@ -28,9 +28,9 @@ Tarefas 54 a 58 concluídas e passagem do Developer entregue. Candidato fixado p
 
 ## Critérios de conclusão
 
-- [ ] Os dez itens de aceite têm evidência ou bloqueio concreto registrado.
-- [ ] Gasto da campanha ≤ US$0,50, sem reset, com zero reservas abertas no fim.
-- [ ] Sem commit, push, merge, tag ou abertura de porta sem autorização própria.
+- [x] Os dez itens de aceite têm evidência ou bloqueio concreto registrado.
+- [x] Gasto da campanha ≤ US$0,50, sem reset, com zero reservas abertas no fim.
+- [x] Sem commit, push, merge, tag ou abertura de porta sem autorização própria.
 
 ## Validação
 
@@ -39,5 +39,7 @@ Reviewer independente apto nas rodadas 1–5 ([parecer](../evidence/v060-reviewe
 ## Status
 
 ```text
-concluída; teste de outra rede pendente com o responsável
+concluída (v0.6.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)). O teste de outra rede segue no [roadmap](../specs/roadmap-v0110-v100.md) (RF-98).

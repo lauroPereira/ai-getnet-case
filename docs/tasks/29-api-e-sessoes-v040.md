@@ -36,4 +36,8 @@ O snapshot OpenAPI do projeto irmão declara `SessionBearer` nas rotas protegida
 
 ## Status
 
-Implementada e validada em ambiente sintético; revisão independente pendente.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)).

@@ -6,7 +6,7 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (D6, D7, D9, D10, D14 e a tabela "Ticketing → assistente"), [spec 0.2](../specs/evolucao-pos-feedback.md) RF-80, RF-81, RF-83, RF-85, [plano](../specs/evolucao-pos-feedback-plano.md) decisões 7 e 8, modelo de dados "Migração 0009".
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (D6, D7, D9, D10, D14 e a tabela "Ticketing → assistente"), [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-80, RF-81, RF-83, RF-85, [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões 7 e 8, modelo de dados "Migração 0009".
 
 ## Pré-condições
 
@@ -27,16 +27,16 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 
 ## Critérios de conclusão
 
-- [ ] CA-47 (fila): caso encaminhado aparece em `GET /v1/handoffs` com estado `open`, protocolo `HO-…`, resumo e rascunho.
-- [ ] CA-48: duas ações concorrentes com chaves diferentes → uma vence, a outra `409 already_resumed`; mesma chave → `200` com o mesmo registro e `replayed: true`; teste com threads reais sobre SQLite.
-- [ ] `409 claimed_by_other` para o segundo operador; reivindicação repetida pelo mesmo operador é idempotente.
-- [ ] CA-46: token de lojista recebe `403` nas rotas de fila.
-- [ ] Migração 0009 sobe e desce com dados preservados no sentido de subida.
-- [ ] Suíte estrita com código 0.
+- [x] CA-47 (fila): caso encaminhado aparece em `GET /v1/handoffs` com estado `open`, protocolo `HO-…`, resumo e rascunho.
+- [x] CA-48: duas ações concorrentes com chaves diferentes → uma vence, a outra `409 already_resumed`; mesma chave → `200` com o mesmo registro e `replayed: true`; teste com threads reais sobre SQLite.
+- [x] `409 claimed_by_other` para o segundo operador; reivindicação repetida pelo mesmo operador é idempotente.
+- [x] CA-46: token de lojista recebe `403` nas rotas de fila.
+- [x] Migração 0009 sobe e desce com dados preservados no sentido de subida.
+- [x] Suíte estrita com código 0.
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 64, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md, seção "Tarefa 64, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística |
 | --- | --- |
@@ -51,5 +51,7 @@ Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v0
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

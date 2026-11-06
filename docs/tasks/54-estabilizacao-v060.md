@@ -33,10 +33,10 @@ Corrigir as pendências que afetam orçamento, integridade e funcionamento demon
 
 ## Critérios de conclusão
 
-- [ ] Cada correção tem regressão sintética que falha antes e passa depois.
-- [ ] Nenhum teto gravado alterado; montagem concorrente não falha.
-- [ ] `POST /messages` legado, MCP e contratos `/v1` existentes inalterados.
-- [ ] Validação estrita backend e web com código 0; nenhuma chamada paga.
+- [x] Cada correção tem regressão sintética que falha antes e passa depois.
+- [x] Nenhum teto gravado alterado; montagem concorrente não falha.
+- [x] `POST /messages` legado, MCP e contratos `/v1` existentes inalterados.
+- [x] Validação estrita backend e web com código 0; nenhuma chamada paga.
 
 ## Validação
 
@@ -54,12 +54,12 @@ Corrigir as pendências que afetam orçamento, integridade e funcionamento demon
 - R2-04: risco aceito, sem mudança de código (registrado na passagem e na preparação do QA).
 - Campanha `v060-qa`: `FixedBudgetGuard` aceita até US$0,50 (plano aprovado); `test_campaign_cap_accepts_the_approved_half_dollar_once`.
 
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: [v060-developer.md](../evidence/v060-developer.md).
+Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md (na tag `v0.6.0`).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

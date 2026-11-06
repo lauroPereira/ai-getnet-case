@@ -54,7 +54,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** o arquivo `<ledger>.limit` é gravado com `f"{ceiling:.12g}"`. Um `limit_usd` cujo `float` tem mais de 12 dígitos significativos (por exemplo `1/3` ou `0.1+0.2`) é gravado truncado (`0.333333333333`, `0.3`) e, na leitura imediata, `limit_usd > ceiling` é verdadeiro: a **primeira** montagem falha com "Configured budget limit exceeds the persistent ceiling" e deixa o arquivo truncado, de modo que toda montagem seguinte com o mesmo valor também falha. Valores usuais (1.00, 0.5, 2.5, 0.25) não são afetados; o impacto é de robustez da configuração, sem efeito financeiro.
 
-**Localização:** [budget.py](../../src/merchant_assistant/orchestration/budget.py:57), [budget.py](../../src/merchant_assistant/orchestration/budget.py:62).
+**Localização:** [budget.py](../../src/merchant_assistant/orchestration/budget.py#L57), [budget.py](../../src/merchant_assistant/orchestration/budget.py#L62).
 
 **Reprodução:** `BudgetGuard(tmp/"x.sqlite3", 1/3)` → `ValueError`; `Path("x.sqlite3.limit").read_text()` → `0.333333333333`.
 
@@ -64,7 +64,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** `os.open(O_CREAT|O_EXCL)` cria o arquivo vazio e só depois o conteúdo é escrito. Outro processo/thread que montar nessa janela vê o arquivo existente e vazio e falha com "Persistent budget ceiling is missing or invalid". Com 8 threads montando juntas um ledger novo, 46–52 de 300 tentativas tiveram ao menos uma falha (106 falhas no total na execução que registrou as mensagens); uma montagem sequencial posterior sempre funcionou. Um processo interrompido entre `open` e `write` deixaria o arquivo vazio e todas as montagens falhariam até remoção manual. No fluxo previsto (bootstrap e API em sequência, um worker) a janela é improvável; vira relevante se o QA montar o ledger por mais de um processo ao mesmo tempo.
 
-**Localização:** [budget.py](../../src/merchant_assistant/orchestration/budget.py:52).
+**Localização:** [budget.py](../../src/merchant_assistant/orchestration/budget.py#L52).
 
 **Reprodução:** mesma de R2-01, com threads sincronizadas por `Barrier` em caminhos novos.
 
@@ -74,7 +74,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** `readiness()` chama `capture_active()`, que chama `bootstrap()`: abre `connect()` (que também aplica migrações pendentes) e executa `BEGIN IMMEDIATE`. Num banco ainda sem registro KB, a **primeira** chamada de `/ready` (rota sem autenticação) grava 40 documentos, a versão `kb_initial` e um evento; depois é idempotente (conferi 40/1/1 linhas após 4 chamadas e após 2 `bootstrap()` extras), mas cada chamada continua tomando o lock de escrita. Não há chamada paga nem alteração de conteúdo publicado; o efeito é um sondeio de saúde com escrita e contenção com ativações.
 
-**Localização:** [graph.py](../../src/merchant_assistant/orchestration/graph.py:362), [kb.py](../../src/merchant_assistant/rag/kb.py:57), [kb.py](../../src/merchant_assistant/rag/kb.py:547).
+**Localização:** [graph.py](../../src/merchant_assistant/orchestration/graph.py#L362), [kb.py](../../src/merchant_assistant/rag/kb.py#L57), [kb.py](../../src/merchant_assistant/rag/kb.py#L547).
 
 **Reprodução:** `Settings` temporário + `offline_orchestrator`; contar linhas de `kb_documents/kb_versions/kb_events` antes e depois de `readiness()`: (0,0,0) → (40,1,1).
 
@@ -84,7 +84,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** `transition()` executa `_verify_integrity` (get_collection, scroll e count no Qdrant) dentro de `BEGIN IMMEDIATE`; `bootstrap()` faz `inspect()` e `create_version` faz `exists()` também sob o lock. Como cada mensagem de atendimento e cada `/ready` passam por `capture_active()` → `BEGIN IMMEDIATE`, um Qdrant lento durante ativação/retorno (timeout do cliente 10 s) pode superar o `busy_timeout` de 5 s da conexão e fazer o atendimento falhar com "database is locked" enquanto a transição dura. Com Qdrant em memória/local e 145 pontos não é perceptível (stress sem erro); o risco aparece com Qdrant remoto degradado.
 
-**Localização:** [kb.py](../../src/merchant_assistant/rag/kb.py:523), [kb.py](../../src/merchant_assistant/rag/kb.py:89), [kb.py](../../src/merchant_assistant/rag/kb.py:327).
+**Localização:** [kb.py](../../src/merchant_assistant/rag/kb.py#L523), [kb.py](../../src/merchant_assistant/rag/kb.py#L89), [kb.py](../../src/merchant_assistant/rag/kb.py#L327).
 
 **Reprodução:** não reproduzida com Qdrant real (sem rede); derivada da leitura do código e dos timeouts.
 
@@ -94,7 +94,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** `_openai_client` cria `OpenAI(api_key=…, max_retries=0)` sem `timeout`; o padrão do SDK é leitura de 600 s. Um provedor pendurado durante `index`/`bootstrap` (inclusive o `bootstrap` do `entrypoint.sh`) segura o comando por até 10 min por lote. Não há efeito financeiro adicional (a reserva já foi feita e fica conservada), apenas disponibilidade do arranque.
 
-**Localização:** [cli.py](../../src/merchant_assistant/cli.py:18) (compare com [main.py](../../src/merchant_assistant/main.py:27), `timeout=30`).
+**Localização:** [cli.py](../../src/merchant_assistant/cli.py#L18) (compare com [main.py](../../src/merchant_assistant/main.py#L27), `timeout=30`).
 
 **Correção esperada:** passar `timeout=30` (ou configurável) como no runtime.
 
@@ -116,7 +116,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** depois da migração para reserva por lote, nenhum chamador em `src/` usa `BudgetGuard.record` nem `record_embedding`, mas ambos continuam públicos e gravam entrada `settled` sem reserva nem verificação de limite. Não há caminho ativo que os use; é um atalho que contraria "toda tentativa paga com reserva prévia" se for reutilizado no futuro.
 
-**Localização:** [budget.py](../../src/merchant_assistant/orchestration/budget.py:150), [budget.py](../../src/merchant_assistant/orchestration/budget.py:164); o teste de valores inválidos ainda exercita `record` ([test_budget_and_router.py](../../tests/unit/test_budget_and_router.py:144)).
+**Localização:** [budget.py](../../src/merchant_assistant/orchestration/budget.py#L150), [budget.py](../../src/merchant_assistant/orchestration/budget.py#L164); o teste de valores inválidos ainda exercita `record` ([test_budget_and_router.py](../../tests/unit/test_budget_and_router.py#L144)).
 
 **Correção esperada:** remover os dois métodos (e o teste associado) ou documentá-los como uso interno.
 
@@ -124,7 +124,7 @@ Nenhum P1/P2. Todos os itens abaixo são P3 (não bloqueiam aptidão) ou decisã
 
 **Condição e impacto:** (a) nenhum teste afirma `max_retries == 0` nos clientes reais (`main.openai_client`, cliente DeepSeek, `cli._openai_client`); os testes usam um transporte falso no lugar do SDK, então restaurar `max_retries=1` (mutação M16) não é detectado, embora "sem retry opaco" seja critério da tarefa. (b) a condição `facts["points"] > 0` de `_verify_integrity` só é exercida quando o manifesto tem `chunks`; um registro sem contagem (como o `kb_initial` legado) com coleção vazia não tem teste (M11). Conferi manualmente que o código atual **recusa** esse caso (retorno para `kb_initial` legado com coleção vazia → "Collection integrity could not be confirmed"); falta apenas a regressão.
 
-**Localização:** [main.py](../../src/merchant_assistant/main.py:27), [main.py](../../src/merchant_assistant/main.py:66), [cli.py](../../src/merchant_assistant/cli.py:18), [kb.py](../../src/merchant_assistant/rag/kb.py:409).
+**Localização:** [main.py](../../src/merchant_assistant/main.py#L27), [main.py](../../src/merchant_assistant/main.py#L66), [cli.py](../../src/merchant_assistant/cli.py#L18), [kb.py](../../src/merchant_assistant/rag/kb.py#L409).
 
 **Correção esperada:** um teste de uma linha por cliente (`client.max_retries == 0`, sem rede) e um caso de retorno/ativação com manifesto sem `chunks`/`point_digest` e coleção vazia.
 

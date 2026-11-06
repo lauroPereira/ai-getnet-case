@@ -2,7 +2,7 @@
 
 ## Status
 
-Aceita pelo responsável em 2026-10-27 com o recorte da v0.6.0. Complementa as decisões 0008 e 0012; não as substitui.
+Aceita pelo responsável em 2026-10-27 com o recorte da v0.6.0. Complementa as decisões 0008 e 0012; não as substitui. A cláusula que encerrava a expansão funcional foi revogada pela [decisão 0016](0016-reabertura-roadmap-producao.md); o restante continua valendo.
 
 ## Contexto
 
@@ -26,7 +26,7 @@ O plano 0.2 previa uma v0.6.0 com Evaluation Agent por etapa e ciclo de melhoria
 
 ## Consequências e retorno
 
-Menos superfície para manter e demonstrar; requisitos retirados ficam como adiados, com IDs preservados. Retorno pela tag `v0.5.0` e pela migração 0008 → 0007 em banco sintético. Comparações longas dependem do processo da API ativo; uma comparação interrompida fica parcial ou com falha registrada.
+Menos superfície para manter e demonstrar; requisitos retirados ficam como adiados, com IDs preservados. Retorno pela tag `v0.5.0` e pela migração 0008 → 0007 em banco sintético. Comparações longas dependem do processo da API ativo; uma comparação interrompida fica parcial ou com falha registrada (desde a v0.10.0, `interrupted` e retomável; [decisão 0022](0022-rubrica-v4-operacao-retomavel.md)).
 
 ## Data
 

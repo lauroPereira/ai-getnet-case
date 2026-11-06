@@ -95,7 +95,7 @@ Nenhum.
 
 - O `lint_and_tests.py --strict` não roda inteiro no export (o verificador de caminhos chama `git ls-files`); as quatro etapas rodaram em separado com os mesmos comandos do script, e o verificador recebeu a lista de arquivos do commit.
 - Sondas e mutantes ficaram em cópias no `<scratchpad da sessão>`; nada foi gravado na árvore do Developer além deste arquivo. Nenhuma chamada paga, nenhum Docker, nenhum Git de escrita.
-- Primeira tentativa de mutantes descartada: rodava só com `src` copiado e a configuração resolve `prompts/` e `data/` pela raiz do pacote; refeita sobre uma cópia completa, com controle verde.
+- Primeira tentativa de mutantes não contada: rodava só com `src` copiado e a configuração resolve `prompts/` e `data/` pela raiz do pacote; refeita sobre uma cópia completa, com controle verde.
 
 ## Ação externa
 

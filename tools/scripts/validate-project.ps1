@@ -25,4 +25,7 @@ if (Test-Path "ai-dev-template") {
 python -I tools/scripts/checar-caminhos-pessoais.py
 if ($LASTEXITCODE -ne 0) { throw "Caminho pessoal em arquivo versionado (AGENTS.md, Caminhos pessoais)." }
 
+python -I tools/scripts/checar-links.py
+if ($LASTEXITCODE -ne 0) { throw "Link relativo com alvo ausente em arquivo Markdown versionado." }
+
 Write-Host "Estrutura básica válida."

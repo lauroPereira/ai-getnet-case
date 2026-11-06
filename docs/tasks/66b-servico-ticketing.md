@@ -6,7 +6,7 @@ Um sistema de ticketing próprio, separado do assistente, recebe o caso encaminh
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times" (Identidade, Webhooks, Serviço de ticketing) e D16; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-81, RF-85, RF-100; [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times" (Identidade, Webhooks, Serviço de ticketing) e D16; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-81, RF-85, RF-100; [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 ## Pré-condições
 
@@ -29,16 +29,16 @@ Um sistema de ticketing próprio, separado do assistente, recebe o caso encaminh
 
 ## Critérios de conclusão
 
-- [ ] CA-47: com o assistente falso em processo, `handoff.created` cria o ticket; assumir, agir e resolver geram os eventos assinados com token de serviço; `conversation.replied` marca a entrega; o ciclo `new → open → pending → solved` aparece no histórico do ticket.
-- [ ] CA-48: ação repetida com a mesma `idempotency_key` não gera segundo evento; `409` do assistente volta à API com o mesmo código e não muda o ticket.
-- [ ] Assinatura inválida, `t` fora da janela, JWT sem `ticketing` na audiência, de outro emissor, expirado ou sem `handoff:operate` → `401`/`403`.
-- [ ] Assistente fora do ar → ato fica pendente, novas tentativas registradas, nenhuma exceção na API.
-- [ ] Teste de arquitetura: o pacote não importa o assistente.
-- [ ] `docker compose config` válido; suíte estrita com código 0 no worktree.
+- [x] CA-47: com o assistente falso em processo, `handoff.created` cria o ticket; assumir, agir e resolver geram os eventos assinados com token de serviço; `conversation.replied` marca a entrega; o ciclo `new → open → pending → solved` aparece no histórico do ticket.
+- [x] CA-48: ação repetida com a mesma `idempotency_key` não gera segundo evento; `409` do assistente volta à API com o mesmo código e não muda o ticket.
+- [x] Assinatura inválida, `t` fora da janela, JWT sem `ticketing` na audiência, de outro emissor, expirado ou sem `handoff:operate` → `401`/`403`.
+- [x] Assistente fora do ar → ato fica pendente, novas tentativas registradas, nenhuma exceção na API.
+- [x] Teste de arquitetura: o pacote não importa o assistente.
+- [x] `docker compose config` válido; suíte estrita com código 0 no worktree.
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-ticketing`, base `fe9d12b`. Detalhes na [passagem](../evidence/v070-developer-time-b.md).
+Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-ticketing`, base `fe9d12b`. Detalhes na passagem.
 
 - Pacote `src/merchant_assistant/ticketing/` (`config`, `signing`, `store`, `auth`, `outbox`, `service`), com banco SQLite próprio em `TICKETING_DB_PATH`. Testes novos: `tests/unit/test_ticketing_units.py` (5) e `tests/integration/test_ticketing_service.py` (26 com parâmetros). Os testes usam um assistente falso que segue o contrato: chave RSA gerada no teste, JWKS, `client_credentials` e `POST /v1/integrations/ticketing/events`, que verifica assinatura, token e escopo `handoff:integrate`.
 - CA-47: `test_full_ticket_cycle_with_signed_events_and_service_token` cobre `handoff.created` → `new`, assumir → `open`, `reply` → `pending` com `conversation.replied` recebido durante a própria ação, resolver → `solved` e `handoff.closed` registrado. No histórico, as transições são `new`, `new→open`, `open→pending`, `pending→solved`; há 3 entregas recebidas e 3 enviadas, e um único token de serviço foi emitido.
@@ -54,5 +54,7 @@ Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-t
 ## Status
 
 ```text
-Implementada pelo Developer (rodada 1); aguarda revisão independente e as respostas do Supervisor às perguntas 1 e 2 da passagem (a 3 foi resolvida pela spec 9c24800).
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

@@ -25,10 +25,18 @@ Plano aprovado e snapshots/revisões disponíveis; preços conhecidos.
 
 ## Critérios de conclusão
 
-- [ ] Negação/custo desconhecido gera zero chamadas; gasto anterior preservado.
-- [ ] Falha não altera ativa; candidata incompleta não é pronta.
-- [ ] Manifesto/modelo/dimensão conferidos; fontes tratadas como evidência.
+- [x] Negação/custo desconhecido gera zero chamadas; gasto anterior preservado.
+- [x] Falha não altera ativa; candidata incompleta não é pronta.
+- [x] Manifesto/modelo/dimensão conferidos; fontes tratadas como evidência.
 
 ## Validação e status
 
 Implementada pelo Developer r1. Build cria coleção inédita, estado incompleto não ativa, estimativa é local e guarda reserva cada lote antes do provedor. Testes verificam negação antes da rede, liquidação única, persistência do sublimite de campanha e colisão sem substituir coleção. Apenas transportes/fakes sintéticos; QA real permanece na tarefa44.
+
+## Status
+
+```text
+concluída (v0.5.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).
