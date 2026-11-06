@@ -12,7 +12,7 @@ from merchant_assistant.api.identity import Principal
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.data.db import connect
 from merchant_assistant.evaluation import evidence
-from merchant_assistant.evaluation.judge import CRITERIA, JudgeScoreV3
+from merchant_assistant.evaluation.judge import CRITERIA, RUBRIC_VERSION, JudgeScoreV3
 from merchant_assistant.evaluation.scripted_judge import handler, scripted_judge
 from merchant_assistant.llm.base import NullMeter
 from merchant_assistant.llm.prompts import load_prompt
@@ -40,12 +40,14 @@ def data_for(outcomes, reply=None, trace=None, message="Quanto vou receber ontem
 # --- the rubric files -----------------------------------------------------------------------------------------------
 
 
-def test_v3_is_the_latest_and_v2_stays_loadable():
-    latest, old = load_prompt(PROMPTS, "judge"), load_prompt(PROMPTS, "judge", "2")
-    assert (latest.id, latest.version) == ("judge", "3") and (old.id, old.version) == ("judge", "2")
-    text = " ".join(latest.template.split())
+def test_v3_is_the_default_and_v2_stays_loadable():
+    # v0.10.0 D1: judge.v4 is the newest file, but the campaign pins judge.v3 (RUBRIC_VERSION) until task 86
+    v3, old = load_prompt(PROMPTS, "judge", RUBRIC_VERSION), load_prompt(PROMPTS, "judge", "2")
+    assert (v3.id, v3.version) == ("judge", "3") and (old.id, old.version) == ("judge", "2")
+    assert load_prompt(PROMPTS, "judge").version == "4"
+    text = " ".join(v3.template.split())
     assert all(criterion in text for criterion in CRITERIA) and "unsupported_claim" in text
-    assert "answers_question" in old.template and "answers_question" not in latest.template
+    assert "answers_question" in old.template and "answers_question" not in v3.template
     with pytest.raises(FileNotFoundError):
         load_prompt(PROMPTS, "judge", "9")
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 
-from merchant_assistant.evaluation.judge import RUBRIC, RUBRIC_VERSION, Judge
+from merchant_assistant.evaluation.judge import RUBRIC, Judge, rubric_version
 from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm.base import LLM, Meter, NullMeter
 from merchant_assistant.llm.prompts import load_prompt
@@ -79,12 +79,16 @@ def scripted_llm() -> LLM:
     return ScriptedLLM(handler, model=MODEL)
 
 
-def scripted_judge(prompts_dir, meter: Meter | None = None, llm: LLM | None = None) -> Judge:
+def scripted_judge(
+    prompts_dir, meter: Meter | None = None, llm: LLM | None = None, rubric: str | None = None
+) -> Judge:
+    """The stand-in under `judge.v3`, or under the rubric named (`rubric`, spec v0.10.0 D1). Its rules are the same
+    for both: it records which prompt it was given, it does not imitate the new sentence of `judge.v4`."""
     return Judge(
         llm or scripted_llm(),
         "scripted",
         MODEL,
-        load_prompt(prompts_dir, RUBRIC, RUBRIC_VERSION),
+        load_prompt(prompts_dir, RUBRIC, rubric_version(rubric)),
         meter or NullMeter(),
         "scripted",
     )
