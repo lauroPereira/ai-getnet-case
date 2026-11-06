@@ -6,7 +6,7 @@ A interface Streamlit autentica por usuário e senha (JWT do assistente), mostra
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times" (Identidade e Serviço de ticketing), D3, D9, D10; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-85; [plano](../specs/evolucao-pos-feedback-plano.md) decisão 8. Repositório: `C:\workspace\ai-getnet-case-web`, branch `codex/v0.7.0-identidade-hitl` (Time B).
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times" (Identidade e Serviço de ticketing), D3, D9, D10; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-85; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão 8. Repositório: `C:\workspace\ai-getnet-case-web`, branch `codex/v0.7.0-identidade-hitl` (Time B).
 
 ## Pré-condições
 

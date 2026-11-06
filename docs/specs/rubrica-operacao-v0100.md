@@ -1,11 +1,11 @@
 # Rubrica `judge.v4` e operação — v0.10.0
 
-Versão 0.1 — 2026-11-05 — escrita pelo Supervisor; sequência **autorizada pelo responsável em 2026-11-05 ("A, C, B, E")**: C = rubrica, B = operação, E = leitura final do README. Deriva da [especificação 0.2](evolucao-pos-feedback.md) (RF-97, RF-104, RF-105), do [plano](evolucao-pos-feedback-plano.md) (v0.10.0, renumerada para 83 a 86) e do resultado da v0.9.0 ([ADR 0021](../architecture/decisions/0021-juiz-modelo-e-regua.md)). Vale a "Autorização por versão" do AGENTS.md. Prazo externo: 2026-11-06 às 08h; cada bloco só entra na `main` com QA apto e README e CHANGELOG coerentes, para a `main` ser entregável a qualquer hora.
+Versão 0.1 — 2026-11-05 — escrita pelo Supervisor; sequência **autorizada pelo responsável em 2026-11-05 ("A, C, B, E")**: C = rubrica, B = operação, E = leitura final do README. Deriva da [especificação 0.2](evolucao-producao-v070-v0100.md) (RF-97, RF-104, RF-105), do [plano](evolucao-producao-v070-v0100-plano.md) (v0.10.0, renumerada para 83 a 86) e do resultado da v0.9.0 ([ADR 0021](../architecture/decisions/0021-juiz-modelo-e-regua.md)). Vale a "Autorização por versão" do AGENTS.md. Prazo externo: 2026-11-06 às 08h; cada bloco só entra na `main` com QA apto e README e CHANGELOG coerentes, para a `main` ser entregável a qualquer hora.
 
 ## Problema
 
-1. O experimento da v0.9.0 mostrou que nenhum dos dois juízes marca a frase genérica sem fonte que o humano marca, porque a rubrica `judge.v3` define afirmação sem suporte como "fato, valor, data, status ou promessa". A lacuna foi registrada como da rubrica; falta fechá-la e remedir.
-2. Ressalvas do avaliador ainda abertas no bloco de maior potencial restante: a comparação de perfis roda numa thread do processo e um reinício a marca como `failed` (Memory, Production); métricas, alertas e painel só descritos (Observability).
+1. O experimento da v0.9.0 mostrou que nenhum dos dois juízes marca a frase genérica sem fonte que o humano marca, porque a rubrica `judge.v3` define afirmação sem suporte como "fato, valor, data, status ou promessa". A lacuna foi registrada como da rubrica. Remedida na v0.10.0 com `judge.v4` ([ADR 0022](../architecture/decisions/0022-rubrica-v4-operacao-retomavel.md)).
+2. Operação: a comparação de perfis rodava numa thread do processo e um reinício a marcava como `failed`; métricas, alertas e painel estavam só descritos. Entregue na v0.10.0: comparação `interrupted` e retomável, `GET /metrics` e regras de alerta versionadas.
 
 ## Resultado desejado
 

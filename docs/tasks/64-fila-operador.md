@@ -6,7 +6,7 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (D6, D7, D9, D10, D14 e a tabela "Ticketing → assistente"), [spec 0.2](../specs/evolucao-pos-feedback.md) RF-80, RF-81, RF-83, RF-85, [plano](../specs/evolucao-pos-feedback-plano.md) decisões 7 e 8, modelo de dados "Migração 0009".
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (D6, D7, D9, D10, D14 e a tabela "Ticketing → assistente"), [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-80, RF-81, RF-83, RF-85, [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões 7 e 8, modelo de dados "Migração 0009".
 
 ## Pré-condições
 

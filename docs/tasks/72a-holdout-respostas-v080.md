@@ -6,7 +6,7 @@ Criar `tests/scenarios/holdout_v080.jsonl` com pelo menos 20 casos novos (metade
 
 ## Especificação relacionada
 
-[Spec 0.2](../specs/evolucao-pos-feedback.md) RF-92 e CA-50; [plano](../specs/evolucao-pos-feedback-plano.md) decisão técnica 15, risco "Holdout escrito pelo autor dos prompts" e seção "Sequência, dois times e estimativa" (72a, Time B, durante a v0.7.0).
+[Spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-92 e CA-50; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão técnica 15, risco "Holdout escrito pelo autor dos prompts" e seção "Sequência, dois times e estimativa" (72a, Time B, durante a v0.7.0).
 
 ## Pré-condições
 

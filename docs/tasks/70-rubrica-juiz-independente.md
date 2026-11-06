@@ -6,7 +6,7 @@ A avaliação real passa a usar quatro critérios com evidência e um veredito d
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D9, D11, D12, D13, D14; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-89, RF-90, CA-50; [plano](../specs/evolucao-pos-feedback-plano.md) decisões técnicas 12 e 13 e "Modelo de dados" (migração 0011).
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D9, D11, D12, D13, D14; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-89, RF-90, CA-50; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões técnicas 12 e 13 e "Modelo de dados" (migração 0011).
 
 ## Pré-condições
 

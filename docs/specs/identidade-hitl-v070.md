@@ -2,7 +2,7 @@
 
 # Especificação: v0.7.0 — identidade e HITL real
 
-Versão 2 — 2026-11-03 — aberta pelo Supervisor sob a "Autorização por versão" do AGENTS.md; versão 2 com duas decisões do responsável no mesmo dia: **JWT com emissor próprio** no lugar de chave sintética com sessão opaca, e **serviço de ticketing próprio com tela no projeto web** no lugar do receptor passivo. Deriva da [especificação 0.2](evolucao-pos-feedback.md) (RF-76 a RF-85, RF-100; CA-46 a CA-48) e do [plano](evolucao-pos-feedback-plano.md) (decisões técnicas 1 a 8). História em [identidade-hitl-v070.md](../historias/identidade-hitl-v070.md); decisões em [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md) e [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+Versão 2 — 2026-11-03 — aberta pelo Supervisor sob a "Autorização por versão" do AGENTS.md; versão 2 com duas decisões do responsável no mesmo dia: **JWT com emissor próprio** no lugar de chave sintética com sessão opaca, e **serviço de ticketing próprio com tela no projeto web** no lugar do receptor passivo. Deriva da [especificação 0.2](evolucao-producao-v070-v0100.md) (RF-76 a RF-85, RF-100; CA-46 a CA-48) e do [plano](evolucao-producao-v070-v0100-plano.md) (decisões técnicas 1 a 8). História em [identidade-hitl-v070.md](../historias/identidade-hitl-v070.md); decisões em [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md) e [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 Esta spec não repete a 0.2: fixa o que o plano deixou aberto, o que mudou com as decisões do responsável e o **contrato entre os dois times**.
 

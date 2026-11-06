@@ -5,7 +5,7 @@
 #   ./tools/scripts/limpar-ambiente.ps1 -Aplicar   # apaga e encerra
 #   ./tools/scripts/limpar-ambiente.ps1 -Aplicar -SemScratchpad
 #       # pula os scratchpads das sessões: use quando o outro time ainda tem agente rodando
-#       # (regra 8 de "Sequência, dois times e estimativa" em docs/specs/evolucao-pos-feedback-plano.md)
+#       # (regra 8 de "Sequência e dois times" em docs/specs/evolucao-producao-v070-v0100-plano.md)
 # Só apaga coisa que se reconstrói sozinha. Não toca em data/runtime/ (ledger primário, banco e índice do
 # desenvolvimento), .pytest_cache/*-qa-control (ledgers das campanhas, que são evidência), _tmp/, .env,
 # volumes do docker-compose, arquivos rastreados pelo Git nem processo que não seja de agente.

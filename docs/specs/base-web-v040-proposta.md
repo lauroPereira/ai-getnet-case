@@ -1,7 +1,7 @@
 # Base proposta para ai-getnet-case-web
 
-Proposta aprovada no plano completo em 2026-10-27. Base criada e validada:
-[manifesto inicial](../evidence/v040-base-web.json), tarefa 30. A criação do
+Proposta aprovada no plano completo em 2026-10-27. Base criada e validada na
+tarefa 30. A criação do
 projeto separado e o template foram decididos na especificação/decisão 0007;
 o texto abaixo preserva o conjunto apresentado antes da execução.
 
@@ -10,8 +10,7 @@ o texto abaixo preserva o conjunto apresentado antes da execução.
 - Destino: `C:\workspace\ai-getnet-case-web`, ausente na conferência inicial.
   Reconferir ausência/vazio e resolução absoluta antes de qualquer escrita.
 - Fonte: snapshot local `ai-dev-template`, versão **0.2.0** no manifesto.
-  O acesso Git da fonte não foi obtido na execução restrita; origem deve
-  registrar hashes de todos os componentes efetivamente copiados, sem
+  A origem deve registrar hashes de todos os componentes efetivamente copiados, sem
   presumir fonte limpa ou um commit não conferido.
 - Projeto independente, sem submodule/subtree ou dependência do template.
   A fonte e os arquivos protegidos do backend permanecem inalterados.

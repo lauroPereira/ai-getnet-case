@@ -2,7 +2,7 @@
 
 ## Status
 
-**Aceita pelo responsável em 2026-11-03** (respostas Q14, Q15 e Q17 da [especificação](../../specs/evolucao-pos-feedback.md)). Revoga, da [decisão 0015](0015-recorte-final-v060.md), apenas a cláusula "após o aceite da v0.6.0 a expansão funcional termina e pendências não originam uma v0.7.0". Mantém o restante da 0015 (sem Evaluation Agent, sem workflow de propostas). As adoções de fluxo (Q19) e o modelo por papel (Q20) ficam para decisão própria, registrada na etapa 0 do plano.
+**Aceita pelo responsável em 2026-11-03** (respostas Q14, Q15 e Q17 da [especificação](../../specs/evolucao-producao-v070-v0100.md)). Revoga, da [decisão 0015](0015-recorte-final-v060.md), apenas a cláusula "após o aceite da v0.6.0 a expansão funcional termina e pendências não originam uma v0.7.0". Mantém o restante da 0015 (sem Evaluation Agent, sem workflow de propostas). As adoções de fluxo (Q19) e o modelo por papel (Q20) ficam para decisão própria, registrada na etapa 0 do plano.
 
 ## Contexto
 

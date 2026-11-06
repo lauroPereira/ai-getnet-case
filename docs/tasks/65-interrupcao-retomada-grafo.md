@@ -6,7 +6,7 @@ O encaminhamento interrompe o grafo com estado durável; a ação do operador re
 
 ## Especificação relacionada
 
-[Spec v0.7.0](../specs/identidade-hitl-v070.md) (D4, D6, D8, D15, D16), [spec 0.2](../specs/evolucao-pos-feedback.md) RF-82, RF-84, [plano](../specs/evolucao-pos-feedback-plano.md) decisões 4 a 6, [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+[Spec v0.7.0](../specs/identidade-hitl-v070.md) (D4, D6, D8, D15, D16), [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-82, RF-84, [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões 4 a 6, [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 ## Pré-condições
 

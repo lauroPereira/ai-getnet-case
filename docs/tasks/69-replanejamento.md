@@ -6,7 +6,7 @@ Depois de `knowledge` e de `support`, um nó `replan` observa o resultado e deci
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D1 a D8; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-86 a RF-88, CA-49, UC-23; [plano](../specs/evolucao-pos-feedback-plano.md) decisões técnicas 9 a 11.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D1 a D8; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-86 a RF-88, CA-49, UC-23; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões técnicas 9 a 11.
 
 ## Pré-condições
 

@@ -24,6 +24,11 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[2]
 EXCLUDED_PREFIXES = (("docs", "raw"),)
+# Links in files an agent may not edit (AGENTS.md, CLAUDE.md, .claude/, .github/) that point at a renamed or removed
+# file. They are reported as warnings until the owner's pull request updates them; remove the entry with it.
+PENDING_PROTECTED = {
+    ("AGENTS.md", "docs/specs/evolucao-pos-feedback-plano.md"),  # renamed to evolucao-producao-v070-v0100-plano.md
+}
 FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
 INLINE_LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\[\]]*\])*\]\(\s*(<[^>]*>|[^\s()]*(?:\([^\s()]*\)[^\s()]*)*)")
@@ -127,17 +132,23 @@ def problems(path: Path) -> list[tuple[int, str]]:
 
 def main(argv: list[str]) -> int:
     files = [Path(name).resolve() for name in argv] if argv else tracked_markdown()
-    hits = [(path, number, target) for path in files for number, target in problems(path)]
-    for path, number, target in hits:
-        try:
-            shown = path.relative_to(ROOT).as_posix()
-        except ValueError:
-            shown = path.as_posix()
+    hits, pending = [], []
+    for path in files:
+        for number, target in problems(path):
+            try:
+                shown = path.relative_to(ROOT).as_posix()
+            except ValueError:
+                shown = path.as_posix()
+            (pending if (shown, target) in PENDING_PROTECTED else hits).append((shown, number, target))
+    for shown, number, target in pending:
+        print(f"Aviso (arquivo protegido, pendente de PR do responsável): {shown}:{number}: {target}")
+    for shown, number, target in hits:
         print(f"{shown}:{number}: {target}")
     if hits:
         print(f"Links quebrados: {len(hits)} em {len({path for path, _, _ in hits})} arquivo(s).")
         return 1
-    print(f"Links relativos: nenhum alvo ausente em {len(files)} arquivo(s) Markdown.")
+    warned = f"; {len(pending)} aviso(s) pendente(s) em arquivo protegido" if pending else ""
+    print(f"Links relativos: nenhum alvo ausente em {len(files)} arquivo(s) Markdown{warned}.")
     return 0
 
 

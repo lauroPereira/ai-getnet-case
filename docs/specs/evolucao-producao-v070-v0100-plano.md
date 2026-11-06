@@ -1,10 +1,10 @@
-<!-- Papel: plano técnico da evolução pós-feedback (v0.7.0 a v1.0.0), derivado de evolucao-pos-feedback.md. -->
+<!-- Papel: plano técnico da evolução para produção (v0.7.0 a v0.10.0), derivado de evolucao-producao-v070-v0100.md. -->
 
-# Plano: evolução pós-feedback (v0.7.0 a v1.0.0)
+# Plano: evolução para produção (v0.7.0 a v0.10.0)
 
 ## Especificação relacionada
 
-[evolucao-pos-feedback.md](evolucao-pos-feedback.md) (versão 0.2) e [ADR 0016](../architecture/decisions/0016-reabertura-pos-feedback.md). **Estado: aprovado em parte em 2026-11-03** (Q14 a Q17); Q19 aprovada e etapa 0 concluída (`f314205`); Q20 decidida por padrão (`opus`/`high`). Dois times decididos pelo responsável em 2026-11-03 (seção "Sequência, dois times e estimativa"). Base: `main` com a v0.6.0 (`2867ea7`; `87e1683` se o link do vídeo for integrado antes).
+[evolucao-producao-v070-v0100.md](evolucao-producao-v070-v0100.md) (versão 0.2) e [ADR 0016](../architecture/decisions/0016-reabertura-roadmap-producao.md). **Estado: aprovado em 2026-11-03** (Q14 a Q17, Q19; Q20 decidida por padrão, `opus`/`high`) e entregue de v0.7.0 a v0.10.0; a v1.0.0 seguiu para o [roadmap](roadmap-v0110-v100-plano.md). Dois times decididos pelo responsável em 2026-11-03 (seção "Sequência e dois times"). Base: `main` com a v0.6.0 (`2867ea7`).
 
 Cada versão segue o ciclo já usado: spec complementar curta → tarefas → Developer → Reviewer independente → candidato fixado → QA real com campanha de teto fixo → `docs/evidence/vXYZ-resultado.md` → merge local com a identidade do projeto → tag. Com a autorização por versão (seção "Preparação do fluxo"), tudo isso corre sem espera; o responsável entra na tag, no push e na calibração.
 
@@ -12,16 +12,11 @@ Cada versão segue o ciclo já usado: spec complementar curta → tarefas → De
 
 Adoções do `ampeli-sdd`, aplicadas uma vez, em uma tarefa de documentação e ferramentas (sem produto):
 
-1. **Emenda ao AGENTS.md** (proposta por PR, conforme a regra do próprio arquivo). Texto proposto para a seção "Sobre este projeto":
-
-   > **Autorização por versão (responsável, data da aprovação).** Dentro de uma versão aprovada em `docs/specs/`, o ciclo avança sem esperar o responsável: implementar as tarefas, commitar na branch da versão, despachar Reviewer e QA como subagentes com os modelos e esforços registrados em `.claude/agents/`, corrigir achados, rodar a campanha real dentro do teto fixado no plano, registrar evidência e fazer o merge local na `main` com a identidade do projeto. Continuam exigindo decisão do responsável: push da `main` e tags, alteração de AGENTS.md, CLAUDE.md, `.claude/`, credenciais e `.github/workflows/`, teto de campanha acima do plano, calibração humana, contato com o avaliador e ressubmissão. Concluída a versão, o Supervisor grava o relatório em `docs/relatorios/` e espera.
-
-   Substitui, para o escopo desta evolução, a regra "Delegação (RNF-12)" de autorização caso a caso: a autorização passa a ser dada por versão, com modelo e esforço fixados em `.claude/agents/`.
-
+1. **Emenda ao AGENTS.md** (proposta por PR, conforme a regra do próprio arquivo): a "Autorização por versão", aprovada e incorporada à seção "Sobre este projeto" do AGENTS.md. Substitui, para o escopo desta evolução, a autorização caso a caso da regra "Delegação (RNF-12)": a autorização passa a ser dada por versão, com modelo e esforço fixados em `.claude/agents/`.
 2. **`.claude/agents/{developer,reviewer,qa}.md`** adaptados do Ampeli: frontmatter com `model`, `effort` e `tools` (Reviewer sem Edit/Write; QA com o navegador embutido), corpo curto apontando para `docs/wiki/agents/<papel>.md`, limites deste projeto (nenhuma chamada paga fora da campanha; sem acesso a `data/runtime/`, `.env`, `discovery/`; sem Git destrutivo; corpo de PR por arquivo; encerrar processos antes de relatar). Modelo e esforço conforme Q20.
 3. **`.github/workflows/validate.yml`**: Ruff e `python tools/scripts/lint_and_tests.py --strict` em PR e push na `main`; sem segredos; o `.env` de teste é o do `conftest`.
 4. **Scripts portados** para `tools/scripts/`: `medir-agentes.py` (parâmetro `--projeto`), `checar-memoria.ps1` (alvos `python.exe`, `qdrant`, `vmmemWSL`, `uvicorn`), `limpar-ambiente.ps1` (alvos `.pytest_cache/*-runtime`, `_tmp/`, volumes anônimos do Docker).
-5. **`docs/templates/relatorio-do-supervisor.md`** e `docs/relatorios/`; despertador de 20 minutos na sessão do Supervisor; `docs/wiki/agents/README.md` ganha a matriz "modelo e esforço por papel".
+5. **`docs/templates/relatorio-do-supervisor.md`**; despertador de 20 minutos na sessão do Supervisor; `docs/wiki/agents/README.md` ganha a matriz "modelo e esforço por papel".
 
 ## Decisões técnicas
 
@@ -68,7 +63,7 @@ Adoções do `ampeli-sdd`, aplicadas uma vez, em uma tarefa de documentação e 
 
 ### v1.0.0 — Fechamento
 
-24. README "Resposta ao feedback" (tabela: dimensão → o que mudou → evidência → código), limitações reescritas, CHANGELOG, túnel testado, vídeo de 10–15 min.
+24. Redefinido no [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100-plano.md).
 
 ## Componentes afetados
 
@@ -137,9 +132,9 @@ Contrato `/v1` aditivo em tudo, exceto os papéis novos em `/sessions`.
 
 | Risco | Mitigação / retorno |
 | --- | --- |
-| `SqliteSaver` serializa o `GraphState`; `RunContext` vai por `config` | Teste de serialização; retorno: retomada em nível de aplicação (descartada por Q15, fica como plano B) |
+| `SqliteSaver` serializa o `GraphState`; `RunContext` vai por `config` | Teste de serialização (retomada em nível de aplicação não adotada, Q15) |
 | Retomada precisa de `RunContext` novo | `request_id` próprio ligado ao caso; trace referencia o original |
-| Sessão obrigatória quebra o `curl` do avaliador | README com duas chamadas; `/docs` com sessão; smoke autônomo; chaves no `.env.example` |
+| Sessão obrigatória quebra o `curl` do README | README com duas chamadas; `/docs` com sessão; smoke autônomo; chaves no `.env.example` |
 | Webhook para fora do compose | URLs vazias por padrão; payload mascarado; HMAC; receptor interno |
 | `replan` cria laços | Orçamento de saltos; sem repetição sem informação nova; limites existentes; teste de laço forçado |
 | Juiz independente caro ou indisponível | Medir em 5 casos; DeepSeek como alternativa integrada |
@@ -171,9 +166,7 @@ O responsável aprovou a reserva de planejamento de **US$2,50** para concluir o 
 - **Portões para a campanha.** A estimativa revisada deve caber ao mesmo tempo no teto aprovado da campanha, no saldo do ledger primário, nos saldos por provedor e na margem restante do teto global. Preservar o ledger e o histórico, usar a montagem única de `v080-qa` e manter o holdout da v0.8.0 para o último passo técnico. A autorização desta decisão cobre o complemento da amostra. Alterações dos limites vigentes, rodadas adicionais que os ultrapassem e redução de critérios de aceite dependem de nova decisão do responsável.
 - **Provedores e demonstração.** Usar OpenAI para o assistente, embeddings e busca web, DeepSeek como juiz independente e TypeSafe para demonstrar o Router Jev. Gravar o percurso no candidato final, mostrando o encaminhamento e o retorno humano, o replanejamento e a avaliação, a comparação de retrieval e a retomada após reinício com resumo e métricas. Ensaios programados e testes automatizados têm custo zero de API.
 
-Na sessão de retomada, o ledger primário registrou **US$0,54250491** gastos e **US$0,45749509** disponíveis no limite persistido de US$1,00. A campanha `v080-qa` ficou sem montagem. Esses números são um retrato da parada, a ser conferido antes do complemento. [Evidência do QA](../evidence/v080-qa-r1.md)
-
-**Ampliação confirmada pelo responsável em 2026-11-04.** Autoriza a transição local do teto persistido do ledger primário para **US$1,70**, com o histórico preservado, e uma faixa excepcional de **US$1,10** para `v080-qa` somente quando o artefato revalidado comprovar estimativa acima de US$1,00 e até US$1,10. A revisão e a validação precedem a transição. O teto global de US$5,00 e a reserva de planejamento de US$2,50 continuam vigentes. A margem da campanha acima de US$1,00 sai da contingência da mesma reserva. Antes das chamadas, confirmar os saldos, o serviço sintético de preços e a montagem única. [Projeção complementar](../evidence/v080-projecao-estratificada-r3.md)
+**Ampliação confirmada pelo responsável em 2026-11-04.** Autoriza a transição local do teto persistido do ledger primário para **US$1,70**, com o histórico preservado, e uma faixa excepcional de **US$1,10** para `v080-qa` somente quando o artefato revalidado comprovar estimativa acima de US$1,00 e até US$1,10. A revisão e a validação precedem a transição. O teto global de US$5,00 e a reserva de planejamento de US$2,50 continuam vigentes. A margem da campanha acima de US$1,00 sai da contingência da mesma reserva. Antes das chamadas, confirmar os saldos, o serviço sintético de preços e a montagem única.
 
 **Contingência autorizada pelo responsável em 2026-11-05.** Na retomada da v0.8.0 no Claude Code, com o reteste r4 em curso e o saldo do cap de US$1,10 igual à soma das fases restantes (reteste US$0,25, juiz repetido US$0,07709880, holdout US$0,36062993, smoke e margem US$0,02943366), o responsável autorizou até **US$0,30 adicionais** para `v080-qa`, debitados da linha "Contingência" desta reserva. Condições: usar só se a guarda bloquear uma fase prevista ou um único reteste após correção revisada; aplicar pelo mesmo rito da ampliação de 2026-11-04 (Developer, Reviewer, suíte estrita, transição validada); registrar motivo e valor liberado na evidência e no relatório. Teto global de US$5,00 inalterado. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
 
@@ -221,13 +214,11 @@ Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão d
 78. Comparação retomável (migração 0012) e resumo rolante de conversas.
 79. Regressão, candidato, revisão, QA real, evidência, tag.
 
-**v1.0.0 — Fechamento e ressubmissão**
+**v1.0.0 — Fechamento**
 
-80. README "Resposta ao feedback", limitações, CHANGELOG, `docs/evidence/v100-resultado.md`.
-81. Túnel externo testado; Docker smoke final em ambiente limpo.
-82. Vídeo curto dos deltas; tag `v1.0.0`; mensagem de ressubmissão proposta ao responsável.
+Redefinido no [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100-plano.md) (tarefas 102 a 104).
 
-## Sequência, dois times e estimativa
+## Sequência e dois times
 
 Decidido pelo responsável em 2026-11-03: dois times, cada um com um Developer e um Reviewer, coordenados pelo mesmo Supervisor. O **Time A** fica no caminho crítico; o **Time B** adianta trabalho que não compartilha arquivos com o A. QA, merge e tag continuam um por vez e em ordem de versão.
 
@@ -239,7 +230,7 @@ Decidido pelo responsável em 2026-11-03: dois times, cada um com um Developer e
 | v0.7.0 | 63 → 64 → 65 → 66 no backend; 68 fecha | 67 (aba Operador, repositório web, depois da 64 fixar o contrato de `/v1/handoffs`); em seguida 72a: escrever e lacrar o holdout de respostas (só dados) |
 | v0.8.0 | 69 (`replan` no grafo); depois 72b (correções das jornadas e `router.v6`); 73 fecha | 70 (rubrica `judge` v3, juiz independente, repetições, migração 0011) e 71 (calibração) |
 | v0.9.0 e v0.10.0, em paralelo | v0.9.0 inteira: 74 → 75 → 76 | v0.10.0 inteira: 77 e 78 → 79 |
-| v1.0.0 | 80 → 81 → 82, um time só | — |
+| v1.0.0 | no roadmap | — |
 
 A tarefa 72 do plano se divide em **72a** (holdout, Time B, durante a v0.7.0) e **72b** (jornadas e Router, Time A, na v0.8.0). Escrever o holdout antes de qualquer ajuste de prompt da v0.8.0, por quem não ajusta prompts, e lacrá-lo por hash atende o RF-92 com mais rigor que escrevê-lo depois.
 
@@ -278,15 +269,3 @@ Um arquivo compartilhado tem um dono por período; o outro time não o edita. Ar
 6. **Ordem de entrega.** QA, merge e tag na ordem v0.7.0 → v0.8.0 → v0.9.0 → v0.10.0 → v1.0.0. No período paralelo, a v0.10.0 só entra em QA depois do merge da v0.9.0 e da atualização da sua branch com a `main`.
 7. **Despacho e medição.** A descrição de todo despacho cita o time e uma tarefa (`Time B, tarefa 70`), para `medir-agentes.py` ratear custo e o relatório separar os dois times.
 8. **Limpeza sem atingir o outro time.** A limpeza é do Supervisor, depois de cada QA apto, sempre rodada no checkout principal: o script não toca o worktree do B (fica fora do scratchpad), os ledgers de campanha, `data/runtime/` nem os volumes com nome do Docker. O único ponto compartilhado são os scratchpads das sessões, onde os subagentes dos dois times escrevem. Com nenhum agente rodando nos dois times, a limpeza é completa (`limpar-ambiente.ps1`, simulação e depois `-Aplicar`). Com agente do outro time rodando, ela roda com `-Aplicar -SemScratchpad`, e a limpeza completa fica para quando os dois times pararem. O Supervisor nunca encerra processo nem remove worktree do outro time.
-
-### Estimativa
-
-| Versão | Um time | Dois times |
-| --- | --- | --- |
-| v0.7.0 | uma noite | uma noite (67 e 72a saem do caminho crítico) |
-| v0.8.0 | uma noite + 1 h de calibração | meia noite + 1 h de calibração (70 e 71 adiantados) |
-| v0.9.0 + v0.10.0 | uma noite (meia + meia, em série) | meia noite (em paralelo, QA em série) |
-| v1.0.0 | meio dia + vídeo | meio dia + vídeo |
-| **Total** | **cerca de quatro noites** | **cerca de três noites** |
-
-Régua: `ampeli-sdd`, ciclo Opus xhigh, 40 pontos por noite com 20 min ativos por ponto; a v0.6.0 deste case saiu em um dia. O ganho dos dois times é cerca de um terço, não o dobro: QA, merge e os arquivos do grafo continuam seriais. Sem a autorização por versão, cada noite vira cerca de dois dias.

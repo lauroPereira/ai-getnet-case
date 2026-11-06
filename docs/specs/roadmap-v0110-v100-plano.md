@@ -1,10 +1,10 @@
-<!-- Papel: plano técnico do ciclo "caminho para 9,5" (v0.11.0 a v1.0.0), derivado de evolucao-95.md. -->
+<!-- Papel: plano técnico do roadmap v0.11.0 a v1.0.0, derivado de roadmap-v0110-v100.md. -->
 
-# Plano: caminho para 9,5 (v0.11.0 a v1.0.0)
+# Plano: roadmap v0.11.0 a v1.0.0
 
 ## Especificação relacionada
 
-[evolucao-95.md](evolucao-95.md), versão 0.1 (proposta, 2026-11-06). Base: `main` em `5fd59b2` (v0.10.0 mais correções de documentação). Cada versão segue o ciclo das anteriores: spec complementar curta → tarefas → Developer → Reviewer independente → candidato selado por hash → QA real com teto fixo → `docs/evidence/vXYZ-resultado.md` → merge local com a identidade do projeto → tag. A autorização por versão do AGENTS.md vale; o responsável entra no teto (Q21), na calibração (Q22), nas tags e no push.
+[roadmap-v0110-v100.md](roadmap-v0110-v100.md), versão 0.1 (2026-11-06). Base: `main` em `5fd59b2` (v0.10.0 mais correções de documentação). Cada versão segue o ciclo das anteriores: spec complementar curta → tarefas → Developer → Reviewer independente → candidato selado por hash → QA real com teto fixo → `docs/evidence/vXYZ-resultado.md` → merge local com a identidade do projeto → tag. A autorização por versão do AGENTS.md vale; o responsável entra no teto (Q21), na calibração (Q22), nas tags e no push.
 
 Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs **0023 a 0025**; prompts novos `judge.v5`, `summary.v1`, `support.v8` (cancelamento), `knowledge_web.v3` (se o resumo da busca precisar de marcação).
 
@@ -32,7 +32,7 @@ Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs *
 ### v0.13.0 — Segurança e operação
 
 14. **Emissor próprio** (RF-120). `api/identity.py`: `GET /v1/auth/authorize` (parâmetros `client_id`, `redirect_uri` registrado, `code_challenge` S256, `state`), página de login mínima do emissor (HTML servido pela API, sem framework), `POST /v1/auth/token` com `grant_type=authorization_code` (+ `code_verifier`) e `refresh_token` (rotativo: o anterior é revogado ao usar; família revogada se um token já usado reaparecer). Tabelas `auth_codes` e `refresh_tokens`. A interface Streamlit usa o redirecionamento; `password` fica marcado "demo" no `/docs`.
-15. **Emissor externo** (RF-121). **Dex** (CNCF, Go, ~20 MB) no compose, perfil `oidc`, com usuários sintéticos estáticos; `OIDC_ISSUERS` (lista) com descoberta e JWKS cacheado; mapeamento de claims (`groups` → papel, escopos por papel) em `identity.py`; `iss` desconhecido → `401 invalid_issuer`. Keycloak só se o avaliador pedir (Q24).
+15. **Emissor externo** (RF-121). **Dex** (CNCF, Go, ~20 MB) no compose, perfil `oidc`, com usuários sintéticos estáticos; `OIDC_ISSUERS` (lista) com descoberta e JWKS cacheado; mapeamento de claims (`groups` → papel, escopos por papel) em `identity.py`; `iss` desconhecido → `401 invalid_issuer`.
 16. **Telegram** (RF-122). Módulo `integrations/telegram.py`: serviço pequeno no compose (perfil `telegram`), recebe `handoff.created` como destino de webhook assinado, envia ao `TELEGRAM_OPERATOR_CHAT_ID` via Bot API, faz long polling dos comandos, chama `/v1/handoffs/{id}/claim|actions` com token de operador (`client_credentials` de um principal `operator` de serviço). Testes com Bot API falsa em processo. Desligado sem `TELEGRAM_BOT_TOKEN`.
 17. **Lease multi-worker** (RF-123). `comparisons.worker_id`, `comparisons.heartbeat_at`; a thread renova a cada 5 s; órfã = heartbeat há mais de 20 s; `resume` reivindica em `BEGIN IMMEDIATE`; `_ACTIVE` sai; `_CASE_LOCKS` de `handoffs.py` sai onde `BEGIN IMMEDIATE` já serializa; `PRAGMA journal_mode=WAL` confirmado na abertura; `uvicorn --workers 2` no compose; teste de integração com dois processos reais e `taskkill` no dono.
 18. **Webhooks e caso órfão** (RF-124, RF-125). Estado `exhausted` em `webhook_outbox`; `POST /v1/webhooks/deliveries/{id}/resend` (escopo `handoff:operate`); na subida, `exhausted` com idade > 1 h reentra uma vez; `handoffs.py` ganha `recover_orphans()` na subida: `open` sem evento de ticketing e sem intenção no outbox → intenção recriada.
@@ -41,8 +41,8 @@ Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs *
 ### v1.0.0 — Leitura e acesso
 
 20. **Imagem e lockfile** (RF-127). `validate.yml` ganha o job `image` em tag: build e push para `ghcr.io/<owner>/ai-getnet-case:<tag>`; `docker-compose.yml` com `image:` e `build:` (a imagem publicada vence quando existe); `uv.lock` versionado; README "Run the tests inside the image".
-21. **`docs/process/`** (RF-128). `git mv` de `docs/relatorios/`, `docs/tasks/`, passagens e JSONs de evidência não citados pelo README para `docs/process/` com índice; verificador de links relativos em `tools/scripts/` e no `lint_and_tests.py`; AGENTS.md e CLAUDE.md citam os caminhos antigos: a mudança desses dois arquivos vai por PR separado para aprovação do responsável.
-22. **README** (RF-129, RF-98). Tabela antes × depois por critério; trilha de 10 minutos; capturas (aba Operador, ticketing, Telegram); túnel testado com evidência.
+21. **Registros de processo** (RF-128). Feito na tarefa 105: relatórios do Supervisor, passagens e rodadas intermediárias fora do versionamento (cópia local); `docs/evidence/` só com resultados e índice; verificador de links relativos (`tools/scripts/checar-links.py`) no `lint_and_tests.py`. AGENTS.md e CLAUDE.md citam caminhos antigos: a mudança desses dois arquivos vai por PR separado para aprovação do responsável.
+22. **README** (RF-129, RF-98). Tabela antes × depois por área; trilha de 10 minutos; capturas (aba Operador, ticketing, Telegram); túnel testado com evidência.
 
 ## Componentes afetados
 
@@ -65,7 +65,7 @@ Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs *
 | `docker-compose.yml`, `.env.example` | — | — | perfis `oidc`, `telegram`, `otel`; `--workers 2` | `image:` |
 | `.github/workflows/` | — | — | — | job `image` |
 | Projeto web | — | — | login por redirecionamento | capturas |
-| `docs/` | spec complementar, tarefas 87–91, ADR 0023 | tarefas 92–96, ADR 0024 | tarefas 97–101, ADR 0025 | tarefas 102–104, `docs/process/` |
+| `docs/` | spec complementar, tarefas 87–91, ADR 0023 | tarefas 92–96, ADR 0024 | tarefas 97–101, ADR 0025 | tarefas 102–104 |
 
 Não alterar: `judge.v3`, `judge.v4`, holdouts selados da v0.8.0 e v0.9.0, snapshots públicos, regras financeiras das ferramentas, ledger. AGENTS.md, CLAUDE.md e `.claude/` só por PR aprovado.
 
@@ -122,7 +122,7 @@ Contrato `/v1` aditivo em tudo. Nenhuma mudança incompatível.
 | Dex não disponível para Windows no notebook | Imagem oficial no compose; teste com emissor falso em processo quando o Docker estiver fora |
 | Dois workers e SQLite | WAL; `BEGIN IMMEDIATE`; teste real com dois processos; retorno: `--workers 1` no compose |
 | Telegram exige rede e o sandbox bloqueia | QA com Bot API falsa cobre o fluxo; teste real só pelo responsável |
-| `git mv` de `docs/` quebra links do README e dos ADRs | Verificador de links; AGENTS.md e CLAUDE.md por PR separado |
+| Renomear arquivos de `docs/` quebra links do README e dos ADRs | Verificador de links; AGENTS.md e CLAUDE.md por PR separado |
 
 Retorno por versão: tag anterior + migração descendente.
 
@@ -175,9 +175,7 @@ Cada item vira um arquivo em `docs/tasks/` na abertura da versão.
 **v1.0.0 — Leitura e acesso**
 
 102. Imagem no GHCR por tag, `uv.lock`, compose com `image:`, suíte dentro da imagem (RF-127).
-103. `docs/process/` com índice e verificador de links; PR separado para AGENTS.md e CLAUDE.md (RF-128).
-104. README antes × depois por critério, trilha de 10 minutos, capturas, túnel testado; CHANGELOG; fechamento e tag `v1.0.0` (RF-129, RF-98).
+103. Registros de processo (RF-128): feito na tarefa 105; resta o PR separado de AGENTS.md e CLAUDE.md.
+104. README antes × depois por área, trilha de 10 minutos, capturas, túnel testado; CHANGELOG; fechamento e tag `v1.0.0` (RF-129, RF-98).
 
 **Paralelismo.** Dois escritores quando os arquivos não se tocam: 87 com 90; 92 com 94; 97 com 99; 102 com 103. A rotulagem humana (89) corre em paralelo com 92 a 94 se os CSVs atrasarem; a decisão do juiz (91) só fecha com eles.
-
-**Estimativa.** Pela régua do ciclo anterior (quatro versões em três noites com dois times): v0.11.0 uma noite mais a rotulagem (~2 h do responsável, ~3 h do segundo rotulador); v0.12.0 uma noite; v0.13.0 uma noite e meia; v1.0.0 meia noite. **Cerca de quatro noites de fluxo**, sem vídeo.

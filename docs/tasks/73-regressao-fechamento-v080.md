@@ -6,7 +6,7 @@ Provar a história da v0.8.0 com modelo programado sobre as tarefas 69, 70, 71 e
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md), critérios e requisitos não funcionais; [história](../historias/orquestracao-avaliacao-v080.md); [plano](../specs/evolucao-pos-feedback-plano.md) tarefa 73 e "Estratégia de testes".
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md), critérios e requisitos não funcionais; [história](../historias/orquestracao-avaliacao-v080.md); [plano](../specs/evolucao-producao-v070-v0100-plano.md) tarefa 73 e "Estratégia de testes".
 
 ## Pré-condições
 
@@ -32,7 +32,7 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 
 ## Roteiro do QA (D17)
 
-**Retomada após a amostra inicial.** O responsável aprovou até US$0,10 adicionais para completar a medição em `dev` com as rotas sub-representadas. Preserve a amostra inicial, fixe o limite cumulativo no ledger primário antes de novas chamadas e registre as medições separadamente da campanha. Use a projeção revisada para decidir a montagem. A campanha depende de prova válida da estimativa e de saldo efetivo. [Decisão e limites](../specs/evolucao-pos-feedback-plano.md#decisão-aprovada-em-2026-11-04)
+**Retomada após a amostra inicial.** O responsável aprovou até US$0,10 adicionais para completar a medição em `dev` com as rotas sub-representadas. Preserve a amostra inicial, fixe o limite cumulativo no ledger primário antes de novas chamadas e registre as medições separadamente da campanha. Use a projeção revisada para decidir a montagem. A campanha depende de prova válida da estimativa e de saldo efetivo. [Decisão e limites](../specs/evolucao-producao-v070-v0100-plano.md#decisão-aprovada-em-2026-11-04)
 
 1. Antes da amostra paga, confirme que `BUDGET_RUNTIME_DIR` aponta para o diretório persistente de orçamento do projeto; a imagem Docker mantém `/app/runtime` nesse papel mesmo quando `RUNTIME_DIR` é isolado para o QA. Fora desse padrão, configure o caminho persistente explicitamente: a CLI recusa antes de chamar o provedor se `RUNTIME_DIR` for novo e `BUDGET_RUNTIME_DIR` estiver ausente. Com as validações determinísticas, o smoke Docker e os demais momentos aptos, meça cinco casos de `dev` com `eval --judge --include-replan --split dev --limit 5 --no-conversations --name v080-custo-amostra`.
 2. Gere a estimativa sem nova chamada de modelo: `merchant-assistant eval-estimate --from docs/evidence/v080-custo-amostra.json --out docs/evidence/v080-custo-estimativa.json`. Mantenha o relatório e a estimativa no mesmo diretório: o artefato referencia a amostra e a CLI revalida a origem e recalcula toda a projeção antes de aceitar o teto de US$1,00. A CLI só aceita relatório `mode=real`, com pelo menos cinco casos distintos, custo positivo de agente e juiz e todos os juízos completos e consistentes com o modelo independente configurado; amostra scripted, custo zero ou juiz incompleto não podem recomendar um teto pago. A projeção inclui os splits `dev`, `holdout` e `holdout_v080` (25 casos conforme a tarefa 72a), sem abrir o JSONL lacrado; separa as três execuções do agente e as três avaliações do juiz sobre cada primeira resposta; usa a média global quando o sample não contém um split; e acrescenta as quatro conversas de acompanhamento, somando os turnos de `followup.jsonl` uma vez cada ao custo médio medido do agente por resposta, sem chamadas de juiz.

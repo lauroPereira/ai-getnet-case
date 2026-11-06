@@ -6,7 +6,7 @@ O assistente emite e valida JWT; toda mensagem exige token; o lojista vem do pri
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — seção "Contrato entre os times / Identidade" e decisões D1 a D5, D12, D13; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-76 a RF-79; [plano](../specs/evolucao-pos-feedback-plano.md) decisões 1 a 3; [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md).
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — seção "Contrato entre os times / Identidade" e decisões D1 a D5, D12, D13; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-76 a RF-79; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisões 1 a 3; [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md).
 
 ## Pré-condições
 

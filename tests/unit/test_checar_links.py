@@ -53,3 +53,10 @@ def test_main_reports_and_returns_one(checker, tmp_path, capsys):
     page = write(tmp_path, "a.md", "[x](falta.md)\n")
     assert checker.main([str(page)]) == 1
     assert "a.md:1: falta.md" in capsys.readouterr().out
+
+
+def test_pending_link_in_a_protected_file_is_a_warning(checker, tmp_path, monkeypatch, capsys):
+    page = write(tmp_path, "AGENTS.md", "[plano](docs/specs/antigo.md)\n")
+    monkeypatch.setattr(checker, "PENDING_PROTECTED", {("AGENTS.md", "docs/specs/antigo.md")})
+    assert checker.main([str(page)]) == 0
+    assert "Aviso" in capsys.readouterr().out

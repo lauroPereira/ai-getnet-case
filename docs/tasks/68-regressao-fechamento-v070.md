@@ -6,7 +6,7 @@ Provar, com modelo programado, a história inteira de ponta a ponta sobre as tar
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (critérios e prova), [história](../historias/identidade-hitl-v070.md), [plano](../specs/evolucao-pos-feedback-plano.md) tarefa 68 e "Estratégia de testes".
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) (critérios e prova), [história](../historias/identidade-hitl-v070.md), [plano](../specs/evolucao-producao-v070-v0100-plano.md) tarefa 68 e "Estratégia de testes".
 
 ## Pré-condições
 

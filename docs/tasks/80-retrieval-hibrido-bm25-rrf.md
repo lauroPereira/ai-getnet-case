@@ -6,7 +6,7 @@ Acrescentar busca lexical (BM25) ao índice de conhecimento e fundi-la com a bus
 
 ## Especificação relacionada
 
-[Juiz Claude e retrieval híbrido v0.9.0](../specs/juiz-retrieval-v090.md): D7, D10, CA-52; especificação 0.2 RF-94. Plano: decisões técnicas 17 a 19 em [evolucao-pos-feedback-plano.md](../specs/evolucao-pos-feedback-plano.md).
+[Juiz Claude e retrieval híbrido v0.9.0](../specs/juiz-retrieval-v090.md): D7, D10, CA-52; especificação 0.2 RF-94. Plano: decisões técnicas 17 a 19 em [evolucao-producao-v070-v0100-plano.md](../specs/evolucao-producao-v070-v0100-plano.md).
 
 ## Pré-condições
 

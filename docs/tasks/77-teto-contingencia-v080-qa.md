@@ -6,7 +6,7 @@ Permitir que a campanha `v080-qa`, já montada com o cap fixo de US$1,10, receba
 
 ## Especificação relacionada
 
-[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), "Requisitos não funcionais", item "Contingência autorizada em 2026-11-05"; [plano](../specs/evolucao-pos-feedback-plano.md), "Decisão aprovada em 2026-11-04". Precedente: commit `27add60` e transição.
+[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), "Requisitos não funcionais", item "Contingência autorizada em 2026-11-05"; [plano](../specs/evolucao-producao-v070-v0100-plano.md), "Decisão aprovada em 2026-11-04". Precedente: commit `27add60` e transição.
 
 ## Motivo registrado
 

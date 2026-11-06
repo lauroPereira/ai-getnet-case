@@ -700,7 +700,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 - Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
-- The functional scope was reopened after the feedback ([ADR 0016](docs/architecture/decisions/0016-reabertura-pos-feedback.md)); there is still no Evaluation Agent, improvement-proposal workflow or experiment platform. Model evaluation is a judge over persisted replies, calibrated against a human sample, not human review.
+- The functional scope was reopened after the feedback ([ADR 0016](docs/architecture/decisions/0016-reabertura-roadmap-producao.md)); there is still no Evaluation Agent, improvement-proposal workflow or experiment platform. Model evaluation is a judge over persisted replies, calibrated against a human sample, not human review.
 - Profile comparisons are small and run in a thread of the API process. Since v0.10.0 a restart marks a running comparison `interrupted` (finished cells kept) and `POST /v1/comparisons/{id}/resume` finishes it; the thread registry is per process, so the API must run with a single worker (as the compose does), and a narrow ABA race in the resume claim is documented in ADR 0022. The comparison estimate is an upper bound (request cost cap per new execution).
 - The Results area lists the runs of the current browser session; there is no general run listing.
 - Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.

@@ -231,13 +231,13 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - [x] **CA-34** A comparação de roteamento executa só os Routers; o atendimento roda uma vez. Comprovado com provedores reais na v0.5.0 e na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [x] **CA-35** A interface rotula cada resultado como real, simulado ou gravado. Verificado na interface da v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [x] **CA-36** Três perfis versionados (Referência, Híbrido, Ajustado), com configuração congelada por execução e modelo efetivo por etapa no trace. Verificado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
-- [x] **CA-37** Combinações incompatíveis ou não implementadas não aparecem na interface e são recusadas pela API. Comprovado por HTTP real na v0.4.0 ([QA r5](../evidence/v040-qa-r5.md)); os modelos oferecidos responderam aos provedores reais na v0.5.0 e na v0.6.0.
+- [x] **CA-37** Combinações incompatíveis ou não implementadas não aparecem na interface e são recusadas pela API. Comprovado por HTTP real na v0.4.0 ([resultado](../evidence/v040-resultado.md)); os modelos oferecidos responderam aos provedores reais na v0.5.0 e na v0.6.0.
 - [ ] ~~**CA-38**~~ Avaliação por etapa com critério, resultado, evidência, método, versão da rubrica e "não avaliado" quando cabível; custos de atendimento e de avaliação separados. — *Substituído na 0.3 por CA-50.*
 - [ ] ~~**CA-39**~~ Uma falha crítica isolada aparece e bloqueia a aprovação mesmo com média alta. — *Substituído na 0.3 por CA-50 (falha crítica visível, sem aprovação a bloquear).*
 - [ ] ~~**CA-40**~~ Ciclo completo demonstrado: proposta, candidata, regressão, aprovação, ativação e retorno, com autoria e evidências. — *Adiado na 0.3; fora da entrega.*
 - [x] **CA-41** Edição de documento fictício com rascunho, comparação, índice candidato, teste, ativação e retorno; fontes oficiais não editáveis; versão da base no trace. Comprovado na v0.5.0 ([resultado](../evidence/v050-resultado.md)); a sonda opcional do marcador permanece inconclusiva e não é convertida em reprovação.
 - [ ] ~~**CA-42**~~ Os quatro gráficos prioritários abrem os registros que os explicam; navegar não gera chamadas pagas. — *Substituído na 0.3 por CA-48.*
-- [ ] **CA-43** Compartilhamento pelo IP público validado de fora da rede local, ou impedimento concreto registrado; perfil de demonstração sem acesso administrativo. *Papel demo sem administração comprovado na v0.6.0; teste de outra rede pendente com o responsável.*
+- [ ] **CA-43** Compartilhamento pelo IP público validado de fora da rede local, ou impedimento concreto registrado; perfil de demonstração sem acesso administrativo. *Papel demo sem administração comprovado na v0.6.0; o teste de outra rede segue no [roadmap](roadmap-v0110-v100.md) (RF-98).*
 - [x] **CA-44** Estados de carregamento, ausência de dados, erro e indisponibilidade tratados nas telas. Verificado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [x] **CA-45** Gasto total dentro de US$5, com custo estimado antes de experimentos e bloqueio de custo desconhecido. Acumulado US$0,68637953 ao fim da v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [x] **CA-46** README, changelog e roteiro de vídeo atualizados; nenhum dado privado do discovery publicado. Fechado na v0.6.0 ([resultado](../evidence/v060-resultado.md)); a gravação do vídeo segue em CA-25.
@@ -248,7 +248,7 @@ Critérios novos da 0.3, formalizados antes do QA da v0.6.0 (detalhes em [fecham
 - [x] **CA-48** Comparação de dois ou três perfis em cenários explícitos, com os dois gráficos e a tabela de RF-78; cada ponto abre as execuções; configurações, versões, repetições e falhas registradas; novas execuções só com estimativa, confirmação e reserva; nenhum caso ou encaminhamento criado no atendimento original; Router-only separado.
 - [x] **CA-49** Mesma pergunta, cenário, perfil, prompts e ferramentas em conversas independentes com V1, V2 editada e V1 restaurada: a diferença prevista antes da edição aparece em V2 e some no retorno, comprovada por trecho e versão recuperados, fatos e ferramentas; nenhuma ferramenta nova, prazo oficial ou regra financeira vinda do texto.
 - [x] **CA-50** Avaliação sob demanda de execução persistida sem novo agente e sem repetir o atendimento: estimativa, confirmação, método, rubrica, evidências, configuração do avaliador e custo separado; "não avaliado" quando ausente; falha crítica visível apesar de média alta.
-- [ ] **CA-51** A versão empacotada em Docker é exercitada (distinta de testes nativos e inspeção de imagem); um guia único inicia backend e Streamlit e conduz a demonstração; compartilhamento pelo IP público e porta testado de outra rede, ou impedimento concreto registrado; limitações explícitas. *Docker e guia comprovados na v0.6.0; teste de outra rede pendente com o responsável.*
+- [ ] **CA-51** A versão empacotada em Docker é exercitada (distinta de testes nativos e inspeção de imagem); um guia único inicia backend e Streamlit e conduz a demonstração; compartilhamento pelo IP público e porta testado de outra rede, ou impedimento concreto registrado; limitações explícitas. *Docker e guia comprovados na v0.6.0; o teste de outra rede segue no [roadmap](roadmap-v0110-v100.md) (RF-98).*
 
 ## Riscos
 
@@ -268,7 +268,7 @@ Critérios novos da 0.3, formalizados antes do QA da v0.6.0 (detalhes em [fecham
 | ID | Questão | Responsável | Bloqueia |
 | --- | --- | --- | --- |
 | Q7 | ~~Aprovar esta especificação e a sequência de versões~~ Aprovada em 2026-10-26, até a v0.7.0 | Responsável | — |
-| Q8 | Autorizar a tag `v0.1.0` na `main` | Responsável | RF-38 |
+| Q8 | ~~Autorizar a tag `v0.1.0` na `main`~~ Autorizada; tag criada em 2026-10-26 | Responsável | — |
 | Q9 | ~~Repositório próprio e template para o projeto web~~ Sim: repositório próprio no GitHub, criado a partir do ai-dev-template | Responsável | — |
 | Q10 | Sublimite de gasto da demonstração: ~~valor~~ inicial US$1,00, aumentável pelo responsável quando necessário (RNF-11). Janela de disponibilidade ainda a definir | Responsável | v0.6.0 (janela, desde a 0.3) |
 | Q11 | Disponibilidade de redirecionamento de porta no roteador e IP público sem CGNAT | Responsável (verificação no QA da v0.6.0) | RF-71, CA-51 |

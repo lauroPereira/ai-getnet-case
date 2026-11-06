@@ -51,7 +51,7 @@ Produto não tinha sido implementado no momento do aceite.
    ID conhecido antes do POST, falha de transporte recuperável e consulta
    somente GET, sem reenviar mensagem paga automaticamente. Sem alteração
    de API pública, autenticação, timeout ou orçamento. Escopo da tarefa50 e
-   [proposta aprovada](../evidence/v050-recuperacao-chat-proposta.md).
+   proposta aprovada.
 
 ## Componentes afetados
 

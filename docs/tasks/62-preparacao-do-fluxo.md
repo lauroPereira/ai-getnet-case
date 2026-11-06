@@ -8,7 +8,7 @@ Adotar as práticas de execução do `ampeli-sdd` que reduzem a espera entre pas
 
 ## Especificação relacionada
 
-[evolucao-pos-feedback.md](../specs/evolucao-pos-feedback.md), seção "Eficiência de execução" (Q19); [plano](../specs/evolucao-pos-feedback-plano.md), seção "Preparação do fluxo".
+[evolucao-producao-v070-v0100.md](../specs/evolucao-producao-v070-v0100.md), seção "Eficiência de execução" (Q19); [plano](../specs/evolucao-producao-v070-v0100-plano.md), seção "Preparação do fluxo".
 
 ## Pré-condições
 

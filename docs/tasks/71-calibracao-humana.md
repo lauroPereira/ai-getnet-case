@@ -6,7 +6,7 @@ Gerar uma amostra de respostas para o responsável avaliar com a mesma rubrica d
 
 ## Especificação relacionada
 
-[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D10; [spec 0.2](../specs/evolucao-pos-feedback.md) RF-91, CA-50; [plano](../specs/evolucao-pos-feedback-plano.md) decisão técnica 14.
+[Spec v0.8.0](../specs/orquestracao-avaliacao-v080.md) — D10; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-91, CA-50; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão técnica 14.
 
 ## Pré-condições
 

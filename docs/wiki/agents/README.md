@@ -88,7 +88,7 @@ A [comparação da atualização](atualizacao-do-fluxo.md) registra o que mudou 
 
 ## Neste projeto: agentes nativos e modelo por papel
 
-Desde a etapa 0 da [evolução pós-feedback](../../specs/evolucao-pos-feedback-plano.md) (2026-11-03), Developer, Reviewer e QA também existem como subagentes nativos do Claude Code em `.claude/agents/`, adaptados do `ampeli-sdd`. O frontmatter fixa modelo, esforço e ferramentas: o Reviewer não tem Edit nem Write; o QA tem o navegador embutido. A sessão principal é o Supervisor e despacha sem sobrepor a matriz.
+Desde a etapa 0 da [evolução pós-feedback](../../specs/evolucao-producao-v070-v0100-plano.md) (2026-11-03), Developer, Reviewer e QA também existem como subagentes nativos do Claude Code em `.claude/agents/`, adaptados do `ampeli-sdd`. O frontmatter fixa modelo, esforço e ferramentas: o Reviewer não tem Edit nem Write; o QA tem o navegador embutido. A sessão principal é o Supervisor e despacha sem sobrepor a matriz.
 
 | Papel | Claude | Esforço | Ferramentas | Escreve |
 | --- | --- | --- | --- | --- |
