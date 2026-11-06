@@ -37,12 +37,19 @@ Worktree `ai-getnet-case-wt/pente-fino`, branch `docs/pente-fino` criada da `mai
 
 ## Validação
 
-A preencher pelo Developer.
+Developer, rodada 1 (2026-11-06), branch `docs/pente-fino`, base `0c8bd1b`, código e testes da suíte em `d00aba2`. Sem chamada paga.
+
+- **Remoções e renomeações.** `docs/relatorios/` (11 arquivos) e 146 arquivos de `docs/evidence/` saíram do versionamento; ficam 152 (resultado consolidado, QA final, pareceres finais aptos, manifestos `*-candidato-r*.json`, execuções reais, calibração, holdouts, retrieval, `orcamento.md`) e o índice [docs/evidence/README.md](../evidence/README.md). Links para arquivos removidos em tarefas e evidências viraram texto; referências a linha de código usam `#L<n>`. `git mv`: as quatro specs do passo 4, `docs/contracts/api-v040.md` → `api-v1.md` e a ADR 0016 → `0016-reabertura-roadmap-producao.md`.
+- **Verificador de links.** `tools/scripts/checar-links.py` (novo; links inline, imagens e referências fora de código; alvo dentro do repositório; âncoras pelo slug do GitHub) ligado ao `lint_and_tests.py` e ao `validate-project.ps1`; `tests/unit/test_checar_links.py` (4 testes). O link de AGENTS.md para o nome antigo do plano fica como aviso (`PENDING_PROTECTED`) até o PR do responsável. `lint_and_tests.py` repassa argumentos desconhecidos ao pytest no modo estrito.
+- `python tools/scripts/checar-links.py`: nenhum alvo ausente em 322 arquivos Markdown; 1 aviso pendente (AGENTS.md:18).
+- `python tools/scripts/checar-caminhos-pessoais.py`: nenhuma ocorrência em 633 arquivos.
+- `git grep -i -E "feedback|avaliador|evaluator|ranking|benchmark|minha falha|erro do reviewer|descartad"`: as ocorrências restantes são de contexto legítimo: o avaliador sob demanda do produto (`EVALUATOR_*`, `run_evaluations.evaluator`, "avaliador fixo", "comentário do avaliador por IA"), o rotulador humano da calibração ("avaliador humano", colunas do avaliador), o feedback do lojista no acompanhamento técnico, ranking de retrieval, "resposta descartada" pelo proxy e caches descartados, nomes antigos dentro dos manifestos JSON de candidatos (registro com hashes), o modelo `docs/templates/decision-record.md`, esta tarefa, e AGENTS.md e CLAUDE.md (não editados).
+- `python tools/scripts/lint_and_tests.py --strict --basetemp=<scratchpad da sessão>/... -p no:cacheprovider -rs` (`.venv` do worktree, árvore limpa em `d00aba2`, sem mudança durante a execução): **2153 passed, 1 skipped** em 1103 s; Ruff `All checks passed!`; estrutura, skills, caminhos e links válidos; exit 0. O skip é de ambiente (`test_v070_identity_r2.py:277`, só roda com basetemp sob `.pytest_cache`).
 
 ## Status
 
 ```text
-pendente
+pronta para revisão (Developer, rodada 1)
 ```
 
 Aberta pelo Supervisor em 2026-11-06.
