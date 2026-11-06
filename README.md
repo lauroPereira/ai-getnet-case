@@ -440,11 +440,12 @@ tests), with `store=false`:
   retrieval hits and guard results. `GET /traces/{request_id}` in demo mode.
 - **Budget ledger** (`runtime/budget.sqlite3`): every paid call with reserved and actual cost; `/ready` shows what
   is left.
-- **Metrics** (`GET /metrics`, public like `/ready`): Prometheus text format 0.0.4, computed on demand from the `/metrics` is public like `/ready` and carries only aggregated counts; in production, restrict it by network or by a read token.
+- **Metrics** (`GET /metrics`, public like `/ready`): Prometheus text format 0.0.4, computed on demand from the
   traces and the ledger and cached for 5 s, with no Prometheus library. Every label value is checked against a
   closed set in the code (route, status, agent, tool, outcome, replan origin, provider) and anything else becomes
   `other`, so no message text, request id, merchant or operator reaches a label. An empty or locked store does not
-  fail the scrape: the last complete read is served again (zeroed families before the first one).
+  fail the scrape: the last complete read is served again (zeroed families before the first one). The endpoint
+  carries only aggregated counts; in production, restrict it by network or by a read token.
 
   | Metric | Type | Labels |
   | --- | --- | --- |
@@ -522,8 +523,23 @@ the run (spec D2):
 
 Both judges are stricter than the human; neither flags the generic claims the human flagged. The pre-registered rule
 said that this outcome means the gap is in the rubric, not the model, so DeepSeek stays the default and the rubric
-gains a line for generic claims without a source ([next steps](#next-steps)). The quadratic kappa of the 1–5 scores is
+gained a line for generic claims without a source in v0.10.0 (`judge.v4`). The quadratic kappa of the 1–5 scores is
 near zero because almost every human score is 5 (ceiling effect); the within-one-point agreement is the usable figure.
+
+The same 24 answers were then re-judged under `judge.v4` by both models, under a second rule written before the run:
+v4 becomes the default only if the default judge flags at least 2 of the 4 generic claims without any criterion
+worsening by more than 0.05 ([report](docs/evidence/v0100-juiz-v4.md), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md)):
+
+| `judge.v3` → `judge.v4`, same 24 answers | DeepSeek (default judge) | Claude Opus 5.5 |
+| --- | ---: | ---: |
+| `unsupported_claim` verdict: exact agreement | 0.67 → 0.79 | 0.88 → 0.92 |
+| Generic claims the human flagged (4) that the judge flagged | 0 → 0 | 1 → 2 |
+| Within one point, groundedness / factual / relevance / usefulness | 0.83 / 0.83 / 1.00 / 0.92 → 0.79 / 0.79 / 1.00 / 0.96 | 0.96 / 0.96 / 1.00 / 0.96 → 0.92 / 0.96 / 0.96 / 1.00 |
+| Cost per judgement | US$0.0003 → US$0.0003 | US$0.0178 → US$0.0183 |
+
+The new line works when the model can apply it: Opus flags half of the generic claims under v4, DeepSeek still none.
+By the rule, `judge.v3` stays the default and v4 is available with `--rubric v4`; the gap is rubric and model
+together, and a cheaper model under v4 is the first [next step](#next-steps).
 
 History: v0.6.0 passed 27/27 core cases and 4/4 conversations with 7/13 journeys under the literal rubric
 ([v0.6.0 result](docs/evidence/v060-resultado.md)); Recall@6 = 1.00 on 14 development questions, which v0.9.0 replaces
@@ -558,9 +574,9 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
-| v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 closed with numbers; two literal remarks of the feedback (comparison lost on restart, alerts only described) answered |
-| v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | The retrieval remark of the feedback closed with numbers, and the judge choice made by experiment rather than preference |
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
+| v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | The retrieval remark of the feedback closed with numbers, and the judge choice made by experiment rather than preference |
+| v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 closed with numbers; two literal remarks of the feedback (comparison lost on restart, alerts only described) answered |
 
 ### Identity and human in the loop (v0.7.0)
 
@@ -698,7 +714,7 @@ In order of value for the open remarks; written down so the direction is clear e
 
 1. **Judge: model and rubric together.** `judge.v4` fixed the rubric but the default judge does not apply it; measure `claude-sonnet-5-5` under v4 against the same 24 human ratings as a cost middle ground, and record the web search text so the judge sees it.
 2. **Rolling summary** for conversations longer than the ten-message window.
-3. **Journey rubric.** Keep the deterministic checks for what is binary (route, status, tools, values, sources, forbidden assertions) and let the judge decide content; add a rubric line for generic claims without a source; record the web search text so the judge sees it.
+3. **Journey rubric.** Keep the deterministic checks for what is binary (route, status, tools, values, sources, forbidden assertions) and let the judge decide content.
 4. **Calibration tooling.** `eval-calibrate --sample` must carry the full evidence the judge saw (the v0.8.0 CSV truncated it; the full text was supplied in a companion file).
 5. **Reranker decision.** Add a no-model control at the same fusion depth (`hybrid@36`) so the reranker's own gain can be measured, then decide `RERANK` by the rule; add a score floor for hits found only by BM25.
 6. **Operation.** Optional OTLP export and a dashboard over `/metrics`; a multi-worker-safe comparison registry (today the API runs with one worker).
