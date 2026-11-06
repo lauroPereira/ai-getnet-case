@@ -53,7 +53,7 @@ Developer, rodada 4 (2026-10-28). Testes novos (cada um falharia no candidato r3
   - O-3: `test_ready_reports_the_active_knowledge_base_version`, com o novo campo `knowledge_base` em `/ready`.
   - O-4: `test_cost_quality_chart_has_no_overlapping_text_labels`; os rótulos foram para a legenda e o tooltip.
   - CHANGELOG corrigido para dez cenários.
-- Não alterados, conforme instrução: a rubrica e os prompts do Router (os casos de preço e o `EN-PRICE-CONDITIONS` ficam como limitação) e o estado "QA aprovado" no README/CHANGELOG.
+- Não alterados, conforme instrução: a rubrica e os prompts do Router (os casos de preço e o `EN-PRICE-CONDITIONS` ficam para a v0.8.0) e o estado "QA aprovado" no README/CHANGELOG.
 
 Validação estrita backend: **347 passed**, Ruff "All checks passed!", código 0. Web: **40 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md (na tag `v0.6.0`).
 
