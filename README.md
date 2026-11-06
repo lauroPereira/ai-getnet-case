@@ -558,7 +558,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 
 ### Identity and human in the loop (v0.7.0)
 
-**Two breaking changes.** `POST /messages` requires `Authorization: Bearer <token>` (the merchant comes from the token; a different `user_id` in the body gets `403 identity_mismatch`), and `POST /v1/sessions` / `DELETE /v1/sessions/current` were replaced by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The two calls are in [Run it](#run-it); `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
+**Two breaking changes.** `POST /messages` requires `Authorization: Bearer <token>` (the merchant comes from the token; a different `user_id` in the body gets `403 identity_mismatch`), and `POST /v1/sessions` / `DELETE /v1/sessions/current` were replaced by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The two calls are in [Run it](#run-it); `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves. The current `/v1` contract is in [docs/contracts/api-v1.md](docs/contracts/api-v1.md).
 
 
 **The loop, end to end.** The flow and the commands that drive it against the Compose stack (the operator side goes through the same `/v1/handoffs` API the ticketing service and the CLI use):
