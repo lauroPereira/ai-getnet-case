@@ -10,7 +10,7 @@ from typing import Protocol
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from merchant_assistant import __version__, comparisons
 from merchant_assistant.api.identity import Identity, Principal, check_configuration
@@ -23,6 +23,7 @@ from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.webhook_outbox import configuration_warnings
+from merchant_assistant.observability import metrics
 
 log = logging.getLogger("merchant_assistant.api")
 
@@ -154,6 +155,7 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     app.state.settings = settings
     app.state.identity = Identity(settings)
     app.state.webhooks = Webhooks(settings)  # signed events to the ticketing and the merchant (task 66)
+    app.state.metrics = metrics.collector_for(app.state.orchestrator, settings)  # /metrics (task 85)
     app.include_router(v1_router)
     app.include_router(integrations_router)
 
@@ -191,6 +193,12 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
     def ready() -> JSONResponse:
         info = app.state.orchestrator.readiness()
         return JSONResponse(status_code=200 if info.get("ready") else 503, content=info)
+
+    @app.get("/metrics", tags=["ops"], response_class=Response)
+    def prometheus_metrics() -> Response:
+        """Prometheus text (0.0.4) from the traces and the budget ledger, cached for 5 s. Public, like `/ready`:
+        aggregate counts only, no message text, request id, merchant or operator in any label."""
+        return Response(app.state.metrics.text(), media_type=metrics.CONTENT_TYPE)
 
     @app.post(
         "/messages",
