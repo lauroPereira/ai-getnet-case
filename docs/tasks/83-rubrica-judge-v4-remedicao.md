@@ -41,6 +41,14 @@ Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (
 - `python tools/scripts/lint_and_tests.py --strict`: 2115 passed, 1 skipped, ruff limpo, `checar-caminhos-pessoais.py` sem ocorrências em 764 arquivos, exit 0.
 - Não verificado aqui: o rejulgamento real (momentos 1 e 2, pagos) e o relatório real do momento 3, que são do QA.
 
+**Rodada 2** (correções da [revisão, rodada 1](../evidence/v0100-reviewer-t83.md)), Developer, 2026-11-05, commit `34d7f6a` ([passagem](../evidence/v0100-developer.md#tarefa-83--rodada-2)).
+
+- P2-1: `eval --rubric` sem padrão próprio no parser (`default=None`); os dois comandos resolvem por `judge.rubric_version` (`--rubric` explícito, senão `judge.RUBRIC_VERSION`, hoje v3), e `calibration._rubric` delega a ela. Teste por `cli.main([...])`: padrão gravado sem `--rubric`, `--judge`/`--judge-run`/`--rubric` repetidos e, com `RUBRIC_VERSION` trocado no teste, os dois comandos seguem o novo padrão.
+- P2-2: teste em que o Opus só tem julgamentos v3 e `eval-calibrate --judge anthropic/claude-opus-5-5 --rubric v4` sem `--judge-run` é recusado, sem calibração gravada e sem relatório.
+- P3-2: a linha da nota de busca web no relatório do `eval` cita a rubrica usada (`judge.v4` quando for o caso). P3-4: a linha D2 diz qual bloco v3 é a base quando o juiz tem mais de um; `_baseline` tem teste. P3-1: `prompt_versions()` informa a rubrica configurada do juiz (v3), não o arquivo mais novo. P3-3: fechado pela delegação do P2-1.
+- Mutantes reaplicados numa cópia: M12, M17, M19, M20, o padrão `"v3"` fixo no parser e o `_rubric` com padrão próprio, todos mortos.
+- `python tools/scripts/lint_and_tests.py --strict`: ver a passagem.
+
 ## Status
 
-Implementada pelo Developer em 2026-11-05; aguarda revisão. Aberta pelo Supervisor em 2026-11-05.
+Rodada 2 implementada pelo Developer em 2026-11-05; aguarda a rodada 2 da revisão. Rodada 1 revisada com correções necessárias (P2-1, P2-2). Aberta pelo Supervisor em 2026-11-05.

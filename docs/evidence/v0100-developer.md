@@ -183,3 +183,62 @@ Reviewer, em contexto novo: revisar `f4dfb97..HEAD` contra a tarefa 84. Depois, 
 ### Próxima ação
 
 Reviewer, em contexto novo: revisar `023dc61..HEAD` (só os commits da tarefa 85) contra a tarefa 85. Depois, QA do momento 6 (`/metrics` ao vivo depois dos momentos 4 e 5) e do momento 7. O Supervisor marca o CA-59 depois da revisão e do QA.
+
+## Tarefa 83 — rodada 2
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único), 2026-11-05.
+- **Objetivo:** fechar o [parecer da rodada 1](v0100-reviewer-t83.md) (P2-1, P2-2; P3-1 a P3-4) com as decisões do Supervisor.
+- **Estado:** implementado; aguarda a rodada 2 da revisão.
+- **Branch e base:** `codex/v0.10.0-rubrica-operacao`, base `b802c36` (parecer da rodada 1). Commits: `34d7f6a` (código e testes) e o commit desta passagem. Os commits da tarefa 85 (`29add9c`, `7638f18`, `2a561db`, `c7b06d5`) entraram na mesma branch durante a rodada, por outro Developer, sem arquivo em comum. Identidade conferida: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos
+
+- `src/merchant_assistant/cli.py`: `eval --rubric` com `default=None`; o aviso "--rubric is ignored" compara com `None`; docstring de `_eval_rubric`.
+- `src/merchant_assistant/evaluation/calibration.py`: `_rubric` delega a `judge.rubric_version` (mesma mensagem em português para rubrica desconhecida); linha "Base: …" na D2 quando o juiz tem mais de um bloco `judge.v3`.
+- `src/merchant_assistant/evaluation/runner.py`: a linha da nota de busca web cita `judge.v<rubrica usada>` (de `config.judge_config.rubric_version`; sem juiz configurado, `RUBRIC_VERSION`).
+- `src/merchant_assistant/llm/prompts.py`: `prompt_versions()` fixa `judge` na rubrica configurada.
+- Testes: `tests/integration/test_v0100_rubric.py` (+1), `tests/unit/evaluation/test_judge_v4.py` (+3), `tests/integration/test_eval_campaign.py` (2 asserções a mais no teste da nota web).
+- `docs/tasks/83-rubrica-judge-v4-remedicao.md`: Validação (rodada 2) e Status.
+
+### Como cada item foi fechado
+
+- **P2-1.** O parser do `eval` não tem mais padrão próprio. Os dois comandos resolvem por uma função só, `judge.rubric_version`: `--rubric` explícito, senão `judge.RUBRIC_VERSION` (hoje `"3"`). `calibration._rubric` virou um invólucro que só traduz a exceção. O teste novo `test_through_the_parser_…` chama `cli.main([...])` de verdade: `eval --judge-repeat` com `--rubric v4` e sem `--rubric` (grava `RUBRIC_VERSION`), `eval-calibrate` com `--judge`, `--judge-run` e `--rubric` repetidos (blocos O, A, B, C na ordem) e, com `judge.RUBRIC_VERSION` trocado para `"4"` no teste, `eval-calibrate` sem `--rubric` liga os julgamentos v4 e `eval --scripted --judge-repeat` sem `--rubric` registra `judge@4`. Isso mostra que os dois comandos seguem o mesmo padrão.
+- **P2-2.** No mesmo teste, com o Opus tendo só julgamentos v3, `eval-calibrate --judge anthropic/claude-opus-5-5 --rubric v4` sem `--judge-run` é recusado ("não há julgamento do juiz … sob a rubrica judge.v4"), sem calibração gravada e sem relatório.
+- **P3-1 (corrigido, mudança pequena).** `prompt_versions()` devolve, para `judge`, a versão de `judge.RUBRIC_VERSION` quando o arquivo existe, e a mais nova para os demais prompts. Com isso, `/ready`, o `prompt_set` dos snapshots e o contexto das comparações voltam a dizer `judge: "3"`, o mesmo valor da `main`. Não toquei em `comparisons.py` nem em `api/v1.py`. O reaproveitamento das comparações gravadas antes da v0.10.0 volta a valer, porque o `prompt_set` é igual ao da `main`. Quando a tarefa 86 trocar `RUBRIC_VERSION`, o `prompt_set` muda uma vez, como já acontece com qualquer prompt novo. A importação de `evaluation.judge` fica dentro da função (`evaluation` depende de `llm.prompts`, e importar no topo criaria ciclo). Continua aberta para a ADR 0022 a decisão de se o `prompt_set` do atendimento deve incluir os prompts de avaliação (o juiz não participa do atendimento, e a avaliação sob demanda usa a `judge.v2`).
+- **P3-2.** Teste: o relatório com `judge_config.rubric_version` `"4"` diz "o `judge.v4` não rebaixa"; sem `judge_config`, continua "o `judge.v3`".
+- **P3-3.** Fechado como efeito do P2-1: a conversão passou a existir uma vez só. Nada além disso.
+- **P3-4.** Quando o juiz de um bloco v4 tem mais de um bloco v3, a linha D2 ganha uma sublinha: "Base: O (execução `legado`), o primeiro bloco `judge.v3` deste juiz; C fica fora desta linha.". Com um bloco v3 por juiz (o comando planejado do QA), o relatório não muda. `_baseline` tem um teste de unidade (original primeiro, depois o primeiro pedido, e `None` sem v3), e o teste de integração confere a sublinha com dois blocos v3 do DeepSeek (O `legado` e C, uma reexecução v3).
+
+### Decisões tomadas além do texto do plano (reversíveis)
+
+1. **"Configuração" é a constante `judge.RUBRIC_VERSION`.** Não criei setting nem variável de ambiente nova (`config.py` não mudou). A precedência fica `--rubric` explícito > `RUBRIC_VERSION` > v3, e hoje os dois últimos coincidem. Se a tarefa 86 quiser `JUDGE_RUBRIC` no ambiente, o lugar é `judge.rubric_version`.
+2. **`--rubric v3` explícito no `eval` sem juiz agora também avisa que é ignorado** (antes só `v4` avisava). É consequência de o parser não ter padrão.
+3. **Observação para a tarefa 86, sem mudar nada agora:** `calibration` usa `RUBRIC_VERSION` com dois sentidos, "rubrica padrão" e "a v3 da regra D2" (`_baseline`, os candidatos da D2, o sufixo "sob a rubrica" das mensagens). Se a 86 trocar o padrão para `"4"`, esses usos precisam ser revistos para comparar com `"3"` literal.
+
+### Evidência
+
+- Testes focados (`tests/unit/evaluation`, `test_v0100_rubric`, `test_calibration_flow`, `test_eval_campaign`, `test_v090_judge`, `test_v080_journeys`, `test_v0100_comparison_resume`): **329 passed**, exit 0. Os arquivos da tarefa (`test_judge_v4.py` e `test_v0100_rubric.py`) somam 12 testes (8 + 4).
+- **Mutantes reaplicados** numa cópia `git archive` no scratchpad, com os arquivos da rodada por cima, `PYTHONPATH` na cópia (módulo carregado conferido) e os 12 testes da tarefa. Base: 12 passed. Todos os mutantes morreram:
+
+| Mutante | Resultado |
+| --- | --- |
+| M12 `judgement_for` sem o filtro de rubrica | morto (`test_through_the_parser_…`): a recusa do Opus v4 não acontece. No mutante, a importação passa e a CLI só quebra (`TypeError`) ao imprimir o bloco com execução `None`. O teste falharia do mesmo jeito sem a quebra, porque espera `SystemExit`. Fora do mutante, esse caminho não é alcançável |
+| M17 `_baseline` pega o último bloco v3 | morto (`test_the_d2_baseline_…` e a sublinha "Base: O") |
+| M19 padrão do parser `"v4"` | morto (sem `--rubric` grava 4) |
+| M19b padrão do parser `"v3"` fixo (a fonte duplicada da rodada 1) | morto (com `RUBRIC_VERSION` `"4"`, o `eval` ainda registraria `judge@3`) |
+| M20 `eval-calibrate --judge` sem `action="append"` | morto (recusa "one --judge takes at most one --judge-run") |
+| M21 `_rubric` com padrão próprio | morto (`test_the_default_rubric_has_one_source…` e o teste de integração) |
+
+- Nenhuma chamada paga, nenhuma rede, `.env` não lido (`cli.get_settings` trocado pela fixture nos testes por `cli.main`).
+
+### Suíte estrita
+
+`python tools/scripts/lint_and_tests.py --strict` (venv da `.venv`) no HEAD `c7b06d5`, que inclui `34d7f6a`. Na árvore, só a Validação da tarefa 83 estava fora de commit. A suíte rodou com `PYTEST_ADDOPTS="--basetemp=<scratchpad da sessão>/suite-bt -p no:cacheprovider"` e deu **2133 passed, 1 skipped** em 1145,53 s. Ruff: `All checks passed!`. Caminhos pessoais: nenhuma ocorrência em 770 arquivos. Estrutura e skills válidas. Saída final "Validação estrita concluída sem falhas", exit 0. Log no scratchpad (não versionado), SHA-256 `af9cbd6a…`.
+
+- **Bloqueio de ambiente na primeira tentativa (não é defeito):** passei o `--basetemp` em forma POSIX (`/c/Users/…`) dentro de `PYTEST_ADDOPTS`. O Git Bash não converte variável de ambiente, e o pytest resolveu o caminho para `C:/c/Users/…`, que não existe: 1369 passed e 765 erros de `FileNotFoundError` no `mktemp`, em 78 s. Com o caminho em forma Windows, a suíte passou (números acima).
+- **Concorrência:** um `pytest` completo de outro agente (basetemp próprio) rodava ao mesmo tempo. Tentei parar a minha para esperar, mas a parada foi negada pela permissão do ambiente, e as duas rodaram juntas. Por isso o tempo foi de 19 min. As duas só leem a árvore e cada uma tem seu basetemp. Houve 1 skip, como na rodada 1. Não confirmei qual teste foi pulado (o log não traz `-rs`), mas os 12 testes da tarefa passaram nas execuções focadas e nos mutantes de base.
+
+### Próxima ação
+
+Reviewer, rodada 2, em contexto novo: `b802c36..HEAD` restrito aos arquivos acima, reaplicando M12, M19 e M20. Depois, QA dos momentos 1 a 3 com os comandos da rodada 1, que não mudaram.
