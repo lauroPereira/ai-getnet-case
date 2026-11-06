@@ -32,7 +32,7 @@ Branch `codex/v0.10.0-rubrica-operacao` criada da `main` com a v0.9.0. Nenhuma c
 
 ## Validação
 
-Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `ce011b5`, commits `1655e80` e `9e66d20` ([passagem](../evidence/v0100-developer.md#tarefa-83--rubrica-judgev4-e-remedição-dos-dois-juízes-rodada-1)).
+Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (árvore igual à de `ce011b5`), commits `1655e80` e `9e66d20` ([passagem](../evidence/v0100-developer.md#tarefa-83--rubrica-judgev4-e-remedição-dos-dois-juízes-rodada-1)).
 
 - `judge.v3.md` intocado (SHA-256 igual ao da v0.9.0, conferido em teste). `judge.v4.md` difere só pelo trecho inserido na definição de `unsupported_claim` e pela linha `version: 4`; o diff está na passagem.
 - `--rubric v3|v4` (padrão `v3`) em `eval --judge-repeat` (e `eval --judge`) e em `eval-calibrate --import`. Cada julgamento grava `rubric_version` e `evaluator.prompt` da rubrica pedida.

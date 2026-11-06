@@ -6,7 +6,7 @@
 - **Objetivo e critérios:** [tarefa 83](../tasks/83-rubrica-judge-v4-remedicao.md); [spec v0.10.0](../specs/rubrica-operacao-v0100.md) D1, D2, CA-57; [história](../historias/rubrica-operacao-v0100.md) momentos 1 a 3; [ADR 0021](../architecture/decisions/0021-juiz-modelo-e-regua.md).
 - **Escopo:** prompt novo, código, testes, Validação e Status da tarefa 83 e esta passagem. `prompts/judge.v3.md`, rótulos, cenários, migrações, snapshots e ledger não mudaram.
 - **Estado:** implementado; aguarda revisão.
-- **Branch e base:** `codex/v0.10.0-rubrica-operacao`, base `ce011b5`. Commits: `1655e80` (prompt `judge.v4` e rubrica selecionável no juiz), `9e66d20` (`--rubric` nas duas CLIs, relatório multi-bloco, testes) e o commit desta passagem. Identidade conferida antes de cada commit: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push.
+- **Branch e base:** `codex/v0.10.0-rubrica-operacao`, base `0266652` (merge da `main` feito pelo Supervisor, mesma árvore de `ce011b5`). Commits: `1655e80` (prompt `judge.v4` e rubrica selecionável no juiz), `9e66d20` (`--rubric` nas duas CLIs, relatório multi-bloco, testes) e o commit desta passagem. Identidade conferida antes de cada commit: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push.
 - **Independência:** não se aplica (implementação).
 
 ### Arquivos
@@ -83,8 +83,9 @@ O comando do momento 3 da história com um `--judge` só gera dois blocos (O e o
 ### Achados e limitações
 
 - **Efeito colateral de um prompt novo (não alterado).** `prompt_versions()` devolve a versão mais nova de cada arquivo, e com isso `judge` passa a aparecer como `"4"` em dois lugares. O primeiro é `Orchestrator.versions()["prompts"]`, onde o padrão da campanha continua v3, de modo que esse número não diz qual rubrica está em uso. O segundo é o contexto `prompt_set` das comparações de perfis: células gravadas antes deste deploy deixam de ser reaproveitadas, o mesmo que acontece com qualquer prompt novo (por exemplo, `router.v6`). Os agentes não usam o juiz. Deixei como está; se o Supervisor quiser, dá para excluir `judge` do `prompt_set` ou mostrar a versão fixada, mas isso fica fora da tarefa.
+- **Outro escritor na mesma árvore.** Entre 21:47 e 21:51 apareceram modificações não commitadas que não são minhas em `src/merchant_assistant/api/app.py`, `api/v1.py`, `comparisons.py`, `data/migrations.py` e `tests/unit/data/test_migrations.py` (pelo conteúdo, a tarefa 84), durante a minha suíte estrita (21:36 a 21:50). Não toquei nelas nem as commitei. A suíte coletou e importou os módulos às 21:36; um módulo importado só depois disso pode ter visto a versão alterada. Se o Reviewer quiser certeza, basta rodar de novo a suíte num worktree limpo em `3b180ff` ou depois.
 - O relatório real só existe depois do rejulgamento pago (momentos 1 e 2), que é do QA.
 
 ### Próxima ação
 
-Reviewer, em contexto novo: revisar `ce011b5..HEAD` contra a tarefa 83. Depois o QA roda os momentos 1 a 3 com os comandos acima, e o Supervisor aplica a D2 na tarefa 86.
+Reviewer, em contexto novo: revisar `0266652..HEAD` contra a tarefa 83. Depois o QA roda os momentos 1 a 3 com os comandos acima, e o Supervisor aplica a D2 na tarefa 86.
