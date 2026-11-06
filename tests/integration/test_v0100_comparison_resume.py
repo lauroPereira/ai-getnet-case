@@ -572,3 +572,30 @@ def test_resume_route_declares_its_error_responses(keys, offline):
     assert {"202", "404", "409", "422", "429"} <= set(responses)
     for status in ("404", "409", "422", "429"):
         assert responses[status]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorBody")
+
+
+def test_a_stale_liveness_check_never_marks_a_registered_comparison_interrupted(keys, offline, monkeypatch):
+    client, _, _ = offline()
+    headers = login(client)
+    release = threading.Event()
+    real = v1.execute_run
+
+    def blocked(*args, **kwargs):
+        release.wait(timeout=30)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(v1, "execute_run", blocked)
+    comparison_id = create(client, headers)
+    try:
+        # The check made before the write transaction saw no thread (as one being registered right then would);
+        # the transaction looks at the registry again before marking anything.
+        monkeypatch.setattr(comparisons, "_alive", lambda _: False)
+        assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] == "running"
+        busy = client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers)
+        assert busy.status_code == 409 and busy.json()["error"]["code"] == "comparison_running"
+        with TestClient(offline()[0].app):
+            assert db_state(keys, comparison_id) == "running"
+    finally:
+        release.set()
+        join(comparison_id)
+    assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] == "completed"
