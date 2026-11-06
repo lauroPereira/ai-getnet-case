@@ -33,6 +33,7 @@ from merchant_assistant.evaluation.judge import (
     CRITERIA,
     RUBRIC,
     RUBRIC_VERSION,
+    RUBRIC_VERSIONS,
     TOKEN_KEYS,
     judge_usage,
 )
@@ -480,11 +481,16 @@ def _judgement(row) -> dict:
 
 
 def judgement_for(
-    conn: sqlite3.Connection, request_id: str, judge: str | None = None, run: str | None = None
+    conn: sqlite3.Connection,
+    request_id: str,
+    judge: str | None = None,
+    run: str | None = None,
+    rubric: str | None = None,
 ) -> dict | None:
     """The first judgement (repetition 1) that the campaign wrote for this request, with its scores and verdict. With
     `judge` (`<provider>/<model>`, spec v0.9.0 RF-108) only that judge's judgements count; without it, any judge's.
-    With `run`, only the judgements of that execution (`LEGACY_RUN` for those without a name)."""
+    With `run`, only the judgements of that execution (`LEGACY_RUN` for those without a name); with `rubric` (the
+    stored version, "3" or "4", spec v0.10.0 D1), only those of that rubric."""
     rows = conn.execute(
         "SELECT evaluation_id, rubric_version, evaluator, scores, unsupported_claim FROM run_evaluations "
         "WHERE request_id=? AND principal_id=? AND rubric=? AND state='completed' AND repetition=1 "
@@ -495,6 +501,8 @@ def judgement_for(
         if judge is not None and _judge_name(row["evaluator"]) != judge:
             continue
         if run is not None and _run_name(row["evaluator"]) != run:
+            continue
+        if rubric is not None and row["rubric_version"] != rubric:
             continue
         return _judgement(row)
     return None
@@ -515,13 +523,20 @@ class Pair:
     judgement: dict
 
 
-def link(conn: sqlite3.Connection, filled: Filled, judge: str | None = None, run: str | None = None) -> list[Pair]:
+def link(
+    conn: sqlite3.Connection,
+    filled: Filled,
+    judge: str | None = None,
+    run: str | None = None,
+    rubric: str | None = None,
+) -> list[Pair]:
     pairs, errors = [], []
     for rating in filled.ratings:
-        judgement = judgement_for(conn, rating.request_id, judge, run)
+        judgement = judgement_for(conn, rating.request_id, judge, run, rubric)
         if judgement is None:
             by = f" do juiz {judge}" if judge else ""
             by += f" na execução {run!r} (repetição 1 completa)" if run else ""
+            by += f" sob a rubrica judge.v{rubric}" if rubric not in (None, RUBRIC_VERSION) else ""
             errors.append(
                 f"linha {rating.line} ({rating.sample_id}): não há julgamento{by} da requisição {rating.request_id} "
                 "em run_evaluations deste banco. Importe no banco em que a campanha gravou os julgamentos."
@@ -672,21 +687,26 @@ def original_pairs(conn: sqlite3.Connection, original: str, rater: str, ratings:
     return pairs
 
 
-def _judge_rows(conn: sqlite3.Connection, request_ids: list[str], judge: str):
+def _judge_rows(conn: sqlite3.Connection, request_ids: list[str], judge: str, rubric: str | None = RUBRIC_VERSION):
+    """The judgements of `judge` on these requests under `rubric` (the stored version; `None` for any)."""
     wanted = set(request_ids)
     for row in conn.execute(
-        "SELECT request_id, evaluator, state, scores, unsupported_claim, cost_usd, result FROM run_evaluations "
-        "WHERE principal_id=? AND rubric=? AND rubric_version=? ORDER BY created_at, evaluation_id",
-        (CAMPAIGN_PRINCIPAL, RUBRIC, RUBRIC_VERSION),
+        "SELECT request_id, evaluator, state, scores, unsupported_claim, cost_usd, result, rubric_version "
+        "FROM run_evaluations WHERE principal_id=? AND rubric=? ORDER BY created_at, evaluation_id",
+        (CAMPAIGN_PRINCIPAL, RUBRIC),
     ):
+        if rubric is not None and row["rubric_version"] != rubric:
+            continue
         if row["request_id"] in wanted and _judge_name(row["evaluator"]) == judge:
             yield row
 
 
-def judge_executions(conn: sqlite3.Connection, request_ids: list[str], judge: str) -> dict[str, int]:
-    """How many judgements (any state) each execution of `judge` wrote on these requests."""
+def judge_executions(
+    conn: sqlite3.Connection, request_ids: list[str], judge: str, rubric: str | None = RUBRIC_VERSION
+) -> dict[str, int]:
+    """How many judgements (any state) each execution of `judge` wrote on these requests under `rubric`."""
     found: dict[str, int] = {}
-    for row in _judge_rows(conn, request_ids, judge):
+    for row in _judge_rows(conn, request_ids, judge, rubric):
         name = _run_name(row["evaluator"])
         found[name] = found.get(name, 0) + 1
     return dict(sorted(found.items()))
@@ -696,38 +716,63 @@ def _listed(found: dict[str, int]) -> str:
     return ", ".join(f"{name!r} ({count} julgamentos)" for name, count in found.items())
 
 
-def choose_run(conn: sqlite3.Connection, request_ids: list[str], judge: str, judge_run: str | None) -> str | None:
+def choose_run(
+    conn: sqlite3.Connection,
+    request_ids: list[str],
+    judge: str,
+    judge_run: str | None,
+    rubric: str = RUBRIC_VERSION,
+) -> str | None:
     """The execution of the requested judge that the comparison reads (task 79 round 2): the one named, or the only
-    one there is. Two executions on the same answers (the probe and the repetitions, say) and no name is an error:
-    mixing them would change the agreement, the consistency and the cost. `None` when the judge has no judgement
-    here (the link then says which requests lack one)."""
-    found = judge_executions(conn, request_ids, judge)
+    one there is, among those of `rubric` (spec v0.10.0 D1). Two executions on the same answers (the probe and the
+    repetitions, say) and no name is an error: mixing them would change the agreement, the consistency and the cost.
+    An execution named under another rubric is an error too. `None` when the judge has no judgement here (the link
+    then says which requests lack one)."""
+    found = judge_executions(conn, request_ids, judge, rubric)
+    under = f" sob a rubrica judge.v{rubric}" if rubric != RUBRIC_VERSION else ""
     if judge_run is not None:
         if judge_run not in found:
+            other = sorted(
+                {
+                    row["rubric_version"]
+                    for row in _judge_rows(conn, request_ids, judge, None)
+                    if _run_name(row["evaluator"]) == judge_run
+                }
+            )
+            if other:
+                raise CalibrationError(
+                    f"a execução {judge_run!r} do juiz {judge} gravou julgamentos "
+                    f"{', '.join('judge.v' + v for v in other)}, não judge.v{rubric}: confira --rubric "
+                    "(cada --judge leva a rubrica da sua execução); nada foi alterado."
+                )
             seen = _listed(found) if found else "nenhuma"
             raise CalibrationError(
-                f"o juiz {judge} não tem julgamento da execução {judge_run!r} sobre estas respostas. Execuções "
+                f"o juiz {judge} não tem julgamento da execução {judge_run!r} sobre estas respostas{under}. Execuções "
                 f"encontradas: {seen}."
             )
         return judge_run
     if len(found) > 1:
         raise CalibrationError(
-            f"o juiz {judge} tem mais de uma execução sobre estas respostas: {_listed(found)}. Escolha a que entra na "
-            "comparação com --judge-run <nome> (o --name do eval que a gravou); nada foi alterado."
+            f"o juiz {judge} tem mais de uma execução sobre estas respostas{under}: {_listed(found)}. Escolha a que "
+            "entra na comparação com --judge-run <nome> (o --name do eval que a gravou); nada foi alterado."
         )
     return next(iter(found), None)
 
 
 def judge_runs(
-    conn: sqlite3.Connection, request_ids: list[str], judge: str, runs: Sequence[str] | None = None
+    conn: sqlite3.Connection,
+    request_ids: list[str],
+    judge: str,
+    runs: Sequence[str] | None = None,
+    rubric: str = RUBRIC_VERSION,
 ) -> dict:
-    """The judgements of `judge` (rubric judge.v3) on these requests, only those of the executions `runs` when given:
-    consistency between its repetitions over the same answer (`aggregate`), how many failed, what they cost and the
-    tokens they recorded."""
+    """The judgements of `judge` under `rubric` (judge.v3 by default) on these requests, only those of the executions
+    `runs` when given: consistency between its repetitions over the same answer (`aggregate`), how many failed, what
+    they cost and the tokens they recorded."""
     entries: dict[str, dict] = {}
     cost = 0.0
     recorded: list[dict] = []
-    for row in _judge_rows(conn, request_ids, judge):
+    for row in _judge_rows(conn, request_ids, judge, rubric):
         if runs is not None and _run_name(row["evaluator"]) not in runs:
             continue
         completed = row["state"] == "completed" and row["scores"] is not None
@@ -936,7 +981,7 @@ def render_report(
     judges = sorted({p.judgement["judge"] for p in pairs})
     rubrics = sorted({p.judgement["rubric_version"] for p in pairs})
     lines = [
-        "# Calibração humana do juiz: dois juízes (v0.9.0)" if comparison else "# Calibração humana do juiz (v0.8.0)",
+        _title(comparison),
         "",
         f"Gerado em {stamp}. Campanha `{_cell(meta['campaign'])}`, avaliador humano `{_cell(rater)}`, rubrica "
         f"`judge.v{', '.join(rubrics)}`, juiz {', '.join(f'`{_cell(j)}`' for j in judges)}.",
@@ -994,7 +1039,9 @@ def render_report(
         ]
     else:
         lines.append("Nenhuma.")
-    if comparison:
+    if comparison and comparison.get("blocks"):
+        lines += render_blocks(analysis, comparison)
+    elif comparison:
         lines += render_comparison(pairs, analysis, comparison)
     by_route: dict[str, int] = {}
     by_split: dict[str, int] = {}
@@ -1028,6 +1075,12 @@ def render_report(
         "nota do juiz.",
     ]
     return "\n".join(lines) + "\n"
+
+
+def _title(comparison: dict | None) -> str:
+    if comparison and comparison.get("blocks"):
+        return "# Calibração humana do juiz: juízes e rubricas (v0.10.0)"
+    return "# Calibração humana do juiz: dois juízes (v0.9.0)" if comparison else "# Calibração humana do juiz (v0.8.0)"
 
 
 def _fmt(value: float | None) -> str:
@@ -1120,10 +1173,18 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
         "pares de julgamentos da mesma resposta com a mesma nota; ±1: diferença de até 1 ponto. Sem pares, o juiz "
         "julgou cada resposta uma vez só.",
         "",
+    ]
+    named = [(f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])]
+    return lines + _run_tables(named)
+
+
+def _run_tables(named: list[tuple[str, dict]]) -> list[str]:
+    """Consistency between repetitions, cost and tokens of each judge (or block) of a comparison, one row each."""
+    lines = [
         "| Juiz | Respostas | Julgamentos | Falhos | Critério | Exata | ±1 | Pares |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+    for name, run in named:
         block = run["consistency"]
         head = f"| {name} | {run['answers']} | {run['judgements']} | {run['failed']}"
         for criterion in CRITERIA:
@@ -1144,7 +1205,7 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
         "| Juiz | Julgamentos | Falhos | Custo total (US$) | Custo por julgamento (US$) |",
         "| --- | --- | --- | --- | --- |",
     ]
-    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+    for name, run in named:
         per = "-" if run["cost_per_judgement_usd"] is None else f"{run['cost_per_judgement_usd']:.6f}"
         lines.append(f"| {name} | {run['judgements']} | {run['failed']} | {run['cost_usd']:.6f} | {per} |")
     lines += [
@@ -1155,7 +1216,7 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
         "| Juiz | Julgamentos com tokens | Entrada | Cache lido | Cache criado | Saída |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
-    for name, run in ((f"A `{_cell(a)}`", runs["A"]), (f"B `{_cell(b)}`", runs["B"])):
+    for name, run in named:
         usage = run["usage"]
         if usage is None:
             lines.append(f"| {name} | 0 | - | - | - | - |")
@@ -1163,6 +1224,211 @@ def render_comparison(pairs: list[Pair], analysis: dict, comparison: dict) -> li
         cells = " | ".join(f"{usage['total'][key]} / {usage['mean'][key]}" for key in TOKEN_KEYS)
         lines.append(f"| {name} | {usage['judgements']} | {cells} |")
     return lines
+
+
+# --- judges and rubrics against the same human ratings (spec v0.10.0 D1, D2, CA-57) -------------------------------
+
+# The four answers of the v0.8.0 sample in which the owner marked a general claim with no source and no judge did
+# (ADR 0021). `judge.v4` adds that case to the definition of an unsupported claim; D2 counts how many a judge marks.
+GENERIC_SAMPLES = ("S01", "S13", "S16", "S21")
+D2_MIN_GENERIC = 2  # at least 2 of the 4 marked
+D2_TOLERANCE = 0.05  # the agreement within one point of no criterion may drop by more than this
+_EPSILON = 1e-9
+D2_JUDGE = "deepseek/deepseek-flash"  # the default judge (ADR 0021), the one D2 lets decide
+
+
+def _block_name(block: dict) -> str:
+    return f"{block['label']} `{_cell(block['judge'])}` judge.v{_cell(block['rubric'])}"
+
+
+def d2_rule(block: dict, baseline: dict) -> dict:
+    """The three conditions of the v0.10.0 rule (D2) for a `judge.v4` block against the `judge.v3` block of the same
+    judge, computed over the same human ratings. Nothing is decided here: the report shows the numbers and whether
+    each condition holds; the choice of the default rubric is recorded in task 86."""
+    now, before = block["analysis"], baseline["analysis"]
+    verdict = (now["verdict"]["exact"], before["verdict"]["exact"])
+    present = [p for p in block["pairs"] if p.rating.sample_id in GENERIC_SAMPLES]
+    marked = sum(bool(p.judgement[VERDICT]) for p in present)
+    within = {
+        criterion: (now["criteria"][criterion]["within_one"], before["criteria"][criterion]["within_one"])
+        for criterion in CRITERIA
+    }
+    holds = {
+        "verdict": verdict[0] >= verdict[1] - _EPSILON,
+        "generic": marked >= D2_MIN_GENERIC,
+        "within_one": all(a - b >= -D2_TOLERANCE - _EPSILON for a, b in within.values()),
+    }
+    return {
+        "verdict": verdict,
+        "generic": (marked, len(present)),
+        "within_one": within,
+        "holds": holds,
+        "all": all(holds.values()),
+    }
+
+
+def _baseline(blocks: list[dict], block: dict) -> dict | None:
+    """The `judge.v3` block of the same judge (the original one first), the reference D2 compares a v4 block with."""
+    return next((b for b in blocks if b["judge"] == block["judge"] and b["rubric"] == RUBRIC_VERSION), None)
+
+
+def render_blocks(analysis: dict, comparison: dict) -> list[str]:
+    """One block per (judge, execution, rubric) asked for, beside the original judge (O), against the same ratings:
+    agreement per criterion, the verdict, the four general claims with no source, the D2 line, and each block's
+    consistency, cost and tokens."""
+    blocks = comparison["blocks"]
+    n = analysis["n"]
+    lines = [
+        "",
+        "## Juízes e rubricas contra as mesmas notas humanas",
+        "",
+        f"As {n} notas humanas são as gravadas na campanha original `{_cell(comparison['original_campaign'])}`, "
+        "conferidas linha a linha; não houve avaliação humana nova. O é o juiz ao qual cada nota foi ligada na "
+        "campanha original; cada outro bloco entra com o julgamento da repetição 1 de cada resposta na execução e "
+        f"sob a rubrica indicadas. As notas desta campanha (`{_cell(comparison['campaign'])}`) ficam ligadas ao "
+        "bloco A. Todos julgaram a mesma evidência gravada.",
+        "",
+        "| Bloco | Juiz | Rubrica | Execuções |",
+        "| --- | --- | --- | --- |",
+    ]
+    for block in blocks:
+        runs = ", ".join(f"`{_cell(name)}`" for name in block["runs"] or ["-"])
+        lines.append(f"| {block['label']} | `{_cell(block['judge'])}` | `judge.v{_cell(block['rubric'])}` | {runs} |")
+    lines += [
+        "",
+        "## Concordância de cada bloco com o humano",
+        "",
+        "| Critério | Bloco | Exata | ±1 | Kappa quadrático | Viés (juiz − humano) |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for criterion in CRITERIA:
+        for block in blocks:
+            m = block["analysis"]["criteria"][criterion]
+            lines.append(
+                f"| {criterion} ({CRITERIA_LABELS[criterion]}) | {_block_name(block)} | {_share(m['exact'], None)} | "
+                f"{_share(m['within_one'], None)} | {_kappa(m)} | {_bias(m)} |"
+            )
+    lines += [
+        "",
+        "Veredito `unsupported_claim` (humano × juiz):",
+        "",
+        "| Bloco | Exata | Kappa | Ambos sim | Só humano | Só juiz | Nenhum |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for block in blocks:
+        v = block["analysis"]["verdict"]
+        t = v["table"]
+        lines.append(
+            f"| {_block_name(block)} | {_share(v['exact'], None)} | {_kappa(v)} | {t['both']} | {t['human_only']} | "
+            f"{t['judge_only']} | {t['neither']} |"
+        )
+    by_block = [{p.rating.sample_id: p.judgement for p in block["pairs"]} for block in blocks]
+    rated = {p.rating.sample_id: p.rating for p in blocks[0]["pairs"]}
+    head = "| Amostra | Caso | Rota | Humano | " + " | ".join(block["label"] for block in blocks) + " |"
+    rule = "| --- | --- | --- | --- | " + " | ".join("---" for _ in blocks) + " |"
+
+    def row(sample_id: str) -> str:
+        rating = rated[sample_id]
+        marks = " | ".join(_yes(judged[sample_id][VERDICT]) for judged in by_block)
+        return (
+            f"| {_cell(sample_id)} | {_cell(rating.case_id or '-')} | {_cell(rating.route or '-')} | "
+            f"{_yes(rating.unsupported_claim)} | {marks} |"
+        )
+
+    present = [sample_id for sample_id in GENERIC_SAMPLES if sample_id in rated]
+    missing = [sample_id for sample_id in GENERIC_SAMPLES if sample_id not in rated]
+    lines += [
+        "",
+        f"## Frases genéricas sem fonte ({', '.join(GENERIC_SAMPLES)})",
+        "",
+        "As quatro respostas em que o humano marcou uma frase genérica sem fonte na calibração da v0.8.0 e nenhum "
+        "juiz marcou (ADR 0021). A `judge.v4` acrescenta esse caso à definição de afirmação sem suporte.",
+        "",
+    ]
+    if present:
+        counts = " | ".join(
+            f"{sum(bool(judged[sample_id][VERDICT]) for sample_id in present)} de {len(present)}"
+            for judged in by_block
+        )
+        human = sum(rated[sample_id].unsupported_claim for sample_id in present)
+        lines += [head, rule, *[row(sample_id) for sample_id in present]]
+        lines.append(f"| Marcadas | - | - | {human} de {len(present)} | {counts} |")
+    else:
+        lines.append("Nenhuma delas está neste arquivo.")
+    if missing:
+        lines += ["", f"Fora deste arquivo: {', '.join(missing)}."]
+    marked = [
+        sample_id
+        for sample_id, rating in rated.items()
+        if rating.unsupported_claim or any(judged[sample_id][VERDICT] for judged in by_block)
+    ]
+    lines += ["", "Respostas que o humano ou algum bloco marcou como afirmação sem suporte:", ""]
+    lines += [head, rule, *[row(sample_id) for sample_id in marked]] if marked else ["Nenhuma."]
+    lines += [
+        "",
+        "## Regra D2 da v0.10.0 (informativa)",
+        "",
+        "Calculada com os números acima, sem decidir. Pela D2, a `judge.v4` vira padrão se, com o juiz padrão "
+        f"(`{D2_JUDGE}`), (a) a concordância do veredito com o humano não cair, (b) pelo menos "
+        f"{D2_MIN_GENERIC} das {len(GENERIC_SAMPLES)} frases genéricas forem marcadas e (c) a concordância ±1 de "
+        f"nenhum critério piorar mais de {D2_TOLERANCE:.2f}; os outros juízes são reportados e não decidem. Cada "
+        "bloco `judge.v4` é comparado com o bloco `judge.v3` do mesmo juiz. A decisão é registrada na tarefa 86.",
+        "",
+    ]
+    candidates = [block for block in blocks if block["rubric"] != RUBRIC_VERSION]
+    if not candidates:
+        lines.append("Nenhum bloco sob outra rubrica que não a `judge.v3`.")
+    for block in candidates:
+        base = _baseline(blocks, block)
+        if base is None:
+            lines.append(
+                f"- {_block_name(block)}: sem bloco `judge.v3` do mesmo juiz neste relatório; condições não "
+                "calculadas."
+            )
+            continue
+        rule_d2 = d2_rule(block, base)
+        (now, before), (hits, out_of) = rule_d2["verdict"], rule_d2["generic"]
+        within = ", ".join(
+            f"{criterion} {a:.3f} contra {b:.3f} ({a - b:+.3f})" for criterion, (a, b) in rule_d2["within_one"].items()
+        )
+        holds = rule_d2["holds"]
+        lines.append(
+            f"- {_block_name(block)} contra {_block_name(base)}: (a) veredito {now:.3f} contra {before:.3f}, não cai: "
+            f"{_yes(holds['verdict'])}; (b) frases genéricas marcadas: {hits} de {out_of}, pelo menos "
+            f"{D2_MIN_GENERIC}: {_yes(holds['generic'])}; (c) ±1 {within}, nenhum piora mais de {D2_TOLERANCE:.2f}: "
+            f"{_yes(holds['within_one'])}. Três condições atendidas: {_yes(rule_d2['all'])}."
+        )
+    lines += [
+        "",
+        "## Julgamentos considerados",
+        "",
+        "Execuções de cada bloco que entram no relatório (o `--name` do `eval` que gravou os julgamentos) e quantos "
+        "julgamentos entram em cada medida. Outras execuções do mesmo juiz, ou da mesma execução sob outra rubrica, "
+        "ficam de fora.",
+        "",
+        "| Bloco | Execuções | Concordância | Consistência | Custo e tokens |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for block in blocks:
+        runs = ", ".join(f"`{_cell(name)}`" for name in block["runs"] or ["-"])
+        count = block["usage"]["judgements"]
+        lines.append(f"| {_block_name(block)} | {runs} | {block['analysis']['n']} | {count} | {count} |")
+    if any(LEGACY_RUN in (block["runs"] or []) for block in blocks):
+        lines += [
+            "",
+            f"`{LEGACY_RUN}`: julgamentos gravados antes da v0.9.0, que não guardam o nome da execução; contam como "
+            "uma execução só, então podem somar mais de uma rodada do mesmo juiz.",
+        ]
+    lines += [
+        "",
+        "## Consistência de cada juiz entre repetições",
+        "",
+        "Os julgamentos de cada bloco sobre estas respostas, do juiz, da rubrica e das execuções da tabela acima. "
+        "Exata: parte dos pares de julgamentos da mesma resposta com a mesma nota; ±1: diferença de até 1 ponto. Sem "
+        "pares, o juiz julgou cada resposta uma vez só.",
+        "",
+    ]
+    return lines + _run_tables([(_block_name(block), block["usage"]) for block in blocks])
 
 
 def _import_notes(removed: list[str], outside: list[str]) -> list[str]:
@@ -1181,6 +1447,45 @@ def _import_notes(removed: list[str], outside: list[str]) -> list[str]:
 
 
 # --- the two commands -----------------------------------------------------------------------------------------------
+
+BLOCK_LABELS = "ABCDEFGH"  # the blocks asked for; O is the original judge
+
+
+def _rubric(rubric: str | None) -> str:
+    """The stored version of a rubric ("3" or "4"; `v3` and `v4` are accepted); `None` is judge.v3."""
+    if rubric is None:
+        return RUBRIC_VERSION
+    version = rubric[1:] if rubric[:1] in ("v", "V") else rubric
+    if version not in RUBRIC_VERSIONS:
+        raise CalibrationError(
+            f"rubrica desconhecida: {rubric!r} (use {', '.join('v' + v for v in RUBRIC_VERSIONS)})."
+        )
+    return version
+
+
+def _other_blocks(
+    conn: sqlite3.Connection,
+    filled: Filled,
+    request_ids: list[str],
+    first: tuple[str | None, str | None, str],
+    extra: list[tuple[str, str | None, str]],
+) -> list[tuple[str, str, str, list[Pair]]]:
+    """The blocks after the first: each judge's execution under its rubric, linked to the same ratings (and not
+    stored). A block asked twice is an error: it would count the same judgements twice."""
+    if len(extra) + 1 > len(BLOCK_LABELS):
+        raise CalibrationError(f"no máximo {len(BLOCK_LABELS)} blocos (--judge) por relatório.")
+    seen = {first}
+    blocks = []
+    for name, wanted, version in extra:
+        run = choose_run(conn, request_ids, name, wanted, version)
+        if (name, run, version) in seen:
+            raise CalibrationError(
+                f"o bloco {name} na execução {run!r} sob judge.v{version} foi pedido mais de uma vez; nada foi "
+                "alterado."
+            )
+        seen.add((name, run, version))
+        blocks.append((name, run, version, link(conn, filled, name, run, version)))
+    return blocks
 
 
 def _token(text: str) -> str:
@@ -1218,6 +1523,8 @@ def import_filled(
     now=None,
     judge: str | None = None,
     judge_run: str | None = None,
+    rubric: str | None = None,
+    more: Sequence[tuple[str, str | None, str | None]] = (),
 ) -> dict:
     """`eval-calibrate --import`: validates the file, stores the ratings and measures the agreement. Nothing is
     written unless every line is valid and has its judgement in `run_evaluations`.
@@ -1227,15 +1534,28 @@ def import_filled(
     own judge). The ratings must equal those the original campaign stored; the report then shows that campaign's judge
     beside the requested one, against the same ratings. `judge_run` names the execution of the requested judge to
     read (required when it has more than one on these answers); the original judge is read in the executions of the
-    judgements its ratings are linked to."""
+    judgements its ratings are linked to.
+
+    `rubric` (the stored version, "3" by default, spec v0.10.0 D1) is the rubric of the requested judge's judgements;
+    `more` adds other blocks, each a `(judge, execution, rubric)` (the execution may be `None` when the judge has one
+    under that rubric). With a rubric other than judge.v3 or with `more`, the report has one block per judge,
+    execution and rubric beside the original judge, the table of the four general claims with no source and the D2
+    line (spec v0.10.0 D2); otherwise it is the v0.9.0 report, unchanged. The ratings are linked to the first block."""
     filled = read_filled(_read_text(path))
     meta = dict(filled.meta)
     original = meta.get("campaign")
     if judge_run is not None and judge is None:
         raise CalibrationError("--judge-run só vale com --judge: escolhe a execução do juiz comparado.")
+    if (rubric is not None or more) and judge is None:
+        raise CalibrationError(
+            "--rubric e os blocos a mais só valem com --judge: são a rubrica de cada juiz comparado."
+        )
+    version = _rubric(rubric)
+    extra = [(other, other_run, _rubric(other_rubric)) for other, other_run, other_rubric in more]
+    for name in [judge, *(other for other, _, _ in extra)] if judge is not None else []:
+        if name.count("/") != 1 or not all(name.split("/")):
+            raise CalibrationError(f"--judge precisa ser <provedor>/<modelo>, recebi {name!r}.")
     if judge is not None:
-        if judge.count("/") != 1 or not all(judge.split("/")):
-            raise CalibrationError(f"--judge precisa ser <provedor>/<modelo>, recebi {judge!r}.")
         if not original:
             raise CalibrationError(
                 "com --judge, o arquivo precisa da linha 'amostra:' com a campanha original (a das notas humanas)."
@@ -1261,8 +1581,9 @@ def import_filled(
         raise CalibrationError("o avaliador (--rater) não pode ficar vazio.")
     before = original_pairs(conn, original, rater, filled.ratings) if judge is not None else None
     request_ids = [rating.request_id for rating in filled.ratings]
-    run = choose_run(conn, request_ids, judge, judge_run) if judge is not None else None
-    pairs = link(conn, filled, judge, run)
+    run = choose_run(conn, request_ids, judge, judge_run, version) if judge is not None else None
+    pairs = link(conn, filled, judge, run, version if judge is not None else None)
+    others = _other_blocks(conn, filled, request_ids, (judge, run, version), extra)
     check_same_sample(conn, meta["campaign"], rater, pairs)
     stored = store(conn, meta["campaign"], rater, pairs, filled.blank)
     seed = int(meta["seed"]) if str(meta.get("seed", "")).lstrip("-").isdigit() else DEFAULT_SEED
@@ -1281,10 +1602,39 @@ def import_filled(
             "pairs": before,
             "analysis": analyze(before, seed),
             "runs": {
-                "A": judge_runs(conn, request_ids, judge, [run]),
+                "A": judge_runs(conn, request_ids, judge, [run], version),
                 "B": judge_runs(conn, request_ids, original_judge, original_runs),
             },
         }
+        if extra or version != RUBRIC_VERSION:
+            original_rubric = ", ".join(sorted({p.judgement["rubric_version"] for p in before}))
+            asked = [(judge, run, version, pairs), *others]
+            comparison |= {
+                "rubric": version,
+                "blocks": [
+                    {
+                        "label": "O",
+                        "judge": original_judge,
+                        "rubric": original_rubric,
+                        "runs": original_runs,
+                        "pairs": before,
+                        "analysis": comparison["analysis"],
+                        "usage": comparison["runs"]["B"],
+                    },
+                    *[
+                        {
+                            "label": BLOCK_LABELS[index],
+                            "judge": name,
+                            "rubric": block_rubric,
+                            "runs": [block_run],
+                            "pairs": block_pairs,
+                            "analysis": analysis if index == 0 else analyze(block_pairs, seed),
+                            "usage": judge_runs(conn, request_ids, name, [block_run], block_rubric),
+                        }
+                        for index, (name, block_run, block_rubric, block_pairs) in enumerate(asked)
+                    ],
+                ],
+            }
     return {
         "meta": meta,
         "rater": rater,
