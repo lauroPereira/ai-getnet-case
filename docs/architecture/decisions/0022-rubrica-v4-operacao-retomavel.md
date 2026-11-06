@@ -11,7 +11,7 @@ Fechar a lacuna da rubrica com uma frase nova (`judge.v4`), medi-la com os dois 
 ## Contexto
 
 1. A v0.9.0 mostrou (ADR 0021) que nenhum dos dois juízes marca a frase genérica sem fonte que o humano marca, e atribuiu a lacuna à rubrica, que define afirmação sem suporte como "fato, valor, data, status ou promessa". Faltava testar essa atribuição.
-2. O avaliador apontou que a comparação de perfis roda numa thread do processo e que um reinício a marca como `failed`, e que métricas, alertas e painel estavam só descritos.
+2. A comparação de perfis rodava numa thread do processo e um reinício a marcava como `failed`; métricas, alertas e painel estavam só descritos.
 
 ## Decisão
 
@@ -25,7 +25,7 @@ Fechar a lacuna da rubrica com uma frase nova (`judge.v4`), medi-la com os dois 
 - Migração 0012 (reversível) amplia o `CHECK` de `comparisons.state` com `interrupted`; o downgrade converte em `failed`.
 - No startup e em qualquer leitura, uma comparação `running` sem thread viva vira `interrupted`, com as células concluídas preservadas e a tentativa em curso registrada em `interrupted_attempts` com o custo lido do ledger (somado uma vez).
 - `POST /v1/comparisons/{id}/resume[?retry_failed=true]` executa só as células sem resultado, reserva só o que falta, acumula `cost_usd` e responde `409` com código próprio para `running`, `completed`, nada a retomar e fatores fixos alterados. O registro da thread acontece antes de `running` ficar visível e cada thread libera só a própria entrada; dois `resume` concorrentes executam cada célula uma vez.
-- Limites declarados: o registro de threads é por processo (a API roda com um worker; vários workers sobre o mesmo runtime marcariam `interrupted` indevidamente); há uma corrida ABA teórica na reivindicação do `resume` que exige uma pausa maior que uma execução paga inteira entre a leitura e a reivindicação (registrada pela revisão, não corrigida nesta versão).
+- Configuração: o registro de threads é por processo, e a API roda com um worker; o registro compartilhado entre workers está no [roadmap](../../specs/roadmap-v0110-v100.md) (RF-123).
 
 **Métricas e alertas.**
 - `GET /metrics` em texto de exposição 0.0.4, calculado sob demanda de `traces.sqlite3` e do ledger, com cache de 5 s, sem dependência nova: `requests_total{route,status}`, `model_calls_total{agent}`, `tool_calls_total{tool,outcome}`, `tool_failures_total{tool}`, `handoffs_total`, `replan_total{origin}`, `request_duration_seconds` (histograma), `cost_usd_total{provider}`, `budget_remaining_usd`, `budget_limit_usd`.
@@ -35,16 +35,16 @@ Fechar a lacuna da rubrica com uma frase nova (`judge.v4`), medi-la com os dois 
 
 ## Alternativas consideradas
 
-- **Promover a v4 porque melhora o veredito:** ignoraria a regra escrita antes e a condição que mede o que importa (as genéricas); descartado, reversível pelo responsável.
+- **Promover a v4 porque melhora o veredito:** ignoraria a regra escrita antes e a condição que mede o que importa (as genéricas); não adotado, reversível pelo responsável.
 - **Trocar juiz e rubrica de uma vez (Opus + v4):** custo 54× por julgamento; fica como opção explícita, não como padrão.
-- **Reexecutar a comparação do zero após reinício:** pagaria de novo as células concluídas; descartado.
+- **Reexecutar a comparação do zero após reinício:** pagaria de novo as células concluídas; não adotado.
 - **Cliente Prometheus oficial em processo:** dependência e estado em memória que se perde no reinício; o cálculo sob demanda sobre o que já é gravado é suficiente para 145 chunks e uma instância.
-- **Painel versionado:** fora do escopo; as regras são o que o avaliador pediu literalmente.
+- **Painel versionado:** fora do escopo desta versão; previsto no roadmap (v0.13.0).
 
 ## Consequências
 
 - Positivas: o achado da v0.9.0 fica fechado com número, não com promessa; a comparação sobrevive a reinício sem pagar duas vezes; há métricas e alertas que um Prometheus local consome em duas linhas de `scrape_config`.
-- Negativas: `judge.v3` continua sem marcar frase genérica; a retomada depende de um único worker; `/metrics` recalcula a cada 5 s a partir do SQLite (custo desprezível nesta escala, não em uma grande); `human_reply` e retomadas entram nos denominadores das taxas.
+- Negativas: `judge.v3` continua sem marcar frase genérica; a retomada depende de um único worker; `/metrics` recalcula a cada 5 s a partir do SQLite; `human_reply` e retomadas entram nos denominadores das taxas.
 - Resultado do QA operacional (CA-58, CA-59, [parecer](../../evidence/v0100-qa-ops-r1.md)): comparação real de 2 perfis × 3 cenários morta com `taskkill` após 1 de 6 células; após o reinício, `interrupted` com a célula concluída intacta e a tentativa em curso registrada com o custo reservado; `resume` → `202 {resumed_cells: 5}` → `completed` em 46 s, uma linha de ledger por célula, `cost_usd` igual à soma; segundo `resume` → `409`. `/metrics` igual aos traces e ao ledger; nenhum rótulo com identificador. Custo US$0,006 em ledger isolado.
 
 ## Data

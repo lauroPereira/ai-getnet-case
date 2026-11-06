@@ -5,7 +5,7 @@
 Aceita pelo responsável em 2026-10-27 com o plano v0.5.0. Complementa ADR0009;
 não a substitui.
 
-## Contexto e decisão proposta
+## Contexto e decisão
 
 Registro SQLite de documentos/rascunhos/versões, ponteiro ativo/anterior e
 eventos; coleção Qdrant por candidata. Conteúdo congelado e origem imutável.

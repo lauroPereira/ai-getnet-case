@@ -10,11 +10,11 @@ Usar OpenAI como provedor baseline dos agentes, embeddings e busca web, com uma 
 aceita
 ```
 
-Aceita pelo responsável em 2026-10-26. Os identificadores de modelo são configuração: a tarefa 02 confirma disponibilidade e preços sem alterar esta decisão.
+Aceita pelo responsável em 2026-10-26. Os identificadores de modelo são configuração; a tarefa 02 confirmou disponibilidade e preços ([evidência](../../evidence/2026-10-26-acesso-e-precos-dos-modelos.md)).
 
 ## Contexto
 
-O responsável tem créditos em OpenAI e DeepSeek e um teto total de US$5. O desafio pede busca web para perguntas gerais. O avaliador precisa subir o sistema com o mínimo de credenciais. O seletor LLM/Jev no Router foi pedido pelo responsável para demonstração e comparação, sem alterar o restante do fluxo.
+O responsável tem créditos em OpenAI e DeepSeek e um teto total de US$5. O desafio pede busca web para perguntas gerais. Quem roda o sistema precisa subi-lo com o mínimo de credenciais. O seletor LLM/Jev no Router foi pedido pelo responsável para demonstração e comparação, sem alterar o restante do fluxo.
 
 ## Decisão
 
@@ -31,7 +31,7 @@ O responsável tem créditos em OpenAI e DeepSeek e um teto total de US$5. O des
 
 ## Consequências
 
-O avaliador precisa apenas de `OPENAI_API_KEY`. O custo é controlado antes de gastar. A comparação Jev/LLM depende de acesso viável dentro do orçamento e não bloqueia o núcleo. O controle local não enxerga o uso das mesmas contas por outros projetos.
+Rodar o sistema exige apenas `OPENAI_API_KEY`. O custo é controlado antes de gastar. A comparação Jev/LLM não bloqueia o núcleo; foi exercitada com chamadas reais na v0.5.0. O controle local não enxerga o uso das mesmas contas por outros projetos.
 
 ## Data
 

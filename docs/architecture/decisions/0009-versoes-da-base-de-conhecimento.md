@@ -21,7 +21,7 @@ O responsável quer editar a documentação fictícia pela interface. Uma versã
 - `kb_versions` com estados `building`, `testing`, `ready`, `active` e `retired`; cada versão aponta para uma coleção própria (`getnet_kb_vN`) e um manifesto (documentos, hashes, modelo de embedding).
 - Rascunhos editam só documentos `simulated_internal`; documentos `public_official` são somente leitura.
 - Ativação troca o ponteiro de forma atômica; execuções em andamento terminam na versão que começaram.
-- Mantêm-se a ativa, a candidata e a anterior; as demais são removidas.
+- Mantêm-se a ativa, a candidata e a anterior; as demais são removidas. A [decisão 0014](0014-ciclo-kb-v050.md) não apaga coleções existentes automaticamente.
 - Trocar o modelo de embedding também cria uma nova versão.
 
 ## Alternativas consideradas

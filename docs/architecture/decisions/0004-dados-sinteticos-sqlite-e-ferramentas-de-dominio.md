@@ -31,7 +31,7 @@ O Customer Support precisa de pelo menos duas ferramentas sobre dados do usuári
 
 ## Consequências
 
-Ferramentas testáveis diretamente, sem rede. Isolamento entre clientes verificado em um único ponto. O MCP entra sem reescrever o domínio, mas a demonstração de MCP fica para a fatia 2.
+Ferramentas testáveis diretamente, sem rede. Isolamento entre clientes verificado em um único ponto. O MCP entra sem reescrever o domínio; a demonstração de MCP veio na v0.2.0.
 
 ## Data
 

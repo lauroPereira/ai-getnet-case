@@ -18,7 +18,7 @@ A decisão 0004 previu o MCP como adaptador posterior. As ferramentas já têm s
 
 ## Decisão
 
-- Comando `merchant-assistant mcp --customer <id>` inicia o servidor stdio com o contexto de cliente fixado pelo processo, nunca por argumento de ferramenta.
+- Comando `merchant-assistant mcp --customer <id>` inicia o servidor stdio com o contexto de cliente fixado pelo processo, nunca por argumento de ferramenta. Na v0.7.0, `--customer` saiu: o lojista vem do token em `MERCHANT_ASSISTANT_TOKEN` ([decisão 0017](0017-identidade-principal-escopos.md)).
 - Cada ferramenta MCP chama `registry.execute`; schemas MCP derivam dos mesmos modelos Pydantic.
 - Erros estruturados viram resultados de ferramenta com `isError` e o mesmo código.
 - Demonstração: script cliente MCP que lista ferramentas, chama duas e mostra o bloqueio de recurso de outro cliente; teste automatizado com cliente em memória.

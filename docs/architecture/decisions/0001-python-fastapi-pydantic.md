@@ -24,7 +24,7 @@ Python 3.13, FastAPI servido por uvicorn, Pydantic v2 para todos os contratos e 
 
 - **Node.js/TypeScript:** viável, mas com menos bibliotecas maduras para RAG e avaliação e sem experiência anterior aproveitável.
 - **Flask:** exigiria validação e documentação OpenAPI manuais.
-- **Python 3.12:** mais conservador, mas a máquina de desenvolvimento já usa 3.13 e as dependências previstas o suportam; volta a ser opção se alguma dependência falhar.
+- **Python 3.12:** mais conservador, mas a máquina de desenvolvimento já usa 3.13 e as dependências previstas o suportam.
 
 ## Consequências
 
