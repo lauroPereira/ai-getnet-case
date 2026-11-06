@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.10.0, validated by independent reviews and real-model QA: a profile comparison survives an API restart (`interrupted`, then `POST .../resume` finishes it without paying any cell twice, proven with a real `taskkill`), `GET /metrics` exposes Prometheus text with versioned alert rules, and the judge rubric `judge.v4` was measured against the human calibration under a rule written beforehand (v3 stays the default; [report](docs/evidence/v0100-juiz-v4.md)). v0.9.0: hybrid retrieval beats dense on the development set and on a sealed retrieval holdout ([report](docs/evidence/v090-retrieval.md)) and is now the default; a pre-registered judge experiment (`claude-opus-5-5` vs DeepSeek against 24 human-rated answers, [report](docs/evidence/v090-juiz-opus.md)) kept DeepSeek as the default judge. v0.8.0 ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md), [human calibration](docs/evidence/v080-calibracao.md)) is unchanged underneath. The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence. Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
+**Status:** v0.10.0, validated by independent reviews and real-model QA at every version. Offline, the backend strict suite passes (**2,147 tests**, Ruff clean). v0.7.0: real human in the loop and JWT identity ([result](docs/evidence/v070-resultado.md)). v0.8.0: replanning (four scenarios 3/3 with real models, at most 2 hops), business journeys **13/13, 12/13 and 12/13** (13/13 by the independent judge), conversations **4/4**, Docker smoke 10/10, sealed holdout run once **62/75**, 24-answer human calibration ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md)). v0.9.0: hybrid retrieval beats dense on dev and on a sealed retrieval holdout and is the default ([report](docs/evidence/v090-retrieval.md)); a pre-registered judge experiment kept DeepSeek over Claude Opus ([report](docs/evidence/v090-juiz-opus.md)). v0.10.0: a profile comparison survives a real `taskkill` and resumes without paying any cell twice ([QA](docs/evidence/v0100-qa-ops-r1.md)), `GET /metrics` with versioned alert rules, and rubric `judge.v4` measured against the human calibration under a rule written beforehand, v3 kept ([report](docs/evidence/v0100-juiz-v4.md)). The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence.
 
 ### Where each part of the challenge lives
 
@@ -37,7 +37,7 @@ Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `
 
 ## Response to the evaluator's feedback
 
-The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the top of the ranking. Versions 0.7.0 and 0.8.0 answer the four largest remarks; the rest is listed under [next steps](#next-steps) with what is in progress. Each version went through the same cycle: a specification, tasks, an independent review in a fresh context, QA with real models under a fixed budget cap, and a candidate sealed by hashes before QA ([reports](docs/relatorios/README.md)).
+The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the top of the ranking. Versions 0.7.0 to 0.10.0 answer every remark except the external access test; what remains is listed under [next steps](#next-steps). Each version went through the same cycle: a specification, tasks, an independent review in a fresh context, QA with real models under a fixed budget cap, and a candidate sealed by hashes before QA ([reports](docs/relatorios/README.md)).
 
 | Dimension (weight, V4 score) | Remark | What changed | Version | Evidence |
 | --- | --- | --- | --- | --- |
@@ -128,6 +128,8 @@ merchant-assistant eval --campaign v080-qa --include-replan --judge --repeat 3 -
 merchant-assistant eval --campaign v080-qa --judge-repeat 3 --answers-from docs/evidence/v080-all.json --name v080-all-judge  # judge variation; the agent does not run
 merchant-assistant eval --campaign v080-qa --judge --repeat 3 --split holdout_v080  # sealed holdout: once, as the last technical step
 merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.json   # CSV for the owner to rate, without the judge's scores; no model call
+merchant-assistant eval-retrieval --mode hybrid --split dev --out docs/evidence/retrieval.md   # Recall@6, MRR, nDCG@6 per mode; --split holdout_v090 once, last
+merchant-assistant eval --judge-repeat 3 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --rubric v4 --name my-run  # re-judge the calibration sample under another rubric or judge
 merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
 merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.001)
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
@@ -488,7 +490,7 @@ The scripted model follows simple rules for each agent, so the whole system (rou
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Validated evidence (v0.8.0, real models).** Strict suite **1,997 tests**, Ruff clean. The V4 feedback asked for
+**Validated evidence (v0.8.0 to v0.10.0, real models).** Strict suite **2,147 tests** at v0.10.0 (1,997 at v0.8.0), Ruff clean. The V4 feedback asked for
 aggregated groundedness, correctness, relevance and usefulness, an independent judge, repeated runs, a holdout and
 human review; this is the main table, from the [campaign](docs/evidence/v080-all-r3.md), the
 [holdout](docs/evidence/v080-holdout-r7.md), the [calibration](docs/evidence/v080-calibracao.md) and the
