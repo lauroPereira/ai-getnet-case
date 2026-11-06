@@ -37,8 +37,21 @@ Nenhuma nota humana nova. Se o Opus recusar algum julgamento, vale a regra opera
 
 ## Resultado da rodada
 
-(Preenchido pelo Supervisor após o QA.)
+Registrado pelo Supervisor em 2026-11-06 a partir dos pareceres do QA (juiz r1, operação r1), candidato r1 (`92230de`).
+
+| Momento | Resultado | Evidência |
+| --- | --- | --- |
+| 1 (v4 com DeepSeek) | 72/72 julgamentos `judge.v4`, US$0,025 | [QA](../evidence/v0100-qa-juiz-r1.md) |
+| 2 (v4 com Opus) | sonda 3/3; 72/72, US$1,37 no ledger Anthropic (restam US$1,14 do cap) | [QA](../evidence/v0100-qa-juiz-r1.md) |
+| 3 (v3 × v4) | DeepSeek: veredito 0,667 → 0,792, critérios dentro de 0,05, 0 de 4 genéricas → regra D2 não atendida; Opus: 0,875 → 0,917, S01 e S21 marcadas, dentro de 0,05. `judge.v3` continua o padrão; a lacuna é de rubrica e de modelo | [relatório](../evidence/v0100-juiz-v4.md), ADR 0022 |
+| 4 (comparação interrompida) | 2 perfis × 3 cenários; `taskkill` após 1 de 6 células; reinício marca `interrupted`, célula concluída intacta, tentativa em curso com custo reservado registrado; log do startup cita o id | [QA](../evidence/v0100-qa-ops-r1.md) |
+| 5 (retomada) | `202 {resumed_cells: 5}` → `completed` em 46 s; uma linha de ledger por célula; `cost_usd` = células + tentativa; segundo `resume` → `409 comparison_completed` | [QA](../evidence/v0100-qa-ops-r1.md) |
+| 6 (métricas) | `/metrics` coerente com traces e ledger (6 requisições, 24 chamadas de modelo, histograma com `+Inf` = `_count`, custo por provedor igual ao liquidado, `budget_remaining_usd` = `/ready`); nenhum rótulo com identificador | [QA](../evidence/v0100-qa-ops-r1.md) |
+| 7 (regras) | 4 regras, `runbook_url` absoluto, métricas existentes | [QA](../evidence/v0100-qa-ops-r1.md) |
+| 8 (regressão) | Suíte estrita 2.148 aprovados; 44 casos e 4 conversas offline iguais | pareceres 83 a 85 |
+
+Custo: projeto US$0,025 (juiz) + US$0,006 (operação, ledger isolado); Anthropic US$1,37. Rodadas de correção pedidas pela revisão: uma por tarefa.
 
 ## Como terminou
 
-(Preenchido pelo Supervisor após o QA.)
+O responsável não deu nota nova e mesmo assim soube que a frase que faltava na rubrica funciona, mas só com um juiz que a entende. O operador perdeu a API no meio de uma comparação e a retomou sem pagar de novo pelo que já tinha rodado. O avaliador técnico encontrou `/metrics` e as regras de alerta no lugar onde antes havia só uma frase dizendo que viriam.

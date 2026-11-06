@@ -2,6 +2,38 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [0.10.0] — 2026-11-06 (validated: review and real QA)
+
+Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rules ([spec](docs/specs/rubrica-operacao-v0100.md), [story](docs/historias/rubrica-operacao-v0100.md), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md), tasks 83–86).
+
+### Added
+- **Rubric `judge.v4`** (`prompts/judge.v4.md`, v3 untouched): an unsupported claim also covers a general claim stated as fact with no source in the evidence. `--rubric v3|v4` in `eval --judge-repeat` and `eval-calibrate --import`, resolved once (`--rubric` > configured default > v3); each judgement records the rubric it used. `eval-calibrate` accepts several `--judge`/`--judge-run`/`--rubric` triples and renders one block per (judge, execution, rubric) against the same human ratings, with the generic-claim table and the decision-rule line.
+- **Resumable comparison.** A running comparison whose process dies becomes `interrupted` on startup or on read, keeping finished cells and recording the in-flight attempt's cost; `POST /v1/comparisons/{id}/resume[?retry_failed=true]` runs only the missing cells, reserves only what is left, accumulates `cost_usd` and answers `409 comparison_running | comparison_completed | nothing_to_resume | fixed_factors_changed`. The thread registry is claimed before `running` is visible and each thread releases only itself, so concurrent resumes run each cell once.
+- **`GET /metrics`** in Prometheus text (exposition 0.0.4, no new dependency), computed on demand from `traces.sqlite3` and the ledger with a 5 s cache: `requests_total{route,status}`, `model_calls_total{agent}`, `tool_calls_total{tool,outcome}`, `tool_failures_total{tool}`, `handoffs_total`, `replan_total{origin}`, `request_duration_seconds` (histogram), `cost_usd_total{provider}`, `budget_remaining_usd`, `budget_limit_usd`. Every label comes from a closed set in the code (anything else is `other`; a drift test pins the sets); an empty, corrupt or locked store never returns 500 (the last complete reading is served).
+- **`alerts/rules.yml`**: four Prometheus rules (budget below 10% of the cap, tool failure rate above 5% in 15 min, handoff rate above 30% in 1 h, p95 duration above 20 s in 15 min) with absolute runbook links; a test checks that every metric they cite exists.
+
+### Changed
+- `prompt_versions()` reports the configured judge rubric (v3), not the newest prompt file, so `/ready`, `prompt_set` and comparison reuse are unchanged.
+- The `eval` report names the rubric actually used.
+
+### Contract and data
+- **Migration 0012** (reversible): `comparisons.state` accepts `interrupted` (table recreated with the wider `CHECK`; downgrade turns `interrupted` into `failed`). Schema version 12.
+- New route `POST /v1/comparisons/{comparison_id}/resume`; `GET /v1/comparisons/{id}` may return `interrupted`, `interrupted_attempts` and `previous_request_ids`. New public endpoint `GET /metrics` (same policy as `/ready`). Judgement records gain the rubric used; no other schema change.
+
+### Validation
+- Backend strict script **2,148 tests passed**, Ruff and skill checks passed; independent review per task in two rounds ([83](docs/evidence/v0100-reviewer-t83.md), [84](docs/evidence/v0100-reviewer-t84.md), [85](docs/evidence/v0100-reviewer-t85.md)); candidate [r1](docs/evidence/v0100-candidato-r1.json).
+- **Rubric experiment** ([report](docs/evidence/v0100-juiz-v4.md), [QA](docs/evidence/v0100-qa-juiz-r1.md)): the same 24 human-rated answers re-judged 3× under `judge.v4` by DeepSeek (US$0.025) and by `claude-opus-5-5` (US$1.37 on the separate Anthropic ledger), 144/144 valid. Decision rule written beforehand (spec D2): DeepSeek v4 vs v3: `unsupported_claim` agreement 0.667 → 0.792, criteria within 0.05, but 0 of 4 generic claims flagged, so v4 is **not** promoted; Opus v4 vs v3: 0.875 → 0.917 and 2 of 4 generic claims flagged (S01, S21) with no criterion worse than 0.05. The gap is rubric and model together.
+- **Operation** ([QA](docs/evidence/v0100-qa-ops-r1.md)): real comparison of 2 profiles × 3 scenarios; the API process killed with `taskkill` after 1 of 6 cells; after restart the comparison read `interrupted` with the finished cell intact and the in-flight attempt's reserved cost recorded; `resume` answered `202 {resumed_cells: 5}` and the comparison reached `completed` with one ledger line per cell and `cost_usd` equal to the sum of cells plus the attempt; a second `resume` got `409 comparison_completed`. `/metrics` matched the traces and the ledger (6 requests, 24 model calls, `+Inf` = `_count`, costs per provider equal to the settled ledger, `budget_remaining_usd` equal to `/ready`); no label carried an identifier. Cost US$0.006 in an isolated ledger.
+
+### Limitations
+- `judge.v3` still does not flag generic claims; `judge.v4` does so only with a stronger model (next step: Sonnet 5.5 under v4 as a cost middle ground).
+- The comparison thread registry is per process: run the API with a single worker (the compose does). A narrow ABA race in the resume claim needs a pause longer than a whole paid execution between check and claim; documented in ADR 0022, not fixed.
+- The interrupted attempt's cost is the reserved amount (`cost_is_estimate: true`), kept as reserved in the ledger; the attempt leaves no trace row, so it is absent from `requests_total`.
+- `/metrics` is public like `/ready` (counts only); restrict by network or token in production. Operator replies and resumes enter the rate denominators.
+
+### Return to 0.9.0
+- Stop the stack, run `merchant-assistant migrate --to 11` against the runtime (any `interrupted` comparison becomes `failed`) and check out the 0.9.0 release. `judge.v4` and `/metrics` leave no data behind that 0.9.0 cannot read.
+
 ## [0.9.0] — 2026-11-06 (validated: review and real QA)
 
 Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v090.md), [story](docs/historias/juiz-retrieval-v090.md), [ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md), [ADR 0021](docs/architecture/decisions/0021-juiz-modelo-e-regua.md), tasks 79–82).

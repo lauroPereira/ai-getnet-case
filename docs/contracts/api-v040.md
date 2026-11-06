@@ -65,6 +65,8 @@ Correções da revisão r1 (tarefa 60): `POST /v1/runs/{id}/evaluations` respond
 
 ## Acréscimos da v0.10.0
 
+`GET /metrics` (público, como `/ready`): métricas agregadas em texto de exposição Prometheus 0.0.4, calculadas dos traces e do ledger, só com rótulos de conjuntos fechados ([especificação v0.10.0](../specs/rubrica-operacao-v0100.md), D4, CA-59; tarefa 85). Regras de alerta em `alerts/rules.yml`.
+
 Comparação retomável ([especificação v0.10.0](../specs/rubrica-operacao-v0100.md), D3, CA-58; tarefa 84). As rotas acima mantêm o comportamento; a resposta de `GET /v1/comparisons/{comparison_id}` ganha um estado e campos opcionais nas células.
 
 | Rota | Acesso | Efeito |

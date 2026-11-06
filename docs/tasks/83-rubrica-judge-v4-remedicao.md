@@ -52,3 +52,7 @@ Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `0266652` (
 ## Status
 
 Rodada 2 implementada pelo Developer em 2026-11-05; aguarda a rodada 2 da revisão. Rodada 1 revisada com correções necessárias (P2-1, P2-2). Aberta pelo Supervisor em 2026-11-05.
+
+## Fechamento (Supervisor, 2026-11-06)
+
+Concluída: revisão r2 apta; QA r1 apto (144/144 julgamentos); decisão D2: `judge.v3` continua o padrão (ADR 0022).

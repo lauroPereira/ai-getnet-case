@@ -45,7 +45,7 @@ Fechar a lacuna da rubrica com uma frase nova (`judge.v4`), medi-la com os dois 
 
 - Positivas: o achado da v0.9.0 fica fechado com número, não com promessa; a comparação sobrevive a reinício sem pagar duas vezes; há métricas e alertas que um Prometheus local consome em duas linhas de `scrape_config`.
 - Negativas: `judge.v3` continua sem marcar frase genérica; a retomada depende de um único worker; `/metrics` recalcula a cada 5 s a partir do SQLite (custo desprezível nesta escala, não em uma grande); `human_reply` e retomadas entram nos denominadores das taxas.
-- Resultado do QA operacional (CA-58, CA-59): (a preencher na aceitação a partir de `docs/evidence/v0100-qa-ops-r1.md`).
+- Resultado do QA operacional (CA-58, CA-59, [parecer](../../evidence/v0100-qa-ops-r1.md)): comparação real de 2 perfis × 3 cenários morta com `taskkill` após 1 de 6 células; após o reinício, `interrupted` com a célula concluída intacta e a tentativa em curso registrada com o custo reservado; `resume` → `202 {resumed_cells: 5}` → `completed` em 46 s, uma linha de ledger por célula, `cost_usd` igual à soma; segundo `resume` → `409`. `/metrics` igual aos traces e ao ledger; nenhum rótulo com identificador. Custo US$0,006 em ledger isolado.
 
 ## Data
 

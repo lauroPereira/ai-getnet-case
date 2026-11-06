@@ -63,3 +63,7 @@ Developer, 2026-11-05, mesma branch, base `5d1ea89`. Commits `873007c` (OpenAPI 
 ## Status
 
 Rodada 2 implementada pelo Developer em 2026-11-05 (P2-1, P2-2 e P2-3 fechados, P3-1 a P3-3 tratados); aguarda a rodada 2 da revisão e o QA real da D6 (CA-58 com `taskkill`). Critérios de aceite da spec não marcados (cabe ao Supervisor).
+
+## Fechamento (Supervisor, 2026-11-06)
+
+Concluída: revisão r2 apta (P3-4 e P3-5 declarados como limites); QA operacional apto (taskkill real, `interrupted`, `resume`, uma linha de ledger por célula).

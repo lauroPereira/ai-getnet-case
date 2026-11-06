@@ -27,8 +27,8 @@ Tarefas 83 a 85 com parecer apto (83 pode ir ao QA antes de 84 e 85, momentos 1 
 
 ## Validação
 
-(Preenchida pelo Supervisor.)
+Supervisor, 2026-11-06: candidato r1 ([manifesto](../evidence/v0100-candidato-r1.json)); QA do juiz r1 e QA operacional r1 aptos; D2 decidida pela regra prévia (v3 continua); ADR 0022 aceita; CHANGELOG 0.10.0, README (status, tabela de resposta, limitações, próximos passos, versões), contrato, história e relatório preenchidos; versão 0.10.0 no pacote e nos testes de fechamento com suíte estrita completa antes do merge.
 
 ## Status
 
-Pendente. Aberta pelo Supervisor em 2026-11-05.
+Concluída em 2026-11-06 (merge local, push e tag `v0.10.0` pelo responsável).

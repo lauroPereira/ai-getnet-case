@@ -51,3 +51,7 @@ Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `023dc61` (
 ## Status
 
 Rodada 2 implementada pelo Developer em 2026-11-05 (P2-1, P3-1, P3-2, P3-3, P3-5 e P3-6 tratados; P3-4 registrado); aguarda a rodada 2 da revisão e o `/metrics` ao vivo do QA (momento 6). Critérios de aceite da spec não marcados (cabe ao Supervisor).
+
+## Fechamento (Supervisor, 2026-11-06)
+
+Concluída: revisão r2 (ver parecer); QA operacional apto (`/metrics` coerente com traces e ledger; regras com métricas existentes).
