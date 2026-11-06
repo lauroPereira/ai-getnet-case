@@ -1439,7 +1439,11 @@ def comparison_create(payload: ComparisonCreateRequest, request: Request, princi
     return JSONResponse(status_code=202, content={"comparison_id": comparison_id, "state": "running"})
 
 
-@router.post("/comparisons/{comparison_id}/resume", status_code=202, responses={409: {"model": ErrorBody}})
+@router.post(
+    "/comparisons/{comparison_id}/resume",
+    status_code=202,
+    responses={status: {"model": ErrorBody} for status in (404, 409, 422, 429)},
+)
 def comparison_resume(comparison_id: str, request: Request, retry_failed: bool = False, principal=READER):
     """Continues an `interrupted`, `partial` or `failed` comparison (task 84): cells with a recorded result are not
     run again; failed cells run again only with `retry_failed=true`. `409 comparison_running`,
