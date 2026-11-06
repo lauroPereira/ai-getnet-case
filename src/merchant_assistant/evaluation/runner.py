@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from merchant_assistant.api.schemas import MessageRequest
 from merchant_assistant.evaluation import aggregate, evidence
-from merchant_assistant.evaluation.judge import CRITERIA, Judge, judge_usage, save_evaluation
+from merchant_assistant.evaluation.judge import CRITERIA, RUBRIC_VERSION, Judge, judge_usage, save_evaluation
 from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import CallSpec, Usage
@@ -521,10 +521,11 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
     if "judge_web_note" in o:
         web = o["judge_web_note"]
+        rubric = (config.get("judge_config") or {}).get("rubric_version", RUBRIC_VERSION)  # the one used (v0.10.0 D1)
         lines += [
             "",
             f"Respostas julgadas sob a nota de busca web: {web['answers']} de {web['judged_answers']}. O texto da "
-            "busca não é gravado e o juiz só vê os títulos das fontes: o `judge.v3` não rebaixa o que não pode "
+            f"busca não é gravado e o juiz só vê os títulos das fontes: o `judge.v{rubric}` não rebaixa o que não pode "
             "conferir, mas mantém a afirmação sem suporte sobre dado da conta do lojista sem resultado de "
             f"ferramenta. Dessas respostas, {web['unsupported']} foram marcadas como afirmação sem suporte.",
         ]

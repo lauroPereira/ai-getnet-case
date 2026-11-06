@@ -35,7 +35,9 @@ from merchant_assistant.evaluation.judge import (
     RUBRIC_VERSION,
     RUBRIC_VERSIONS,
     TOKEN_KEYS,
+    JudgeRefused,
     judge_usage,
+    rubric_version,
 )
 from merchant_assistant.guardrails.input import mask_sensitive
 
@@ -1398,6 +1400,13 @@ def render_blocks(analysis: dict, comparison: dict) -> list[str]:
             f"{D2_MIN_GENERIC}: {_yes(holds['generic'])}; (c) ±1 {within}, nenhum piora mais de {D2_TOLERANCE:.2f}: "
             f"{_yes(holds['within_one'])}. Três condições atendidas: {_yes(rule_d2['all'])}."
         )
+        others = [b for b in blocks if b is not base and b["judge"] == base["judge"] and b["rubric"] == base["rubric"]]
+        if others:  # review P3-4: say which judge.v3 block of this judge is the base when there is more than one
+            runs = ", ".join(f"`{_cell(name)}`" for name in base["runs"] or ["-"])
+            lines.append(
+                f"  - Base: {base['label']} (execução {runs}), o primeiro bloco `judge.v3` deste juiz; "
+                f"{', '.join(b['label'] for b in others)} {'fica' if len(others) == 1 else 'ficam'} fora desta linha."
+            )
     lines += [
         "",
         "## Julgamentos considerados",
@@ -1452,15 +1461,14 @@ BLOCK_LABELS = "ABCDEFGH"  # the blocks asked for; O is the original judge
 
 
 def _rubric(rubric: str | None) -> str:
-    """The stored version of a rubric ("3" or "4"; `v3` and `v4` are accepted); `None` is judge.v3."""
-    if rubric is None:
-        return RUBRIC_VERSION
-    version = rubric[1:] if rubric[:1] in ("v", "V") else rubric
-    if version not in RUBRIC_VERSIONS:
+    """The stored version of a rubric ("3" or "4"; `v3` and `v4` are accepted); `None` is the configured default.
+    The same resolution as `eval --rubric` (`judge.rubric_version`), so both commands share one default."""
+    try:
+        return rubric_version(rubric)
+    except JudgeRefused:
         raise CalibrationError(
             f"rubrica desconhecida: {rubric!r} (use {', '.join('v' + v for v in RUBRIC_VERSIONS)})."
-        )
-    return version
+        ) from None
 
 
 def _other_blocks(

@@ -23,9 +23,21 @@ class Prompt:
 
 
 def prompt_versions(prompts_dir: Path) -> dict[str, str]:
-    """Latest version of every prompt in the directory, as recorded in its front matter."""
+    """Version in use of every prompt in the directory, as recorded in its front matter: the latest file, except the
+    judge, whose version is the configured rubric (`judge.RUBRIC_VERSION`, spec v0.10.0 D1: judge.v4 exists, judge.v3
+    stays the default until task 86)."""
+    from merchant_assistant.evaluation.judge import RUBRIC_VERSION  # imported here: evaluation depends on this module
+
+    pinned = {"judge": RUBRIC_VERSION}
     names = sorted({p.name.split(".v")[0] for p in prompts_dir.glob("*.v*.md")})
-    return {name: load_prompt(prompts_dir, name).version for name in names}
+    return {
+        name: load_prompt(prompts_dir, name, _pinned(prompts_dir, name, pinned.get(name))).version for name in names
+    }
+
+
+def _pinned(prompts_dir: Path, name: str, version: str | None) -> str | None:
+    """The configured version when its file is in the directory, else `None` (the latest)."""
+    return version if version is not None and (prompts_dir / f"{name}.v{version}.md").exists() else None
 
 
 @lru_cache

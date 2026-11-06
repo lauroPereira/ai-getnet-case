@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from merchant_assistant.config import PROJECT_ROOT, Settings
 from merchant_assistant.evaluation import calibration as cal
+from merchant_assistant.evaluation import judge as judge_module
 from merchant_assistant.evaluation.judge import (
     RUBRIC_VERSION,
     JudgeRefused,
@@ -19,7 +20,7 @@ from merchant_assistant.evaluation.judge import (
 )
 from merchant_assistant.evaluation.scripted_judge import handler, scripted_judge
 from merchant_assistant.llm.base import NullMeter
-from merchant_assistant.llm.prompts import load_prompt
+from merchant_assistant.llm.prompts import load_prompt, prompt_versions
 from merchant_assistant.llm.scripted import ScriptedLLM
 
 PROMPTS = PROJECT_ROOT / "prompts"
@@ -98,3 +99,38 @@ def test_the_d2_line_computes_the_three_conditions_without_deciding():
     assert failed["holds"] == {"verdict": False, "generic": False, "within_one": False} and failed["all"] is False
     same = cal.d2_rule(block(0.667, (0.833, 0.833, 1.000, 0.917), ("S13", "S21")), before)
     assert same["all"] is True  # a verdict that does not drop is enough; it need not rise
+
+
+def test_the_default_rubric_has_one_source_for_both_commands(monkeypatch):
+    # review P2-1: `eval --rubric` and `eval-calibrate --rubric` left out resolve through judge.rubric_version
+    assert cal._rubric(None) == rubric_version(None) == RUBRIC_VERSION
+    monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")  # what task 86 would change, if D2 says so
+    assert cal._rubric(None) == rubric_version(None) == "4" and cal._rubric("v3") == "3"
+
+
+def test_prompt_versions_reports_the_configured_rubric_not_the_newest_file(monkeypatch, tmp_path):
+    # review P3-1: /ready and the run snapshots name the judge in use, not the newest file
+    versions = prompt_versions(PROMPTS)
+    assert versions["judge"] == RUBRIC_VERSION == "3" and load_prompt(PROMPTS, "judge").version == "4"
+    assert versions["router"] == load_prompt(PROMPTS, "router").version  # the others stay the latest
+    monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")
+    assert prompt_versions(PROMPTS)["judge"] == "4"
+    (tmp_path / "judge.v2.md").write_text("---\nid: judge\nversion: 2\n---\nold\n", encoding="utf-8")
+    assert prompt_versions(tmp_path) == {"judge": "2"}  # without the configured file, the latest there
+
+
+def test_the_d2_baseline_is_the_first_v3_block_of_the_same_judge():
+    # review P3-4: with more than one judge.v3 block of a judge, the original (O) or the first asked is the base
+    blocks = [
+        {"label": label, "judge": judge, "rubric": rubric}
+        for label, judge, rubric in (
+            ("O", "deepseek/deepseek-flash", "3"),
+            ("A", "deepseek/deepseek-flash", "4"),
+            ("B", "anthropic/claude-opus-5-5", "4"),
+            ("C", "deepseek/deepseek-flash", "3"),
+            ("D", "anthropic/claude-opus-5-5", "3"),
+            ("E", "anthropic/claude-opus-5-5", "3"),
+            ("F", "openai/gpt-6-luna", "4"),
+        )
+    ]
+    assert [(cal._baseline(blocks, blocks[i]) or {}).get("label") for i in (1, 2, 6)] == ["O", "D", None]

@@ -534,7 +534,8 @@ def _eval_judge_preflight(
 
 
 def _eval_rubric(args) -> str:
-    """The stored version of `--rubric` (`v3` by default, spec v0.10.0 D1)."""
+    """The stored version of `--rubric`: the one named, else the configured default (`judge.RUBRIC_VERSION`, v3 until
+    task 86, spec v0.10.0 D1). `eval-calibrate` resolves through the same `judge.rubric_version`."""
     from merchant_assistant.evaluation import judge as judge_module
 
     try:
@@ -599,7 +600,7 @@ def cmd_eval(settings: Settings, args) -> int:
     if repeat < 1:
         raise SystemExit("eval: --repeat must be at least 1.")
     rubric = _eval_rubric(args)
-    if not args.judge and getattr(args, "rubric", None) not in (None, "v3"):
+    if not args.judge and getattr(args, "rubric", None) is not None:
         print("eval: --rubric is ignored without --judge or --judge-repeat: no judge runs.", file=sys.stderr)
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
     case_files = [
@@ -1344,9 +1345,10 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--rubric",
         choices=["v3", "v4"],
-        default="v3",
-        help="Rubric of the judge with --judge or --judge-repeat: v3 (default) or v4, which also flags a general "
-        "claim stated as fact with no source (spec v0.10.0 D1). Each judgement records the version.",
+        default=None,
+        help="Rubric of the judge with --judge or --judge-repeat: v3 or v4, which also flags a general claim stated "
+        "as fact with no source (spec v0.10.0 D1). Left out, the configured default (v3 until task 86). Each "
+        "judgement records the version.",
     )
     p_evalx.add_argument(
         "--only-sample",

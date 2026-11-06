@@ -22,6 +22,7 @@ from merchant_assistant import cli, main
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.data.db import connect
 from merchant_assistant.evaluation import calibration as cal
+from merchant_assistant.evaluation import judge as judge_module
 from merchant_assistant.evaluation.judge import Judge
 from merchant_assistant.evaluation.runner import load_cases, persist_judgements, run, summarize, write_report
 from merchant_assistant.llm.base import NullMeter
@@ -337,3 +338,66 @@ def test_rubric_v3_by_name_is_the_v090_report_and_bad_blocks_are_refused(experim
         assert conn.execute("SELECT COUNT(*) FROM calibrations WHERE campaign='v0100-juiz-v4'").fetchone()[0] == 0
     finally:
         conn.close()
+
+
+def test_through_the_parser_the_default_rubric_the_repeated_blocks_and_no_v4_without_v4_judgements(
+    experiment, judges, tmp_path, monkeypatch, capsys
+):
+    """Review round 1 of task 83: P2-1 (the parser has no default of its own, `--judge` repeats), P2-2 (a judge with
+    only judge.v3 judgements is refused under `--rubric v4`, nothing stored) and P3-4 (the D2 base is named)."""
+    deepseek, opus, _ = judges
+    out, given = str(tmp_path / "out"), ["--answers-from", str(experiment["report"]), "--only-sample"]
+    given += [str(experiment["csv"]), "--out", out]
+    monkeypatch.setattr(cli, "get_settings", lambda: deepseek)
+    assert cli.main(["eval", "--judge-repeat", "1", "--rubric", "v4", "--name", "ds-v4", *given]) == 0
+    assert cli.main(["eval", "--judge-repeat", "1", "--name", "ds-v3", *given]) == 0  # no --rubric
+    monkeypatch.setattr(cli, "get_settings", lambda: opus)
+    assert cli.main(["eval", "--judge-repeat", "1", "--name", "opus-v3", *given]) == 0
+    for run_name, version in (("ds-v4", "4"), ("ds-v3", judge_module.RUBRIC_VERSION), ("opus-v3", "3")):
+        assert {r["rubric_version"] for r in stored(deepseek, run_name)} == {version}, run_name
+
+    def calibrate(campaign: str, *blocks: str) -> list[str]:
+        report = tmp_path / f"{campaign}.md"
+        argv = ["eval-calibrate", "--import", str(experiment["csv"]), "--rater", "owner", "--campaign", campaign]
+        return [*argv, *blocks, "--out", str(report)]
+
+    def calibrations(campaign: str) -> int:
+        conn = connect(deepseek.db_path)
+        try:
+            return conn.execute("SELECT COUNT(*) FROM calibrations WHERE campaign=?", (campaign,)).fetchone()[0]
+        finally:
+            conn.close()
+
+    # P2-2: Opus has judge.v3 judgements only; under --rubric v4 and no --judge-run it is refused, nothing stored
+    with pytest.raises(SystemExit) as refused:
+        cli.main(calibrate("probe-opus-v4", "--judge", OPUS, "--rubric", "v4"))
+    assert f"não há julgamento do juiz {OPUS} sob a rubrica judge.v4" in str(refused.value)
+    assert calibrations("probe-opus-v4") == 0 and not (tmp_path / "probe-opus-v4.md").exists()
+
+    # P2-1: --judge, --judge-run and --rubric repeated through the parser, one block each, in order
+    blocks = ["--judge", DEEPSEEK, "--judge-run", "ds-v4", "--rubric", "v4", "--judge", OPUS, "--judge-run"]
+    blocks += ["opus-v3", "--rubric", "v3", "--judge", DEEPSEEK, "--judge-run", "ds-v3", "--rubric", "v3"]
+    capsys.readouterr()
+    assert cli.main(calibrate("parser-blocks", *blocks)) == 0
+    printed = capsys.readouterr().out
+    for line in (
+        "block O: deepseek/deepseek-flash judge.v3 (execution legado)",
+        "block A: deepseek/deepseek-flash judge.v4 (execution ds-v4)",
+        "block B: anthropic/claude-opus-5-5 judge.v3 (execution opus-v3)",
+        "block C: deepseek/deepseek-flash judge.v3 (execution ds-v3)",
+    ):
+        assert line in printed
+    text = (tmp_path / "parser-blocks.md").read_text(encoding="utf-8")
+    # P3-4: DeepSeek has two judge.v3 blocks (O and C); the base of A is O and the report says so
+    assert "- A `deepseek/deepseek-flash` judge.v4 contra O `deepseek/deepseek-flash` judge.v3:" in text
+    assert "  - Base: O (execução `legado`), o primeiro bloco `judge.v3` deste juiz; C fica fora desta linha." in text
+    assert calibrations("parser-blocks") == 24
+
+    # one source for the default: if task 86 moves it, both commands follow without --rubric
+    monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")
+    monkeypatch.setattr(cli, "get_settings", lambda: deepseek)
+    assert cli.main(calibrate("default-v4", "--judge", DEEPSEEK, "--judge-run", "ds-v4")) == 0
+    assert calibrations("default-v4") == 24
+    assert cli.main(["eval", "--scripted", "--judge-repeat", "1", "--name", "scripted-default", *given]) == 0
+    report = json.loads((tmp_path / "out" / "scripted-default.json").read_text(encoding="utf-8"))
+    assert report["config"]["judge_config"]["prompt"] == "judge@4"
