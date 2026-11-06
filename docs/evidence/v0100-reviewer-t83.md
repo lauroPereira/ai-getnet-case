@@ -117,3 +117,142 @@ Nenhum.
 Próximo: o **Developer** corrige P2-1 e P2-2 (os P3 ficam a critério, com P3-1 e P3-4 registrados na tarefa 86). Depois, uma rodada 2 do Reviewer, restrita a `cli.py` e aos testes novos, com a reaplicação dos mutantes M12, M19 e M20. Não há decisão humana pendente nesta revisão.
 
 Nenhum efeito no repositório além deste arquivo. Os processos em segundo plano (suíte e mutantes) terminaram antes deste relato.
+
+---
+
+# Passagem de papel: revisão da tarefa 83, rodada 2
+
+- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
+- **Objetivo e critérios:** fechar os achados da rodada 1 (P2-1, P2-2, P3-1 a P3-4) e seguir as decisões do Supervisor para a rodada 2. São elas:
+  - `eval --rubric` com `default=None` e uma resolução só (`--rubric` > `judge.RUBRIC_VERSION` > v3) para os dois comandos, com teste no nível de `cli.main`;
+  - teste da recusa de `--judge <par> --rubric v4` sem `--judge-run`;
+  - relatório do `eval` citando a rubrica usada;
+  - linha D2 dizendo qual é a base quando há mais de um bloco v3;
+  - `prompt_versions()` reportando a rubrica configurada.
+
+  Li a tarefa 83 só até "## Validação" e a spec nas decisões D1 e D2. Não li `v0100-developer.md`.
+- **Escopo:** `34d7f6a` (correções da rodada 1). `git show --stat 34d7f6a` mostra exatamente 7 arquivos: `cli.py`, `evaluation/calibration.py`, `evaluation/runner.py`, `llm/prompts.py`, `tests/integration/test_v0100_rubric.py`, `tests/unit/evaluation/test_judge_v4.py` e `tests/integration/test_eval_campaign.py`. Os commits das tarefas 84 e 85 que ficam entre `9e66d20` e `34d7f6a~1` não tocam nenhum desses 7 arquivos, nem `prompts/` e `evaluation/judge.py`. Então `git diff 9e66d20..34d7f6a`, restrito a eles, é o próprio commit.
+- **Estado:** **apto para QA**. Nenhum P1 nem P2. Os seis achados da rodada 1 estão fechados e há 3 P3 novos.
+- **Branch e PR:** `codex/v0.10.0-rubrica-operacao`, sem PR.
+- **Base e versão final:**
+  - Candidato `34d7f6a`, revisado sobre um export limpo de `2230603` (árvore `8af9644`). `2230603` só acrescenta documentação: `git diff --stat 34d7f6a 2230603 -- src tests prompts` sai vazio.
+  - Blobs do candidato: `cli.py 210c785`, `calibration.py a037f91`, `runner.py bfc13a0`, `prompts.py 436edb2`, `judge.py 9b48a14`, `judge.v3.md 7375786`, `judge.v4.md 2c0f2c9`, `test_v0100_rubric.py afdc250`, `test_judge_v4.py 11a0eb4` e `test_eval_campaign.py b48655a`.
+  - Durante a revisão, o HEAD avançou de `2230603` para `205336b` (sete commits das tarefas 84 e 85). Restrito a `cli.py`, `evaluation/`, `llm/`, `prompts/`, `test_v0100_rubric.py`, `tests/unit/evaluation` e `test_eval_campaign.py`, `git diff --stat 2230603 205336b` sai vazio. Nenhuma linha adicionada ou removida em `src` cita `prompt_set`, `prompt_versions` ou rubrica. O parecer continua valendo.
+  - No fim, `diff -rq` contra um novo `git archive 2230603` (sem caches) mostra o export do candidato e a cópia de mutação idênticos.
+- **Independência:** independente. Não implementei nada e não li o relato do Developer nem a Validação ou o Status da tarefa 83.
+
+## Comandos e números
+
+Tudo rodou em cópias em `<scratchpad da sessão>`:
+- `git archive 2230603` (candidato);
+- uma segunda cópia de `2230603` para mutação;
+- `git archive main` e `git archive 9e66d20` (comparação);
+- uma terceira cópia de `2230603` para a sonda da tarefa 86.
+
+Usei o Python do `.venv` (3.13.3) com `PYTHONPATH` no `src/` de cada cópia e conferi o `__file__` carregado em cada sonda. Uma primeira sonda minha carregou a árvore de trabalho por erro de escape no `PYTHONPATH`. Descartei o resultado e repeti com `cygpath -w`. Todos os `--basetemp` ficaram em estilo Windows. Não houve chamada paga, rede, Docker nem Git de escrita, e não toquei em `data/runtime/`, `.env` nem `.pytest_cache/qa-*` (exceto para copiar o banco abaixo).
+
+| Verificação | Resultado |
+| --- | --- |
+| `pytest` completo (export de `2230603`) | **2133 passed, 1 skipped, 0 failed**, 1100 s, exit 0. O pulado é `test_synthetic_v040_script_logs_in_with_passwords`, que só roda com basetemp dentro do `.pytest_cache`. Rodado à parte com basetemp no `.pytest_cache` do export: 1 passed. Na prática, 2134 passed e 0 skipped |
+| `ruff check` (os 168 arquivos de `python_files()` do export) | All checks passed |
+| `validate_structure` e `validate_skills` (do `lint_and_tests.py` do export) | válidas |
+| `checar-caminhos-pessoais.py` (os 770 arquivos rastreados de `2230603`, em lotes de 150) | rc 0, nenhuma ocorrência |
+| Banco de QA `qa-v080-r1/runtime/merchant.sqlite3` | só copiado; sha256 `18968e43…881c87` antes e depois, o mesmo da rodada 1 |
+
+As quatro etapas do `--strict` rodaram separadamente, porque o export não tem `.git`.
+
+## O que re-derivei e como
+
+1. **Uma fonte para o padrão (P2-1).**
+   - `cli.py:1345-1352` declara `eval --rubric` com `default=None`.
+   - `_eval_rubric` (`cli.py:536-544`) e `calibration._rubric` (`calibration.py:1463-1471`) delegam a `judge.rubric_version`, que lê `RUBRIC_VERSION` na hora da chamada.
+   - O aviso `cli.py:603` compara com `None`.
+   - O teste novo passa por `cli.main([...])` nos dois comandos, com `--judge`, `--judge-run` e `--rubric` repetidos. Com `judge.RUBRIC_VERSION` trocado para "4" por monkeypatch, confere que os dois comandos acompanham.
+   - Mutantes M19, M19b, M20, M21 e M21b, todos mortos (tabela abaixo).
+2. **Recusa sem `--judge-run` (P2-2).** O teste roda `--judge` Opus `--rubric v4` sem `--judge-run`, sobre um banco onde o Opus só tem julgamentos v3. Ele espera `SystemExit` com "não há julgamento do juiz … sob a rubrica judge.v4", nenhuma linha em `calibrations` e nenhum relatório. O M12 morre na linha 373, que é essa chamada. Nesse fixture, a morte vem de um `TypeError` incidental, mas o `pytest.raises(SystemExit)` também reprovaria o rc 0 que o M12 produz no banco real (rodada 1).
+3. **`prompt_versions()` (P3-1):**
+   - `prompt_versions(Path('prompts'))` dá `judge: "3"` na `main` e no candidato, e `judge: "4"` na base `9e66d20`. Os demais prompts são iguais nos três.
+   - Rodei um atendimento programado (`POST /v1/messages`, perfil `reference`, mecanismo `llm`, fixture `offline`) na `main` e no candidato. Os `prompt_set` e `prompt_versions` gravados em `run_snapshots`, e o `versions.prompts` do `/ready`, saem **byte a byte iguais** (`cmp`).
+   - Como `_compatible_runs` (`comparisons.py:64-85`) compara `prompt_set` por igualdade, as execuções gravadas antes seguem reaproveitáveis.
+   - Os testes existentes de reaproveitamento (`test_v060_api.py:362`, com 4 reaproveitadas e custo 0, e `test_v060_r2.py:273-283`) passam na suíte. O M22 (voltar ao arquivo mais novo) e o M26 (sem checar a existência do arquivo fixado) morrem.
+4. **Rubrica no relatório do `eval` (P3-2).**
+   - `runner.py:524` lê `judge_config.rubric_version`, que `Judge.config()` (`judge.py:165`) grava a partir do prompt carregado.
+   - De ponta a ponta, `eval --scripted --judge --rubric v4` dá `judge@4` e "o `judge.v4` não rebaixa". Sem `--rubric`, dá `judge@3` e "o `judge.v3` não rebaixa".
+   - O banco do `eval --scripted` é temporário e próprio do comando.
+   - O M23 morre em `test_eval_campaign.py`.
+5. **Conversão única (P3-3).** `calibration._rubric` agora só traduz `JudgeRefused` em `CalibrationError`.
+6. **Base da D2 (P3-4).**
+   - Com dois blocos v3 do DeepSeek (O `legado` e C `ds-v3`), o relatório traz "Base: O (execução `legado`), o primeiro bloco `judge.v3` deste juiz; C fica fora desta linha.".
+   - `_baseline` tem teste unitário com sete blocos e três juízes.
+   - O M17 (último bloco) e o M24 (sem a linha da base) morrem.
+7. **Regressão da v0.9.0 sem `--rubric`, `main` contra candidato**, cada um sobre uma cópia própria do banco de QA:
+   - `import_filled` com `now` fixo, no modo Opus (`--judge anthropic/claude-opus-5-5 --judge-run v090-juiz-opus-r3 --campaign v090-juiz-opus`) e no modo v0.8.0 sem juiz: **byte a byte idênticos**, sha256 `99d778a6…` e `ab5070e7…` nas duas árvores.
+   - Pela CLI real (`eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv` com o juiz Opus acima, via `cli.main`, com `RUNTIME_DIR` e `BUDGET_RUNTIME_DIR` isolados): idênticos fora da linha "Gerado em".
+   - Os hashes diferem dos da rodada 1 porque o `now` fixado não é o mesmo. A comparação vale dentro de cada rodada.
+8. **Mutação manual** na cópia própria. O subconjunto tem 9 arquivos e 175 testes: `test_judge_v4`, `test_judge_v3`, `test_calibration`, `test_v0100_rubric`, `test_eval_campaign`, `test_calibration_flow`, `test_v090_judge`, `test_v060_api` e `test_v060_r2`. Sem mutação, os 175 passam. Foram **13 mutantes: 12 mortos e 1 sobrevivente** (P3-7). Cada substituição foi conferida como única e o arquivo foi restaurado e comparado depois de cada uma.
+
+| Mutante | Resultado |
+| --- | --- |
+| M12 `judgement_for` ignora a rubrica | morto (`test_through_the_parser…`, linha 373, a recusa) |
+| M17 `_baseline` pega o último bloco v3 | morto (`test_the_d2_baseline_is_the_first_v3_block…`) |
+| M19 padrão do `eval --rubric` `None` → `"v4"` | morto (`test_through_the_parser…`) |
+| M19b padrão `None` → `"v3"` (volta a segunda fonte) | morto (`test_through_the_parser…`, bloco com `RUBRIC_VERSION` "4") |
+| M20 `eval-calibrate --judge` sem `append` | morto (`test_through_the_parser…`, linha 381, os blocos repetidos) |
+| M21 `_rubric` com padrão próprio (`None` → "3") | morto (`test_the_default_rubric_has_one_source…`) |
+| M21b `_eval_rubric` com padrão próprio (`or "v3"`) | morto (`test_through_the_parser…`) |
+| M22 `prompt_versions` volta ao arquivo mais novo | morto (`test_prompt_versions_reports_the_configured_rubric…`) |
+| M23 linha da busca web com `judge.v3` fixo | morto (`test_the_report_counts_the_answers_judged_under_the_web_note`) |
+| M24 sem a linha "Base:" da D2 | morto (`test_through_the_parser…`) |
+| M25 sem o aviso "--rubric is ignored" | **sobreviveu** (P3-7) |
+| M26 `_pinned` sem checar a existência do arquivo | morto (`test_prompt_versions_reports_the_configured_rubric…`) |
+
+9. **Sonda da tarefa 86.** Numa cópia à parte, troquei `RUBRIC_VERSION = "3"` por `"4"` no código de `judge.py`, como a tarefa 86 faria, e não por monkeypatch. Com isso, `_baseline` de cada bloco v4 devolve o próprio bloco: `A, B, F` em vez de `O, D, None`. Veja o P3-5. As demais falhas dessa cópia são testes que fixam o padrão v3, o esperado.
+
+## Achados
+
+### P1
+
+Nenhum.
+
+### P2
+
+Nenhum. P2-1 e P2-2 da rodada 1 estão fechados (itens 1 e 2 acima).
+
+### P3
+
+- **P3-5. Em `calibration.py`, `RUBRIC_VERSION` tem dois sentidos, e a troca do padrão na tarefa 86 inverte a linha D2.**
+  - Condição: `calibration.py:31-36` importa `RUBRIC_VERSION` por nome, então o valor fica fixado na importação. A constante é usada como "o padrão": nos valores padrão de `_judge_rows`, `judge_runs` e afins (`:692`, `:707`, `:726`, `:769`), no gatilho do relatório multi-bloco (`:1617`) e nos rótulos (`:541`, `:734`). Mas também é usada como "a `judge.v3` da D2": em `_baseline` (`:1272-1274`) e nos candidatos da D2 (`:1380`).
+  - Impacto: hoje, nenhum, porque o padrão é v3 e a D2 roda antes da troca. Quando a tarefa 86 trocar o padrão para "4" no código:
+    - a base de um bloco v4 passa a ser ele mesmo, e os blocos v3 viram os "candidatos" da D2;
+    - `--rubric v4` deixa de disparar o relatório multi-bloco (`version != RUBRIC_VERSION` fica falso).
+
+    O teste novo "one source for the default" só aplica monkeypatch em `judge_module.RUBRIC_VERSION`. A cópia importada em `calibration` continua "3", então o teste não reproduz o efeito dessa troca.
+  - Reprodução: item 9 acima.
+  - Encaminhamento: registrar na tarefa 86. Separar uma constante da D2 (a base é a `judge.v3`, literal) do padrão configurado, e, na troca, ler o padrão por `judge.RUBRIC_VERSION` na hora da chamada. Corrigir agora é opcional.
+- **P3-6. Dois textos ainda dizem "v3" como padrão fixo.** A ajuda de `eval-calibrate --rubric` (`cli.py:1439`, "v3 when left out") e a docstring de `_calibrate_blocks` (`cli.py:1098`, "(all judge.v3)") dizem v3, mas a resolução agora segue `judge.RUBRIC_VERSION`. A ajuda de `eval --rubric` já foi ajustada ("the configured default"). Os dois textos ficam desatualizados na tarefa 86.
+- **P3-7. O aviso "--rubric is ignored without --judge or --judge-repeat" (`cli.py:603-604`) não tem teste.** O M25 sobrevive. O impacto é baixo: só uma mensagem em stderr, sem efeito em dado ou custo.
+
+### Observação (não é achado do candidato)
+
+Apareceu na árvore de trabalho um diretório não rastreado, com nome em forma de caminho achatado terminado em `scratchpadsuite-bt/` (criado às 23:40, com `jwt0` e `test_a_failed_recorded_cell_ru0`). É o efeito de um `--basetemp` POSIX de outro agente. Não fui eu (meus basetemps se chamam `bt-*` e ficaram no scratchpad). Não toquei nele.
+
+## Critérios
+
+| Critério | Situação |
+| --- | --- |
+| `eval --rubric` com `default=None` e resolução única nos dois comandos, com teste em `cli.main` | **comprovado** (código, teste, M19, M19b, M20, M21, M21b) |
+| Recusa de `--judge <par> --rubric v4` sem `--judge-run` sobre um banco só com v3 | **comprovado** (teste, M12) |
+| Relatório do `eval` cita a rubrica usada | **comprovado** (de ponta a ponta v4 e padrão; M23) |
+| Linha D2 diz qual é a base com mais de um bloco v3 | **comprovado** (teste, M17, M24) |
+| `prompt_versions()` reporta a rubrica configurada; `prompt_set` e `/ready` iguais aos da `main`; reaproveitamento preservado | **comprovado** (atendimento programado nas duas árvores, `cmp`; M22, M26) |
+| Relatório da v0.9.0 sem `--rubric` byte a byte igual | **comprovado** (`main` contra candidato, cópia do banco de QA, `import_filled` e CLI) |
+| Suíte estrita verde; caminhos limpos | **comprovado** (2134 passed com o pulado reexecutado; ruff, estrutura, skills, caminhos) |
+| Momentos 1 a 3 com modelos reais (CA-57) | **não verificado**: é do QA, com chamada paga |
+
+## Parecer e próxima ação
+
+**Apto para QA** para o candidato `34d7f6a` (export de `2230603`; o HEAD `205336b` não muda a superfície da tarefa 83), em revisão independente. As decisões do Supervisor para a rodada 2 estão implementadas e foram re-derivadas em execução. Os P3-5 a P3-7 não bloqueiam. O P3-5 deve entrar na tarefa 86 antes da troca do padrão.
+
+Próximo: o **QA** executa os momentos 1 a 3 (CA-57) dentro do teto da versão. O **Developer** cuida dos P3 quando quiser, e o P3-5 fica registrado na tarefa 86. Não há decisão humana pendente nesta revisão.
+
+Nenhum efeito no repositório além deste arquivo, que não foi commitado. Os processos em segundo plano (suíte completa, mutantes e esperas) terminaram antes deste relato.
