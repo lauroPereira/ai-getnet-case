@@ -122,13 +122,14 @@ def main() -> int:
         action="store_true",
         help="Exige pytest, ruff e validação das skills quando aplicáveis.",
     )
-    args = parser.parse_args()
+    parser.epilog = "Argumentos não reconhecidos vão ao pytest no modo estrito (ex.: --basetemp=C:/tmp/novo)."
+    args, pytest_args = parser.parse_known_args()
 
     if not validate_structure():
         return 1
-    checker = ROOT / "tools" / "scripts" / "checar-caminhos-pessoais.py"
-    if run([sys.executable, "-I", str(checker)]) != 0:
-        return 1
+    for checker in ("checar-caminhos-pessoais.py", "checar-links.py"):
+        if run([sys.executable, "-I", str(ROOT / "tools" / "scripts" / checker)]) != 0:
+            return 1
 
     files = python_files()
     if not args.strict:
@@ -136,7 +137,7 @@ def main() -> int:
             print("Lint não foi executado: ruff não está disponível.")
         elif files:
             print("Lint disponível, mas não executado no modo padrão.")
-        print("Validação padrão concluída: estrutura e caminhos pessoais são bloqueantes.")
+        print("Validação padrão concluída: estrutura, caminhos pessoais e links são bloqueantes.")
         return 0
 
     failed = False
@@ -144,7 +145,7 @@ def main() -> int:
     tests_directory = ROOT / "tests"
     if tests_directory.is_dir():
         if has_module("pytest"):
-            failed = run([sys.executable, "-m", "pytest"]) != 0 or failed
+            failed = run([sys.executable, "-m", "pytest", *pytest_args]) != 0 or failed
         else:
             print("Erro: tests/ existe, mas pytest não está disponível.")
             missing_required_tool = True
