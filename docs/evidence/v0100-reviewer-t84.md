@@ -108,3 +108,109 @@ Developer: corrigir P2-1 e P2-2 (registro da thread antes de `running` ficar vis
 ## Decisão humana pendente
 
 Nenhuma. P2-1 e P2-2 tocam dinheiro (CA-58); ficaram em P2 por dependerem de corrida estreita e o teto global do guarda continuar valendo. O Supervisor pode elevar para P1.
+
+---
+
+# Passagem de papel: Reviewer, tarefa 84 (comparação retomável), rodada 2
+
+- Papel e responsável: Reviewer (subagente, contexto frio). Não li `docs/evidence/v0100-developer.md`.
+- Objetivo e critérios: spec `docs/specs/rubrica-operacao-v0100.md` D3, D6, CA-58; tarefa 84 (passos e critérios de conclusão); achados P2-1, P2-2, P2-3 e P3-1 a P3-3 da rodada 1; decisões do Supervisor para a rodada 2 (a thread remove só a própria entrada, depois de gravar o estado final; `resume` recusa 409 com thread viva, qualquer que seja o estado gravado; registro antes de `running` ficar visível no `start` e dentro do `BEGIN IMMEDIATE` no `resume`; thread registrada e não iniciada conta como viva; marcação `interrupted` em transação própria que relê a linha e consulta o registro; teste com custo não nulo; célula `failed` só com `retry_failed`; OpenAPI com 404/409/422/429).
+- Escopo: commits `873007c` (decorator da rota em `api/v1.py`, +5/−1), `c097f90` (`comparisons.py` +103/−52 e `tests/integration/test_v0100_comparison_resume.py` +308) e `205336b` (mesmo arquivo de teste, +27). Nos arquivos do escopo, nada mais mudou em `ee7774a..205336b` (o `api/app.py` só recebeu `/metrics` da tarefa 85, commit `29add9c`), e nada em `src/` ou `tests/` mudou entre `205336b` e `5005d81`.
+- Estado: **apto para QA**.
+- Branch e PR: `codex/v0.10.0-rubrica-operacao`, sem PR.
+- Base e versão final: base da rodada 1 `ee7774a`; revisado o export limpo de `5005d81` (`git archive`, fora da raiz do repositório), nunca a árvore de trabalho. Impressão digital (sha256 da lista de sha256 de `src/**/*.py` e `tests/**/*.py` do export): `5b7f8af40aea…c85bb82a`, igual no início e no fim. Durante a revisão a branch avançou para `0b1a637` (`4195468`, `0b1a637`: só documentos das tarefas 83 e 85; nada em `src/`, `tests/` nem neste arquivo).
+- Independência: independente quanto ao Developer (sem a passagem dele nem diagnóstico do Supervisor além das decisões listadas no despacho). **Desvio registrado:** a leitura da tarefa 84 trouxe o arquivo inteiro, inclusive "## Validação" (rodada 2) e "## Status". Tratei aquele texto como afirmação a verificar: cada item abaixo foi re-derivado com comando, sonda ou mutante próprios, e as sondas usam construções diferentes das do candidato (gancho em `Thread.__init__` e `Thread.start`, barreira em `prompt_versions`, três pedidos concorrentes em vez de dois, ABA).
+
+## Comandos e números
+
+Tudo no export limpo, com o `.venv` do projeto e `PYTHONPATH` no `src` do export (conferido por `merchant_assistant.__file__`). `--basetemp` em forma Windows, por argumento de linha de comando, sob `.pytest_cache` do export (nunca `PYTEST_ADDOPTS`); a raiz do repositório não ganhou diretório.
+
+| Etapa | Comando | Resultado |
+| --- | --- | --- |
+| Estrutura | `lint_and_tests.validate_structure()` | válida |
+| Caminhos pessoais | `checar-caminhos-pessoais.py` com a lista de `git ls-tree -r --name-only 5005d81` (o export não é repositório Git) | 772 arquivos, nenhuma ocorrência, exit 0 |
+| pytest | `python -m pytest --basetemp=<export>/.pytest_cache/rv2-full -p no:cacheprovider -rs` (forma Windows) | **2148 passed, 0 skipped** em 929,14 s; exit 0 (o teste de `test_v070_identity_r2.py` que costuma pular rodou, porque o basetemp está sob `.pytest_cache`) |
+| ruff | `ruff check` nos 168 arquivos de `python_files()` | All checks passed, exit 0 |
+| ruff format | `ruff format --check` nos 3 arquivos do escopo | já formatados |
+| Skills | `validate_skills()` | válidas |
+| OpenAPI | rota `/v1/comparisons/{comparison_id}/resume` no `router` | `POST`, 202, `{404, 409, 422, 429}` com `ErrorBody` |
+
+A suíte rodou junto com as sondas e os mutantes (em outra cópia), com CPU disputada; nenhuma falha.
+
+## Re-derivado e como
+
+1. **Diff (`git show` de cada commit)**: o `pop` do `finally` de `_run` virou `_release(id, current_thread())`, que só apaga a entrada se ela for da própria thread, e fica depois do `_save` com o estado final (`comparisons.py:445-451`). O `resume` recusa com 409 quando `row.state == running or _alive(id)` (`:579`). O `start` cria e registra a thread antes do `INSERT` com `running` (`:263-289`), e o `resume` registra dentro do `BEGIN IMMEDIATE` da reivindicação, antes do `COMMIT` (`:636-658`). `_registered` conta como viva a thread registrada com `ident is None` (`:459-464`). `_interrupt_if_orphan` abre `BEGIN IMMEDIATE`, relê a linha e consulta o registro antes de `_mark_interrupted` (`:524-541`); `read`, `resume` e `interrupt_orphans` passam por ela. As falhas entre registrar e iniciar (`INSERT`, reivindicação, `thread.start()`) liberam a entrada. A ordem de travas não fecha ciclo: `_ACTIVE_LOCK` nunca é mantido enquanto se espera o SQLite (`connect` usa `isolation_level=None`, autocommit). Mecanismo equivalente procurado (registro, `_ACTIVE`, `is_alive`, `BEGIN IMMEDIATE` em `comparisons`, sem distinguir maiúsculas): o registro é o mesmo da rodada 1, só corrigido; nada duplicado.
+2. **Janelas da rodada 1, com threads reais** (sondas em cópia separada do export, modelo programado, admin ou demo sintéticos):
+   - P1, um segundo `resume` aninhado na construção da `Thread` do primeiro (a reprodução da rodada 1 que dava 6 execuções): primeiro 409, aninhado 202, **3 execuções, uma por célula**, `completed`.
+   - P2, `GET` + `resume?retry_failed=true` entre o `INSERT` do `start` e o `thread.start()` (gancho em `Thread.start`): banco `running`, `GET` `running`, `409 comparison_running`, **4 execuções, uma por célula** (a rodada 1 dava 8).
+   - P3, o mesmo entre o `COMMIT` da reivindicação do `resume` e o `thread.start()`: 202, `running`, 409, **3 execuções**.
+   - P4, três `resume` concorrentes em threads reais com `Barrier(3)` depois da checagem de vida (em `prompt_versions`): `[202, 409, 409]`, **3 execuções, uma por célula**, `completed`.
+3. **Thread antiga terminando** (P5): com a thread parada depois de gravar `partial` e antes de sair do registro, 5 `GET` dão `partial` e 3 `resume?retry_failed=true` dão `409 comparison_running`. Com uma thread mais nova registrada no mesmo id e a linha em `running`, a antiga sai: 10 `GET` seguidos dão `running`, **nunca `interrupted`**, e a entrada da nova continua no registro.
+4. **Custo da tentativa interrompida** (P6, valores diferentes dos do teste do candidato): ledger da tentativa morta com as linhas `settled` a 0,0031 e uma `reserved` a 0,0017. Resultado: `interrupted_attempts = [{request_id, cost_usd: 0,0141}]`; `cost_usd` = anterior + 0,0141 em três leituras seguidas e depois de um **segundo reinício** (lifespan de novo); depois do `resume`, `cost_usd` = soma das células + 0,0141, com uma única entrada em `interrupted_attempts`. **Somado uma vez.**
+5. **Mutantes** (cópia separada, um por vez, arquivo restaurado ao fim com sha256 igual ao do export). Conjunto do candidato: `test_v0100_comparison_resume.py` (13), `test_v060_api.py` (17), `test_v060_r2.py` (13), `test_v060_r4.py` (9) = 52 testes, controle verde. As sondas P1 a P6 também passam no controle (P7 é o achado P3-4 e falha já no controle).
+
+| Mutante | Candidato | Teste que caiu | Sondas |
+| --- | --- | --- | --- |
+| M02 custo da tentativa não somado | morto | `test_restart_…` | P6 |
+| M08 `_mark_interrupted` sem a guarda `running` no `UPDATE` | morto | `test_marking_interrupted_never_overwrites_a_final_state` | — |
+| M12 reivindicação sem `AND state=?` | morto | `test_two_concurrent_resumes_claim_the_comparison_once` | P1, P4 |
+| M13 `resume` sem recontar o limite demo | morto | `test_resume_recounts_given_back_cells_…` | — |
+| M14 devolução demo sem conferir `demo_refunded` | morto | `test_resume_recounts_given_back_cells_…` | — |
+| `pop` sem conferir identidade | morto | `test_a_leaving_thread_…`, `test_two_concurrent_resumes_…` | P1, P4, P5 |
+| `resume` ignora thread viva (só olha `running`) | morto | `test_a_leaving_thread_…` | P5 |
+| thread não iniciada tratada como morta | morto | `test_read_and_resume_while_start_…`, `…_while_resume_…` | P2, P3 |
+| marcação sem consultar o registro na transação | morto | `test_a_stale_liveness_check_…` | — |
+| `start` registra depois do `INSERT` | morto | `test_read_and_resume_while_start_is_registering_…` | — (o gancho de P2 fica depois do registro mutado) |
+| `resume` registra depois do `COMMIT` | morto | `test_read_and_resume_while_resume_is_registering_…` | — (idem P3) |
+| P3-1 desfeito (condição antiga) | morto | `test_a_failed_recorded_cell_runs_again_only_with_retry_failed` | — |
+| `_release` antes de gravar o estado final | morto | `test_a_leaving_thread_…` | P5 |
+
+6. **P3-1** (célula `failed` sem `request_id`): a condição agora pula toda célula `failed` sem `retry_failed` (`comparisons.py:606-610`); mutante morto. **P3-3**: decorator com os quatro códigos e teste do OpenAPI.
+
+## Achados
+
+### P1
+
+Nenhum.
+
+### P2
+
+Nenhum. P2-1, P2-2 e P2-3 da rodada 1 estão fechados (itens 2 a 5 acima).
+
+### P3
+
+**P3-4. A reivindicação do `resume` compara só o `state`: um `resume` que leu `partial` ou `failed` aceita depois de outro `resume` ter rodado e voltado ao mesmo estado (ABA), com `cells` e `cost_usd` velhos.**
+- Condição: o `UPDATE … WHERE comparison_id=? AND state=?` (`comparisons.py:638-641`) usa o `state` lido no começo e grava o `cells` calculado dessa leitura. Se, entre a checagem de vida (`:579`) e a reivindicação, outro `resume` reivindicar, rodar e terminar de novo em `partial` ou `failed`, a reivindicação velha passa, porque o registro já está vazio. A thread nova roda de novo as células que a anterior concluiu e começa com o `spent` velho.
+- Impacto: uma célula paga duas vezes, e o `cost_usd` fica abaixo do gasto. Os `request_id` da execução intermediária somem de `cells` (nem `request_id` nem `previous_request_ids`), embora continuem no ledger. Alcance prático baixo: a pausa precisa durar mais que uma execução inteira com chamadas pagas (segundos), contra uma janela de milissegundos. Não achei ponto de espera longo nesse trecho: `capture_active` só lê depois do bootstrap, `prompt_versions` lê arquivos e não há escrita até o `BEGIN IMMEDIATE`. O fluxo sequencial do QA (D6) não passa por aqui. Fica em P3 por isso; o Supervisor pode elevar, porque o texto de CA-58 é "sem célula paga duas vezes".
+- Reprodução: sonda `test_p7_aba_stale_claim`, em cópia do export. Uma comparação `partial` com duas células `failed`. R2 (`resume?retry_failed=true`, em outra thread) para dentro de `prompt_versions`. R1 (`resume?retry_failed=true`) roda até o fim: uma célula concluída a 0,01, a outra falha de novo, e o estado volta a `partial`. R2 é liberado e recebe **202** (esperado: 409). As duas células rodam 2 vezes cada. `cost_usd` final 0,02 para 0,03 executado, e os dois `request_id` de R1 desaparecem de `cells`.
+- Correção sugerida: a reivindicação compara também o `cells` lido (`AND cells=?` com o `cells` da linha lida); o `updated_at` não serve, porque `_now()` tem resolução de segundos. Além disso, consultar `_registered(id)` dentro da transação da reivindicação. Teste com a pausa forçada, como a sonda.
+
+**P3-5. O registro de threads é por processo, e esse limite não está documentado no contrato nem no README. O README ainda descreve o comportamento antigo.**
+- Condição: `_ACTIVE` vale só para o processo (o comentário de `comparisons.py:32-34` diz isso). Com dois processos sobre o mesmo runtime, o processo B não vê a thread viva do processo A: o lifespan ou um `GET` de B marca `interrupted` uma comparação que ainda roda em A, e um `resume` em B roda de novo as células que A está executando. Isso vale para mais de um worker ou para uma segunda API subindo com a primeira viva. `docker/entrypoint.sh:5` fixa `--workers 1`, que é a guarda operacional, e o teste do candidato só cobre dois apps no mesmo processo. `README.md:685` ainda diz que reiniciar a API marca a comparação em execução como `failed`.
+- Impacto: documentação. O uso previsto (um processo; no QA, `taskkill` e depois reinício) não é afetado.
+- Correção sugerida (tarefa 86, junto do README e do CHANGELOG): registrar no contrato ("Acréscimos da v0.10.0") e no README que a detecção de thread viva é por processo e exige um único processo da API por runtime, e atualizar `README.md:685`.
+
+Rodada 1, P3: P3-1 corrigido; P3-2 coberto (M08, M13 e M14 mortos); P3-3 corrigido.
+
+## Critérios comprovados e não verificados
+
+- Comprovados offline: uma execução por célula nas janelas do `start` e do `resume`, com `resume` aninhado e com três `resume` concorrentes; o `GET` nunca mostra `interrupted` enquanto há thread registrada, nem quando a thread antiga sai; o `resume` recusa enquanto a thread que gravou o estado final não saiu; a tentativa interrompida tem custo não nulo, somado uma vez em leituras, reinício e retomada; célula `failed` só roda com `retry_failed`; OpenAPI com 404, 409, 422 e 429; os mutantes pedidos estão mortos; suíte estrita verde; caminhos pessoais limpos.
+- Não verificados aqui (QA, D6): reinício real com `taskkill` e modelo real; ledger antes e depois na campanha real.
+
+## Limitações
+
+- O `lint_and_tests.py --strict` não roda inteiro no export, porque o verificador de caminhos chama `git ls-files`. As quatro etapas rodaram em separado com os mesmos comandos do script, e o verificador recebeu a lista de arquivos do commit.
+- As sondas P2 e P3 usam gancho em `Thread.start`, então não matam os mutantes que movem o registro para logo antes do `start`. Os testes `Window` do candidato, com gancho no `close` da conexão, matam esses mutantes.
+- Sondas, mutantes e logs ficaram em cópias no `<scratchpad da sessão>`. Nada foi gravado na árvore do Developer além deste arquivo. Nenhuma chamada paga, nenhum Docker, nenhum Git de escrita.
+
+## Ação externa
+
+Nenhuma. Arquivo não commitado.
+
+## Próxima ação
+
+QA da D6 (CA-58 com `taskkill` e modelo real) sobre `5005d81` ou um sucessor sem mudança em `src/`. P3-4 (reivindicação também por `cells` e registro consultado dentro da transação) e P3-5 (limite por processo no contrato e no README, `README.md:685`) ficam para o Developer, a critério do Supervisor: P3-4 tem correção de uma linha, P3-5 entra na tarefa 86.
+
+## Decisão humana pendente
+
+Nenhuma. O Supervisor decide se eleva P3-4 por causa do texto literal de CA-58.
