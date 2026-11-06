@@ -27,7 +27,7 @@ O Supervisor usa este relatório para contar a Lauro o que aconteceu num períod
 ## Onde registrar
 
 - Responder no chat.
-- Gravar em `docs/relatorios/AAAA-MM-DD-<período>.md` quando cobrir um bloco de trabalho. Pedidos rápidos de "como estamos?" só vão para o chat.
+- Gravar em `discovery/relatorios/AAAA-MM-DD-<período>.md` (local, fora do versionamento) quando cobrir um bloco de trabalho. Pedidos rápidos de "como estamos?" só vão para o chat.
 
 ## Modelo
 
