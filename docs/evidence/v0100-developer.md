@@ -137,3 +137,49 @@ Reviewer, em contexto novo: revisar `0266652..HEAD` contra a tarefa 83. Depois o
 ### Próxima ação
 
 Reviewer, em contexto novo: revisar `f4dfb97..HEAD` contra a tarefa 84. Depois, QA da D6 com modelo real (2 perfis × 3 cenários, `taskkill` com a primeira célula concluída, reinício, `resume`, ledger antes e depois). O Supervisor marca o CA-58 depois da revisão e do QA.
+
+## Tarefa 85 — `/metrics` e regras de alerta versionadas (rodada 1)
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único).
+- **Objetivo e critérios:** [tarefa 85](../tasks/85-metrics-e-alertas.md); spec [rubrica-operacao-v0100](../specs/rubrica-operacao-v0100.md) D4, D5, CA-59; história, momentos 6 e 7.
+- **Escopo:** `src/merchant_assistant/observability/metrics.py` (novo), `src/merchant_assistant/api/app.py` (só acréscimo: import, `app.state.metrics` e rota `GET /metrics`), `alerts/rules.yml` (novo), `tests/integration/test_v0100_metrics.py` (novo), `README.md` (só a seção Observability). Não toquei em `comparisons.py`, `api/v1.py`, `evaluation/`, `prompts/`, `data/migrations.py` nem `docker-compose.yml`.
+- **Estado:** apto para revisão.
+- **Branch:** `codex/v0.10.0-rubrica-operacao`, sem push.
+- **Base e versão final:** base `023dc61`; commits `29add9c` (módulo e rota), `7638f18` (regras e testes), `2a561db` (README), mais um commit de documentação com esta passagem e a tarefa. O `b802c36` (revisão da tarefa 83) entrou na branch no meio do trabalho, sem conflito. Identidade conferida: `lauroPereira` / e-mail do projeto.
+- **Independência:** não-independente (autor). A revisão precisa de contexto novo.
+
+### O que mudou
+
+- **`metrics.py`:** consultas agregadas, somente leitura (`mode=ro`), em `traces.sqlite3` e no ledger. Nenhuma biblioteca Prometheus. Formato texto 0.0.4 com `# HELP` e `# TYPE`. `MetricsCollector` guarda um cache de 5 s em processo, com trava e relógio injetável. `collector_for` usa os caminhos do `TraceStore` e do `BudgetGuard` do orquestrador. Com o orquestrador placeholder, usa os padrões do runtime.
+- **Métricas:** `requests_total{route,status}` (rota e status do assistente gravados em `requests`; não é a rota HTTP), `model_calls_total{agent}` (soma de `models_by_agent[*].calls` do `detail`), `tool_calls_total{tool,outcome}` e `tool_failures_total{tool}` (passos `tool:*`, `outcome` `ok` ou `error`), `handoffs_total` (`status='handoff'`), `replan_total{origin}` (`detail.origin` dos passos `replan`), `request_duration_seconds` (histograma de `requests.duration_ms`, buckets 1, 2, 5, 10, 20, 30, 60, +Inf), `cost_usd_total{provider}`, `budget_remaining_usd` e `budget_limit_usd`.
+- **`GET /metrics`:** público, porque o `/ready` é público (sem `AUTH`, sem token). `Content-Type: text/plain; version=0.0.4; charset=utf-8`.
+- **`alerts/rules.yml`:** grupo `merchant-assistant` com 4 regras: `BudgetNearLimit` (`budget_remaining_usd < 0.10 * budget_limit_usd`), `ToolFailureRateHigh` (razão das `rate` em 15 min > 0,05), `HandoffRateHigh` (razão em 1 h > 0,30) e `RequestLatencyP95High` (`histogram_quantile(0.95, …[15m]) > 20`). Cada uma tem `summary`, `description` e `runbook_url: ../README.md#observability`, relativo ao arquivo.
+- **README:** a seção Observability ganhou o endpoint, a tabela de métricas, as regras e o `scrape_config` local em duas linhas. A linha de próximos passos agora cita só OTLP, painéis e drift de retrieval.
+
+### Decisões tomadas além do texto do plano (todas reversíveis)
+
+1. **`budget_limit_usd` (gauge) a mais:** a regra "orçamento < 10% do teto" precisa do teto em PromQL. Fixar o número no YAML quebraria quando `BUDGET_LIMIT_USD` mudasse.
+2. **`cost_usd_total` conta só o liquidado.** Uma reserva baixa para o valor real ao liquidar. Se o contador incluísse reservas, poderia diminuir, e o Prometheus leria isso como reset. `budget_remaining_usd` desconta liquidado + reservado, como o `BudgetGuard.remaining()` (o teste confere a igualdade).
+3. **Provedor pela tabela de preços:** o ledger não tem coluna de provedor. O provedor vem de `prices.json` (`scripted*` → `scripted`; modelo sem preço → `unknown`).
+4. **Rótulos de vocabulário fechado:** `tool` só aceita nome registrado em `TOOLS`; qualquer outro vira `other`, porque o modelo pode pedir um nome arbitrário e ele vai para o trace. Os demais valores só passam se casarem com `^[a-z0-9_:.\-]{1,64}$`; senão viram `other`, e valor nulo vira `unknown`. O teste confere cada rótulo contra os literais `Route` e `Status`, `TOOLS`, agentes, `rule:<nome>` e `model`, provedores e buckets.
+5. **Banco ausente não é criado:** o scrape abre em `mode=ro` só se o arquivo existir; se não, devolve as famílias zeradas.
+6. **Teste de coerência:** extrai os nomes das `expr` com regex, depois de remover `by (...)`, intervalos `[...]`, seletores `{...}` e chamadas de função. Confere os nomes contra as amostras de `/metrics` (o `_bucket` do histograma incluído). Um teste extra fixa o comportamento do extrator.
+
+### Evidência
+
+- Testes novos: **8** em `tests/integration/test_v0100_metrics.py` (formato, valores contra os traces do fluxo programado com 3 rotas, 1 falha de `get_device_status` e 1 encaminhamento, rótulos sem dado pessoal, nome livre → `other`, custo e restante, cache, coerência das regras, extrator).
+- Saída real do fluxo programado: `requests_total` 1 em cada uma de `knowledge/answered`, `support/answered` e `knowledge_and_support/handoff`; `tool_failures_total{tool="get_device_status"} 1`; `handoffs_total 1`; `replan_total` com `rule:complete` 2, `rule:plan_pending` 1 e `rule:tool_failure_no_alternative` 1; histograma com `_count 3`; `cost_usd_total{provider="scripted"} 0`; `budget_remaining_usd 1`.
+- Focados: `test_v0100_metrics.py` + `test_health.py` com **10 passed**; `test_messages_contract.py`, `test_v1_api.py`, `test_v060_r4.py` e `test_v070_story.py` com **38 passed**; ruff check e format limpos nos arquivos tocados.
+- **Suíte estrita:** `python tools/scripts/lint_and_tests.py --strict` (`.venv`) com HEAD `2a561db`: **2132 passed, 1 skipped** em 960,31 s; ruff `All checks passed!`; caminhos pessoais: nenhuma ocorrência em 770 arquivos; estrutura e skills válidas; "Validação estrita concluída sem falhas", exit 0. Log no scratchpad da sessão (não versionado), SHA-256 `aa1e2f43…06381d7c`. **Atenção:** durante a rodada, outro escritor tinha alterações não commitadas na árvore (`cli.py`, `evaluation/calibration.py`, `evaluation/runner.py`, `llm/prompts.py`, `test_eval_campaign.py`, `test_v0100_rubric.py`, `test_judge_v4.py`), aparentemente as correções da tarefa 83, e a coleta incluiu essas alterações. Conta: 2121 + 8 desta tarefa + 3 de lá. Não toquei nesses arquivos nem os adicionei.
+- Nenhuma chamada paga, `.env` não lido, nenhum servidor iniciado. Os processos de espera foram encerrados.
+
+### Achados e limitações
+
+- `/metrics` reflete o que está em `traces.sqlite3`. A tabela `requests` também recebe `human_reply` (resposta do operador); essas linhas aparecem em `requests_total{route="human_reply"}` e entram no denominador da regra de encaminhamento.
+- `model_calls_total` conta chamadas liquidadas (`usage_by_agent`). Uma reserva que falhou antes de liquidar entra em `requests.model_calls`, mas não aqui.
+- A consulta varre as tabelas inteiras a cada 5 s no máximo. Com o volume de demo, isso não pesa. Para volume real, o caminho é o cliente oficial (reversão de D4).
+- Fora desta seção do README, a linha 51 (tabela de resposta ao avaliador) ainda diz que `/metrics` e as regras de alerta são próximos passos. `docs/contracts/api-v040.md` não lista a rota nova. Deixei os dois para o fechamento (tarefa 86), porque a tarefa restringe o README à seção Observability.
+
+### Próxima ação
+
+Reviewer, em contexto novo: revisar `023dc61..HEAD` (só os commits da tarefa 85) contra a tarefa 85. Depois, QA do momento 6 (`/metrics` ao vivo depois dos momentos 4 e 5) e do momento 7. O Supervisor marca o CA-59 depois da revisão e do QA.
