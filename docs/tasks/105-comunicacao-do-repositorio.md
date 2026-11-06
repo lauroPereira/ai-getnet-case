@@ -58,10 +58,12 @@ Developer, rodada 2 (2026-11-06), sobre a revisão independente da rodada 1; có
 - `checar-links.py`: nenhum alvo ausente em 322 arquivos Markdown; 1 aviso pendente (AGENTS.md:18). `checar-caminhos-pessoais.py`: nenhuma ocorrência em 634 arquivos.
 - `python tools/scripts/lint_and_tests.py --strict --basetemp=<scratchpad da sessão>/... -rs` (`.venv` do worktree, árvore limpa em `2555631`): **2156 passed, 1 skipped** em 974 s; Ruff `All checks passed!`; estrutura, skills, caminhos e links válidos; exit 0. O skip é o mesmo de ambiente da rodada 1.
 
+Developer, rodada 3 (2026-11-06): a ADR 0022 voltou a registrar a janela teórica (ABA) da reivindicação do `resume`, apontada na revisão da tarefa 84 e tratada no roadmap pela lease (v0.13.0). Só um `.md` mudou; `checar-links.py` sem alvo ausente e grep de vocabulário sem ocorrência nova.
+
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 2)
+pronta para revisão (Developer, rodada 3)
 ```
 
 Aberta pelo Supervisor em 2026-11-06.
