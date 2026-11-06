@@ -7,6 +7,8 @@ Synthetic and offline only: scripted model, hashing embedder, in-memory Qdrant, 
 from __future__ import annotations
 
 import re
+import sqlite3
+import time
 from pathlib import Path
 from typing import get_args
 
@@ -73,6 +75,13 @@ def parse(text: str) -> dict:
 def value(families: dict, family: str, name: str | None = None, **labels: str) -> float:
     found = [v for n, ls, v in families[family]["samples"] if n == (name or family) and ls == labels]
     return found[0] if found else 0.0
+
+
+def present(families: dict, family: str, name: str | None = None, **labels: str) -> float:
+    """The value of a series that must exist (`value` reads a missing series as 0)."""
+    found = [v for n, ls, v in families[family]["samples"] if n == (name or family) and ls == labels]
+    assert len(found) == 1, f"{name or family}{labels} missing from the exposition"
+    return found[0]
 
 
 def post(client, message: str) -> dict:
@@ -144,7 +153,7 @@ def test_values_match_the_recorded_traces(flow):
         assert n == sum(s <= bound for s in seconds) and n >= previous
         previous = n
 
-    assert value(families, "cost_usd_total", provider="scripted") == 0  # scripted model: free, but in the ledger
+    assert present(families, "cost_usd_total", provider="scripted") == 0  # scripted model: free, but in the ledger
     assert value(families, "budget_limit_usd") == orchestrator.budget.limit_usd
     assert value(families, "budget_remaining_usd") == pytest.approx(orchestrator.budget.remaining(), abs=1e-8)
 
@@ -154,11 +163,12 @@ def test_labels_carry_no_personal_data(flow, settings):
     families = parse(client.get("/metrics").text)
     forbidden = {"cliente1988"} | {b["request_id"] for b in bodies} | {b["conversation_id"] for b in bodies}
     vocabulary = {  # every label value comes from a closed set defined in code
-        "route": {*get_args(Route), "human_reply", "other", "unknown"},
-        "status": {*get_args(Status), "other", "unknown"},
+        "route": {*get_args(Route), "human_reply", "other"},
+        "status": {*get_args(Status), "other"},
         "tool": {*TOOLS, "other"},
         "outcome": {"ok", "error"},
-        "agent": {"router", "knowledge", "customer_support", "escalation", "personality", "replan"},
+        "agent": {*metrics.AGENTS, "other"},
+        "origin": {"model", *(f"rule:{name}" for name in metrics.REPLAN_RULES), "other"},
         "provider": {"scripted", "unknown", *(m.get("provider") for m in prices()["models"].values())},
         "le": {metrics._number(b) for b in metrics.DURATION_BUCKETS} | {"+Inf"},
     }
@@ -168,10 +178,7 @@ def test_labels_carry_no_personal_data(flow, settings):
             for key, label_value in labels.items():
                 seen += 1
                 assert not any(f in label_value for f in forbidden)
-                if key == "origin":
-                    assert label_value in {"model", "unknown"} or re.fullmatch(r"rule:[a-z_]{1,48}", label_value)
-                else:
-                    assert label_value in vocabulary[key], (key, label_value)
+                assert label_value in vocabulary[key], (key, label_value)
     assert seen
 
 
@@ -187,6 +194,126 @@ def test_unregistered_tool_names_and_free_text_never_become_labels(tmp_path):
     assert value(families, "requests_total", route="other", status="answered") == 1
     assert not (tmp_path / "missing.sqlite3").exists()  # a scrape never creates a database
     assert value(families, "budget_remaining_usd") == 1.0
+
+
+IDENTIFIERS = ("cliente1988", "op_ana", "req_0123456789abcdef0123", "conv_7f3a9c")
+
+
+def test_identifier_shaped_values_in_the_traces_come_out_as_other(tmp_path):
+    """Review P2-1: a value that looks like a code identifier (merchant, operator, request or conversation id) is
+    not in any closed set, so the metrics layer itself turns it into `other`, whatever reached the trace."""
+    store = TraceStore(tmp_path / "traces.sqlite3")
+    recorder = TraceRecorder("req_0123456789abcdef0123")
+    recorder.event("replan", origin="cliente1988")
+    recorder.event("replan", origin="rule:conv_7f3a9c")
+    recorder.event("replan", origin="op_ana")
+    recorder.event("replan", origin="rule:tool_failure_no_alternative")
+    recorder.event("tool:cliente1988", "error")
+    store.save(
+        recorder,
+        {
+            "user_id": "cliente1988",
+            "route": "cliente1988",
+            "status": "req_0123456789abcdef0123",
+            "detail": {
+                "models_by_agent": {"op_ana": {"calls": 2}, "cliente1988": {"calls": 1}, "router": {"calls": 1}}
+            },
+        },
+    )
+    second = TraceRecorder("req_second")
+    store.save(second, {"user_id": "cliente1988", "route": "op_ana", "status": "answered"})
+    text = metrics.render(tmp_path / "traces.sqlite3", tmp_path / "missing.sqlite3", 1.0)
+    assert not any(identifier in text for identifier in IDENTIFIERS), text
+    families = parse(text)
+    assert present(families, "requests_total", route="other", status="other") == 1
+    assert present(families, "requests_total", route="other", status="answered") == 1
+    assert present(families, "model_calls_total", agent="other") == 3
+    assert present(families, "model_calls_total", agent="router") == 1
+    assert present(families, "replan_total", origin="other") == 3
+    assert present(families, "replan_total", origin="rule:tool_failure_no_alternative") == 1
+    assert present(families, "tool_failures_total", tool="other") == 1
+
+
+def test_closed_sets_follow_the_names_in_the_code():
+    """The agent and replan rule names are written once in metrics.py; this keeps them in step with the source, so a
+    new agent or rule fails here instead of being counted as `other`."""
+    src = ROOT / "src" / "merchant_assistant"
+    replanner = (src / "agents" / "replanner.py").read_text(encoding="utf-8")
+    rules = (
+        set(re.findall(r'Match\(\s*"([a-z_]+)"', replanner))
+        | set(re.findall(r'"rule:([a-z_]+)"', replanner))
+        | set(re.findall(r'refusal = \("([a-z_]+)"', replanner))
+    )
+    assert rules == metrics.REPLAN_RULES
+    agents = {
+        name
+        for path in src.rglob("*.py")
+        for pair in re.findall(r'\bagent="([a-z_]+)"|^AGENT = "([a-z_]+)"', path.read_text(encoding="utf-8"), re.M)
+        for name in pair
+        if name
+    }
+    assert agents and agents <= metrics.AGENTS, agents - metrics.AGENTS
+    assert {*get_args(Route), "human_reply"} == metrics.ROUTES and set(get_args(Status)) == metrics.STATUSES
+
+
+def test_histogram_inf_bucket_counts_requests_above_the_last_bound(tmp_path):
+    """Review P3-1: a request above 60 s is in `+Inf` and `_count` but in no finite bucket."""
+    store = TraceStore(tmp_path / "traces.sqlite3")
+    fast, slow = TraceRecorder("req_fast"), TraceRecorder("req_slow")
+    slow._t0 = time.perf_counter() - 61.5  # the store takes the duration from the recorder's clock
+    store.save(fast, {"route": "knowledge", "status": "answered"})
+    store.save(slow, {"route": "knowledge", "status": "answered"})
+    families = parse(metrics.render(tmp_path / "traces.sqlite3", tmp_path / "missing.sqlite3", 1.0))
+    name = "request_duration_seconds"
+    assert present(families, name, f"{name}_bucket", le="60") == 1
+    assert present(families, name, f"{name}_bucket", le="+Inf") == 2
+    assert present(families, name, f"{name}_count") == 2
+    assert present(families, name, f"{name}_sum") >= 61.5
+
+
+def test_unreadable_stores_never_fail_the_scrape(tmp_path):
+    """Review P3-3: an empty file (no tables) or a locked database gives zeroed families quickly, never an error;
+    the collector serves the last complete read again instead of dropping counters to zero."""
+    empty_traces, empty_ledger = tmp_path / "empty-traces.sqlite3", tmp_path / "empty-budget.sqlite3"
+    empty_traces.write_bytes(b"")
+    empty_ledger.write_bytes(b"")
+    families = parse(metrics.render(empty_traces, empty_ledger, 2.0))
+    assert set(families) >= REQUIRED
+    assert value(families, "handoffs_total") == 0 and present(families, "budget_remaining_usd") == 2.0
+
+    traces = tmp_path / "traces.sqlite3"
+    store = TraceStore(traces)
+    store.save(TraceRecorder("req_one"), {"route": "knowledge", "status": "answered"})
+    now = [0.0]
+    collector = metrics.MetricsCollector(traces, tmp_path / "budget.sqlite3", 1.0, clock=lambda: now[0])
+    complete = collector.text()
+    assert value(parse(complete), "requests_total", route="knowledge", status="answered") == 1
+
+    lock = sqlite3.connect(traces, isolation_level=None)
+    try:
+        lock.execute("BEGIN EXCLUSIVE")
+        started = time.perf_counter()
+        locked = metrics.render(traces, tmp_path / "budget.sqlite3", 1.0)
+        assert time.perf_counter() - started < metrics.OPEN_TIMEOUT_SECONDS + 3
+        assert value(parse(locked), "requests_total", route="knowledge", status="answered") == 0  # zeroed
+        now[0] += metrics.CACHE_SECONDS
+        assert collector.text() == complete  # the last complete read, not a counter reset
+    finally:
+        lock.execute("ROLLBACK")
+        lock.close()
+    store.save(TraceRecorder("req_two"), {"route": "knowledge", "status": "answered"})
+    now[0] += metrics.CACHE_SECONDS
+    assert value(parse(collector.text()), "requests_total", route="knowledge", status="answered") == 2
+
+
+def test_metrics_endpoint_answers_200_when_the_trace_store_is_empty(offline, settings):
+    client, orchestrator, _ = offline()
+    path = Path(orchestrator.traces.path)
+    path.write_bytes(b"")  # present but with no tables
+    client.app.state.metrics = metrics.MetricsCollector(path, path.with_name("missing.sqlite3"), 1.0)
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert set(parse(response.text)) >= REQUIRED
 
 
 def test_ledger_cost_counts_settled_spend_and_remaining_counts_reservations(tmp_path):
@@ -248,7 +375,7 @@ def test_alert_rules_reference_only_exposed_metrics(flow):
         used |= names
         annotations = rule["annotations"]
         assert annotations["summary"] and annotations["description"]
-        assert annotations["runbook_url"].endswith("README.md#observability")
+        assert annotations["runbook_url"] == "https://github.com/lauroPereira/ai-getnet-case#observability"
     assert {"budget_remaining_usd", "tool_failures_total", "handoffs_total", "request_duration_seconds_bucket"} <= used
     assert "## Observability" in (ROOT / "README.md").read_text(encoding="utf-8")
 

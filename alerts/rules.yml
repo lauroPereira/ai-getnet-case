@@ -13,7 +13,7 @@ groups:
           description: >-
             The budget ledger has less than 10% of the configured limit left (settled plus reserved spend). Paid calls
             are refused when it reaches zero.
-          runbook_url: ../README.md#observability
+          runbook_url: https://github.com/lauroPereira/ai-getnet-case#observability
       - alert: ToolFailureRateHigh
         expr: sum(rate(tool_failures_total[15m])) / sum(rate(tool_calls_total[15m])) > 0.05
         for: 5m
@@ -24,7 +24,7 @@ groups:
           description: >-
             The share of tool calls that ended in error is above 5% in the last 15 minutes. Check which tool in
             tool_failures_total and the support services behind it.
-          runbook_url: ../README.md#observability
+          runbook_url: https://github.com/lauroPereira/ai-getnet-case#observability
       - alert: HandoffRateHigh
         expr: sum(rate(handoffs_total[1h])) / sum(rate(requests_total[1h])) > 0.30
         for: 10m
@@ -35,7 +35,7 @@ groups:
           description: >-
             Handoffs are above 30% of the requests in the last hour. Look at the route mix in requests_total and at
             tool failures, which force a handoff when an essential check cannot run.
-          runbook_url: ../README.md#observability
+          runbook_url: https://github.com/lauroPereira/ai-getnet-case#observability
       - alert: RequestLatencyP95High
         expr: histogram_quantile(0.95, sum by (le) (rate(request_duration_seconds_bucket[15m]))) > 20
         for: 5m
@@ -46,4 +46,4 @@ groups:
           description: >-
             The 95th percentile of request duration is above 20 s in the last 15 minutes. Compare model calls per
             agent in model_calls_total and replans in replan_total.
-          runbook_url: ../README.md#observability
+          runbook_url: https://github.com/lauroPereira/ai-getnet-case#observability
