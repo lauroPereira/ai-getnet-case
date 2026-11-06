@@ -14,7 +14,7 @@ Tarefas 54 a 58 concluídas e passagem do Developer entregue. Candidato fixado p
 
 ## Arquivos prováveis
 
-`docs/evidence/v060-candidato-rN.json`, `v060-reviewer.md`, `v060-qa.md`, `v060-qa-preparacao.md`, `v060-resultado.md`; controle `.pytest_cache/v060-qa-control/`.
+`docs/evidence/v060-candidato-rN.json`, `v060-reviewer.md`, `v060-qa.md`, `v060-qa-preparacao.md` (na tag `v0.6.0`), `v060-resultado.md`; controle `.pytest_cache/v060-qa-control/`.
 
 ## Passos
 

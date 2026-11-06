@@ -57,7 +57,7 @@ Developer, rodada 2 (2026-10-27). Testes novos (cada um falharia no candidato r1
 - **P3-10** — web `test_shared_interface_offers_only_the_demo_simulated_role`.
 - P3-04 fora do escopo (decisão do responsável).
 
-Validação estrita backend: **337 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web: **34 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md.
+Validação estrita backend: **337 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web: **34 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md (na tag `v0.6.0`).
 
 Developer, rodada 3 (2026-10-27), resíduos da revisão r2:
 
@@ -66,7 +66,7 @@ Developer, rodada 3 (2026-10-27), resíduos da revisão r2:
 - **P3-R2-04** — web `tests/test_v060_interface.py::test_unknown_costs_of_bars_and_running_evaluations_are_never_numbers`. Uma barra com `cost_unknown` sai do gráfico, recebe o rótulo "custo desconhecido" e continua selecionável. A avaliação em andamento mostra "custo da avaliação desconhecido". No r2 apareciam `US$ 0.002000` e `US$ 0.000000`.
 - **P3-R2-02** — sem código: a 0008 não foi publicada e o QA cria runtime novo (conferência do Supervisor registrada no item 14).
 
-Validação estrita backend: **340 passed**, Ruff "All checks passed!", código 0. Web: **35 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md.
+Validação estrita backend: **340 passed**, Ruff "All checks passed!", código 0. Web: **35 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md (na tag `v0.6.0`).
 
 ## Status
 

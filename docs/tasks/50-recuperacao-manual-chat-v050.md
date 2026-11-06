@@ -41,7 +41,7 @@ Documentação de passagem. Backend somente esta tarefa e evidência.
    nem introduzir retry automático. Registrar limites da análise histórica.
 6. Validar transporte controlado e testes web completos, script exigido/Ruff
    externo se necessário. Não chamar APIs reais ou serviços pagos da rodada.
-7. Entregar passagem `v050-developer-ui-r2.md`; parar escrita ao concluir,
+7. Entregar passagem `v050-developer-ui-r2.md` (na tag `v0.5.0`); parar escrita ao concluir,
    sem adendos experimentais. Supervisor fixa r5, Reviewer revisa o conjunto
    controles/recuperação e o mesmo QA revalida no orçamento já existente.
 

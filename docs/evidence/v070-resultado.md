@@ -49,7 +49,7 @@ Acumulado do projeto: cerca de US$0,79 de US$5,00. O custo da ferramenta de dese
 
 ## Limitações
 
-Ver CHANGELOG 0.7.0 e README "Limitations": entrega esgotada ou recusada sem reenvio e prendendo os eventos seguintes do mesmo caso e destino; recuperação de um turno interrompido dependente do reenvio da mesma mensagem; bloqueios entre processos exercitados só no Windows; identidade com emissor próprio e usuários sintéticos. Atritos e observações do QA (A-1 a A-3, O-4 a O-9) estão em [v070-qa.md](v070-qa.md).
+Ver CHANGELOG 0.7.0 e README (seção "Limitations" na tag `v0.7.0`): entrega esgotada ou recusada sem reenvio e prendendo os eventos seguintes do mesmo caso e destino; recuperação de um turno interrompido dependente do reenvio da mesma mensagem; bloqueios entre processos exercitados só no Windows; identidade com emissor próprio e usuários sintéticos. Atritos e observações do QA (A-1 a A-3, O-4 a O-9) estão em [v070-qa.md](v070-qa.md).
 
 ## Como voltar à v0.6.0
 

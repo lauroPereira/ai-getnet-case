@@ -48,7 +48,7 @@ Cada checkbox marcado habilita o botão correspondente quando os demais pré-req
 
 ## Validação
 
-QA real r1 reproduziu o defeito. Correção Developer e regressão sintética em `docs/evidence/v050-developer-ui-r1.md`; nova revisão independente e confirmação no navegador ainda pendentes.
+QA real r1 reproduziu o defeito. Correção Developer e regressão sintética em `docs/evidence/v050-developer-ui-r1.md` (na tag `v0.5.0`); nova revisão independente e confirmação no navegador ainda pendentes.
 
 ## Status
 

@@ -55,7 +55,7 @@ O usuário recebe a resposta concluída ou um estado recuperável que identifica
 
 ## Validação
 
-QA real v0.5.0, r1: observação e logs sanitizados em `docs/evidence/v050-qa-r1.md`. Nenhum retry foi feito.
+QA real v0.5.0, r1: observação e logs sanitizados em `docs/evidence/v050-qa-r1.md` (na tag `v0.5.0`). Nenhum retry foi feito.
 
 ## Status
 

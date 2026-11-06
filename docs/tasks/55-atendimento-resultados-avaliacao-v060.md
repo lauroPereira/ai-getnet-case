@@ -42,7 +42,7 @@ Backend: `data/scenarios/`, `api/v1.py`, `evaluation/runner.py`, `orchestration/
 - Interface: `test_demo_sees_attendance_and_results_and_admin_also_sees_administration`, `test_catalog_scenario_is_sent_once_with_its_id_and_reruns_do_not_post`, `test_results_show_checks_unevaluated_and_evaluation_needs_explicit_confirmation`, `test_backend_errors_explain_the_recovery_action`; testes existentes de recuperação, comparação de Routers e KB continuam passando. Cliente e `openapi-v1.json` regenerados (31 caminhos, 28 operações).
 - Bancos novos publicam Referência, Híbrido e Ajustado; bancos anteriores mantêm o Ajustado como rascunho até a publicação pelo admin (documentado no guia).
 
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md.
+Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md (na tag `v0.6.0`).
 
 ## Status
 
