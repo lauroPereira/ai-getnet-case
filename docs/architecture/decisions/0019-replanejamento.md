@@ -57,6 +57,7 @@ Restrições: o grafo de retomada do operador (ADR 0018) acaba de ser validado e
 - Mais um nó e mais um conceito no estado (`plan`, um dicionário simples, para não ampliar os tipos registrados nos checkpoints). A fila de revisão e o formato dos checkpoints não mudam.
 - Duas regras usam marcadores lexicais da mensagem (plano, contrato, conta, taxas do lojista; "como faço") e do `missing` do Knowledge. Servem para os casos claros; ambiguidade fica com o modelo. Falso positivo custa um especialista a mais e é limitado pelo orçamento; falso negativo mantém o comportamento da v0.7.0. Os marcadores não cobrem outros idiomas além de português e inglês.
 - `evidence_insufficient_web` busca informação fora das páginas oficiais da Getnet para uma pergunta sobre produto Getnet; a resposta mostra a fonte web. O índice fora do ar (`knowledge_unavailable`) não aciona a web, para não mascarar uma falha de infraestrutura com fonte não oficial.
+- Comportamento: quando o Router manda o cenário "suporte com lacuna de procedimento" direto para `knowledge_and_support`, o replanejamento não roda nesse caso; o rótulo aceita as duas rotas.
 - Retorno: o nó é isolado (`agents/replanner.py`, o nó e três arestas em `graph.py`); voltar às arestas `_after_knowledge` e `_after_support` da v0.7.0 desliga o replanejamento sem tocar na fila, nos checkpoints ou nos contratos. `MAX_PLAN_HOPS=0` impede qualquer especialista extra mantendo o resumo no trace.
 
 ## Data

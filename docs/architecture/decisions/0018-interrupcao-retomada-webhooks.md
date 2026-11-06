@@ -60,7 +60,7 @@ sequenceDiagram
 
 Dependências `langgraph-checkpoint-sqlite` e `pyjwt[crypto]`; um arquivo de checkpoints e arquivos de bloqueio no runtime; tabelas novas nas migrações 0009 (fila, eventos, inbox, entregas) e 0010 (outbox); um serviço a mais no compose (`ticketing`, publicado só em `127.0.0.1`), do qual a `api` depende. O caminho sem encaminhamento não lê checkpoint. Webhooks para fora do compose ficam desligados por padrão (URLs vazias); a API avisa na subida quando um destino tem URL e não tem segredo.
 
-Comportamento na v0.7.0: intenção esgotada (`failed`) ou recusada (`rejected`) prende os eventos seguintes do mesmo caso e destinatário (reenvio previsto no [roadmap](../../specs/roadmap-v0110-v100.md), RF-124); depois de uma queda no meio do turno do encaminhamento, o caso se completa quando o lojista reenvia a mesma mensagem (recuperação na subida prevista, RF-125).
+Comportamento na v0.7.0: intenção esgotada (`failed`) ou recusada (`rejected`) prende os eventos seguintes do mesmo caso e destinatário (reenvio previsto no [roadmap](../../specs/roadmap-v0110-v100.md), RF-124); depois de uma queda no meio do turno do encaminhamento, o caso se completa quando o lojista reenvia a mesma mensagem (recuperação na subida prevista, RF-125). Uma colisão de faixa de bloqueio com uma retomada longa devolve `503`, repetível depois de 5 s; os bloqueios entre processos foram exercitados no Windows.
 
 Retorno: tag v0.6.0, migrações 0010 e 0009 descendentes (a 0010 só desce com a outbox vazia ou só com entregues) e remoção de `checkpoints.sqlite3`, dos arquivos de bloqueio e do banco do ticketing.
 

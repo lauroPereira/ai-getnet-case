@@ -25,7 +25,7 @@ Fechar a lacuna da rubrica com uma frase nova (`judge.v4`), medi-la com os dois 
 - Migração 0012 (reversível) amplia o `CHECK` de `comparisons.state` com `interrupted`; o downgrade converte em `failed`.
 - No startup e em qualquer leitura, uma comparação `running` sem thread viva vira `interrupted`, com as células concluídas preservadas e a tentativa em curso registrada em `interrupted_attempts` com o custo lido do ledger (somado uma vez).
 - `POST /v1/comparisons/{id}/resume[?retry_failed=true]` executa só as células sem resultado, reserva só o que falta, acumula `cost_usd` e responde `409` com código próprio para `running`, `completed`, nada a retomar e fatores fixos alterados. O registro da thread acontece antes de `running` ficar visível e cada thread libera só a própria entrada; dois `resume` concorrentes executam cada célula uma vez.
-- Configuração: o registro de threads é por processo, e a API roda com um worker; o registro compartilhado entre workers está no [roadmap](../../specs/roadmap-v0110-v100.md) (RF-123).
+- Comportamento: a reivindicação do `resume` compara o estado da comparação; o registro de threads é por processo, e a API roda com um worker; a evolução para lease no banco, compartilhada entre workers, está no [roadmap](../../specs/roadmap-v0110-v100.md) (RF-123).
 
 **Métricas e alertas.**
 - `GET /metrics` em texto de exposição 0.0.4, calculado sob demanda de `traces.sqlite3` e do ledger, com cache de 5 s, sem dependência nova: `requests_total{route,status}`, `model_calls_total{agent}`, `tool_calls_total{tool,outcome}`, `tool_failures_total{tool}`, `handoffs_total`, `replan_total{origin}`, `request_duration_seconds` (histograma), `cost_usd_total{provider}`, `budget_remaining_usd`, `budget_limit_usd`.
