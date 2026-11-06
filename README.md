@@ -439,8 +439,10 @@ tests), with `store=false`:
 - **Budget ledger** (`runtime/budget.sqlite3`): every paid call with reserved and actual cost; `/ready` shows what
   is left.
 - **Metrics** (`GET /metrics`, public like `/ready`): Prometheus text format 0.0.4, computed on demand from the
-  traces and the ledger and cached for 5 s, with no Prometheus library. Labels come from closed sets in the code
-  (route, status, agent, tool, outcome, replan origin, provider); no message text, request id, merchant or operator.
+  traces and the ledger and cached for 5 s, with no Prometheus library. Every label value is checked against a
+  closed set in the code (route, status, agent, tool, outcome, replan origin, provider) and anything else becomes
+  `other`, so no message text, request id, merchant or operator reaches a label. An empty or locked store does not
+  fail the scrape: the last complete read is served again (zeroed families before the first one).
 
   | Metric | Type | Labels |
   | --- | --- | --- |
@@ -456,7 +458,9 @@ tests), with `store=false`:
 
 - **Alert rules** in [`alerts/rules.yml`](alerts/rules.yml) (Prometheus format, group `merchant-assistant`): budget
   below 10% of the limit, tool failure rate above 5% over 15 min, handoff rate above 30% over 1 h, p95 duration
-  above 20 s over 15 min. A test checks that every metric in the rules exists in `/metrics`. To scrape it with a
+  above 20 s over 15 min. A test checks that every metric in the rules exists in `/metrics`. `requests_total` and
+  the duration histogram also count operator replies delivered to the merchant (`route="human_reply"`) and
+  resumed requests, so they are in the denominators of the handoff rate and the p95. To scrape it with a
   local Prometheus, add to `scrape_configs` (and `rule_files: [alerts/rules.yml]`):
 
   ```yaml
