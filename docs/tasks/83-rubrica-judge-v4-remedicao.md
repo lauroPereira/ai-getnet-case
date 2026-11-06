@@ -32,8 +32,15 @@ Branch `codex/v0.10.0-rubrica-operacao` criada da `main` com a v0.9.0. Nenhuma c
 
 ## Validação
 
-(Preenchida pelo Developer.)
+Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `ce011b5`, commits `1655e80` e `9e66d20` ([passagem](../evidence/v0100-developer.md#tarefa-83--rubrica-judgev4-e-remedição-dos-dois-juízes-rodada-1)).
+
+- `judge.v3.md` intocado (SHA-256 igual ao da v0.9.0, conferido em teste). `judge.v4.md` difere só pelo trecho inserido na definição de `unsupported_claim` e pela linha `version: 4`; o diff está na passagem.
+- `--rubric v3|v4` (padrão `v3`) em `eval --judge-repeat` (e `eval --judge`) e em `eval-calibrate --import`. Cada julgamento grava `rubric_version` e `evaluator.prompt` da rubrica pedida.
+- Relatório multi-bloco: `--judge`, `--judge-run` e `--rubric` repetíveis, pareados pela ordem, com um bloco por (juiz, execução, rubrica) ao lado do original, a tabela das frases genéricas (S01, S13, S16, S21) e a linha informativa da regra D2. Com um juiz sob v3, o relatório da v0.9.0 sai idêntico byte a byte (conferido sobre o mesmo banco com o código de `ce011b5` e o da branch). Ligações inválidas são recusadas sem gravar nada.
+- Testes sem rede: 8 novos (`tests/unit/evaluation/test_judge_v4.py`, `tests/integration/test_v0100_rubric.py`); um teste existente ajustado porque o arquivo mais novo agora é o v4 (ver a passagem).
+- `python tools/scripts/lint_and_tests.py --strict`: 2115 passed, 1 skipped, ruff limpo, `checar-caminhos-pessoais.py` sem ocorrências em 764 arquivos, exit 0.
+- Não verificado aqui: o rejulgamento real (momentos 1 e 2, pagos) e o relatório real do momento 3, que são do QA.
 
 ## Status
 
-Pendente. Aberta pelo Supervisor em 2026-11-05.
+Implementada pelo Developer em 2026-11-05; aguarda revisão. Aberta pelo Supervisor em 2026-11-05.
