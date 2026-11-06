@@ -29,6 +29,9 @@ JUDGE_CRITERIA = ("answers_question", "clarity_and_tone", "honesty")
 
 log = logging.getLogger("merchant_assistant.comparisons")
 
+# Registry of the comparison threads of this process (task 84 review, P2-1 and P2-2): a thread is registered before
+# its comparison becomes `running` in the database and leaves the registry only after its final state was recorded,
+# and only by itself. So a `running` row without a registered thread really lost its process.
 _ACTIVE: dict[str, threading.Thread] = {}
 _ACTIVE_LOCK = threading.Lock()
 
@@ -240,9 +243,7 @@ def start(app, principal: dict, selection: dict, *, confirmed: bool, max_cost_us
                 (principal["principal_id"],),
             )
         ]
-        with _ACTIVE_LOCK:
-            busy = any(item in _ACTIVE and _ACTIVE[item].is_alive() for item in running)
-        if busy:
+        if any(_alive(item) for item in running):
             raise ComparisonError(409, "comparison_running", "Another comparison is still running; refresh it first.")
         if (
             principal["role"] in v1.LIMITED_ROLES
@@ -257,34 +258,42 @@ def start(app, principal: dict, selection: dict, *, confirmed: bool, max_cost_us
         comparison_id = f"pcmp_{uuid.uuid4().hex[:20]}"
         cells = [dict(cell, status="pending") for cell in estimate["cells"]]
         config = {key: estimate[key] for key in estimate if key not in ("cells",)} | {"max_cost_usd": max_cost_usd}
-        conn.execute(
-            "INSERT INTO comparisons VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (
-                comparison_id,
-                principal["principal_id"],
-                "running",
-                json.dumps(config, sort_keys=True),
-                json.dumps(cells),
-                "[]",
-                json.dumps({"estimated_cost_usd": estimate["estimated_cost_usd"], "digest": expected_digest}),
-                0.0,
-                _now(),
-                _now(),
-            ),
+        kb = getattr(orchestrator, "knowledge_base", None)
+        knowledge = kb.capture_active() if kb else (orchestrator.index, None)
+        thread = threading.Thread(
+            target=_run,
+            args=(app, comparison_id, principal, config, cells, knowledge),
+            name=f"comparison-{comparison_id}",
+            daemon=True,
         )
+        with _ACTIVE_LOCK:  # registered before the row is `running`: a read meanwhile never takes it as orphaned
+            _ACTIVE[comparison_id] = thread
+        try:
+            conn.execute(
+                "INSERT INTO comparisons VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (
+                    comparison_id,
+                    principal["principal_id"],
+                    "running",
+                    json.dumps(config, sort_keys=True),
+                    json.dumps(cells),
+                    "[]",
+                    json.dumps({"estimated_cost_usd": estimate["estimated_cost_usd"], "digest": expected_digest}),
+                    0.0,
+                    _now(),
+                    _now(),
+                ),
+            )
+        except BaseException:
+            _release(comparison_id, thread)
+            raise
     finally:
         conn.close()
-    kb = getattr(orchestrator, "knowledge_base", None)
-    knowledge = kb.capture_active() if kb else (orchestrator.index, None)
-    thread = threading.Thread(
-        target=_run,
-        args=(app, comparison_id, principal, config, cells, knowledge),
-        name=f"comparison-{comparison_id}",
-        daemon=True,
-    )
-    with _ACTIVE_LOCK:
-        _ACTIVE[comparison_id] = thread
-    thread.start()
+    try:
+        thread.start()
+    except BaseException:  # the row stays `running` without a thread: the next read marks it `interrupted`
+        _release(comparison_id, thread)
+        raise
     return comparison_id
 
 
@@ -438,8 +447,8 @@ def _run(
         finally:
             conn.close()
             shutil.rmtree(workdir, ignore_errors=True)
-            with _ACTIVE_LOCK:
-                _ACTIVE.pop(comparison_id, None)
+            # Only after the final state is recorded, and only this thread's own entry (task 84 review, P2-1).
+            _release(comparison_id, threading.current_thread())
 
 
 def _judge_view(evaluations: list[dict]) -> dict | None:
@@ -447,9 +456,23 @@ def _judge_view(evaluations: list[dict]) -> dict | None:
     return completed[-1] if completed else None
 
 
-def _alive(comparison_id: str) -> bool:
+def _registered(comparison_id: str) -> bool:
+    """A thread is registered for the comparison and has not ended. A registered thread that was not started yet
+    counts as alive: it is about to run the cells of a comparison that is (or is becoming) `running`."""
     with _ACTIVE_LOCK:
-        return comparison_id in _ACTIVE and _ACTIVE[comparison_id].is_alive()
+        thread = _ACTIVE.get(comparison_id)
+        return thread is not None and (thread.ident is None or thread.is_alive())
+
+
+def _alive(comparison_id: str) -> bool:
+    return _registered(comparison_id)
+
+
+def _release(comparison_id: str, thread: threading.Thread) -> None:
+    """Removes `thread` from the registry, never an entry registered by another thread."""
+    with _ACTIVE_LOCK:
+        if _ACTIVE.get(comparison_id) is thread:
+            del _ACTIVE[comparison_id]
 
 
 def _ledger_cost(budget, request_id: str) -> float | None:
@@ -498,14 +521,34 @@ def _mark_interrupted(conn, app_state, row) -> bool:
     return updated.rowcount == 1
 
 
+def _interrupt_if_orphan(conn, app_state, comparison_id: str) -> bool:
+    """Marks the comparison `interrupted` if, inside one write transaction, it is still `running` and no thread is
+    registered for it. A resume registers its thread inside its own write transaction, before `running` is committed,
+    so the two never interleave; a finishing thread records its final state before leaving the registry."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute("SELECT * FROM comparisons WHERE comparison_id=?", (comparison_id,)).fetchone()
+        marked = (
+            row is not None
+            and row["state"] == "running"
+            and not _registered(comparison_id)
+            and _mark_interrupted(conn, app_state, row)
+        )
+        conn.execute("COMMIT")
+    except BaseException:
+        conn.execute("ROLLBACK")
+        raise
+    return marked
+
+
 def interrupt_orphans(app_state) -> list[str]:
     """At API startup no comparison thread of this process exists: every `running` comparison without a live thread
     becomes `interrupted` (task 84)."""
     conn = connect(app_state.settings.db_path)
     try:
         marked = []
-        for row in conn.execute("SELECT * FROM comparisons WHERE state='running'").fetchall():
-            if not _alive(row["comparison_id"]) and _mark_interrupted(conn, app_state, row):
+        for row in conn.execute("SELECT comparison_id FROM comparisons WHERE state='running'").fetchall():
+            if not _alive(row["comparison_id"]) and _interrupt_if_orphan(conn, app_state, row["comparison_id"]):
                 marked.append(row["comparison_id"])
                 log.info("comparison interrupted", extra={"event": {"comparison_id": row["comparison_id"]}})
         return marked
@@ -529,9 +572,11 @@ def resume(app, principal: dict, comparison_id: str, *, retry_failed: bool = Fal
         if row is None:
             raise ComparisonError(404, "not_found", "Comparison not found.")
         if row["state"] == "running" and not _alive(comparison_id):
-            _mark_interrupted(conn, app.state, row)
+            _interrupt_if_orphan(conn, app.state, comparison_id)
             row = conn.execute("SELECT * FROM comparisons WHERE comparison_id=?", (comparison_id,)).fetchone()
-        if row["state"] == "running":
+        # A registered thread means the comparison is running, whatever state it already recorded: a thread that
+        # recorded its final state is still leaving (task 84 review, P2-1).
+        if row["state"] == "running" or _alive(comparison_id):
             raise ComparisonError(409, "comparison_running", "The comparison is still running.")
         if row["state"] == "completed":
             raise ComparisonError(409, "comparison_completed", "The comparison already completed; nothing to resume.")
@@ -559,8 +604,10 @@ def resume(app, principal: dict, comparison_id: str, *, retry_failed: bool = Fal
                 "The knowledge base, prompts or execution mode changed since the comparison started; start a new one.",
             )
         for cell in cells:
-            if cell.get("request_id") and not (retry_failed and cell.get("status") == "failed"):
-                continue  # recorded result: kept as it is
+            if (cell.get("status") == "failed" and not retry_failed) or (
+                cell.get("request_id") and cell.get("status") != "failed"
+            ):
+                continue  # recorded result, or a failed cell without retry_failed: kept as it is
             previous = cell.pop("request_id", None)
             if previous:  # the failed attempt stays attached to the cell (and in the ledger under its own id)
                 cell.setdefault("previous_request_ids", []).append(previous)
@@ -578,6 +625,14 @@ def resume(app, principal: dict, comparison_id: str, *, retry_failed: bool = Fal
         recount = [cell for cell in todo if cell["source"] == "new" and cell.get("demo_refunded")]
         for cell in recount:  # counted again below: given back again only if it makes no paid call this time
             cell.pop("demo_refunded", None)
+        failures, spent = json.loads(row["failures"]), float(row["cost_usd"] or 0.0)
+        thread = threading.Thread(
+            target=_run,
+            args=(app, comparison_id, principal, config, cells, knowledge),
+            kwargs={"failures": failures, "spent": spent},
+            name=f"comparison-{comparison_id}",
+            daemon=True,
+        )
         conn.execute("BEGIN IMMEDIATE")
         try:
             claimed = conn.execute(
@@ -596,23 +651,23 @@ def resume(app, principal: dict, comparison_id: str, *, retry_failed: bool = Fal
                     "demo_message_limit_reached",
                     "This demo session cannot run that many new executions; start a new session.",
                 )
+            # Registered inside the claim, before `running` is committed: a read or a resume that sees `running`
+            # also sees the thread (task 84 review, P2-2).
+            with _ACTIVE_LOCK:
+                _ACTIVE[comparison_id] = thread
             conn.execute("COMMIT")
         except BaseException:
-            conn.execute("ROLLBACK")
+            if conn.in_transaction:
+                conn.execute("ROLLBACK")
+            _release(comparison_id, thread)
             raise
-        failures, spent = json.loads(row["failures"]), float(row["cost_usd"] or 0.0)
     finally:
         conn.close()
-    thread = threading.Thread(
-        target=_run,
-        args=(app, comparison_id, principal, config, cells, knowledge),
-        kwargs={"failures": failures, "spent": spent},
-        name=f"comparison-{comparison_id}",
-        daemon=True,
-    )
-    with _ACTIVE_LOCK:
-        _ACTIVE[comparison_id] = thread
-    thread.start()
+    try:
+        thread.start()
+    except BaseException:  # the row stays `running` without a thread: the next read marks it `interrupted`
+        _release(comparison_id, thread)
+        raise
     return {"comparison_id": comparison_id, "state": "running", "resumed_cells": len(todo)}
 
 
@@ -625,7 +680,7 @@ def read(app_state, conn, principal: dict, comparison_id: str) -> dict:
     if row["state"] == "running" and not _alive(comparison_id):
         # The API process restarted while the thread was running: the comparison becomes `interrupted` and can be
         # resumed (task 84). A thread that recorded its final state in the meantime is never overwritten (P3-01).
-        _mark_interrupted(conn, app_state, row)
+        _interrupt_if_orphan(conn, app_state, comparison_id)
         row = conn.execute("SELECT * FROM comparisons WHERE comparison_id=?", (comparison_id,)).fetchone()
     state = row["state"]
     cells, failures = json.loads(row["cells"]), json.loads(row["failures"])

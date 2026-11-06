@@ -7,6 +7,7 @@ restart is a new app (new orchestrator and scripted model) over the same runtime
 
 from __future__ import annotations
 
+import json
 import logging
 import sqlite3
 import threading
@@ -142,6 +143,25 @@ def test_restart_marks_the_comparison_interrupted_and_resume_runs_only_the_missi
     settings = keys
     caplog.set_level(logging.INFO, logger="merchant_assistant.comparisons")
     comparison_id, killed_id, restarted, orchestrator, llm = interrupted_comparison(settings, offline, monkeypatch)
+    # The attempt that died has a cost in the ledger: its settled calls, plus a reservation never settled because the
+    # process stopped during the call (review P2-3: the cost must reach `cost_usd`, once).
+    budget = sqlite3.connect(settings.runtime_path / "budget.sqlite3")
+    budget.execute("UPDATE ledger SET actual_usd=0.004 WHERE request_id=? AND status='settled'", (killed_id,))
+    budget.execute(
+        "INSERT INTO ledger (at, request_id, agent, model, reserved_usd, status) "
+        "VALUES ('t', ?, 'router', 'synthetic', 0.002, 'reserved')",
+        (killed_id,),
+    )
+    budget.commit()
+    settled = budget.execute(
+        "SELECT COUNT(*) FROM ledger WHERE request_id=? AND status='settled'", (killed_id,)
+    ).fetchone()[0]
+    budget.close()
+    attempt_cost = settled * 0.004 + 0.002
+    recorded = sqlite3.connect(settings.db_path)
+    cost_before = recorded.execute("SELECT cost_usd FROM comparisons WHERE comparison_id=?", (comparison_id,))
+    cost_before = cost_before.fetchone()
+    recorded.close()
     with TestClient(restarted.app) as client:  # the lifespan runs: no thread survived the old process
         assert db_state(settings, comparison_id) == "interrupted"
         assert [getattr(r, "event", None) for r in caplog.records if r.name == "merchant_assistant.comparisons"] == [
@@ -153,8 +173,11 @@ def test_restart_marks_the_comparison_interrupted_and_resume_runs_only_the_missi
         first, *rest = lost["cells"]
         assert first["status"] == "completed" and first["request_id"]  # the finished cell is preserved
         assert [cell["status"] for cell in rest] == ["pending"] * 3 and not any("request_id" in c for c in rest)
-        assert rest[0]["interrupted_attempts"] == [{"request_id": killed_id, "cost_usd": 0.0}]
+        assert rest[0]["interrupted_attempts"] == [{"request_id": killed_id, "cost_usd": pytest.approx(attempt_cost)}]
         assert "in_flight_request_id" not in str(lost["cells"])
+        assert lost["cost_usd"] == pytest.approx(cost_before[0] + attempt_cost)  # added once
+        again = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
+        assert again["cost_usd"] == lost["cost_usd"] and again["cells"] == lost["cells"]  # never added twice
         before = ledger(settings)
         assert set(before) == {first["request_id"], killed_id}
 
@@ -178,8 +201,9 @@ def test_restart_marks_the_comparison_interrupted_and_resume_runs_only_the_missi
     after = ledger(settings)
     assert set(after) == set(before) | set(new_ids)
     assert {rid: after[rid] for rid in before} == before
-    expected_cost = sum(float(cell["cost_usd"] or 0) for cell in cells) + 0.0  # + the interrupted attempt (0 here)
+    expected_cost = sum(float(cell["cost_usd"] or 0) for cell in cells) + attempt_cost  # + the interrupted attempt
     assert done["cost_usd"] == pytest.approx(expected_cost)
+    assert cells[1]["interrupted_attempts"] == rest[0]["interrupted_attempts"]
     assert done["aggregates"]["profiles"][0]["sample_size"] == 2 and done["aggregates"]["profiles"][1]["sample_size"]
 
 
@@ -268,3 +292,283 @@ def test_resume_reserves_only_what_is_missing_and_refuses_changed_fixed_factors(
         assert resumed.status_code == 202, resumed.json()
         join(comparison_id)
         assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] == "completed"
+
+
+# --- Task 84 review, round 1: races around the thread registry (P2-1, P2-2) ------------------------------------------
+
+
+class Window:
+    """Wraps `comparisons.connect` for the request threads: when the connection whose statement made a comparison
+    `running` (the INSERT of `start`, the claim of `resume`) closes, after its commit and before the comparison thread
+    starts, runs `during` once. The comparison threads get the real connection."""
+
+    def __init__(self, monkeypatch, marker: str, during) -> None:
+        real, window = comparisons.connect, self
+        self.ran, self.params = False, ()
+
+        class Conn:
+            def __init__(self, conn) -> None:
+                self._conn, self._hit = conn, False
+
+            def execute(self, sql, *args):
+                if marker in sql and not self._hit:
+                    self._hit, window.params = True, args[0] if args else ()
+                return self._conn.execute(sql, *args)
+
+            def close(self) -> None:
+                self._conn.close()
+                if self._hit and not window.ran:
+                    window.ran = True
+                    during()
+
+            def __getattr__(self, name):
+                return getattr(self._conn, name)
+
+        def connect(path):
+            conn = real(path)
+            return conn if threading.current_thread().name.startswith("comparison-") else Conn(conn)
+
+        monkeypatch.setattr(comparisons, "connect", connect)
+
+
+def test_read_and_resume_while_start_is_registering_never_run_a_cell_twice(keys, offline, monkeypatch):
+    client, _, llm = offline()
+    headers = login(client)
+    executions = Executions(monkeypatch, llm=llm)
+    seen: dict = {}
+
+    def during():  # the row is already `running`; the thread exists but has not started
+        comparison_id = window.params[0]
+        seen["read"] = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"]
+        seen["resume"] = client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers)
+
+    window = Window(monkeypatch, "INSERT INTO comparisons", during)
+    comparison_id = create(client, headers)
+    join(comparison_id)
+    assert window.ran and seen["read"] == "running"  # never `interrupted` while its thread is registered
+    assert seen["resume"].status_code == 409 and seen["resume"].json()["error"]["code"] == "comparison_running"
+    done = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
+    assert done["state"] == "completed", done["failures"]
+    assert len(executions.calls) == 4 and len({call[2] for call in executions.calls}) == 4  # each cell once
+
+
+def test_read_and_resume_while_resume_is_registering_never_run_a_cell_twice(keys, offline, monkeypatch):
+    settings = keys
+    comparison_id, _, restarted, _, llm = interrupted_comparison(settings, offline, monkeypatch)
+    with TestClient(restarted.app) as client:
+        headers = login(client)
+        executions = Executions(monkeypatch, llm=llm)
+        seen: dict = {}
+
+        def during():  # the claim committed `running`; the resumed thread exists but has not started
+            seen["read"] = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"]
+            seen["resume"] = client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers)
+
+        window = Window(monkeypatch, "SET state='running'", during)
+        resumed = client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers)
+        assert resumed.status_code == 202, resumed.json()
+        join(comparison_id)
+        done = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
+    assert window.ran and seen["read"] == "running"
+    assert seen["resume"].status_code == 409 and seen["resume"].json()["error"]["code"] == "comparison_running"
+    assert done["state"] == "completed", done["failures"]
+    assert len(executions.calls) == 3  # each missing cell once
+
+
+def test_two_concurrent_resumes_claim_the_comparison_once(keys, offline, monkeypatch):
+    settings = keys
+    comparison_id, _, restarted, orchestrator, llm = interrupted_comparison(settings, offline, monkeypatch)
+    with TestClient(restarted.app) as client:
+        headers = login(client)
+        executions = Executions(monkeypatch, llm=llm)
+        barrier, lock, calls = threading.Barrier(2, timeout=30), threading.Lock(), []
+        real_remaining = orchestrator.budget.remaining
+
+        def remaining():  # both requests read the same `interrupted` row, then both try to claim it
+            with lock:
+                calls.append(None)
+                first_two = len(calls) <= 2
+            if first_two:
+                barrier.wait()
+            return real_remaining()
+
+        monkeypatch.setattr(orchestrator.budget, "remaining", remaining)
+        responses: list = []
+        workers = [
+            threading.Thread(
+                target=lambda: responses.append(client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers))
+            )
+            for _ in range(2)
+        ]
+        for worker in workers:
+            worker.start()
+        for worker in workers:
+            worker.join(timeout=60)
+        assert sorted(response.status_code for response in responses) == [202, 409]
+        refused = next(response for response in responses if response.status_code == 409)
+        assert refused.json()["error"]["code"] == "comparison_running"
+        join(comparison_id)
+        done = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
+    assert done["state"] == "completed", done["failures"]
+    assert len(executions.calls) == 3 and len({call[2] for call in executions.calls}) == 3  # each missing cell once
+
+
+def test_a_leaving_thread_keeps_resume_refused_and_unregisters_only_itself(keys, offline, monkeypatch):
+    client, _, llm = offline()
+    headers = login(client)
+    executions = Executions(monkeypatch, fail_at=2, llm=llm)
+    leaving, go, hold = threading.Event(), threading.Event(), threading.Event()
+    real_rmtree = comparisons.shutil.rmtree
+
+    def rmtree(path, *args, **kwargs):  # the final state is recorded; the thread has not left the registry yet
+        if threading.current_thread().name.startswith("comparison-") and not go.is_set():
+            leaving.set()
+            go.wait(timeout=30)
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(comparisons.shutil, "rmtree", rmtree)
+    comparison_id = create(client, headers)
+    first = comparisons._ACTIVE[comparison_id]
+    other = threading.Thread(target=hold.wait, args=(30,), daemon=True)
+    try:
+        assert leaving.wait(timeout=60)
+        assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] == "partial"
+        busy = client.post(f"/v1/comparisons/{comparison_id}/resume?retry_failed=true", headers=headers)
+        assert busy.status_code == 409 and busy.json()["error"]["code"] == "comparison_running"
+        # Another thread registered under the same id meanwhile is never removed by the one that is leaving.
+        other.start()
+        with comparisons._ACTIVE_LOCK:
+            comparisons._ACTIVE[comparison_id] = other
+        go.set()
+        first.join(timeout=60)
+        assert not first.is_alive() and comparisons._ACTIVE.get(comparison_id) is other
+    finally:
+        go.set()
+        hold.set()
+        if other.ident:
+            other.join(timeout=60)
+        comparisons._release(comparison_id, other)
+
+    executions.calls.clear()
+    executions.fail_at = None
+    retried = client.post(f"/v1/comparisons/{comparison_id}/resume?retry_failed=true", headers=headers)
+    assert retried.status_code == 202, retried.json()
+    assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] in ("running", "completed")
+    again = client.post(f"/v1/comparisons/{comparison_id}/resume?retry_failed=true", headers=headers)
+    assert again.status_code == 409
+    join(comparison_id)
+    assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] == "completed"
+    assert len(executions.calls) == 1  # the failed cell ran again once
+
+
+# --- Task 84 review, round 1: P3-1, P3-2, P3-3 ------------------------------------------------------------------------
+
+
+def comparison_cells(settings, comparison_id: str) -> list[dict]:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        row = conn.execute("SELECT cells FROM comparisons WHERE comparison_id=?", (comparison_id,)).fetchone()
+        return json.loads(row[0])
+    finally:
+        conn.close()
+
+
+def save_cells(settings, comparison_id: str, cells: list[dict]) -> None:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        conn.execute("UPDATE comparisons SET cells=? WHERE comparison_id=?", (json.dumps(cells), comparison_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def demo_count(settings) -> int:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        return conn.execute("SELECT SUM(message_count) FROM api_sessions WHERE principal_id LIKE 'demo%'").fetchone()[0]
+    finally:
+        conn.close()
+
+
+def test_resume_recounts_given_back_cells_and_never_gives_one_back_twice(keys, offline, monkeypatch):
+    settings = keys
+    client, _, llm = offline()
+    headers = login(client)
+    executions = Executions(monkeypatch, fail_at=2, llm=llm)
+    comparison_id = create(client, headers)
+    join(comparison_id)
+    assert demo_count(settings) == 3  # four counted at the start; the cell that failed before any call given back
+    cells = comparison_cells(settings, comparison_id)
+    failed = next(i for i, cell in enumerate(cells) if cell["status"] == "failed")
+    assert cells[failed]["demo_refunded"] is True
+    # The last cell becomes one the process never reached (already counted, never given back).
+    keep = ("scenario_id", "profile_id", "profile_version", "repetition", "source", "reused_request_id")
+    cells[-1] = {key: cells[-1][key] for key in (*keep, "estimated_cost_usd")} | {"status": "pending"}
+    save_cells(settings, comparison_id, cells)
+
+    executions.fail_at = None
+    resumed = client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers)
+    assert resumed.status_code == 202 and resumed.json()["resumed_cells"] == 1
+    join(comparison_id)
+    assert demo_count(settings) == 3  # the failed cell, given back before, is not given back again
+
+    retried = client.post(f"/v1/comparisons/{comparison_id}/resume?retry_failed=true", headers=headers)
+    assert retried.status_code == 202 and retried.json()["resumed_cells"] == 1
+    join(comparison_id)
+    assert demo_count(settings) == 4  # the given-back cell is counted again before it runs, and it made a paid call
+    assert client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()["state"] == "completed"
+
+
+def test_a_failed_recorded_cell_runs_again_only_with_retry_failed(keys, offline, monkeypatch):
+    settings = keys
+    client, _, llm = offline()
+    headers = login(client)
+    executions = Executions(monkeypatch, fail_at=2, llm=llm)
+    comparison_id = create(client, headers)
+    join(comparison_id)
+    cells = comparison_cells(settings, comparison_id)
+    failed = next(i for i, cell in enumerate(cells) if cell["status"] == "failed")
+    recorded = next(cell["request_id"] for cell in cells if cell["status"] == "completed")
+    keep = ("scenario_id", "profile_id", "profile_version", "repetition", "status")
+    cells[failed] = {key: cells[failed][key] for key in keep} | {
+        "source": "recorded",
+        "reused_request_id": recorded,
+        "estimated_cost_usd": 0.0,
+        "error": "recorded_run_missing",
+    }
+    save_cells(settings, comparison_id, cells)
+
+    nothing = client.post(f"/v1/comparisons/{comparison_id}/resume", headers=headers)
+    assert nothing.status_code == 409 and nothing.json()["error"]["code"] == "nothing_to_resume"
+    executions.calls.clear()
+    retried = client.post(f"/v1/comparisons/{comparison_id}/resume?retry_failed=true", headers=headers)
+    assert retried.status_code == 202 and retried.json()["resumed_cells"] == 1
+    join(comparison_id)
+    done = client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
+    assert done["state"] == "completed", done["failures"]
+    assert done["cells"][failed]["request_id"] == recorded and executions.calls == []  # reused, no new execution
+
+
+def test_marking_interrupted_never_overwrites_a_final_state(keys, offline):
+    settings = keys
+    client, _, _ = offline()
+    conn = comparisons.connect(settings.db_path)
+    try:
+        conn.execute(
+            "INSERT INTO comparisons VALUES ('pcmp_final0000000000000','demo:default','completed','{}',"
+            "'[{\"status\": \"completed\", \"in_flight_request_id\": \"req_x\"}]','[]','{}',0.5,'t','t')"
+        )
+        row = conn.execute("SELECT * FROM comparisons WHERE comparison_id='pcmp_final0000000000000'").fetchone()
+        assert comparisons._mark_interrupted(conn, client.app.state, row) is False  # a stale `running` view
+        after = conn.execute("SELECT * FROM comparisons WHERE comparison_id='pcmp_final0000000000000'").fetchone()
+        assert tuple(after) == tuple(row)
+    finally:
+        conn.close()
+
+
+def test_resume_route_declares_its_error_responses(keys, offline):
+    client, _, _ = offline()
+    responses = client.app.openapi()["paths"]["/v1/comparisons/{comparison_id}/resume"]["post"]["responses"]
+    assert {"202", "404", "409", "422", "429"} <= set(responses)
+    for status in ("404", "409", "422", "429"):
+        assert responses[status]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorBody")
