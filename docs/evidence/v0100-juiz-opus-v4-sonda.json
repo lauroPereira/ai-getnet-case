@@ -1,0 +1,867 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "anthropic",
+   "model": "claude-opus-5-5",
+   "rubric": "judge",
+   "rubric_version": "4",
+   "prompt": "judge@4",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "default",
+    "thinking": "default"
+   }
+  },
+  "repeat": 1,
+  "judge_repeat": 1,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "v080-calibracao-amostra.csv",
+  "only_sample_ids": 24,
+  "limit": 3,
+  "selected_answers": 3,
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 3
+ },
+ "summary": {
+  "overall": {
+   "n": 3,
+   "passed": 1.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 8534,
+   "latency_p95_ms": 16753,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 3,
+    "answers": 1,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.67,
+    "factual_correctness": 4.33,
+    "relevance": 4.67,
+    "usefulness": 4.33
+   },
+   "unsupported_claim_rate": 0.333
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11708,
+    "latency_p95_ms": 16753,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 4.5,
+     "relevance": 4.5,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.0
+   },
+   "holdout": {
+    "n": 1,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8534,
+    "latency_p95_ms": 8534,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 4.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 1.0
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6664,
+    "latency_p95_ms": 6664,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.0
+   },
+   "pt": {
+    "n": 2,
+    "passed": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 12643,
+    "latency_p95_ms": 16753,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.5,
+     "factual_correctness": 4.0,
+     "relevance": 4.5,
+     "usefulness": 4.5
+    },
+    "unsupported_claim_rate": 0.5
+   }
+  },
+  "paths": {
+   "knowledge": {
+    "knowledge": 1,
+    "knowledge → customer_support → web": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-06T03:20:57+00:00",
+  "judge_cost_usd": 0.05856,
+  "judge_usage": {
+   "judgements": 3,
+   "total": {
+    "input_tokens": 9331,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "output_tokens": 1062
+   },
+   "mean": {
+    "input_tokens": 3110.3,
+    "cache_read_tokens": 0.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 354.0
+   }
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 1,
+   "caveat": "Ressalva de amostra pequena (D19): 3 casos com 1 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 3,
+    "judgements": 3,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.67,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": 4.33,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": 4.67,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": 4.33,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.333,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {
+    "knowledge": {
+     "cases": 2,
+     "judgements": 2,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.5,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 4.5,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.5,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.5,
+      "exact": null,
+      "pairs": 0
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 2,
+     "judgements": 2,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.5,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 4.5,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": null,
+      "pairs": 0
+     }
+    },
+    "holdout": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT06",
+   "repetition": 1,
+   "request_id": "req_eval0c6f7493f669",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Como funciona a antecipação de recebíveis na Getnet?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil. Acesse **Serviços > Antecipação de Vendas** e:\n1. Escolha uma conta bancária cadastrada e aceite os termos.\n2. Faça uma simulação para conferir valores, bandeiras e taxas. O valor mínimo é de R$50,00, e as taxas variam conforme o contrato.\n3. Se confirmar, confira o valor final, toque em **Antecipar** e informe sua senha. Acompanhe o status em **Meus Pedidos**.\n\nTambém é possível solicitar a habilitação da Antecipação Automática pelo app. A solicitação pode levar até 48 horas, exige saldo mínimo de R$ 50,00 para ocorrer e depende de avaliação individual do contrato.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Como habilitar antecipação automática pelo App - Getnet"
+   ],
+   "duration_ms": 8534,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Como funciona a antecipação de recebíveis na Getnet?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Como habilitar antecipação automática pelo App - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nSim, você pode solicitar a alteração das taxas nos canais da Getnet:\nAplicativo da Getnet;\nPortal do Cliente\n– para contratação de máquina adicional (aluguel ou compra);\nCentral de Relacionamento Getnet, por meio do telefone 4002-4000 e realizar a solicitação.\nQual a taxa para Antecipação Automática?\nQual a taxa para Antecipação Automática?\nA Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’. Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática.\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nInformações de taxas\npara venda no débito e crédito\nPara maior transparência disponibilizamos todas as taxas cobradas em suas transações de vendas.\nPlano de recebimento:\n2 dias úteis*\nReceba conforme\nsuas vendas\nDébito:\n1,89%\n1,95%\nCrédito à vista:\n3,99%"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-habilitar-antecipacao-automatica-pelo-app",
+      "text": "Como habilitar antecipação automática pelo App - Getnet\nVocê pode habilitar a antecipação automática direto pelo App Getnet Brasil. Contudo, lembre-se que para qualquer solicitação de ativação e desativação é necessário ter um perfil administrativo e [credential removed] conseguir seguir.\nPasso a passo para habilitar a antecipação automática:\n1. Acesse o App com seu login e [credential removed]\n2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;\n4. Clique Habilitar;\n5. Insira sua [credential removed] leia os termos e condições e clique Habilitar;\n6. Pronto! Sua solicitação foi enviada e pode demorar até 48 horas.\n7. Verifique o valor final e clique em Antecipar.\nCaso deseje desabilitar, basta selecionar Antecipação Automática na área Serviços e desabilitar.\nA habilitação é livre, porém para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3021,
+     "kept_chars": 3021,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil. Acesse **Serviços > Antecipação de Vendas** e:\n1. Escolha uma conta bancária cadastrada e aceite os termos.\n2. Faça uma simulação para conferir valores, bandeiras e taxas. O valor mínimo é de R$50,00, e as taxas variam conforme o contrato.\n3. Se confirmar, confira o valor final, toque em **Antecipar** e informe sua senha. Acompanhe o status em **Meus Pedidos**.\n\nTambém é possível solicitar a habilitação da Antecipação Automática pelo app. A solicitação pode levar até 48 horas, exige saldo mínimo de R$ 50,00 para ocorrer e depende de avaliação individual do contrato."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3021,
+    "kept_chars": 3021,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00060897,
+   "judge": {
+    "evaluation_id": "eval_1f23feded57a4d54b516",
+    "rubric_version": "4",
+    "repetition": 1,
+    "provider": "anthropic",
+    "model": "claude-opus-5-5",
+    "state": "completed",
+    "model_used": "claude-opus-5-5",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Most steps, the R$50 minimum, the 48-hour wait and individual evaluation are supported; 'taxas variam conforme o contrato' has no source.",
+     "factual_correctness": "The reply matches the evidence except the rate-variation claim; individual evaluation in the evidence concerns granting Automatic Anticipation, not rates.",
+     "relevance": "It directly explains how manual and automatic receivables anticipation work, as asked.",
+     "usefulness": "Clear, concise, actionable steps in Portuguese covering the app path, minimum amount and status tracking."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.023496,
+    "usage": {
+     "input_tokens": 3844,
+     "cache_read_tokens": 0,
+     "cache_creation_tokens": 0,
+     "output_tokens": 406
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_1f23feded57a4d54b516",
+     "rubric_version": "4",
+     "repetition": 1,
+     "provider": "anthropic",
+     "model": "claude-opus-5-5",
+     "state": "completed",
+     "model_used": "claude-opus-5-5",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Most steps, the R$50 minimum, the 48-hour wait and individual evaluation are supported; 'taxas variam conforme o contrato' has no source.",
+      "factual_correctness": "The reply matches the evidence except the rate-variation claim; individual evaluation in the evidence concerns granting Automatic Anticipation, not rates.",
+      "relevance": "It directly explains how manual and automatic receivables anticipation work, as asked.",
+      "usefulness": "Clear, concise, actionable steps in Portuguese covering the app path, minimum amount and status tracking."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.023496,
+     "usage": {
+      "input_tokens": 3844,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0,
+      "output_tokens": 406
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "V030-ENABLEMENT-PENDING",
+   "repetition": 1,
+   "request_id": "req_evalda08fa632aaf",
+   "split": "dev",
+   "language": "en",
+   "message": "I already requested Visa enablement; can you check it?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "Your Visa enablement request is pending, and no activation date is recorded. The device checked for this request is marked available, but that does not mean Visa enablement is active. Keep protocol SIM-BND-1988-001 for follow-up.",
+   "sources": [
+    "Card-scheme enablement requests (your account)"
+   ],
+   "duration_ms": 6664,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_enablement_requests"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "I already requested Visa enablement; can you check it?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Card-scheme enablement requests (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"enablement\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:53:59-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"enablement\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T19:53:59-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"enablement\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_enablement_requests",
+      "text": "{\"arguments\": {\"scheme\": \"Visa\"}, \"result\": {\"note\": \"Read-only status; no new request or terminal configuration is created.\", \"observed_at\": \"2026-11-04T19:54:00-03:00\", \"requests\": [{\"activated_at\": null, \"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}, \"protocol\": \"SIM-BND-1988-001\", \"request_id\": \"enr_1988_visa_001\", \"requested_at\": \"2026-11-02T09:00:00-03:00\", \"scheme\": \"visa\", \"status\": \"pending\"}], \"source\": \"EnablementRequestsMock\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 786,
+     "kept_chars": 786,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Your Visa enablement request is pending, and no activation date is recorded. The device checked for this request is marked available, but that does not mean Visa enablement is active. Keep protocol SIM-BND-1988-001 for follow-up."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 786,
+    "kept_chars": 786,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00028593,
+   "judge": {
+    "evaluation_id": "eval_7649d96cb07649c8907d",
+    "rubric_version": "4",
+    "repetition": 1,
+    "provider": "anthropic",
+    "model": "claude-opus-5-5",
+    "state": "completed",
+    "model_used": "claude-opus-5-5",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Pending status, null activation date, device availability and protocol all come directly from the get_enablement_requests tool result.",
+     "factual_correctness": "All stated details match the tool result exactly, and the caveat about device availability is a reasonable, consistent clarification.",
+     "relevance": "Directly checks and reports the status of the merchant's Visa enablement request.",
+     "usefulness": "Clear, concise, in English, and gives the protocol for follow-up; could mention the request date or next steps."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.014664,
+    "usage": {
+     "input_tokens": 2581,
+     "cache_read_tokens": 0,
+     "cache_creation_tokens": 0,
+     "output_tokens": 217
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_7649d96cb07649c8907d",
+     "rubric_version": "4",
+     "repetition": 1,
+     "provider": "anthropic",
+     "model": "claude-opus-5-5",
+     "state": "completed",
+     "model_used": "claude-opus-5-5",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Pending status, null activation date, device availability and protocol all come directly from the get_enablement_requests tool result.",
+      "factual_correctness": "All stated details match the tool result exactly, and the caveat about device availability is a reasonable, consistent clarification.",
+      "relevance": "Directly checks and reports the status of the merchant's Visa enablement request.",
+      "usefulness": "Clear, concise, in English, and gives the protocol for follow-up; could mention the request date or next steps."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.014664,
+     "usage": {
+      "input_tokens": 2581,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0,
+      "output_tokens": 217
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "REPLAN-ACCOUNT",
+   "repetition": 1,
+   "request_id": "req_eval4e3529ab6de2",
+   "split": "dev",
+   "language": "pt",
+   "message": "A antecipação de recebíveis está disponível no meu plano?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support → web",
+   "answer": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2, mas não foi possível confirmar se a antecipação está incluída nele. Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil. O valor mínimo é de R$ 50,00.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Crédito: o que é antecipação de recebíveis – Conta Azul",
+    "Contracted products (your account)"
+   ],
+   "duration_ms": 16753,
+   "cost_usd": 0.0,
+   "model_calls": 8,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_contract_snapshot"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A antecipação de recebíveis está disponível no meu plano?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Crédito: o que é antecipação de recebíveis – Conta Azul",
+     "Contracted products (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_contract_snapshot",
+      "text": "{\"arguments\": {}, \"result\": {\"effective_from\": \"2025-09-30\", \"observed_at\": \"2026-11-04T19:48:53-03:00\", \"pricing_context\": {\"plan\": \"demo_standard\", \"source\": \"ContractPricingContextMock\", \"version\": \"pricing_mock_v1\"}, \"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\", \"source\": \"ContractsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1298,
+     "kept_chars": 1298,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2, mas não foi possível confirmar se a antecipação está incluída nele. Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil. O valor mínimo é de R$ 50,00."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1298,
+    "kept_chars": 1298,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.01157239,
+   "judge": {
+    "evaluation_id": "eval_ecb8b3313cc44ab2a4d1",
+    "rubric_version": "4",
+    "repetition": 1,
+    "provider": "anthropic",
+    "model": "claude-opus-5-5",
+    "state": "completed",
+    "model_used": "claude-opus-5-5",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 4,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Settlement plan, app request path and R$50 minimum all match the tool result and Getnet passage; extra web text was unavailable to me.",
+     "factual_correctness": "Facts are accurate, but 'você pode solicitar' slightly conflicts with saying availability in the plan couldn't be confirmed.",
+     "relevance": "It addresses plan availability and honestly states it could not be confirmed, adding how to request it.",
+     "usefulness": "Clear Portuguese reply with an actionable path; it could suggest checking the app's Serviços menu or support to confirm eligibility."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.020404,
+    "usage": {
+     "input_tokens": 2906,
+     "cache_read_tokens": 0,
+     "cache_creation_tokens": 0,
+     "output_tokens": 439
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_ecb8b3313cc44ab2a4d1",
+     "rubric_version": "4",
+     "repetition": 1,
+     "provider": "anthropic",
+     "model": "claude-opus-5-5",
+     "state": "completed",
+     "model_used": "claude-opus-5-5",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 4,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Settlement plan, app request path and R$50 minimum all match the tool result and Getnet passage; extra web text was unavailable to me.",
+      "factual_correctness": "Facts are accurate, but 'você pode solicitar' slightly conflicts with saying availability in the plan couldn't be confirmed.",
+      "relevance": "It addresses plan availability and honestly states it could not be confirmed, adding how to request it.",
+      "usefulness": "Clear Portuguese reply with an actionable path; it could suggest checking the app's Serviços menu or support to confirm eligibility."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.020404,
+     "usage": {
+      "input_tokens": 2906,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0,
+      "output_tokens": 439
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

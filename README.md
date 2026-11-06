@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.9.0, validated by independent reviews and a real-model QA: hybrid retrieval beats dense on the development set and on a sealed retrieval holdout ([report](docs/evidence/v090-retrieval.md)) and is now the default; a pre-registered judge experiment (`claude-opus-5-5` vs DeepSeek against 24 human-rated answers, [report](docs/evidence/v090-juiz-opus.md)) kept DeepSeek as the default judge. v0.8.0 ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md), [human calibration](docs/evidence/v080-calibracao.md)) is unchanged underneath. The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence. Offline, the backend strict suite passes (**1,997 tests**, Ruff clean). Against real models, the four replanning scenarios pass 3/3 each with at most 2 hops, the business journeys pass **13/13, 12/13 and 12/13** in three repetitions (13/13 each by the independent judge), the multi-turn conversations **4/4**, and the Docker smoke 10/10. The sealed v0.8.0 holdout, run once and reported separately, scored **62/75**. The v0.8.0 QA campaign spent **US$0.84** of its US$1.40 cap. The v0.7.0 human-in-the-loop story is [validated](docs/evidence/v070-resultado.md) and unchanged.
+**Status:** v0.10.0, validated by independent reviews and real-model QA at every version. Offline, the backend strict suite passes (**2,147 tests**, Ruff clean). v0.7.0: real human in the loop and JWT identity ([result](docs/evidence/v070-resultado.md)). v0.8.0: replanning (four scenarios 3/3 with real models, at most 2 hops), business journeys **13/13, 12/13 and 12/13** (13/13 by the independent judge), conversations **4/4**, Docker smoke 10/10, sealed holdout run once **62/75**, 24-answer human calibration ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md)). v0.9.0: hybrid retrieval beats dense on dev and on a sealed retrieval holdout and is the default ([report](docs/evidence/v090-retrieval.md)); a pre-registered judge experiment kept DeepSeek over Claude Opus ([report](docs/evidence/v090-juiz-opus.md)). v0.10.0: a profile comparison survives a real `taskkill` and resumes without paying any cell twice ([QA](docs/evidence/v0100-qa-ops-r1.md)), `GET /metrics` with versioned alert rules, and rubric `judge.v4` measured against the human calibration under a rule written beforehand, v3 kept ([report](docs/evidence/v0100-juiz-v4.md)). The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence.
 
 ### Where each part of the challenge lives
 
@@ -37,18 +37,18 @@ Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `
 
 ## Response to the evaluator's feedback
 
-The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the top of the ranking. Versions 0.7.0 and 0.8.0 answer the four largest remarks; the rest is listed under [next steps](#next-steps) with what is in progress. Each version went through the same cycle: a specification, tasks, an independent review in a fresh context, QA with real models under a fixed budget cap, and a candidate sealed by hashes before QA ([reports](docs/relatorios/README.md)).
+The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the top of the ranking. Versions 0.7.0 to 0.10.0 answer every remark except the external access test; what remains is listed under [next steps](#next-steps). Each version went through the same cycle: a specification, tasks, an independent review in a fresh context, QA with real models under a fixed budget cap, and a candidate sealed by hashes before QA ([reports](docs/relatorios/README.md)).
 
 | Dimension (weight, V4 score) | Remark | What changed | Version | Evidence |
 | --- | --- | --- | --- | --- |
 | Human Oversight & Risk Management (7%, 4.0) | Handoff simulated: a local case with a `SIM-` protocol; no operator queue, no human reply back to the agent, no interrupt and resume | On a handoff the graph pauses at `human_review` (LangGraph `interrupt()`, SQLite checkpoint). A persistent operator queue with claim and idempotent `approve`, `reply` and `reject`; the action resumes the graph and the human reply reaches the merchant in the same conversation, by API and by webhook. A separate ticketing service talks to the assistant only through signed webhooks in both directions | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), [result](docs/evidence/v070-resultado.md), [story QA](docs/evidence/v070-qa.md) |
 | Security & Identity (13%, 7.8) | `user_id` was the authority of the payload; no credential → principal → authorization → merchant chain; tool calls not authorized | RS256 JWTs from an own issuer with JWKS; roles and scopes; the merchant comes from the token (`403 identity_mismatch` otherwise); every tool call checks scope and merchant and writes an audit row; revocation, rate limit per principal, MCP with a key | v0.7.0 | [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [result](docs/evidence/v070-resultado.md), [API contract](docs/contracts/api-v040.md) |
 | Agentic Reasoning & Orchestration (15%, 8.5) | A predefined combined route; no observe → reconsider → replan → another agent → review loop with a hop limit | A `replan` node after Knowledge, web and Support: named rules first, the model only on ambiguity, a three-hop budget, each specialist at most once, and the origin of every decision in the trace. The four replanning scenarios pass 3/3 with real models and at most 2 hops | v0.8.0 | [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), [pre-holdout QA](docs/evidence/v080-d12-pre-holdout-r6.md) |
-| Evaluation & Quality Engineering (14%, 9.0) | No aggregated groundedness, correctness, relevance and usefulness; no independent judge, repeated runs, human calibration or holdout; journeys 7/13 by the literal rubric | `judge.v3` (four criteria plus `unsupported_claim`) by a DeepSeek judge over an OpenAI agent; three agent runs and three judge runs with the agreement reported; dev and holdout separated; the sealed holdout run once (62/75); a 24-answer human calibration (agreement within one point 0.83–1.00, the judge stricter than the human). Journeys 13/13, 12/13 and 12/13 by the deterministic floor and 13/13 by the judge. v0.9.0 added a pre-registered judge experiment: `claude-opus-5-5` over the same 24 human-rated answers agrees more with the human (within one point 0.96 vs 0.83) but still misses 3 of 4 generic claims, so by the rule written beforehand the gap is the rubric and DeepSeek stays the default | v0.8.0, v0.9.0 | [campaign](docs/evidence/v080-all-r3.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md), [judge experiment](docs/evidence/v090-juiz-opus.md) |
+| Evaluation & Quality Engineering (14%, 9.0) | No aggregated groundedness, correctness, relevance and usefulness; no independent judge, repeated runs, human calibration or holdout; journeys 7/13 by the literal rubric | `judge.v3` (four criteria plus `unsupported_claim`) by a DeepSeek judge over an OpenAI agent; three agent runs and three judge runs with the agreement reported; dev and holdout separated; the sealed holdout run once (62/75); a 24-answer human calibration (agreement within one point 0.83–1.00, the judge stricter than the human). Journeys 13/13, 12/13 and 12/13 by the deterministic floor and 13/13 by the judge. v0.9.0 added a pre-registered judge experiment: `claude-opus-5-5` over the same 24 human-rated answers agrees more with the human (within one point 0.96 vs 0.83) but still misses 3 of 4 generic claims, so by the rule written beforehand the gap is the rubric and DeepSeek stays the default. v0.10.0 closed the loop: `judge.v4` adds the generic-claim line; re-judged by both models against the same 24 human ratings, DeepSeek's verdict agreement rises 0.67 → 0.79 but it still flags 0 of 4 generic claims, while Opus under v4 flags 2 of 4 without any criterion worsening; by the pre-registered rule v3 stays the default and the gap is rubric and model together | v0.8.0, v0.9.0, v0.10.0 | [campaign](docs/evidence/v080-all-r3.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md), [judge experiment](docs/evidence/v090-juiz-opus.md), [rubric v4](docs/evidence/v0100-juiz-v4.md) |
 | Context, Knowledge & RAG (10%, 9.4) | Recall@6 = 1.00 on a small set used during development; no hybrid BM25 + dense, RRF or reranker | BM25 + dense fused by RRF (`RETRIEVAL_MODE`, now `hybrid` by default), a configurable reranker (`rerank.v1`, off by default), nDCG@6 and a sealed 25-question retrieval holdout measured once, last. With real embeddings, nDCG@6 dense → hybrid: 0.868 → 0.974 on dev, 0.880 → 0.921 on the holdout; the default was chosen by a rule written before the measurement | v0.9.0 | [ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md), [report](docs/evidence/v090-retrieval.md), [QA](docs/evidence/v090-qa-retrieval-r1.md) |
-| Production Engineering (5%, 9.0) | `/messages` without auth; handoff without human integration; comparison in a thread of the process; external access untested; demo credentials to be configured | `/messages` authenticated and the handoff integrated (v0.7.0); `docker compose up` works without editing `.env.example` (fictitious demo keys); a CI workflow runs the strict suite on every push and pull request. Still open: the comparison thread and the external access test | v0.7.0, CI | [workflow](.github/workflows/validate.yml), [result](docs/evidence/v070-resultado.md) |
-| Memory, State & Resilience (8%, 9.0) | A comparison lost on restart is marked failed | The review graph checkpoint and the outbox survive an API restart (v0.7.0); a resumable comparison and a rolling summary of long conversations are next steps | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md) |
-| Observability, Reliability & Cost (6%, 9.2) | Production next steps only described (OTel, dashboards, alerts) | Unchanged: cost ledger with campaign caps and a budget guard, and a trace with the origin of every decision; `/metrics`, OTLP and alert rules are next steps | — | [Observability](#observability) |
+| Production Engineering (5%, 9.0) | `/messages` without auth; handoff without human integration; comparison in a thread of the process; external access untested; demo credentials to be configured | `/messages` authenticated and the handoff integrated (v0.7.0); `docker compose up` works without editing `.env.example` (fictitious demo keys); a CI workflow runs the strict suite on every push and pull request; the profile comparison now survives a process kill and resumes from where it stopped (v0.10.0). Still open: the external access test | v0.7.0, CI, v0.10.0 | [workflow](.github/workflows/validate.yml), [result](docs/evidence/v070-resultado.md), [ops QA](docs/evidence/v0100-qa-ops-r1.md) |
+| Memory, State & Resilience (8%, 9.0) | A comparison lost on restart is marked failed | The review graph checkpoint and the outbox survive an API restart (v0.7.0). Since v0.10.0 a running comparison whose process dies becomes `interrupted` with its finished cells kept and the in-flight attempt's cost recorded; `POST /v1/comparisons/{id}/resume` runs only the missing cells (real QA: killed after 1 of 6 cells, resumed 5, `completed`, one ledger line per cell). A rolling summary of long conversations remains a next step | v0.7.0, v0.10.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md), [ops QA](docs/evidence/v0100-qa-ops-r1.md) |
+| Observability, Reliability & Cost (6%, 9.2) | Production next steps only described (OTel, dashboards, alerts) | `GET /metrics` in Prometheus text (requests, model calls, tool calls and failures, handoffs, replan origins, duration histogram, cost per provider, budget) computed from the traces and the ledger, labels from closed sets only; `alerts/rules.yml` with four versioned rules whose metrics a test checks against the endpoint; a two-line `scrape_config` in the README. OTLP and a dashboard remain next steps | v0.10.0 | [Observability](#observability), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md) |
 
 ---
 
@@ -128,6 +128,8 @@ merchant-assistant eval --campaign v080-qa --include-replan --judge --repeat 3 -
 merchant-assistant eval --campaign v080-qa --judge-repeat 3 --answers-from docs/evidence/v080-all.json --name v080-all-judge  # judge variation; the agent does not run
 merchant-assistant eval --campaign v080-qa --judge --repeat 3 --split holdout_v080  # sealed holdout: once, as the last technical step
 merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.json   # CSV for the owner to rate, without the judge's scores; no model call
+merchant-assistant eval-retrieval --mode hybrid --split dev --out docs/evidence/retrieval.md   # Recall@6, MRR, nDCG@6 per mode; --split holdout_v090 once, last
+merchant-assistant eval --judge-repeat 3 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --rubric v4 --name my-run  # re-judge the calibration sample under another rubric or judge
 merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
 merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.001)
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
@@ -438,9 +440,38 @@ tests), with `store=false`:
   retrieval hits and guard results. `GET /traces/{request_id}` in demo mode.
 - **Budget ledger** (`runtime/budget.sqlite3`): every paid call with reserved and actual cost; `/ready` shows what
   is left.
-- **Production next steps:** export the same spans to OpenTelemetry/Langfuse, dashboards for route mix, handoff
-  rate, guard blocks, p95 latency and cost per resolved case, and alerts on error rate, budget burn and retrieval
-  score drift.
+- **Metrics** (`GET /metrics`, public like `/ready`): Prometheus text format 0.0.4, computed on demand from the `/metrics` is public like `/ready` and carries only aggregated counts; in production, restrict it by network or by a read token.
+  traces and the ledger and cached for 5 s, with no Prometheus library. Every label value is checked against a
+  closed set in the code (route, status, agent, tool, outcome, replan origin, provider) and anything else becomes
+  `other`, so no message text, request id, merchant or operator reaches a label. An empty or locked store does not
+  fail the scrape: the last complete read is served again (zeroed families before the first one).
+
+  | Metric | Type | Labels |
+  | --- | --- | --- |
+  | `requests_total` | counter | `route`, `status` |
+  | `model_calls_total` | counter | `agent` |
+  | `tool_calls_total` | counter | `tool`, `outcome` |
+  | `tool_failures_total` | counter | `tool` |
+  | `handoffs_total` | counter | — |
+  | `replan_total` | counter | `origin` |
+  | `request_duration_seconds` | histogram (1, 2, 5, 10, 20, 30, 60 s, +Inf) | — |
+  | `cost_usd_total` | counter (settled spend) | `provider` |
+  | `budget_remaining_usd`, `budget_limit_usd` | gauge | — |
+
+- **Alert rules** in [`alerts/rules.yml`](alerts/rules.yml) (Prometheus format, group `merchant-assistant`): budget
+  below 10% of the limit, tool failure rate above 5% over 15 min, handoff rate above 30% over 1 h, p95 duration
+  above 20 s over 15 min. A test checks that every metric in the rules exists in `/metrics`. `requests_total` and
+  the duration histogram also count operator replies delivered to the merchant (`route="human_reply"`) and
+  resumed requests, so they are in the denominators of the handoff rate and the p95. To scrape it with a
+  local Prometheus, add to `scrape_configs` (and `rule_files: [alerts/rules.yml]`):
+
+  ```yaml
+  - job_name: merchant-assistant
+    static_configs: [{targets: ["localhost:8000"]}]
+  ```
+
+- **Production next steps:** export the same spans to OpenTelemetry/Langfuse (OTLP), dashboards for route mix,
+  handoff rate, guard blocks, p95 latency and cost per resolved case, and alerts on retrieval score drift.
 
 ## Testing and evaluation
 
@@ -459,7 +490,7 @@ The scripted model follows simple rules for each agent, so the whole system (rou
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Validated evidence (v0.8.0, real models).** Strict suite **1,997 tests**, Ruff clean. The V4 feedback asked for
+**Validated evidence (v0.8.0 to v0.10.0, real models).** Strict suite **2,147 tests** at v0.10.0 (1,997 at v0.8.0), Ruff clean. The V4 feedback asked for
 aggregated groundedness, correctness, relevance and usefulness, an independent judge, repeated runs, a holdout and
 human review; this is the main table, from the [campaign](docs/evidence/v080-all-r3.md), the
 [holdout](docs/evidence/v080-holdout-r7.md), the [calibration](docs/evidence/v080-calibracao.md) and the
@@ -527,6 +558,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
+| v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 closed with numbers; two literal remarks of the feedback (comparison lost on restart, alerts only described) answered |
 | v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | The retrieval remark of the feedback closed with numbers, and the judge choice made by experiment rather than preference |
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 
@@ -653,7 +685,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 - Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
   confirmation before a case is resolved.
 - The functional scope was reopened after the feedback ([ADR 0016](docs/architecture/decisions/0016-reabertura-pos-feedback.md)); there is still no Evaluation Agent, improvement-proposal workflow or experiment platform. Model evaluation is a judge over persisted replies, calibrated against a human sample, not human review.
-- Profile comparisons are small and run in a thread of the API process; restarting the API marks a running comparison as failed. The comparison estimate is an upper bound (request cost cap per new execution).
+- Profile comparisons are small and run in a thread of the API process. Since v0.10.0 a restart marks a running comparison `interrupted` (finished cells kept) and `POST /v1/comparisons/{id}/resume` finishes it; the thread registry is per process, so the API must run with a single worker (as the compose does), and a narrow ABA race in the resume claim is documented in ADR 0022. The comparison estimate is an upper bound (request cost cap per new execution).
 - The Results area lists the runs of the current browser session; there is no general run listing.
 - Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.
 - Sale cancellation is read-only: the assistant reports the status of an existing request; asking it to cancel a
@@ -664,12 +696,12 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 
 In order of value for the open remarks; written down so the direction is clear even where it ships later.
 
-1. **Resumable comparison and rolling summary.** A profile comparison that survives an API restart instead of being marked failed, and a rolling summary for conversations longer than the ten-message window (the one remark of the feedback's top-five dimensions not yet changed).
-2. **Judge rubric `judge.v4`.** Add generic claims without a source to the definition of an unsupported claim (what the v0.9.0 experiment showed neither judge flags), and record the web search text so the judge sees it; then re-run the two-judge comparison against the same 24 human ratings.
+1. **Judge: model and rubric together.** `judge.v4` fixed the rubric but the default judge does not apply it; measure `claude-sonnet-5-5` under v4 against the same 24 human ratings as a cost middle ground, and record the web search text so the judge sees it.
+2. **Rolling summary** for conversations longer than the ten-message window.
 3. **Journey rubric.** Keep the deterministic checks for what is binary (route, status, tools, values, sources, forbidden assertions) and let the judge decide content; add a rubric line for generic claims without a source; record the web search text so the judge sees it.
 4. **Calibration tooling.** `eval-calibrate --sample` must carry the full evidence the judge saw (the v0.8.0 CSV truncated it; the full text was supplied in a companion file).
 5. **Reranker decision.** Add a no-model control at the same fusion depth (`hybrid@36`) so the reranker's own gain can be measured, then decide `RERANK` by the rule; add a score floor for hits found only by BM25.
-6. **Operation.** `/metrics`, optional OTLP, versioned alert rules (planned v0.10.0).
+6. **Operation.** Optional OTLP export and a dashboard over `/metrics`; a multi-worker-safe comparison registry (today the API runs with one worker).
 7. **Optional Anthropic agent provider** with a per-provider ledger and a paired comparison against the OpenAI profile (specification drafted, not merged; the judge adapter of v0.9.0 is the first piece).
 8. **Production.** External access test through a tunnel; mapping to a commercial ticketing system; resend of exhausted webhook deliveries.
 

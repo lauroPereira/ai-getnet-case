@@ -62,3 +62,16 @@ Rotas aditivas aprovadas no [plano v0.6.0](../specs/fechamento-v060-plano.md#api
 Dados: migração 0008 reversível (`run_evaluations`, `comparisons`, `api_sessions.message_count`). O campo `evaluation` dos perfis permanece no esquema e não é usado no atendimento.
 
 Correções da revisão r1 (tarefa 60): `POST /v1/runs/{id}/evaluations` responde `409 evaluation_running` quando há uma avaliação em andamento com a mesma configuração (reserva atômica; `run_evaluations.state` aceita `running`, liberada como `failed`/`interrupted` após 10 minutos); `POST /v1/router/compare` e `POST /v1/runs/{id}/evaluations` passam a contar no limite demo (`429 demo_message_limit_reached`), e recusas sem inferência não contam; o reuso da comparação só aceita execuções sem histórico de conversa (`history_turns = 0` no snapshot); custos ausentes aparecem como desconhecidos (`cost_mean_usd`/`cost_total_usd` nulos, `cost_unknown_runs`).
+
+## Acréscimos da v0.10.0
+
+`GET /metrics` (público, como `/ready`): métricas agregadas em texto de exposição Prometheus 0.0.4, calculadas dos traces e do ledger, só com rótulos de conjuntos fechados ([especificação v0.10.0](../specs/rubrica-operacao-v0100.md), D4, CA-59; tarefa 85). Regras de alerta em `alerts/rules.yml`.
+
+Comparação retomável ([especificação v0.10.0](../specs/rubrica-operacao-v0100.md), D3, CA-58; tarefa 84). As rotas acima mantêm o comportamento; a resposta de `GET /v1/comparisons/{comparison_id}` ganha um estado e campos opcionais nas células.
+
+| Rota | Acesso | Efeito |
+| --- | --- | --- |
+| `GET /v1/comparisons/{comparison_id}` | Bearer/dono | `state` passa a poder ser `interrupted`: a API reiniciou (ou o processo morreu) com a comparação em execução. No startup toda comparação `running` sem thread viva vira `interrupted`, e a leitura faz o mesmo. As células concluídas são preservadas; as que faltavam continuam `pending`. A célula cuja execução estava em curso guarda `interrupted_attempts: [{request_id, cost_usd}]` (custo lido do ledger, somado ao `cost_usd` da comparação). Antes da v0.10.0 esse caso virava `failed` com as células pendentes `skipped` |
+| `POST /v1/comparisons/{comparison_id}/resume?retry_failed=false` | Bearer/dono | retoma uma comparação `interrupted`, `partial` ou `failed` com a mesma configuração e o mesmo teto confirmado: células com resultado (`request_id`) não rodam de novo; células `failed` só rodam de novo com `retry_failed=true` (o `request_id` anterior vai para `previous_request_ids`); `cost_usd` acumula. Orçamento e limite demo verificados só para as células que faltam. `202 {comparison_id, state: running, resumed_cells}`; `404` ausente ou de outro dono; `409 comparison_running`, `409 comparison_completed`, `409 nothing_to_resume`, `409 fixed_factors_changed` (base de conhecimento, prompts ou modo de execução mudaram); `429 installation_budget_exceeded` ou `demo_message_limit_reached` |
+
+Dados: migração 0012 reversível (`comparisons.state` aceita `interrupted`; a tabela é recriada porque o SQLite não altera `CHECK`). O rollback converte `interrupted` em `failed` e restaura o `CHECK` anterior. Versão do esquema 12, reportada em `/ready`. A interface web não muda nesta versão: `interrupted` aparece como está.

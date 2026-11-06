@@ -25,7 +25,9 @@ from merchant_assistant.profiles import digest
 
 CRITERIA = ("groundedness", "factual_correctness", "relevance", "usefulness")
 RUBRIC = "judge"
-RUBRIC_VERSION = "3"
+RUBRIC_VERSION = "3"  # the default rubric (spec v0.10.0 D1: it stays judge.v3 until task 86 decides)
+# v0.10.0 D1: judge.v4 is judge.v3 plus the general claim with no source; the schema (JudgeScoreV3) is the same.
+RUBRIC_VERSIONS = ("3", "4")
 MAX_OUTPUT_TOKENS = 400  # four reasons of at most 25 words and the scores take about 220; this is also the reservation
 CAMPAIGN_PRINCIPAL = "cli:eval"
 MAX_ERROR_CHARS = 160  # a provider error is stored as its class and a short masked message, never as the raw body
@@ -38,6 +40,18 @@ MAX_OUTPUT_TOKENS_BY_PROVIDER = {"anthropic": 2000}
 
 class JudgeRefused(RuntimeError):
     """The configured judge cannot be used. Raised before any model call; nothing was spent."""
+
+
+def rubric_version(choice: str | None) -> str:
+    """The stored version of a rubric named on the command line (`v3`, `v4`, or `3`, `4`); `None` is the default."""
+    if choice is None:
+        return RUBRIC_VERSION
+    version = choice[1:] if choice[:1] in ("v", "V") else choice
+    if version not in RUBRIC_VERSIONS:
+        raise JudgeRefused(
+            f"Unknown rubric {choice!r} (available: {', '.join('v' + v for v in RUBRIC_VERSIONS)}). No call was made."
+        )
+    return version
 
 
 @dataclass(frozen=True)
@@ -219,8 +233,10 @@ def default_factory(settings) -> Callable[[str, str], LLM]:
     return model_factory(settings)
 
 
-def validate_judge(settings, *, agent: tuple[str, str]) -> JudgeSetup:
-    """Validate provider, price, independence, key and prompt without constructing a provider client."""
+def validate_judge(settings, *, agent: tuple[str, str], rubric: str | None = None) -> JudgeSetup:
+    """Validate provider, price, independence, key and prompt without constructing a provider client. `rubric` picks
+    the prompt (`judge.v3` by default, `judge.v4` with "4", spec v0.10.0 D1)."""
+    version = rubric_version(rubric)
     provider, model = settings.judge_provider, settings.judge_model
     if provider not in JUDGE_PROVIDERS:
         raise JudgeRefused(
@@ -252,7 +268,7 @@ def validate_judge(settings, *, agent: tuple[str, str]) -> JudgeSetup:
             "evaluation does not switch to another judge on its own: set the key or choose another JUDGE_*. "
             "No call was made."
         )
-    prompt = load_prompt(settings.prompts_dir, RUBRIC, RUBRIC_VERSION)
+    prompt = load_prompt(settings.prompts_dir, RUBRIC, version)
     return JudgeSetup(agent, provider, model, prompt, independence)
 
 
@@ -263,9 +279,10 @@ def resolve_judge(
     meter: Meter | None = None,
     factory: Callable[[str, str], LLM] | None = None,
     validated: JudgeSetup | None = None,
+    rubric: str | None = None,
 ) -> Judge:
     """Build a judge after validation; its spending meter can be bound after the run guard exists."""
-    setup = validated or validate_judge(settings, agent=agent)
+    setup = validated or validate_judge(settings, agent=agent, rubric=rubric)
     if (
         setup.agent != agent
         or setup.provider != settings.judge_provider

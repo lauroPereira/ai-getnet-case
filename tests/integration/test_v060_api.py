@@ -404,7 +404,7 @@ def test_budget_denial_stops_the_remaining_cells_and_is_recorded(settings, api, 
     assert "skipped" in statuses and statuses[0] in ("completed", "failed")
 
 
-def test_comparison_requires_confirmation_and_fresh_estimate_and_lost_threads_fail(settings, api):
+def test_comparison_requires_confirmation_and_fresh_estimate_and_lost_threads_are_interrupted(settings, api):
     client, _, llm = api
     headers = login(client)
     estimate = client.post("/v1/comparisons/estimate", headers=headers, json=_selection()).json()
@@ -425,7 +425,8 @@ def test_comparison_requires_confirmation_and_fresh_estimate_and_lost_threads_fa
     conn.commit()
     conn.close()
     lost = client.get("/v1/comparisons/pcmp_lost000000000000", headers=headers).json()
-    assert lost["state"] == "failed" and lost["failures"][-1]["code"] == "interrupted"
+    assert lost["state"] == "interrupted" and lost["failures"][-1]["code"] == "interrupted"  # v0.10.0, task 84
+    assert lost["cells"][0]["status"] == "pending"  # preserved for the resume
     assert client.get("/v1/comparisons/pcmp_lost000000000000", headers=login(client, ADMIN_KEY)).status_code == 404
 
 
@@ -455,8 +456,9 @@ def test_migration_0008_round_trip_on_a_synthetic_database(settings, api):
     conn.row_factory = sqlite3.Row
     snapshots = conn.execute("SELECT * FROM run_snapshots").fetchall()
     sessions = conn.execute("SELECT session_id, principal_id FROM api_sessions").fetchall()
-    assert current_version(conn) == 11
+    assert current_version(conn) == 12
     assert migrate(conn, 7) == [
+        "down 0012_comparison_interrupted",
         "down 0011_evaluation_rubric",
         "down 0010_webhook_outbox",
         "down 0009_identity_hitl",

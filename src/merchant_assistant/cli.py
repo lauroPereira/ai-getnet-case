@@ -491,20 +491,22 @@ def _eval_judge(
     agent_model: str | None = None,
     agent_provider: str | None = None,
     validated_plan=None,
+    rubric: str | None = None,
 ):
     """The campaign judge (`eval --judge`): the scripted stand-in offline, otherwise the configured independent
-    evaluator, or a refusal that leaves before anything is built or called (spec v0.8.0 D11)."""
+    evaluator, or a refusal that leaves before anything is built or called (spec v0.8.0 D11). `rubric` is the stored
+    version of the rubric (`--rubric`, spec v0.10.0 D1; `judge.v3` when `None`)."""
     from merchant_assistant.evaluation import judge as judge_module
 
     if scripted:
         from merchant_assistant.evaluation.scripted_judge import scripted_judge
 
-        judge = scripted_judge(settings.prompts_dir, None)
+        judge = scripted_judge(settings.prompts_dir, None, rubric=rubric)
         agent = ("scripted", agent_model or "scripted-v1")
     else:
         agent = (agent_provider or judge_module.AGENT_PROVIDER, agent_model or settings.agent_model)
         try:
-            return judge_module.resolve_judge(settings, agent=agent, validated=validated_plan)
+            return judge_module.resolve_judge(settings, agent=agent, validated=validated_plan, rubric=rubric)
         except judge_module.JudgeRefused as exc:
             raise SystemExit(f"eval: {exc}") from None
     try:
@@ -515,14 +517,29 @@ def _eval_judge(
 
 
 def _eval_judge_preflight(
-    settings: Settings, *, agent_model: str | None = None, agent_provider: str | None = None
+    settings: Settings,
+    *,
+    agent_model: str | None = None,
+    agent_provider: str | None = None,
+    rubric: str | None = None,
 ):
     """Validate paid-judge configuration before opening the persistent budget ledger."""
     from merchant_assistant.evaluation import judge as judge_module
 
     agent = (agent_provider or judge_module.AGENT_PROVIDER, agent_model or settings.agent_model)
     try:
-        return judge_module.validate_judge(settings, agent=agent)
+        return judge_module.validate_judge(settings, agent=agent, rubric=rubric)
+    except judge_module.JudgeRefused as exc:
+        raise SystemExit(f"eval: {exc}") from None
+
+
+def _eval_rubric(args) -> str:
+    """The stored version of `--rubric`: the one named, else the configured default (`judge.RUBRIC_VERSION`, v3 until
+    task 86, spec v0.10.0 D1). `eval-calibrate` resolves through the same `judge.rubric_version`."""
+    from merchant_assistant.evaluation import judge as judge_module
+
+    try:
+        return judge_module.rubric_version(getattr(args, "rubric", None))
     except judge_module.JudgeRefused as exc:
         raise SystemExit(f"eval: {exc}") from None
 
@@ -582,6 +599,9 @@ def cmd_eval(settings: Settings, args) -> int:
     repeat = getattr(args, "repeat", 1)
     if repeat < 1:
         raise SystemExit("eval: --repeat must be at least 1.")
+    rubric = _eval_rubric(args)
+    if not args.judge and getattr(args, "rubric", None) is not None:
+        print("eval: --rubric is ignored without --judge or --judge-repeat: no judge runs.", file=sys.stderr)
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
     case_files = [
     scenarios / name
@@ -599,13 +619,15 @@ def cmd_eval(settings: Settings, args) -> int:
         if case_limit < 1:
             raise SystemExit("eval: --limit must be at least 1.")
         cases = cases[:case_limit]
-    judge_plan = _eval_judge_preflight(settings) if args.judge and not args.scripted else None
+    judge_plan = _eval_judge_preflight(settings, rubric=rubric) if args.judge and not args.scripted else None
     budget = (
         _eval_budget_for_args(settings, args)
         if not args.scripted or getattr(args, "campaign", None) is not None
         else None
     )
-    judge = _eval_judge(settings, scripted=args.scripted, validated_plan=judge_plan) if args.judge else None
+    judge = (
+        _eval_judge(settings, scripted=args.scripted, validated_plan=judge_plan, rubric=rubric) if args.judge else None
+    )
     if args.scripted:
         from merchant_assistant.testing import offline_orchestrator
 
@@ -692,6 +714,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         )
     if args.judge_repeat < 1:
         raise SystemExit("eval: --judge-repeat must be at least 1.")
+    rubric = _eval_rubric(args)
     if getattr(args, "split", "all") != "all":
         print("eval: --split is ignored with --judge-repeat; the cases are the recorded answers.", file=sys.stderr)
     try:
@@ -705,7 +728,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         raise SystemExit(f"eval: the report {name}.json would overwrite the answers being graded; use another --name.")
     judge_plan = (
         _eval_judge_preflight(
-            settings, agent_model=source.get("model"), agent_provider=source.get("agent_provider")
+            settings, agent_model=source.get("model"), agent_provider=source.get("agent_provider"), rubric=rubric
         )
         if not args.scripted
         else None
@@ -717,6 +740,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         agent_model=source.get("model"),
         agent_provider=source.get("agent_provider"),
         validated_plan=judge_plan,
+        rubric=rubric,
     )
     if args.scripted:
         db_path, mode = Path(tempfile.mkdtemp(prefix="eval-")) / "merchant.sqlite3", "scripted"
@@ -978,6 +1002,7 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         raise SystemExit("eval-calibrate: --judge is used with --import (the sample never shows a judge's scores).")
     if getattr(args, "judge_run", None) and not getattr(args, "judge", None):
         raise SystemExit("eval-calibrate: --judge-run is used with --judge (it picks the execution of that judge).")
+    blocks = _calibrate_blocks(args)
     evidence_dir = PROJECT_ROOT / "docs" / "evidence"
     try:
         if size is not None:
@@ -1017,8 +1042,10 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
                 Path(filled),
                 rater=args.rater,
                 campaign=args.campaign,
-                judge=getattr(args, "judge", None),
-                judge_run=getattr(args, "judge_run", None),
+                judge=blocks[0][0] if blocks else None,
+                judge_run=blocks[0][1] if blocks else None,
+                rubric=blocks[0][2] if blocks else None,
+                more=blocks[1:],
             )
         finally:
             conn.close()
@@ -1038,6 +1065,11 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
                 f"beside {compared['original_judge']} (campaign {compared['original_campaign']}, execution "
                 f"{', '.join(compared['original_runs'])}), {result['analysis']['n']} human ratings"
             )
+            for block in compared.get("blocks", []):
+                print(
+                    f"block {block['label']}: {block['judge']} judge.v{block['rubric']} "
+                    f"(execution {', '.join(block['runs'])})"
+                )
         if result["outside"]:
             print(
                 f"eval-calibrate: {len(result['outside'])} rating(s) of this campaign and rater are in the database "
@@ -1051,6 +1083,39 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         more = len(exc.messages) - len(shown)
         lines = [f"eval-calibrate: {shown[0]}", *shown[1:], *([f"(+{more} more)"] if more else [])]
         raise SystemExit("\n".join(lines)) from None
+
+
+def _listed_args(value) -> list:
+    """An option given once (a string, as before v0.10.0) or repeated (`action="append"`), as a list."""
+    if value is None:
+        return []
+    return [value] if isinstance(value, str) else list(value)
+
+
+def _calibrate_blocks(args) -> list[tuple[str, str | None, str | None]]:
+    """`--judge`, `--judge-run` and `--rubric` of `eval-calibrate --import`, paired in order (spec v0.10.0, task 83):
+    one block per `--judge`. With one judge, `--judge-run` and `--rubric` may be left out; with more, every judge
+    needs its `--judge-run`, and `--rubric` is given for none (all judge.v3) or for each."""
+    judges, runs, rubrics = (_listed_args(getattr(args, key, None)) for key in ("judge", "judge_run", "rubric"))
+    if rubrics and not judges:
+        raise SystemExit("eval-calibrate: --rubric is used with --judge (the rubric of that judge's judgements).")
+    if not judges:
+        return []
+    if len(judges) == 1:
+        if len(runs) > 1 or len(rubrics) > 1:
+            raise SystemExit("eval-calibrate: one --judge takes at most one --judge-run and one --rubric.")
+        return [(judges[0], runs[0] if runs else None, rubrics[0] if rubrics else None)]
+    if len(runs) != len(judges):
+        raise SystemExit(
+            f"eval-calibrate: {len(judges)} --judge need {len(judges)} --judge-run, in the same order "
+            f"(got {len(runs)})."
+        )
+    if rubrics and len(rubrics) != len(judges):
+        raise SystemExit(
+            f"eval-calibrate: --rubric is given for every --judge or for none (got {len(rubrics)} for "
+            f"{len(judges)} judges)."
+        )
+    return list(zip(judges, runs, rubrics or [None] * len(judges), strict=True))
 
 
 def cmd_migrate(settings: Settings, args) -> int:
@@ -1256,7 +1321,8 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--judge",
         action="store_true",
-        help="Add the model-graded rubric judge.v3 (paid). The judge is set by JUDGE_PROVIDER and JUDGE_MODEL "
+        help="Add the model-graded rubric judge.v3 (or the one --rubric names; paid). The judge is set by "
+        "JUDGE_PROVIDER and JUDGE_MODEL "
         "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY (anthropic/claude-opus-5-5 needs "
         "ANTHROPIC_API_KEY). Refused, before any call, when the judge equals the agent or its key is missing.",
     )
@@ -1275,6 +1341,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_evalx.add_argument(
         "--answers-from", default=None, help="Report JSON of an earlier campaign (used with --judge-repeat)."
+    )
+    p_evalx.add_argument(
+        "--rubric",
+        choices=["v3", "v4"],
+        default=None,
+        help="Rubric of the judge with --judge or --judge-repeat: v3 or v4, which also flags a general claim stated "
+        "as fact with no source (spec v0.10.0 D1). Left out, the configured default (v3 until task 86). Each "
+        "judgement records the version.",
     )
     p_evalx.add_argument(
         "--only-sample",
@@ -1342,17 +1416,29 @@ def main(argv: list[str] | None = None) -> int:
     p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
     p_calibrate.add_argument(
         "--judge",
+        action="append",
         default=None,
         help="With --import: compare the ratings with this judge (<provider>/<model>, e.g. anthropic/claude-opus-5-5) "
         "instead of the first judgement of any judge, under a new --campaign; the report adds the original campaign's "
-        "judge side by side and each judge's consistency between repetitions.",
+        "judge side by side and each judge's consistency between repetitions. Repeat it (each with its --judge-run "
+        "and, if any, --rubric, in the same order) for one block per judge, execution and rubric.",
     )
     p_calibrate.add_argument(
         "--judge-run",
+        action="append",
         default=None,
         help="With --judge: the execution of that judge to compare (the --name of the eval that graded, e.g. "
         "v090-juiz-opus-r3). Required when the judge has more than one execution on the sample's answers (the probe "
-        "and the repetitions, say).",
+        "and the repetitions, say), and for every --judge when there is more than one.",
+    )
+    p_calibrate.add_argument(
+        "--rubric",
+        action="append",
+        choices=["v3", "v4"],
+        default=None,
+        help="With --judge: the rubric of that judge's judgements (v3 when left out, spec v0.10.0 D1). With v4 or more "
+        "than one --judge, the report has one block per judge beside the original, the table of the four general "
+        "claims with no source and the D2 line.",
     )
     p_calibrate.add_argument(
         "--delimiter",

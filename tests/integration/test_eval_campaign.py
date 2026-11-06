@@ -528,6 +528,11 @@ def test_the_report_counts_the_answers_judged_under_the_web_note(settings, tmp_p
     text = md.read_text(encoding="utf-8")
     assert "Respostas julgadas sob a nota de busca web: 1 de 4." in text
     assert "0 foram marcadas como afirmação sem suporte" in text
+    assert "o `judge.v3` não rebaixa" in text  # no judge_config: the default rubric
+    # v0.10.0 review P3-2: the line names the rubric the judge used
+    under_v4 = {"mode": "scripted", "judge_config": {"rubric_version": "4"}}
+    md, _ = write_report(rows, summary, tmp_path, "web-v4", under_v4)
+    assert "o `judge.v4` não rebaixa" in md.read_text(encoding="utf-8")
     # a web answer that states data of the merchant's account without a tool result is counted and flagged
     web_rows[0]["judge_input"]["reply"] = "Pelo que encontrei, o seu saldo é de R$ 321,00."
     web_rows[0]["judge"] = judge.evaluate(web_rows[0]["judge_input"])
