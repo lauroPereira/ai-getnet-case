@@ -247,6 +247,9 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 - Synthetic HTTP client flow passed login, profile read, two-router comparison, selected message, run inspection, one-time consumption and authorization/revocation checks.
 - Candidate r6, review and QA are linked from the [result record](docs/evidence/v040-resultado.md).
 
+### Notes
+- Validated with scripted models; real-model QA starts in 0.5.0.
+
 ## [0.3.0] — 2026-10-27 (validated; approved for release)
 
 ### Added

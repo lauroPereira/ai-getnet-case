@@ -23,16 +23,16 @@ Nenhuma porta pública ou alteração de roteador nesta rodada.
 
 | Momento | Ação normal | Resultado esperado | Critério | Evidência | Retorno |
 | --- | --- | --- | --- | --- | --- |
-| Entrada | Abrir Streamlit em modo simulado e entrar como demo | Identificação do modo, sessão/escopo corretos, nenhum segredo | RF-53, CA-35 | Executado (QA r5 e r6) | Encerrar sessão |
-| Conversa | Escolher Referência e enviar cenário sintético; continuar | Resposta/estado/histórico preservados; perfil/versionamento efetivo visível | RF-43, RF-51 | Executado (QA r5 e r6) | v0.3.0 legado |
+| Entrada | Abrir Streamlit em modo simulado e entrar como demo | Identificação do modo, sessão/escopo corretos, nenhum segredo | RF-53, CA-35 | QA r5 e r6, modelos programados | Encerrar sessão |
+| Conversa | Escolher Referência e enviar cenário sintético; continuar | Resposta/estado/histórico preservados; perfil/versionamento efetivo visível | RF-43, RF-51 | QA r5 e r6, modelos programados | v0.3.0 legado |
 | Híbrido | Selecionar JEV real e enviar após confirmar custo | Decisão real JEV com versão/tempo/custo; especialistas conforme perfil | CA-32 | JEV real na v0.5.0 | Escolha explícita de outro mecanismo |
-| Falha JEV | Provedor indisponível ou decisão inválida | Erro claro, sem trocar mecanismo silenciosamente | CA-33 | Executado (QA r5 e r6) | Nova ação explícita |
-| Comparação | Comparar LLM/JEV e usar a decisão escolhida | Só dois Routers na comparação; atendimento uma vez; custos separados | CA-34 | Executado (QA r5 e r6) | Registro expirado/conflito claro |
-| Inspeção | Abrir execução e atualizar a tela | Snapshot/fontes/ferramentas/versões; real/simulado/gravado distintos; sem nova chamada | CA-35–36 | Executado (QA r5 e r6) | Reabrir registro |
-| Administração | Demo tenta publicar; admin publica perfil compatível | Demo 403; versão publicada imutável; execução corrente não muda | CA-36–37 | Executado (QA r5 e r6) | Perfil anterior publicado |
-| Limites | Selecionar capacidade incompatível ou custo desconhecido | Opção indisponível e rejeição backend antes da chamada | CA-37 | Executado (QA r5 e r6) | Perfil compatível |
-| Isolamento | Acessar conversa/execução/comparação de outro dono | Recusa sem revelar dados; comparação não pode ser reutilizada | RF-53, RNF-10 | Executado (QA r5 e r6) | Própria sessão |
-| Compatibilidade | Usar HTTP legado e MCP sem interface | Núcleo e jornadas v0.3.0 preservados | CA-28, RF-43 | Executado (QA r5 e r6) | tag v0.3.0 |
+| Falha JEV | Provedor indisponível ou decisão inválida | Erro claro, sem trocar mecanismo silenciosamente | CA-33 | Testes e revisão (falha real de provedor não exercitada) | Nova ação explícita |
+| Comparação | Comparar LLM/JEV e usar a decisão escolhida | Só dois Routers na comparação; atendimento uma vez; custos separados | CA-34 | QA r5 e r6, modelos programados | Registro expirado/conflito claro |
+| Inspeção | Abrir execução e atualizar a tela | Snapshot/fontes/ferramentas/versões; real/simulado/gravado distintos; sem nova chamada | CA-35–36 | QA r5 e r6, modelos programados | Reabrir registro |
+| Administração | Demo tenta publicar; admin publica perfil compatível | Demo 403; versão publicada imutável; execução corrente não muda | CA-36–37 | QA r5 e r6, modelos programados | Perfil anterior publicado |
+| Limites | Selecionar capacidade incompatível ou custo desconhecido | Opção indisponível e rejeição backend antes da chamada | CA-37 | QA r5 e r6, modelos programados | Perfil compatível |
+| Isolamento | Acessar conversa/execução/comparação de outro dono | Recusa sem revelar dados; comparação não pode ser reutilizada | RF-53, RNF-10 | Regressão automatizada | Própria sessão |
+| Compatibilidade | Usar HTTP legado e MCP sem interface | Núcleo e jornadas v0.3.0 preservados | CA-28, RF-43 | Regressão automatizada | tag v0.3.0 |
 
 ## Experiência e exceções
 
@@ -43,8 +43,8 @@ Valores financeiros continuam derivados das ferramentas em centavos.
 
 ## Resultado da rodada
 
-Executada no QA r5 e r6 ([QA r6](../evidence/v040-qa-r6.md), [resultado](../evidence/v040-resultado.md)); a
-chamada real ao JEV (CA-32) foi feita na v0.5.0.
+Executada no QA r5 e r6 com inferência e embeddings programados ([QA r6](../evidence/v040-qa-r6.md),
+[resultado](../evidence/v040-resultado.md)); a chamada real ao JEV (CA-32) foi feita na v0.5.0.
 
 ## Como terminou
 

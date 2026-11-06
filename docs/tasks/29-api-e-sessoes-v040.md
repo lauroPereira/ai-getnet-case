@@ -40,4 +40,4 @@ O snapshot OpenAPI do projeto irmão declara `SessionBearer` nas rotas protegida
 concluída (v0.4.0)
 ```
 
-Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)).
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)).

@@ -59,4 +59,4 @@ completos estão na passagem Developer r2.
 concluída (v0.4.0)
 ```
 
-Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)).
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)).

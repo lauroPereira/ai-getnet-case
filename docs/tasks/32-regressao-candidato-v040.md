@@ -42,4 +42,4 @@ Backend `.venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`, com
 concluída (v0.4.0)
 ```
 
-Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0 e a regressão real do núcleo na v0.6.0.
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0 e a regressão real do núcleo na v0.6.0.

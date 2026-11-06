@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.10.0. Every version goes through an independent review and QA with real models under a fixed budget cap; offline, the backend strict suite passes (**2,148 tests**, Ruff clean; [v0.10.0 candidate](docs/evidence/v0100-candidato-r1.json)). What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
+**Status:** v0.10.0. Every version goes through an independent review; QA uses real models under a fixed budget cap from v0.5.0 on; offline, the backend strict suite passes (**2,148 tests**, Ruff clean; [v0.10.0 candidate](docs/evidence/v0100-candidato-r1.json)). What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
 
 ### Where each part of the challenge lives
 

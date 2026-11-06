@@ -40,4 +40,4 @@ Fontes oficiais e preços/capacidades datados em [catálogo](../evidence/v040-ca
 concluída (v0.4.0)
 ```
 
-Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)). O catálogo segue a documentação oficial datada, sem identificação pela API da conta; a chamada real ao JEV (CA-32) foi feita na v0.5.0.
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)). O catálogo segue a documentação oficial datada, sem identificação pela API da conta; a chamada real ao JEV (CA-32) foi feita na v0.5.0.

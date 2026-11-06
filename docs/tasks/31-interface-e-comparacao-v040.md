@@ -42,4 +42,4 @@ Cliente gerado idempotentemente do OpenAPI atualizado, incluindo catálogo e par
 concluída (v0.4.0)
 ```
 
-Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0.
+Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0.
