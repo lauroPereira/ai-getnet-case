@@ -124,6 +124,8 @@ def main() -> int:
     )
     parser.epilog = "Argumentos não reconhecidos vão ao pytest no modo estrito (ex.: --basetemp=C:/tmp/novo)."
     args, pytest_args = parser.parse_known_args()
+    if pytest_args and not args.strict:
+        parser.error(f"argumentos não reconhecidos (só vão ao pytest com --strict): {' '.join(pytest_args)}")
 
     if not validate_structure():
         return 1

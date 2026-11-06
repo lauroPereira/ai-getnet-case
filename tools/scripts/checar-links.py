@@ -2,7 +2,7 @@ r"""Refuses tracked Markdown files with a relative link whose target does not ex
 
 For every tracked `*.md` (except `docs/raw/`, kept as delivered), each inline link `[text](target)`, image
 `![alt](target)` and reference definition `[label]: target` outside code is resolved against the file's directory
-(or the repository root when it starts with `/`) and must exist inside the repository: a local absolute path
+(or the repository root when it starts with `/`) and must be tracked by Git inside the repository: a local absolute path
 (`C:/...`) or a target outside the repository does not resolve on the hosting site. External schemes (`http:`,
 `https:`, `mailto:` ...) are skipped. A `#fragment` pointing at a Markdown file, or at the file itself, must match one
 of its headings, slugged as GitHub does.
@@ -95,6 +95,29 @@ def anchors(path: Path) -> frozenset[str]:
     return frozenset(found)
 
 
+@cache
+def tracked_paths(root: Path) -> frozenset[Path] | None:
+    """Tracked files and their directories under `root`; None outside a Git checkout (then the disk decides)."""
+    try:
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=root, check=True, capture_output=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    paths: set[Path] = set()
+    for name in out.decode("utf-8").split("\0"):
+        if name:
+            path = (root / name).resolve()
+            paths.add(path)
+            paths.update(parent for parent in path.parents if parent.is_relative_to(root))
+    return frozenset(paths)
+
+
+def exists_in_repository(resolved: Path) -> bool:
+    if not resolved.is_relative_to(ROOT) or not resolved.exists():
+        return False
+    tracked = tracked_paths(ROOT)
+    return tracked is None or resolved in tracked
+
+
 def broken(path: Path, target: str) -> bool:
     target = target.strip("<>").strip()
     if not target or SCHEME.match(target):
@@ -106,7 +129,7 @@ def broken(path: Path, target: str) -> bool:
     if target:
         base = ROOT if target.startswith("/") else path.parent
         resolved = (base / target.lstrip("/")).resolve()
-        if not resolved.is_relative_to(ROOT) or not resolved.exists():
+        if not exists_in_repository(resolved):
             return True
     else:
         resolved = path
