@@ -242,3 +242,65 @@ Reviewer, em contexto novo: revisar `023dc61..HEAD` (só os commits da tarefa 85
 ### Próxima ação
 
 Reviewer, rodada 2, em contexto novo: `b802c36..HEAD` restrito aos arquivos acima, reaplicando M12, M19 e M20. Depois, QA dos momentos 1 a 3 com os comandos da rodada 1, que não mudaram.
+
+## Tarefa 84 — rodada 2
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único), 2026-11-05.
+- **Objetivo:** fechar o [parecer da rodada 1](v0100-reviewer-t84.md) (P2-1, P2-2, P2-3; P3-1 a P3-3) com as decisões do Supervisor (P2-1 e P2-2 bloqueantes).
+- **Estado:** implementado; aguarda a rodada 2 da revisão.
+- **Branch e base:** `codex/v0.10.0-rubrica-operacao`, base `5d1ea89` (parecer da rodada 1). Commits `873007c` (OpenAPI da rota), `c097f90` (registro da thread e testes), `205336b` (teste da checagem de vida antiga) e o commit desta passagem. Os commits da tarefa 85 (`ac508ca`, `bed7fe0`, `b9bb1ed`) entraram na branch durante a rodada, de outro papel, sem arquivo em comum. Identidade conferida: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos
+
+- `src/merchant_assistant/comparisons.py`: `_registered`, `_release`, `_interrupt_if_orphan`; ordem de registro em `start` e `resume`; `_run` libera só a própria entrada; condição de P3-1 no laço do `resume`.
+- `src/merchant_assistant/api/v1.py`: só o decorador da rota de retomada (`responses` com 404, 409, 422 e 429).
+- `tests/integration/test_v0100_comparison_resume.py`: teste de reinício com custo não nulo e 9 testes novos.
+- `docs/tasks/84-comparacao-retomavel.md`: Validação (rodada 2) e Status.
+
+### Como cada item foi fechado
+
+- **P2-1.** `_release(id, thread)` remove a entrada só se for aquela thread. `_run` chama `_release(id, threading.current_thread())` no último `finally`, depois de gravar o estado final. Assim, enquanto a linha está `running`, a thread está no registro. O `resume` recusa com `409 comparison_running` quando `_alive(id)`, qualquer que seja o estado gravado: a thread que já gravou `partial` e ainda está saindo bloqueia a retomada até sair. Não há janela em que um `GET` veja `running` sem a thread registrada. Na outra ordem, sem o registro com `running`, o `GET` marcaria `interrupted`.
+- **P2-2.** Reivindicação atômica pelo registro. O `start` cria a thread e a registra antes do `INSERT` com `running` (a captura da base de conhecimento passou para antes do `INSERT`). O `resume` registra a thread dentro do `BEGIN IMMEDIATE`, depois do `UPDATE … WHERE state=<lido>` e antes do `COMMIT`. `_registered` trata uma thread registrada e ainda não iniciada (`ident is None`) como viva. A marcação de órfã (`read`, `resume`, `lifespan`) passou para `_interrupt_if_orphan`, que relê a linha e consulta o registro dentro de uma transação `BEGIN IMMEDIATE` própria. Como o `resume` registra antes de efetivar `running` e a thread sai depois de gravar o estado final, a marcação nunca intercala com uma reivindicação. Ordem dos travamentos: quem segura o `_ACTIVE_LOCK` nunca espera o SQLite (o lock só envolve leituras e escritas do dicionário). Então segurar a escrita do SQLite e pedir o `_ACTIVE_LOCK` não trava. Falhas entre o registro e o `thread.start()` liberam a entrada. Se o próprio `start()` falhar, a linha fica `running` sem thread, e a próxima leitura a marca `interrupted`.
+- **P2-3.** Teste de reinício: antes do app novo, as linhas `settled` da tentativa morta passam a 0,004 e entra uma `reserved` de 0,002. `interrupted_attempts[0].cost_usd` dá esse valor, e o `cost_usd` fica igual ao anterior mais esse valor. Uma segunda leitura não muda nada, e no fim o `cost_usd` é a soma das células mais a tentativa.
+- **P3-1.** Uma célula `failed` é mantida sem `retry_failed`, tenha ou não `request_id`. Uma célula com `request_id` e outro estado também é mantida (condição em uma linha, sem mudar o resto).
+- **P3-2.** Testes baratos para os três: M08 (`_mark_interrupted` com a linha já `completed` devolve `False` e não altera nada), M13 e M14 (contagem demo pela tabela `api_sessions`: 4 contadas, 1 devolvida → 3; retomada de uma célula ainda não alcançada → continua 3; `retry_failed` da devolvida → 4).
+- **P3-3.** A rota declara `404`, `409`, `422` e `429` com `ErrorBody`, e um teste confere o OpenAPI. A rota irmã de criação continua como estava, fora do escopo.
+
+### Decisões tomadas além do texto do parecer (reversíveis)
+
+1. **Registro primeiro, não marca no banco.** Das duas opções do Supervisor, escolhi o registro em `_ACTIVE` antes de `running` ficar visível. Uma marca de reivindicação no banco não diria se a thread está viva, e a vida da thread já é a fonte de verdade da marcação `interrupted`. O `AND state=?` da reivindicação continua, como segunda defesa contra dois pedidos que leram o mesmo estado. É o que o teste de dois `resume` com barreira exercita.
+2. **A marcação de órfã ganhou transação própria.** O pedido de P2-1 e P2-2 não exigia isso, mas sem ela restava uma corrida estreita: uma leitura via `running` da thread antiga, a thread saía, um `resume` reivindicava, e o `UPDATE … WHERE state='running'` da leitura marcava `interrupted` a retomada nova. O teste `test_a_stale_liveness_check_…` mata o mutante que tira a consulta ao registro de dentro da transação.
+3. **Teste da identidade do `pop`.** O cenário não acontece mais pela API, porque o `resume` recusa enquanto a thread antiga está registrada. O teste injeta uma thread no registro enquanto a antiga está parada e confere que ela continua lá. O mutante "pop sem identidade" também morre no teste de dois `resume`: o `_release` do pedido recusado tiraria do registro a thread do vencedor.
+
+### Evidência
+
+- Testes da tarefa: `test_v0100_comparison_resume.py` com **13 passed** (4 da rodada 1, um deles ampliado com custo, e 9 novos). Vizinhos `test_v060_r2`, `test_v060_api` e `test_v060_r4` verdes. Ruff check e format limpos nos arquivos tocados.
+- **Código da rodada 1 contra os testes novos** (cópia com `comparisons.py` de `5d1ea89`): falham os dois testes de janela (`start` e `resume`), o da thread que sai e o de P3-1. Os demais passam, como esperado: o de dois `resume` simultâneos mira o M12, que o código antigo já cobria pelo `AND state=?`.
+- **Mutantes** numa cópia da árvore no scratchpad (`PYTHONPATH` na cópia, `merchant_assistant.__file__` conferido), um por vez, com os testes da tarefa e `test_v060_r2.py`; controle verde:
+
+| Mutante | Resultado |
+| --- | --- |
+| M02 custo da tentativa não somado | morto (`test_restart_…`) |
+| M08 `_mark_interrupted` sem `AND state='running'` | morto (`test_marking_interrupted_never_overwrites_a_final_state`) |
+| M12 reivindicação sem `AND state=?` | morto (`test_two_concurrent_resumes_claim_the_comparison_once`) |
+| M13 `resume` sem recontar o limite demo | morto (`test_resume_recounts_given_back_cells_…`) |
+| M14 devolução sem a marca `demo_refunded` | morto (o mesmo teste) |
+| P3-1 desfeito (falha sem `request_id` volta sem `retry_failed`) | morto (`test_a_failed_recorded_cell_…`) |
+| `pop` sem conferir a identidade | morto (`test_two_concurrent_resumes_…`) |
+| `resume` sem recusar thread viva com estado final | morto (`test_a_leaving_thread_…`) |
+| thread registrada e não iniciada tratada como morta | morto (`test_read_and_resume_while_start_is_registering_…`) |
+| marcação sem consultar o registro dentro da transação | morto (`test_a_stale_liveness_check_…`, depois de `205336b`) |
+
+- **Suíte estrita:** `python tools/scripts/lint_and_tests.py --strict` (`.venv`) no HEAD `205336b` (com os commits da tarefa 85 que estavam na branch), com `-p no:cacheprovider -rs`: **2147 passed, 1 skipped** em 1049,36 s (o skip é o de sempre, `test_v070_identity_r2.py:277`, que exige basetemp sob `.pytest_cache`); ruff `All checks passed!`; caminhos pessoais: nenhuma ocorrência em 772 arquivos; estrutura e skills válidas; "Validação estrita concluída sem falhas", exit 0. Log no scratchpad da sessão (não versionado), SHA-256 `888851ee…7bbf`. Bloqueio de ambiente, não defeito: o `--basetemp` em `PYTEST_ADDOPTS` perdeu as barras invertidas na passagem pelo Git Bash, e o pytest criou o basetemp como diretório relativo na raiz do repositório (não versionado, 175 diretórios temporários de teste). Removi esse diretório depois da suíte; nada versionado foi afetado.
+- Nenhuma chamada paga, nenhuma rede, `.env` não lido, nenhum servidor iniciado.
+
+### Limites
+
+- O `taskkill` real continua com o QA (D6, CA-58). Os testes de concorrência usam threads reais no mesmo processo, sem vários processos.
+- Com mais de um processo da API sobre o mesmo banco (vários workers), o registro é por processo: outro processo veria `running` sem thread e marcaria `interrupted`. O projeto roda um processo só. Essa premissa já existia na rodada 1 e não mudou.
+- Uma retomada logo depois do fim da thread pode receber `409 comparison_running` por alguns milissegundos (a thread já gravou o estado final e ainda não saiu do registro). A recusa é segura, e o cliente repete.
+
+### Próxima ação
+
+Reviewer, rodada 2, em contexto novo: `5d1ea89..HEAD` restrito a `comparisons.py`, ao decorador da rota em `api/v1.py` e a `test_v0100_comparison_resume.py`, reaplicando M02, M12 e as sondas de P2-1 e P2-2. Depois, o QA da D6 com os comandos da rodada 1, que não mudaram.
