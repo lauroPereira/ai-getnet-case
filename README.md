@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.10.0, validated by independent reviews and real-model QA at every version. Offline, the backend strict suite passes (**2,147 tests**, Ruff clean). v0.7.0: real human in the loop and JWT identity ([result](docs/evidence/v070-resultado.md)). v0.8.0: replanning (four scenarios 3/3 with real models, at most 2 hops), business journeys **13/13, 12/13 and 12/13** (13/13 by the independent judge), conversations **4/4**, Docker smoke 10/10, sealed holdout run once **62/75**, 24-answer human calibration ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md)). v0.9.0: hybrid retrieval beats dense on dev and on a sealed retrieval holdout and is the default ([report](docs/evidence/v090-retrieval.md)); a pre-registered judge experiment kept DeepSeek over Claude Opus ([report](docs/evidence/v090-juiz-opus.md)). v0.10.0: a profile comparison survives a real `taskkill` and resumes without paying any cell twice ([QA](docs/evidence/v0100-qa-ops-r1.md)), `GET /metrics` with versioned alert rules, and rubric `judge.v4` measured against the human calibration under a rule written beforehand, v3 kept ([report](docs/evidence/v0100-juiz-v4.md)). The [response to the feedback](#response-to-the-evaluators-feedback) maps each remark of the evaluation to the change and its evidence.
+**Status:** v0.10.0. Every version goes through an independent review and QA with real models under a fixed budget cap; offline, the backend strict suite passes (**2,148 tests**, Ruff clean; [v0.10.0 candidate](docs/evidence/v0100-candidato-r1.json)). What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
 
 ### Where each part of the challenge lives
 
@@ -35,30 +35,16 @@ Since v0.7.0 `POST /messages` requires a token: the merchant comes from the toke
 
 Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `Dockerfile` and `docker-compose.yml` are at the repository root. Features built beyond the challenge (an interface, model profiles, an alternative Router engine, a versioned knowledge base, MCP) are described in [Beyond the challenge](#beyond-the-challenge).
 
-## Response to the evaluator's feedback
-
-The V4 evaluation (2026-11-03, 8.6/10) said what separated this case from the top of the ranking. Versions 0.7.0 to 0.10.0 answer every remark except the external access test; what remains is listed under [next steps](#next-steps). Each version went through the same cycle: a specification, tasks, an independent review in a fresh context, QA with real models under a fixed budget cap, and a candidate sealed by hashes before QA ([reports](docs/relatorios/README.md)).
-
-| Dimension (weight, V4 score) | Remark | What changed | Version | Evidence |
-| --- | --- | --- | --- | --- |
-| Human Oversight & Risk Management (7%, 4.0) | Handoff simulated: a local case with a `SIM-` protocol; no operator queue, no human reply back to the agent, no interrupt and resume | On a handoff the graph pauses at `human_review` (LangGraph `interrupt()`, SQLite checkpoint). A persistent operator queue with claim and idempotent `approve`, `reply` and `reject`; the action resumes the graph and the human reply reaches the merchant in the same conversation, by API and by webhook. A separate ticketing service talks to the assistant only through signed webhooks in both directions | v0.7.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), [result](docs/evidence/v070-resultado.md), [story QA](docs/evidence/v070-qa.md) |
-| Security & Identity (13%, 7.8) | `user_id` was the authority of the payload; no credential → principal → authorization → merchant chain; tool calls not authorized | RS256 JWTs from an own issuer with JWKS; roles and scopes; the merchant comes from the token (`403 identity_mismatch` otherwise); every tool call checks scope and merchant and writes an audit row; revocation, rate limit per principal, MCP with a key | v0.7.0 | [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [result](docs/evidence/v070-resultado.md), [API contract](docs/contracts/api-v040.md) |
-| Agentic Reasoning & Orchestration (15%, 8.5) | A predefined combined route; no observe → reconsider → replan → another agent → review loop with a hop limit | A `replan` node after Knowledge, web and Support: named rules first, the model only on ambiguity, a three-hop budget, each specialist at most once, and the origin of every decision in the trace. The four replanning scenarios pass 3/3 with real models and at most 2 hops | v0.8.0 | [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), [pre-holdout QA](docs/evidence/v080-d12-pre-holdout-r6.md) |
-| Evaluation & Quality Engineering (14%, 9.0) | No aggregated groundedness, correctness, relevance and usefulness; no independent judge, repeated runs, human calibration or holdout; journeys 7/13 by the literal rubric | `judge.v3` (four criteria plus `unsupported_claim`) by a DeepSeek judge over an OpenAI agent; three agent runs and three judge runs with the agreement reported; dev and holdout separated; the sealed holdout run once (62/75); a 24-answer human calibration (agreement within one point 0.83–1.00, the judge stricter than the human). Journeys 13/13, 12/13 and 12/13 by the deterministic floor and 13/13 by the judge. v0.9.0 added a pre-registered judge experiment: `claude-opus-5-5` over the same 24 human-rated answers agrees more with the human (within one point 0.96 vs 0.83) but still misses 3 of 4 generic claims, so by the rule written beforehand the gap is the rubric and DeepSeek stays the default. v0.10.0 closed the loop: `judge.v4` adds the generic-claim line; re-judged by both models against the same 24 human ratings, DeepSeek's verdict agreement rises 0.67 → 0.79 but it still flags 0 of 4 generic claims, while Opus under v4 flags 2 of 4 without any criterion worsening; by the pre-registered rule v3 stays the default and the gap is rubric and model together | v0.8.0, v0.9.0, v0.10.0 | [campaign](docs/evidence/v080-all-r3.md), [holdout](docs/evidence/v080-holdout-r7.md), [calibration](docs/evidence/v080-calibracao.md), [judge experiment](docs/evidence/v090-juiz-opus.md), [rubric v4](docs/evidence/v0100-juiz-v4.md) |
-| Context, Knowledge & RAG (10%, 9.4) | Recall@6 = 1.00 on a small set used during development; no hybrid BM25 + dense, RRF or reranker | BM25 + dense fused by RRF (`RETRIEVAL_MODE`, now `hybrid` by default), a configurable reranker (`rerank.v1`, off by default), nDCG@6 and a sealed 25-question retrieval holdout measured once, last. With real embeddings, nDCG@6 dense → hybrid: 0.868 → 0.974 on dev, 0.880 → 0.921 on the holdout; the default was chosen by a rule written before the measurement | v0.9.0 | [ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md), [report](docs/evidence/v090-retrieval.md), [QA](docs/evidence/v090-qa-retrieval-r1.md) |
-| Production Engineering (5%, 9.0) | `/messages` without auth; handoff without human integration; comparison in a thread of the process; external access untested; demo credentials to be configured | `/messages` authenticated and the handoff integrated (v0.7.0); `docker compose up` works without editing `.env.example` (fictitious demo keys); a CI workflow runs the strict suite on every push and pull request; the profile comparison now survives a process kill and resumes from where it stopped (v0.10.0). Still open: the external access test | v0.7.0, CI, v0.10.0 | [workflow](.github/workflows/validate.yml), [result](docs/evidence/v070-resultado.md), [ops QA](docs/evidence/v0100-qa-ops-r1.md) |
-| Memory, State & Resilience (8%, 9.0) | A comparison lost on restart is marked failed | The review graph checkpoint and the outbox survive an API restart (v0.7.0). Since v0.10.0 a running comparison whose process dies becomes `interrupted` with its finished cells kept and the in-flight attempt's cost recorded; `POST /v1/comparisons/{id}/resume` runs only the missing cells (real QA: killed after 1 of 6 cells, resumed 5, `completed`, one ledger line per cell). A rolling summary of long conversations remains a next step | v0.7.0, v0.10.0 | [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md), [ops QA](docs/evidence/v0100-qa-ops-r1.md) |
-| Observability, Reliability & Cost (6%, 9.2) | Production next steps only described (OTel, dashboards, alerts) | `GET /metrics` in Prometheus text (requests, model calls, tool calls and failures, handoffs, replan origins, duration histogram, cost per provider, budget) computed from the traces and the ledger, labels from closed sets only; `alerts/rules.yml` with four versioned rules whose metrics a test checks against the endpoint; a two-line `scrape_config` in the README. OTLP and a dashboard remain next steps | v0.10.0 | [Observability](#observability), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md) |
-
 ---
 
 ## Contents
 
-[Response to the feedback](#response-to-the-evaluators-feedback) · 1. [Run it](#run-it) · 2. [Configuration](#configuration) · 3. [Architecture](#architecture) ·
+1. [Run it](#run-it) · 2. [Configuration](#configuration) · 3. [Architecture](#architecture) ·
 4. [Message workflow](#message-workflow) · 5. [RAG pipeline](#rag-pipeline) · 6. [Support tools and data](#support-tools-and-synthetic-data) ·
 7. [How the LLM tools are used](#how-the-llm-tools-are-used) · 8. [Guardrails and reliability](#guardrails-and-reliability) ·
 9. [Observability](#observability) · 10. [Testing and evaluation](#testing-and-evaluation) · 11. [Design decisions](#design-decisions) ·
-12. [Beyond the challenge](#beyond-the-challenge) · 13. [Limitations and next steps](#limitations-and-next-steps) · 14. [Repository layout](#repository-layout)
+12. [Beyond the challenge](#beyond-the-challenge) · 13. [Operating notes](#operating-notes) · 14. [Roadmap](#roadmap) ·
+15. [Repository layout](#repository-layout)
 
 ---
 
@@ -135,13 +121,11 @@ merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.0
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
 ```
 
-`eval --judge` uses the independent judge (`JUDGE_PROVIDER`, `JUDGE_MODEL`). `--repeat 3` measures the variation of the assistant (the judge grades each answer once); `--judge-repeat 3 --answers-from` measures the variation of the judge over recorded answers. `--campaign v080-qa` mounts its fixed cap once (US$0.50; US$1.00 or US$1.10 with `--campaign-estimate` and a verified `eval-estimate`). That campaign is already mounted at US$1.40 after the approved contingency: `--campaign-cap-usd 1.40 --campaign-estimate docs/evidence/v080-custo-estimativa-r3.json` only continues it and never mounts a new one.
-
-The seed dates the synthetic sales relative to the day it ran ("yesterday" is the day before the seeding). A paid QA run must run `merchant-assistant bootstrap` (or a container start, which seeds) on the same local day, or the date-dependent cases are invalid.
+`eval --judge` uses the independent judge (`JUDGE_PROVIDER`, `JUDGE_MODEL`). `--repeat 3` measures the variation of the assistant (the judge grades each answer once); `--judge-repeat 3 --answers-from` measures the variation of the judge over recorded answers. `--campaign v080-qa` mounts its fixed cap once (US$0.50; US$1.00 or US$1.10 with `--campaign-estimate` and a verified `eval-estimate`).
 
 ## Configuration
 
-All settings come from environment variables (or `.env`). Defaults are safe for a reviewer's own key.
+All settings come from environment variables (or `.env`). Defaults are safe for a single OpenAI key.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -149,7 +133,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `AGENT_MODEL` | `gpt-6-luna` | Default model for every agent; the `/v1` model profiles can set another model per agent |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
-| `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers for the `eval` campaigns; keep it pointed at the project budget volume when `RUNTIME_DIR` is isolated for a QA run. The API and `bootstrap` write their ledger under `RUNTIME_DIR` (so an isolated runtime starts a ledger of its own, capped by `BUDGET_LIMIT_USD`) |
+| `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers for the `eval` campaigns; keep it pointed at the project budget volume when `RUNTIME_DIR` is isolated for a QA run. The API and `bootstrap` write their ledger under `RUNTIME_DIR` |
 | `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
 | `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger). Accepted range 0–5.00 (absolute project ceiling); the first limit recorded beside a ledger (`budget.sqlite3.limit`, native 1.00 for a ledger that predates it) can never be raised by a later value |
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
@@ -267,8 +251,7 @@ request status: answering does not close the case. Handoffs add `{"protocol": "H
 
 ### Replanning, as it ran
 
-The V4 feedback asked for `agent → observe result → Router reconsiders → replan → different agent → review`, with a
-hop limit. Since v0.8.0 a `replan` node runs after Knowledge, web and Support and decides `finish`, `knowledge`,
+Since v0.8.0 the assistant observes each specialist's result and can change the plan: a `replan` node runs after Knowledge, web and Support and decides `finish`, `knowledge`,
 `web`, `support`, `escalate` or `clarify`; named rules decide the clear cases, `replan.v2` decides only when no rule
 applies or two disagree, each specialist runs at most once, and `MAX_PLAN_HOPS=3` bounds the plan changes. Every
 decision carries its origin in the trace. A real request from the v0.8.0 QA (`req_eval866ca888dc9d`, 2 hops: the
@@ -377,14 +360,13 @@ The Support Agent has nine tools, plus two used by code at case opening.
 | `get_complaint_history` *(prefix)* | `topic` | Previous cases and attempts |
 | `run_customer_healthcheck` *(prefix)* | `topic` | Predefined checks: ok, pending, attention, unknown, unavailable |
 
-- **Customer binding.** The customer comes from the request context (`user_id`), never from model arguments; no tool
-  schema contains a customer field. Asking for another merchant's resource returns `FORBIDDEN_RESOURCE`, no data,
-  and an audit record. `user_id` identifies a demo scenario and does not prove identity; in production it would come
-  from authentication.
+- **Customer binding.** The customer comes from the verified token (see [Identity](#identity-and-human-in-the-loop-v070)),
+  never from model arguments; no tool schema contains a customer field. Asking for another merchant's resource returns
+  `FORBIDDEN_RESOURCE`, no data, and an audit record.
 - **Synthetic data** (SQLite, seeded at startup): `cliente1988` has three sales from *yesterday* (debit, credit, Pix),
   a Get Smart that went offline three hours ago, a declined transaction today and a previous Wi-Fi case;
-  `cliente_demo_002` exists to test isolation. All dates are relative to the clock, so "yesterday" always works.
-  Tests use a fixed clock (2026-10-26). Unknown `user_id`s can still ask product questions.
+  `cliente_demo_002` exists to test isolation. All dates are relative to the day the seed runs; tests use a fixed
+  clock (2026-10-26).
 - **Status vocabulary.** Original status names are preserved and mapped by a versioned glossary (for example
   `LOT_DONE` = batch processed, *not* money in the account). The agent only says a credit is confirmed when the
   payout tool says so.
@@ -471,9 +453,6 @@ tests), with `store=false`:
     static_configs: [{targets: ["localhost:8000"]}]
   ```
 
-- **Production next steps:** export the same spans to OpenTelemetry/Langfuse (OTLP), dashboards for route mix,
-  handoff rate, guard blocks, p95 latency and cost per resolved case, and alerts on retrieval score drift.
-
 ## Testing and evaluation
 
 **Strategy.**
@@ -483,7 +462,7 @@ tests), with `store=false`:
 | Unit | Tools (binding, filters, dates, errors), clock and seed, chunking, guards, pricing, budget atomicity, Router rules | 0 |
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
 | Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
-| Release validation (real) | The 44 labeled cases, 13 business journeys and 4 multi-turn conversations against real models on each release candidate, three runs each, judged by an independent model; sealed holdout run once, last; see the [v0.8.0 evidence](docs/evidence/v080-d12-pre-holdout-r6.md) | Paid and capped (v0.6.0 QA: US$0.088) |
+| Release validation (real) | The 44 labeled cases, 13 business journeys and 4 multi-turn conversations against real models on each release candidate, three runs each, judged by an independent model; sealed holdout run once, last; see the [v0.8.0 evidence](docs/evidence/v080-d12-pre-holdout-r6.md) | Paid, with a fixed cap per campaign |
 | Retrieval | Recall@6, MRR and nDCG@6 per mode on the development set and, once, on the sealed retrieval holdout | ≈ US$0.003 per configuration (US$0.016 for the six) |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
@@ -491,9 +470,7 @@ The scripted model follows simple rules for each agent, so the whole system (rou
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Validated evidence (v0.8.0 to v0.10.0, real models).** Strict suite **2,147 tests** at v0.10.0 (1,997 at v0.8.0), Ruff clean. The V4 feedback asked for
-aggregated groundedness, correctness, relevance and usefulness, an independent judge, repeated runs, a holdout and
-human review; this is the main table, from the [campaign](docs/evidence/v080-all-r3.md), the
+**Validated evidence (v0.8.0 to v0.10.0, real models).** The main table comes from the [campaign](docs/evidence/v080-all-r3.md), the
 [holdout](docs/evidence/v080-holdout-r7.md), the [calibration](docs/evidence/v080-calibracao.md) and the
 [judge experiment](docs/evidence/v090-juiz-opus.md). The judge is `deepseek-flash` over an OpenAI agent (`judge.v3`,
 scores 1–5 against the masked evidence of each answer); "±1" is the share of repeated runs within one point.
@@ -506,7 +483,7 @@ scores 1–5 against the masked evidence of each answer); "±1" is the share of 
 
 Deterministic checks on the same runs: replanning scenarios 3/3 each, business journeys **13/13, 12/13, 12/13**
 (the two refusals are correct paraphrases the literal floor rejects; the judge gave 13/13), conversations 4/4,
-holdout 62/75 by the literal floor.
+holdout 62/75 by the literal floor; the Docker smoke of the same QA passed 10/10.
 
 **Human review of the judge.** The owner rated a stratified sample of 24 answers with the judge's rubric, without
 seeing its scores; then the same 24 answers were judged by `claude-opus-5-5` under a decision rule written before
@@ -521,7 +498,7 @@ the run (spec D2):
 | Self-consistency over 3 repetitions (exact) | 0.76–0.86 | 0.81–1.00 |
 | Cost per judgement | US$0.0003 | US$0.0178 |
 
-Both judges are stricter than the human; neither flags the generic claims the human flagged. The pre-registered rule
+Both judges are stricter than the human; of the generic claims the human flagged, DeepSeek flags none and Opus one. The pre-registered rule
 said that this outcome means the gap is in the rubric, not the model, so DeepSeek stays the default and the rubric
 gained a line for generic claims without a source in v0.10.0 (`judge.v4`). The quadratic kappa of the 1–5 scores is
 near zero because almost every human score is 5 (ceiling effect); the within-one-point agreement is the usable figure.
@@ -539,11 +516,7 @@ worsening by more than 0.05 ([report](docs/evidence/v0100-juiz-v4.md), [ADR 0022
 
 The new line works when the model can apply it: Opus flags half of the generic claims under v4, DeepSeek still none.
 By the rule, `judge.v3` stays the default and v4 is available with `--rubric v4`; the gap is rubric and model
-together, and a cheaper model under v4 is the first [next step](#next-steps).
-
-History: v0.6.0 passed 27/27 core cases and 4/4 conversations with 7/13 journeys under the literal rubric
-([v0.6.0 result](docs/evidence/v060-resultado.md)); Recall@6 = 1.00 on 14 development questions, which v0.9.0 replaces
-with a sealed retrieval holdout.
+together. Judging claim by claim is the next step in the [Roadmap](#roadmap).
 
 ## Design decisions
 
@@ -555,8 +528,12 @@ Recorded as ADRs (in Portuguese) in [`docs/architecture/decisions/`](docs/archit
 - **Qdrant + versioned snapshots**: reproducible builds and evaluations independent of the live site.
 - **Synthetic data in SQLite, tools as domain functions**: testable without network; one place enforces customer
   isolation. The MCP server (v0.2.0) exposes the same functions.
-- **OpenAI baseline with a persistent budget guard**: a reviewer needs only one key; spending is capped before it
+- **OpenAI baseline with a persistent budget guard**: one key is enough to run it; spending is capped before it
   happens.
+- **Scope**: reopened in v0.7.0 for production concerns ([ADR 0016](docs/architecture/decisions/0016-reabertura-roadmap-producao.md));
+  an Evaluation Agent, an improvement-proposal workflow and an experiment platform stay out of scope
+  ([ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md)). Model evaluation is a judge over persisted
+  replies, calibrated against a human sample.
 
 Other choices: a deterministic case prefix (history + healthcheck) instead of letting the model decide; Personality
 as a separate, guarded step (from the challenge diagram) so tone changes cannot alter facts; answers in the
@@ -564,10 +541,11 @@ merchant's language while code, prompts and this README are in English.
 
 ## Beyond the challenge
 
-Later increments built on the same core (graph, agents, tools and guards), each with its own specification, independent review and QA. None of them is needed to evaluate the challenge: `POST /messages` works without them.
+Later increments built on the same core (graph, agents, tools and guards), each with its own specification, independent review and QA; `POST /messages` works without them. What each version added and why:
 
 | Version | Added | Why |
 | --- | --- | --- |
+| v0.1.0 | The core: Router, Knowledge (RAG and web search), Customer Support with tools, Escalation, Personality, guards, budget guard, Docker | The challenge itself |
 | v0.2.0 | [Conversations and case follow-up](#conversations-and-case-follow-up); MCP server | Multi-turn continuity; the same tools for external agents |
 | v0.3.0 | Read-only journeys: pricing disputes with an independent pricing service, card-scheme enablement, sale-cancellation status | The questions where a wrong answer becomes a financial promise |
 | v0.4.0 | Authenticated `/v1` API, per-agent model profiles (Reference: all `gpt-6-luna`; Hybrid: Router on DeepSeek; Adjusted: Router and Support on DeepSeek), per-request Router engine (LLM or TypeSafe JEV), Streamlit interface | Controlled configuration and comparison; the same validated Router contract for every engine |
@@ -575,16 +553,15 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | JWT identity with scopes checked on every tool call; real human in the loop: the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
-| v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | The retrieval remark of the feedback closed with numbers, and the judge choice made by experiment rather than preference |
-| v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 closed with numbers; two literal remarks of the feedback (comparison lost on restart, alerts only described) answered |
+| v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | Retrieval chosen by a rule written before measuring it on unseen questions, and the judge chosen by experiment rather than preference |
+| v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 measured with both judges; a comparison survives a restart without paying a cell twice; the operation gets metrics and alerts |
 
 ### Identity and human in the loop (v0.7.0)
 
-**Two breaking changes.** `POST /messages` requires `Authorization: Bearer <token>` (the merchant comes from the token; a different `user_id` in the body gets `403 identity_mismatch`), and `POST /v1/sessions` / `DELETE /v1/sessions/current` were replaced by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The evaluator's two calls are in [Run it](#run-it); `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
+**Two breaking changes.** `POST /messages` requires `Authorization: Bearer <token>` (the merchant comes from the token; a different `user_id` in the body gets `403 identity_mismatch`), and `POST /v1/sessions` / `DELETE /v1/sessions/current` were replaced by `POST /v1/auth/token` and `POST /v1/auth/revoke`. The two calls are in [Run it](#run-it); `merchant-assistant smoke` and `merchant-assistant auth token` get the token themselves.
 
 
-**The loop, end to end.** This is the flow the V4 feedback asked for, and the commands that drive it against the
-Compose stack (the operator side goes through the same `/v1/handoffs` API the ticketing service and the CLI use):
+**The loop, end to end.** The flow and the commands that drive it against the Compose stack (the operator side goes through the same `/v1/handoffs` API the ticketing service and the CLI use):
 
 ```text
 Merchant message
@@ -615,10 +592,10 @@ Repeating the claim is idempotent; repeating the action with the same `idempoten
 second resume of the same case gets `409 already_resumed`. The v0.7.0 story QA walked this sequence with real models
 and the ticketing screen ([story QA](docs/evidence/v070-qa.md), moments 6 to 14).
 
-- **Identity** ([ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md)). The assistant issues RS256 JWTs (own issuer, JWKS and discovery; an external OIDC issuer is a configuration change). Roles `merchant`, `operator`, `service`, `demo` and `admin` carry scopes; every tool call checks scope and merchant and writes an audit row with principal, scope and result. Tokens can be revoked; requests are rate-limited per principal and login attempts are limited.
+- **Identity** ([ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md)). The assistant issues RS256 JWTs (own issuer, JWKS and discovery). Roles `merchant`, `operator`, `service`, `demo` and `admin` carry scopes; every tool call checks scope and merchant and writes an audit row with principal, scope and result. Tokens can be revoked; requests are rate-limited per principal and login attempts are limited.
 
-**The identity chain, with where each step lives.** The V4 feedback described the missing chain as
-`credential → authenticated principal → authorization → merchant`, with every tool call authorized. Since v0.7.0:
+**The identity chain, with where each step lives.** Since v0.7.0 every request follows
+`credential → authenticated principal → authorization → merchant`, with every tool call authorized:
 
 ```text
 credential               POST /v1/auth/token (password grant for demo users, client_credentials for the ticketing service)
@@ -636,12 +613,12 @@ audit row                every tool call writes principal, tool, scope, result a
                          a call that cannot be audited is not reported as done
 ```
 
-An external OIDC issuer is a configuration change (`JWT_JWKS_URL`); the demo users and secrets in `.env.example` are
-fictitious and no private key is versioned (`JWT_PRIVATE_KEY_PATH` empty: the key is generated at startup).
+The demo users and secrets in `.env.example` are fictitious and no private key is versioned (`JWT_PRIVATE_KEY_PATH`
+empty: the key is generated at startup).
 
 - **Pause and resume** ([ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md)). When the Escalation agent opens a case, the end-of-turn state goes to a review graph checkpointed in SQLite that stops at `human_review` with LangGraph `interrupt()`; the attendance path without a handoff reads no checkpoint. An operator's `approve`, `reply` or `reject` resumes it with `Command(resume)`: approve and reply go to Personality, reject re-runs Support once with the operator's instruction. The reply is a turn marked `via=operator`, delivered on the merchant's next message (route `human_reply`, no model call), in `GET /v1/conversations/{id}` and by webhook. It survives an API restart.
 - **Queue.** States `open → claimed → answered | rejected → closed`; claim and actions are idempotent (`idempotency_key`), a second resume gets `409 already_resumed`, another operator's claim `409 claimed_by_other`. API (`GET /v1/handoffs`, `POST /v1/handoffs/{id}/claim`, `POST /v1/handoffs/{id}/actions`), CLI (`merchant-assistant operator list|show|act`) and the ticketing service go through the same service.
-- **Ticketing service.** A separate service in Compose (own database, published on `127.0.0.1:8002`), with the ticket cycle `new → open → pending → solved` and an operator screen in the web project. It talks to the assistant only through signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction) and a `client_credentials` token. Incoming events are idempotent by id and a repeated refused event gets the original `409`/`422` back.
+- **Ticketing service.** A separate service in Compose with a Zendesk/Freshdesk-style contract (own database, published on `127.0.0.1:8002`), with the ticket cycle `new → open → pending → solved` and an operator screen in the web project. It talks to the assistant only through signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction) and a `client_credentials` token. Incoming events are idempotent by id and a repeated refused event gets the original `409`/`422` back.
 - **Durable delivery.** Each outgoing event and destination is written to an outbox (migration 0010) in the same transaction as the change it reports; a dispatcher delivers it with up to three attempts in total, recorded and visible in the case, and recovers pending deliveries when the API starts.
 
 ### Demonstration API (v0.6.0)
@@ -658,6 +635,7 @@ These additive `/v1` routes back the Streamlit interface:
 | `POST /v1/comparisons/estimate` | demo, admin | 2–3 published profiles × up to 3 scenarios × up to 2 repetitions: cells, reused recorded runs, new executions, fixed factors, exploratory flag and an upper-bound estimate |
 | `POST /v1/comparisons` | demo, admin | Confirmed estimate required; `202` and execution in a thread of the API process with one knowledge-base version, domain effects in a temporary copy of the synthetic database and traces/snapshots marked `purpose=comparison` |
 | `GET /v1/comparisons/{id}` | owner | State, configuration, cells, failures and aggregates for the cost × quality and cost-by-agent/model charts |
+| `POST /v1/comparisons/{id}/resume` | owner | Since v0.10.0 a comparison whose process stopped is `interrupted`, with its finished cells kept; resume runs only the missing cells ([ops QA](docs/evidence/v0100-qa-ops-r1.md): killed after 1 of 6 cells, resumed 5, `completed`, one ledger line per cell) |
 
 Migration 0008 (reversible) adds `run_evaluations`, `comparisons` and `api_sessions.message_count`. Legacy `POST /messages`, MCP and the existing `/v1` behaviour are unchanged. In Compose the API is published only on `127.0.0.1:8000`.
 
@@ -672,7 +650,7 @@ $env:BACKEND_API_URL = "http://localhost:8000"
 streamlit run app.py
 ```
 
-For a no-key local HTTP exercise, use the synthetic backend harness with a new runtime directory under `.pytest_cache`, then point `BACKEND_API_URL` to that loopback server. The harness has programmed providers, a fresh isolated SQLite/Qdrant runtime, and no provider credentials; it is not a production configuration. Detailed commands are in the [developer passage](docs/evidence/v040-developer-r1.md).
+For a no-key local HTTP exercise, use the synthetic backend harness with a new runtime directory under `.pytest_cache`, then point `BACKEND_API_URL` to that loopback server. The harness has programmed providers, a fresh isolated SQLite/Qdrant runtime, and no provider credentials; it is not a production configuration. The Results area lists the runs of the current browser session.
 
 ### MCP server
 
@@ -693,33 +671,24 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 {"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp"], "env": {"MERCHANT_ASSISTANT_TOKEN": "<token>"}}}}
 ```
 
-## Limitations and next steps
+## Operating notes
 
-- The ticketing service is the project's own (Zendesk/Freshdesk-style contract); a commercial ticketing system would be a mapping and configuration change. A delivery that exhausts its three attempts, or that the receiver refuses, has no automatic or manual resend yet and holds the later events of the same case and destination. If the API dies in the middle of the turn that opens a case, the case is completed when the merchant sends the same message again; otherwise it stays open without a ticket. The ticket id appears on the case after the first operator event from the ticketing; it is empty while the ticket is still in reception. The cross-process locks were exercised on Windows only.
-- Business journeys are measured by a literal rubric that works as a deterministic floor (route, status, tools, values, forbidden assertions): real runs bring correct paraphrases it refuses (v0.8.0 passed 13/13, 12/13 and 12/13; the judge 13/13 each), and a wrong paraphrase outside the registered list can pass it. Content is checked by the calibrated judge. The handoff sentence and the journey labels were fixed in v0.8.0. The judge does not see the web search text, so `general_web` answers score lower and vary more, and the calibration shows it misses generic claims that a human flags. The human calibration of the judge is [done](docs/evidence/v080-calibracao.md) (24 answers: the judge is the stricter rater, and the two never flag the same answer as unsupported), and the v0.8.0 holdout has been seen once.
-- Snapshots fix the site content of 2026-10-26; JavaScript-rendered pages need a browser capture to refresh.
-- Troubleshooting steps are identified by the model's short label; informational answers wait for the merchant's
-  confirmation before a case is resolved.
-- The functional scope was reopened after the feedback ([ADR 0016](docs/architecture/decisions/0016-reabertura-roadmap-producao.md)); there is still no Evaluation Agent, improvement-proposal workflow or experiment platform. Model evaluation is a judge over persisted replies, calibrated against a human sample, not human review.
-- Profile comparisons are small and run in a thread of the API process. Since v0.10.0 a restart marks a running comparison `interrupted` (finished cells kept) and `POST /v1/comparisons/{id}/resume` finishes it; the thread registry is per process, so the API must run with a single worker (as the compose does), and a narrow ABA race in the resume claim is documented in ADR 0022. The comparison estimate is an upper bound (request cost cap per new execution).
-- The Results area lists the runs of the current browser session; there is no general run listing.
-- Public sharing depends on the owner's router, firewall and the absence of CGNAT; a tunnel is a documented alternative.
-- Sale cancellation is read-only: the assistant reports the status of an existing request; asking it to cancel a
-  new sale is not covered.
-- Identity uses the assistant's own issuer and synthetic demo users; there is no authorization-code flow, refresh token or external OIDC provider running in the demo.
+- The compose runs the API with one worker, published on `127.0.0.1:8000`, with the ticketing service on `127.0.0.1:8002`.
+- The users, passwords and secrets in `.env.example` are fictitious demo values; replace them before exposing the API beyond the local machine.
+- Product answers come from snapshots of Getnet's official pages taken on 2026-10-26; JavaScript-rendered pages are refreshed by a browser capture.
+- Every paid call goes through the installation budget (`BUDGET_LIMIT_USD`, at most US$5.00); `/ready` shows what is left and `docker compose down -v` resets it.
+- The seed dates the synthetic sales relative to the day it runs, so a paid evaluation run reseeds the same day (`merchant-assistant bootstrap` or a container start).
 
-### Next steps
+## Roadmap
 
-In order of value for the open remarks; written down so the direction is clear even where it ships later.
+Planned evolution, one version at a time, each with its own specification, review and QA ([specification](docs/specs/roadmap-v0110-v100.md)):
 
-1. **Judge: model and rubric together.** `judge.v4` fixed the rubric but the default judge does not apply it; measure `claude-sonnet-5-5` under v4 against the same 24 human ratings as a cost middle ground, and record the web search text so the judge sees it.
-2. **Rolling summary** for conversations longer than the ten-message window.
-3. **Journey rubric.** Keep the deterministic checks for what is binary (route, status, tools, values, sources, forbidden assertions) and let the judge decide content.
-4. **Calibration tooling.** `eval-calibrate --sample` must carry the full evidence the judge saw (the v0.8.0 CSV truncated it; the full text was supplied in a companion file).
-5. **Reranker decision.** Add a no-model control at the same fusion depth (`hybrid@36`) so the reranker's own gain can be measured, then decide `RERANK` by the rule; add a score floor for hits found only by BM25.
-6. **Operation.** Optional OTLP export and a dashboard over `/metrics`; a multi-worker-safe comparison registry (today the API runs with one worker).
-7. **Optional Anthropic agent provider** with a per-provider ledger and a paired comparison against the OpenAI profile (specification drafted, not merged; the judge adapter of v0.9.0 is the first piece).
-8. **Production.** External access test through a tunnel; mapping to a commercial ticketing system; resend of exhausted webhook deliveries.
+| Version | Planned |
+| --- | --- |
+| v0.11.0 — Judge and retrieval | The judge reads the web pages a `general_web` answer cites and judges each claim (`judge.v5`); a two-rater calibration on 60 answers; a no-model control for the reranker (`hybrid@36`) and a score floor for BM25-only hits; journeys measured by deterministic checks plus the judge |
+| v0.12.0 — Orchestration, memory and actions | Rolling summary of long conversations with a fact register; replanning measured with and without; sale cancellation with explicit confirmation |
+| v0.13.0 — Identity and operation | Authorization code with PKCE, refresh tokens and an external OIDC issuer; operator channel on the phone (Telegram); multiple API workers with a shared comparison lease; resend of exhausted webhook deliveries and recovery of cases opened while the API stopped; OTLP export and a dashboard |
+| v1.0.0 — Reading and access | Image published per tag and a lockfile; external access tested through a tunnel; a 10-minute walkthrough |
 
 ## Repository layout
 
