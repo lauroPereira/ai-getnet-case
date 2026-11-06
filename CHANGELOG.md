@@ -75,7 +75,7 @@ Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v0
 ### Notes
 - `RERANK` stays `off` by default (ADR 0020): the measured gain includes the effect of the deeper fusion (36 instead of 18 candidates), and the reranker quadruples the time per query.
 - In hybrid mode the trace `score` is on the RRF scale, and the Knowledge agent's "no evidence" shortcut fires only when BM25 also finds nothing.
-- The retrieval holdout (25 questions) was labeled by the Developer, checked by an independent reviewer and sealed before any measurement; it has now been measured, and later runs mark it as seen.
+- The retrieval holdout (25 questions) was labeled by the Developer, checked by an independent reviewer and sealed before any measurement (re-sealed once after the label review); it has now been measured: later runs must be marked as seen, and the CLI counts runs within the same report file.
 - Use a new execution name for each `eval --judge-repeat` round: a repeated name overwrites its report.
 - The Opus judge costs 54× more per judgement than DeepSeek (US$0.0178 vs US$0.00033).
 
@@ -119,10 +119,10 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 
 ### Notes
 - The deterministic journey rubric is literal: it refuses some correct paraphrases and can accept a wrong one outside the registered list; the independent judge is the extra control.
-- `holdout_v080` has now been seen: any later QA run marks it as such, and no change is guided by its result.
+- `holdout_v080` has now been seen: any later QA run must be marked as seen, and no change may be guided by its result.
 - Human calibration rests on 24 answers rated by one person; the quadratic kappa is near zero because almost every human score is 5 (ceiling), so the within-one-point agreement is the usable figure.
 - Replanning does not run in the operator resume graph.
-- The seed dates "yesterday" by the day it runs: a paid QA run reseeds the same local day.
+- The seed dates "yesterday" by the day it runs: run `bootstrap` the same local day before a paid QA run.
 
 ### Return to 0.7.0
 - Stop the stack, make sure `calibrations` holds no human scores (or recreate the runtime), run `merchant-assistant migrate --to 10` against the runtime and check out the 0.7.0 release. The prompt loader takes the latest file of each prompt, so 0.7.0 uses `router.v5`, `personality.v4` and `judge.v2` again; `MAX_PLAN_HOPS` and the judge settings are ignored. The budget ledgers stay as they are.
