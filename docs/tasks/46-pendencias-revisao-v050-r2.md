@@ -61,4 +61,4 @@ Feita na [tarefa 54](54-estabilizacao-v060.md).
 concluída (v0.6.0)
 ```
 
-Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)). Itens corrigidos na [tarefa 54](54-estabilizacao-v060.md); R2-04 mantido por desenho, sem contenção observada no QA real.
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)). Itens corrigidos na [tarefa 54](54-estabilizacao-v060.md); R2-04 fica como risco aceito, sem contenção observada no QA real.

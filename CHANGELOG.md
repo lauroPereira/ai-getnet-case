@@ -187,7 +187,7 @@ Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md)
 - Reversible migration 0008 adds `run_evaluations`, `comparisons` and `api_sessions.message_count`; schema version 8. Trace detail gains `purpose`, `scenario_id`, `citations` and passage excerpts; run snapshots gain `scenario_id`, `purpose`, the masked `message` and the `prompt_set`.
 - Compose publishes the API only on `127.0.0.1:8000`.
 - The approved v0.6.0 QA campaign cap is US$0.50: `FixedBudgetGuard` accepts up to US$0.50 (was US$0.25).
-- Activation keeps its Qdrant I/O inside the `BEGIN IMMEDIATE` transaction (R2-04, by design).
+- R2-04 (Qdrant I/O inside `BEGIN IMMEDIATE` during activation) is an accepted risk, without code change.
 
 ### Validation
 - Backend strict script: **349 tests passed**, Ruff and skill checks passed. Web: **42 tests passed**, Ruff passed, strict script exit 0. Migration 0007 → 0008 → 0007 tested on a synthetic SQLite database. Independent review and real QA (candidate r5) apt on the ten acceptance items through the real UI, ledgers and the packaged Docker stack (API only on loopback, schema 8). Highlights: the edited document changed tool use with a real model (V2 retrieved the new passage first and called `get_contract_snapshot`; the restored V1 did not); JEV toggle confirmed by `jev-1.14.0` ledger rows; recovery with one POST and one GET; on-demand evaluation reused without cost. Real regression: core and challenge cases 27/27, conversations 4/4, business journeys 7/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). QA campaign cost **US$0.08800487** of its US$0.50 cap; project total US$0.68637953 of US$5. See the [result record](docs/evidence/v060-resultado.md).
