@@ -89,3 +89,51 @@ O comando do momento 3 da história com um `--judge` só gera dois blocos (O e o
 ### Próxima ação
 
 Reviewer, em contexto novo: revisar `0266652..HEAD` contra a tarefa 83. Depois o QA roda os momentos 1 a 3 com os comandos acima, e o Supervisor aplica a D2 na tarefa 86.
+
+## Tarefa 84 — Comparação retomável após reinício (rodada 1)
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único).
+- **Objetivo e critérios:** [tarefa 84](../tasks/84-comparacao-retomavel.md); spec [rubrica-operacao-v0100](../specs/rubrica-operacao-v0100.md) D3, D6, CA-58; história, momentos 4 e 5.
+- **Escopo:** `src/merchant_assistant/data/migrations.py` (0012), `src/merchant_assistant/comparisons.py`, `src/merchant_assistant/api/app.py` (`lifespan`), `src/merchant_assistant/api/v1.py` (só a rota nova), `docs/contracts/api-v040.md` (seção "Acréscimos da v0.10.0"), `tests/integration/test_v0100_comparison_resume.py` (novo), `tests/unit/data/test_migrations.py`; asserções de versão em `tests/integration/test_v1_api.py`, `test_use_cases.py`, `test_v070_story.py` e `test_v060_api.py`. Não toquei em `evaluation/`, `cli.py` nem `prompts/`.
+- **Estado:** apto para revisão.
+- **Branch:** `codex/v0.10.0-rubrica-operacao`, sem push (push é do Supervisor).
+- **Base e versão final:** base `f4dfb97` (passagem da tarefa 83); commits `4b6891b` (migração 0012), `b6f7e19` (retomada), `ee7774a` (contrato). A tarefa e esta passagem vão num commit de documentação logo depois. Identidade conferida: `lauroPereira` / e-mail do projeto.
+- **Independência:** não-independente (autor). A revisão precisa de contexto novo.
+
+### O que mudou
+
+- **Migração 0012 `comparison_interrupted`:** o `CHECK` da 0008 não aceitava `interrupted`. A tabela é recriada (nova, cópia, drop, rename, índice `comparisons_owner_v060` recriado; nada referencia `comparisons`). O rollback converte `interrupted` em `failed` e restaura o `CHECK`. Esquema 12, reportado em `/ready`.
+- **`interrupted`:** no `lifespan` (`comparisons.interrupt_orphans`, com `try/except` como a recuperação do outbox), toda linha `running` sem thread viva neste processo vira `interrupted`, com log `comparison interrupted` e `event={"comparison_id": ...}`. `read()` faz o mesmo e deixa de marcar `failed`. As células não mudam: as concluídas ficam como estão, as pendentes continuam `pending` (antes viravam `skipped`).
+- **`POST /v1/comparisons/{id}/resume?retry_failed=false`:** mesmas regras de principal da leitura. Relê `config` e `cells` e pula as células com `request_id`. Com `retry_failed=true`, as células `failed` voltam a `pending`. Verifica orçamento e limite demo só para o que falta (mesmo teto por célula do `estimate`) e roda na thread como `start`, partindo do `cost_usd` e das `failures` gravados: o teto confirmado vale para a comparação inteira e o custo acumula. O estado final continua sendo calculado como hoje. `202 {comparison_id, state, resumed_cells}`.
+
+### Decisões tomadas além do texto do plano (todas reversíveis)
+
+1. **A tentativa em curso fica registrada.** Hoje o `request_id` da célula só vai para o banco quando ela termina. Se o processo morre durante a chamada, o ledger guarda linhas de um `request_id` que nenhuma célula conhece. Agora `_run` grava `in_flight_request_id` na célula antes de chamar `execute_run` e remove esse campo ao terminar. Ao marcar `interrupted`, o campo vira `interrupted_attempts: [{request_id, cost_usd}]`, com o custo lido do ledger (liquidado, ou reservado se nunca foi liquidado), e esse custo entra no `cost_usd`. A célula continua `pending` e roda de novo na retomada, porque não tem resultado. Assim todo `request_id` do ledger aponta para uma célula, e o QA consegue conciliar o ledger antes e depois (CA-58). A tentativa interrompida é o único gasto que não vira resultado; ela fica documentada, não some.
+2. **`retry_failed` guarda o histórico:** o `request_id` da falha vai para `previous_request_ids` da célula.
+3. **Novos `409`, todos com código próprio:** `comparison_completed`, `comparison_running` (com o thread vivo, outra comparação do principal rodando ou retomada concorrente; a reserva é um `UPDATE ... WHERE state=<anterior>` dentro de `BEGIN IMMEDIATE`), `nothing_to_resume` (por exemplo, `partial` só com falhas e sem `retry_failed`) e `fixed_factors_changed` (base de conhecimento ativa, `prompt_set` ou modo de execução diferentes dos da configuração: misturar células simuladas e reais, ou prompts diferentes, quebraria a comparabilidade). Também `422 admin_scope_required`, como em `POST /v1/comparisons`.
+4. **Limite demo sem contar duas vezes:** a célula devolvida no fim de uma execução ganha `demo_refunded`. A retomada conta de novo só essas (as outras já foram contadas no `start`) e nunca devolve uma célula duas vezes. `model_calls` de células terminadas antes não é recalculado.
+5. **Retomada de `partial`/`failed` também é aceita** (a tarefa só exige `409` para `running`/`completed`). Células `skipped` (teto, orçamento, base trocada) não têm `request_id` e rodam de novo. A trava de base trocada em `_run` passou a pular só células sem resultado, para não apagar as concluídas.
+6. **Teste antigo ajustado ao comportamento novo da spec:** `test_comparison_requires_confirmation_and_fresh_estimate_and_lost_threads_fail` passou a se chamar `..._lost_threads_are_interrupted` e verifica `interrupted` com a célula ainda `pending`. As listas de passos de migração e as asserções `schema == 11` passaram a usar o 12.
+
+### Evidência
+
+- Testes novos: **6** (4 em `tests/integration/test_v0100_comparison_resume.py` e 2 da 0012 em `tests/unit/data/test_migrations.py`). Simulação do `taskkill`: a comparação roda de verdade até a segunda execução nova, e a partir daí nada do thread chega ao banco. Um app novo (orquestrador e modelo programado novos) sobre o mesmo runtime, com `TestClient` em `with`, roda o `lifespan`.
+  - interrupção → `interrupted` gravado pelo `lifespan` antes de qualquer GET; célula concluída intacta; 3 `pending`; `interrupted_attempts` com o `request_id` morto. Retomada → `completed`, 4 células. `execute_run` roda só nas 3 que faltavam; todas as chamadas do modelo programado depois do reinício acontecem dentro dessas 3. O ledger da célula concluída e da tentativa interrompida fica igual, entram só os 3 `request_id` novos, e o `cost_usd` é a soma das células mais a tentativa;
+  - `409 comparison_running` com o thread vivo (e um app novo no mesmo processo não marca essa comparação), `409 comparison_completed`, `404` ausente ou de outro dono, `401` sem token;
+  - `partial` → `409 nothing_to_resume`; `?retry_failed=true` → só a célula falha roda, com `previous_request_ids`, e o estado final é `completed`;
+  - orçamento restante abaixo de 3 × teto → `429 installation_budget_exceeded`, exatamente 3 × teto basta; prompts diferentes → `409 fixed_factors_changed`; recusas não mudam o estado.
+- Focados: `test_v0100_comparison_resume.py` + `test_migrations.py` + `test_v1_api.py` com **49 passed**. Vizinhos (`test_v060_api`, `test_v060_r2`, `test_v060_r4`, `test_v070_identity_r2`, `test_use_cases`, `test_v070_story`, `test_v070_webhooks`) verdes depois de corrigir a lista de passos da 0006 em `test_v1_api.py`, a única falha da primeira rodada.
+- OpenAPI gerado pelo FastAPI: `/v1/comparisons/{comparison_id}/resume` com `retry_failed`, `202`/`409`/`422`, `SessionBearer`; 37 caminhos.
+- **Suíte estrita:** `python tools/scripts/lint_and_tests.py --strict` (`.venv`) no HEAD `ee7774a`, com `PYTEST_ADDOPTS="--basetemp=<scratchpad da sessão>/t84/bt -p no:cacheprovider"`: **2121 passed, 1 skipped** em 945,84 s (2115 da tarefa 83 + 6 novos; o skip é o mesmo de antes); ruff `All checks passed!`; caminhos pessoais: nenhuma ocorrência em 766 arquivos; estrutura e skills válidas; "Validação estrita concluída sem falhas", exit 0, 971 s. Log no scratchpad da sessão (não versionado), SHA-256 `ac8a9b6d…df104d83`. Durante a suíte, outro papel rodava pytest e mutação em cópias próprias (`<scratchpad da sessão>/head` e `/mut`), fora desta árvore.
+- Nenhuma chamada paga, `.env` não lido, nenhum servidor iniciado. Os processos de espera que eu abri foram encerrados.
+
+### Achados e limitações
+
+- O `taskkill` real (D6, CA-58) é do QA: a simulação prova a lógica, não o comportamento do SQLite e do ledger sob morte abrupta do processo. Se a API morrer entre o `_save` do `in_flight_request_id` e a primeira reserva do ledger, a tentativa aparece com `cost_usd` 0, o que é correto.
+- A interface web não muda (decisão da tarefa): `interrupted` e os campos novos das células aparecem como estão. A web ainda não tem botão de retomada; a retomada é pela API.
+- Uma janela curta já existente (`start` e `resume` registram o thread antes de `thread.start()`) pode, em tese, fazer uma leitura concorrente marcar `interrupted` uma comparação que acabou de começar. O thread grava o estado final de qualquer forma. Não mexi nisso.
+- O `prompt_set` inclui o `judge` (achado da tarefa 83): uma comparação iniciada antes de um prompt novo entrar não pode ser retomada (`409 fixed_factors_changed`), de propósito.
+
+### Próxima ação
+
+Reviewer, em contexto novo: revisar `f4dfb97..HEAD` contra a tarefa 84. Depois, QA da D6 com modelo real (2 perfis × 3 cenários, `taskkill` com a primeira célula concluída, reinício, `resume`, ledger antes e depois). O Supervisor marca o CA-58 depois da revisão e do QA.
