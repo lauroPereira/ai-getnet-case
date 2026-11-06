@@ -25,7 +25,7 @@ Aprovação específica do plano e da rede para fontes oficiais; nenhuma chamada
 
 ## Critérios de conclusão
 
-- [ ] Catálogo diferencia identificação via API de capacidade comprovada em documentação.
+- [ ] Catálogo diferencia identificação via API de capacidade comprovada em documentação. *Não feito: o catálogo segue a documentação oficial datada.*
 - [x] JEV e LLM produzem o mesmo RouterDecision validado; erros explícitos sem troca silenciosa.
 - [x] Modelos desconhecidos/preço ausente não são selecionáveis; estimativa respeita guarda e faixa peak.
 - [x] Testes offline aprovados; execução real aguarda autorização monetária.
@@ -36,4 +36,8 @@ Fontes oficiais e preços/capacidades datados em [catálogo](../evidence/v040-ca
 
 ## Status
 
-Implementada como candidata nos limites sem custo. A identificação via endpoint da conta e validação real do provedor permanecem abertas; Reviewer/QA pendentes.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)). O catálogo segue a documentação oficial datada, sem identificação pela API da conta; a chamada real ao JEV (CA-32) foi feita na v0.5.0.

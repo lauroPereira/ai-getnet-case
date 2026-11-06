@@ -33,10 +33,10 @@ Corrigir as pendências que afetam orçamento, integridade e funcionamento demon
 
 ## Critérios de conclusão
 
-- [ ] Cada correção tem regressão sintética que falha antes e passa depois.
-- [ ] Nenhum teto gravado alterado; montagem concorrente não falha.
-- [ ] `POST /messages` legado, MCP e contratos `/v1` existentes inalterados.
-- [ ] Validação estrita backend e web com código 0; nenhuma chamada paga.
+- [x] Cada correção tem regressão sintética que falha antes e passa depois.
+- [x] Nenhum teto gravado alterado; montagem concorrente não falha.
+- [x] `POST /messages` legado, MCP e contratos `/v1` existentes inalterados.
+- [x] Validação estrita backend e web com código 0; nenhuma chamada paga.
 
 ## Validação
 
@@ -59,7 +59,7 @@ Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .py
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

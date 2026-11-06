@@ -38,9 +38,9 @@ Corrigir, antes do QA real, os achados P3 do [parecer r1](../evidence/v060-revie
 
 ## Critérios de conclusão
 
-- [ ] Cada item com teste que falharia antes e passa depois, ou justificativa registrada.
-- [ ] Contratos aprovados, legado e MCP inalterados além do necessário a estes itens.
-- [ ] Nenhuma chamada paga; validação estrita com código 0 nos dois repositórios.
+- [x] Cada item com teste que falharia antes e passa depois, ou justificativa registrada.
+- [x] Contratos aprovados, legado e MCP inalterados além do necessário a estes itens.
+- [x] Nenhuma chamada paga; validação estrita com código 0 nos dois repositórios.
 
 ## Validação
 
@@ -71,7 +71,7 @@ Validação estrita backend: **340 passed**, Ruff "All checks passed!", código 
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

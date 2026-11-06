@@ -24,10 +24,18 @@ API `/v1`, registro KB, schemas e testes de autorização/validação.
 
 ## Critérios de conclusão
 
-- [ ] Escritas admin; demo/oficial recusados sem efeito.
-- [ ] Limite64KiB e409 de revisão; nenhum caminho arbitrário.
-- [ ] Texto editado não muda ferramentas, orçamento ou autoridade financeira.
+- [x] Escritas admin; demo/oficial recusados sem efeito.
+- [x] Limite64KiB e409 de revisão; nenhum caminho arbitrário.
+- [x] Texto editado não muda ferramentas, orçamento ou autoridade financeira.
 
 ## Validação e status
 
 Implementada pelo Developer r1. Contrato exercitado com fonte oficial somente leitura, demo sem escrita, revisão obsoleta (`409`), edição fictícia e diff. Unitários e integração usam transportes sintéticos; nenhuma chamada paga.
+
+## Status
+
+```text
+concluída (v0.5.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

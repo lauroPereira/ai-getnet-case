@@ -44,7 +44,7 @@ Cada checkbox marcado habilita o botão correspondente quando os demais pré-req
 - [x] Marcar a confirmação de build habilita o botão sem exigir mudança não relacionada.
 - [x] Marcar a confirmação de teste habilita o botão quando a candidata satisfaz os pré-requisitos.
 - [x] Cada clique explícito gera no máximo uma chamada de UI; estimativa, reserva/liquidação e validação do backend permanecem inalteradas.
-- [ ] Validação visual no navegador, além da regressão AppTest direcionada, permanece para QA.
+- [x] Validação visual no navegador, além da regressão AppTest direcionada, permanece para QA. *Feita no QA r2.*
 
 ## Validação
 
@@ -53,9 +53,7 @@ QA real r1 reproduziu o defeito. Correção Developer e regressão sintética em
 ## Status
 
 ```text
-concluída
+concluída (v0.5.0)
 ```
 
-Corrigida pela [tarefa 49](49-correcao-confirmacoes-qa-v050.md) e revalidada no QA r2.
-
-Corrigido localmente na branch de trabalho. O novo candidato deve ser fixado pelo Supervisor após revisão.
+Revisão independente e QA real aptos ([QA](../evidence/v050-qa-r3.md)). Corrigida pela [tarefa 49](49-correcao-confirmacoes-qa-v050.md) e revalidada no QA r2.

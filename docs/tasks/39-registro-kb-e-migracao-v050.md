@@ -24,10 +24,18 @@ Plano/API/migração aprovados. Base nos merges v0.4 registrados; dados sintéti
 
 ## Critérios de conclusão
 
-- [ ] Tabelas novas isoladas, subida/descida preservam negócios e ledger.
-- [ ] Oficial não vira editável; versão publicada imutável.
-- [ ] Bootstrap não reconstrói/apaga coleção existente.
+- [x] Tabelas novas isoladas, subida/descida preservam negócios e ledger.
+- [x] Oficial não vira editável; versão publicada imutável.
+- [x] Bootstrap não reconstrói/apaga coleção existente.
 
 ## Validação e status
 
 Implementada pelo Developer r1. Migração aditiva `0007_kb_versions`, bootstrap idempotente sem rebuild da coleção e downgrade/upgrade exercitados em SQLite sintético; preservação dos registros legados verificada. QA e revisão independentes pendentes.
+
+## Status
+
+```text
+concluída (v0.5.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

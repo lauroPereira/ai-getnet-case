@@ -30,9 +30,9 @@ Mesmo Developer; sem chamada paga, commit ou push. Contratos aprovados inalterad
 
 ## Critérios de conclusão
 
-- [ ] Toggle JEV executa o adaptador JEV de verdade no envio direto e na comparação; registros coerentes.
-- [ ] Cada item com teste que falharia antes, ou justificativa registrada.
-- [ ] Nenhuma chamada paga; validação estrita com código 0 nos dois repositórios.
+- [x] Toggle JEV executa o adaptador JEV de verdade no envio direto e na comparação; registros coerentes.
+- [x] Cada item com teste que falharia antes, ou justificativa registrada.
+- [x] Nenhuma chamada paga; validação estrita com código 0 nos dois repositórios.
 
 ## Validação
 
@@ -72,7 +72,7 @@ Validação estrita backend: **349 passed**, Ruff "All checks passed!", código 
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

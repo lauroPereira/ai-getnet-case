@@ -27,11 +27,11 @@ Spec v0.8.0 aprovada; a branch `codex/v0.8.0-avaliacao` (worktree `time-b`, `.ve
 
 ## Critérios de conclusão
 
-- [ ] Agregação e concordância conferidas com números fixos em teste.
-- [ ] `judge.v3` com modelo programado devolve os quatro critérios e o veredito; evidência longa é truncada e o truncamento aparece.
-- [ ] Juiz igual ao agente ou sem chave → recusa clara antes de qualquer chamada.
-- [ ] Migração 0011 sobe e desce com dados sintéticos.
-- [ ] Suíte estrita com código 0 no worktree; nenhuma chamada paga; lacre do holdout verde.
+- [x] Agregação e concordância conferidas com números fixos em teste.
+- [x] `judge.v3` com modelo programado devolve os quatro critérios e o veredito; evidência longa é truncada e o truncamento aparece.
+- [x] Juiz igual ao agente ou sem chave → recusa clara antes de qualquer chamada.
+- [x] Migração 0011 sobe e desce com dados sintéticos.
+- [x] Suíte estrita com código 0 no worktree; nenhuma chamada paga; lacre do holdout verde.
 
 ## Validação
 
@@ -56,5 +56,7 @@ Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080
 ## Status
 
 ```text
-Rodada 2 apta na revisão independente. Segue para a suíte integrada e o QA da v0.8.0.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

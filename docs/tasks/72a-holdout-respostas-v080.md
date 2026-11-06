@@ -29,10 +29,10 @@ Criar `tests/scenarios/holdout_v080.jsonl` com pelo menos 20 casos novos (metade
 
 ## Critérios de conclusão
 
-- [ ] ≥ 20 casos, ≥ 50% em pt, rotas cobertas como no passo 1, três difíceis marcados (campo `notes` ou id com sufixo `-HARD`).
-- [ ] Cada valor e cada fonte tem derivação reproduzível no arquivo de evidência.
-- [ ] Teste de lacre passa; alterar um byte do JSONL o faz falhar.
-- [ ] Suíte estrita com código 0 no worktree; nenhuma chamada paga; `prompts/` não foi aberto (declarado na passagem).
+- [x] ≥ 20 casos, ≥ 50% em pt, rotas cobertas como no passo 1, três difíceis marcados (campo `notes` ou id com sufixo `-HARD`).
+- [x] Cada valor e cada fonte tem derivação reproduzível no arquivo de evidência.
+- [x] Teste de lacre passa; alterar um byte do JSONL o faz falhar.
+- [x] Suíte estrita com código 0 no worktree; nenhuma chamada paga; `prompts/` não foi aberto (declarado na passagem).
 
 ## Validação
 
@@ -95,5 +95,7 @@ Developer, rodada 6 (2026-11-03, última), sobre o [parecer da rodada 5](../evid
 ## Status
 
 ```text
-Rodada 6 implementada pelo Developer; aguarda a revisão final e o lacre definitivo pelo Supervisor.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([holdout](../evidence/v080-holdout-r7.md)).

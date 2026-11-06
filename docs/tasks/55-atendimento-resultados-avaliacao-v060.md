@@ -28,10 +28,10 @@ Backend: `data/scenarios/`, `api/v1.py`, `evaluation/runner.py`, `orchestration/
 
 ## Critérios de conclusão
 
-- [ ] Nenhum POST, inferência ou publicação em rerun, troca de aba ou navegação.
-- [ ] Avaliação de execução persistida não repete o atendimento; custo de avaliação separado; repetição só explícita.
-- [ ] Demo não vê nem consegue usar Administração (backend `403`).
-- [ ] Migração 0008 sobe e desce em banco sintético; validação estrita backend e web com código 0.
+- [x] Nenhum POST, inferência ou publicação em rerun, troca de aba ou navegação.
+- [x] Avaliação de execução persistida não repete o atendimento; custo de avaliação separado; repetição só explícita.
+- [x] Demo não vê nem consegue usar Administração (backend `403`).
+- [x] Migração 0008 sobe e desce em banco sintético; validação estrita backend e web com código 0.
 
 ## Validação
 
@@ -47,7 +47,7 @@ Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .py
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

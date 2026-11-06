@@ -66,7 +66,11 @@ Developer, 2026-11-05, commits `8c1970b` (holdout e lacre, antes de qualquer có
 
 ## Status
 
-Aberta pelo Supervisor em 2026-11-05. Rodada 1 implementada pelo Developer em 2026-11-05 e revisada (correções necessárias: P2-1 a P2-3). Rodada 2 implementada pelo Developer em 2026-11-05, com o holdout relacrado; aguarda nova revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+```text
+concluída (v0.9.0)
+```
+
+Revisão independente e QA real aptos ([relatório](../evidence/v090-retrieval.md)).
 
 ## Fechamento (Supervisor, 2026-11-06)
 

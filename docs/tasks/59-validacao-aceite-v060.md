@@ -28,9 +28,9 @@ Tarefas 54 a 58 concluídas e passagem do Developer entregue. Candidato fixado p
 
 ## Critérios de conclusão
 
-- [ ] Os dez itens de aceite têm evidência ou bloqueio concreto registrado.
-- [ ] Gasto da campanha ≤ US$0,50, sem reset, com zero reservas abertas no fim.
-- [ ] Sem commit, push, merge, tag ou abertura de porta sem autorização própria.
+- [x] Os dez itens de aceite têm evidência ou bloqueio concreto registrado.
+- [x] Gasto da campanha ≤ US$0,50, sem reset, com zero reservas abertas no fim.
+- [x] Sem commit, push, merge, tag ou abertura de porta sem autorização própria.
 
 ## Validação
 
@@ -39,5 +39,7 @@ Reviewer independente apto nas rodadas 1–5 ([parecer](../evidence/v060-reviewe
 ## Status
 
 ```text
-concluída; teste de outra rede pendente com o responsável
+concluída (v0.6.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)). O teste de outra rede segue no [roadmap](../specs/roadmap-v0110-v100.md) (RF-98).

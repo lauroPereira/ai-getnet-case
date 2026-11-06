@@ -33,11 +33,11 @@ Não modificar BudgetGuard, limites financeiros ou a regra de reserva.
 
 ## Critérios de conclusão
 
-- [ ] Bloqueios por limite da solicitação ou saldo global devolvem erro explícito.
-- [ ] Provedor não é invocado quando sua reserva foi negada.
-- [ ] Falha no segundo Router não cria comparação completa/consumível ou atendimento.
-- [ ] Contabilização anterior permanece intacta, sem ultrapassar limites.
-- [ ] Parecer/revalidação identificam o novo candidato e a correção real.
+- [x] Bloqueios por limite da solicitação ou saldo global devolvem erro explícito.
+- [x] Provedor não é invocado quando sua reserva foi negada.
+- [x] Falha no segundo Router não cria comparação completa/consumível ou atendimento.
+- [x] Contabilização anterior permanece intacta, sem ultrapassar limites.
+- [x] Parecer/revalidação identificam o novo candidato e a correção real.
 
 ## Validação
 
@@ -55,6 +55,8 @@ completos estão na passagem Developer r2.
 
 ## Status
 
-Implementação e regressões validadas pelo Developer r2. Aguarda novo parecer
-do Reviewer; QA ainda não iniciado. Nenhuma chamada paga, alteração da guarda,
-dos limites ou reset do ledger.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)).

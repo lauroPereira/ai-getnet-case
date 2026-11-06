@@ -26,9 +26,9 @@ Tarefa 55 concluída (catálogo e Resultados). Documento fictício de dispositiv
 
 ## Critérios de conclusão
 
-- [ ] Diferença esperada registrada antes de qualquer edição real.
-- [ ] Teste sem custo mostra a mudança e o retorno por ferramenta e fato, não só por redação.
-- [ ] Nenhuma ferramenta nova, prazo oficial ou regra financeira vinda do texto.
+- [x] Diferença esperada registrada antes de qualquer edição real.
+- [x] Teste sem custo mostra a mudança e o retorno por ferramenta e fato, não só por redação.
+- [x] Nenhuma ferramenta nova, prazo oficial ou regra financeira vinda do texto.
 
 ## Validação
 
@@ -42,7 +42,7 @@ Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .py
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

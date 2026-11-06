@@ -28,13 +28,13 @@ O encaminhamento interrompe o grafo com estado durável; a ação do operador re
 
 ## Critérios de conclusão
 
-- [ ] CA-47: com modelo programado, `approve`, `reply` e `reject` produzem turno `via=operator` com a marca de atendente e o estado de caso de D15; `reject` chama a ferramenta indicada pela instrução uma única vez e não reencaminha.
-- [ ] CA-48: retomada após reinício: o teste encaminha num processo, encerra-o e retoma num processo novo sobre o mesmo checkpoint.
-- [ ] CA-48: segunda retomada recusada (`409 already_resumed`) sem tocar o grafo.
-- [ ] CA-46: na retomada `reject`, a auditoria registra o principal do operador e o lojista do caso; o lojista B não recebe nem vê o turno.
-- [ ] Rota `human_reply` não gera chamada a modelo (contagem do modelo programado).
-- [ ] Nova mensagem do lojista com o caso aberto não colide com a interrupção pendente.
-- [ ] Suíte estrita com código 0; prompts novos como arquivos novos, sem editar versões anteriores.
+- [x] CA-47: com modelo programado, `approve`, `reply` e `reject` produzem turno `via=operator` com a marca de atendente e o estado de caso de D15; `reject` chama a ferramenta indicada pela instrução uma única vez e não reencaminha.
+- [x] CA-48: retomada após reinício: o teste encaminha num processo, encerra-o e retoma num processo novo sobre o mesmo checkpoint.
+- [x] CA-48: segunda retomada recusada (`409 already_resumed`) sem tocar o grafo.
+- [x] CA-46: na retomada `reject`, a auditoria registra o principal do operador e o lojista do caso; o lojista B não recebe nem vê o turno.
+- [x] Rota `human_reply` não gera chamada a modelo (contagem do modelo programado).
+- [x] Nova mensagem do lojista com o caso aberto não colide com a interrupção pendente.
+- [x] Suíte estrita com código 0; prompts novos como arquivos novos, sem editar versões anteriores.
 
 ## Validação
 
@@ -69,5 +69,7 @@ Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 2)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

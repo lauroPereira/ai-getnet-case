@@ -5,7 +5,7 @@ Versão 1, 2026-11-04; roteiro aprovado com a spec, antes de implementar. Spec: 
 ## Pessoas e objetivo
 
 - **Lojista** (`cliente1988`, usuário e senha fictícios da v0.7.0): faz perguntas cuja resposta não está onde o Router mandou procurar primeiro.
-- **Avaliador técnico** (papel vivido pelo QA): quer ver por que o assistente mudou de caminho e quanto a nota do juiz merece confiança.
+- **Auditor técnico** (papel vivido pelo QA): quer ver por que o assistente mudou de caminho e quanto a nota do juiz merece confiança.
 - **Responsável** (Lauro): calibra uma amostra de respostas com a mesma rubrica do juiz.
 
 ## Critérios e candidato
@@ -36,7 +36,7 @@ Percorra na ordem. O momento 11 depende do responsável e pode fechar depois do 
 
 ## Experiência e exceções
 
-O lojista não vê o replanejamento: vê uma resposta só, honesta sobre o que não conseguiu confirmar. O avaliador vê cada decisão no trace, com motivo e origem. O CSV de calibração traz instruções curtas e nenhum score do juiz.
+O lojista não vê o replanejamento: vê uma resposta só, honesta sobre o que não conseguiu confirmar. O auditor vê cada decisão no trace, com motivo e origem. O CSV de calibração traz instruções curtas e nenhum score do juiz.
 
 ## Resultado da rodada
 
@@ -44,7 +44,7 @@ Registrado pelo Supervisor em 2026-11-05 a partir dos pareceres do QA (r3 a r7),
 
 | Momento | Resultado | Evidência |
 | --- | --- | --- |
-| 1 a 6 (replanejamento) | CA-49 apto: os quatro cenários com modelos reais, origem em toda decisão, no máximo 2 saltos; `REPLAN-TOOL-DOWN` com falha real da ferramenta de preços e protocolo `HO-` | [r5](../evidence/v080-d12-pre-holdout-r5.md) |
+| 1 a 6 (replanejamento) | CA-49 apto: os quatro cenários com modelos reais, origem em toda decisão, no máximo 2 saltos; `REPLAN-TOOL-DOWN` com falha real da ferramenta de preços e protocolo `HO-` | [r6](../evidence/v080-d12-pre-holdout-r6.md), [falha de ferramenta](../evidence/v080-tool-down-r5.md) |
 | 7 (campanha com juiz independente) | Juiz DeepSeek sem falha; `--judge-repeat 3` sobre as 44 primeiras respostas com concordância exata 0,76 a 0,86 e ±1 ≥ 0,985 | [r6](../evidence/v080-d12-pre-holdout-r6.md) |
 | 8 (jornadas) | CA-51 pela régua determinística 13/13, 12/13 e 12/13 (as duas recusas são redações corretas, limitação da régua literal); pelo `judge.v3`, 13/13 nas três | [r6](../evidence/v080-d12-pre-holdout-r6.md), [tarefa 78](../tasks/78-regua-literal-ca51-recusa-respostas-corretas-v080.md) |
 | 9 (Docker) | Smoke 10/10; pergunta mista replaneja (`rule:procedure_gap`) com o caminho no trace; `down` limpo | [r6](../evidence/v080-d12-pre-holdout-r6.md) |
@@ -55,4 +55,4 @@ Rodadas anteriores: r3 reprovou CA-51 (9, 11 e 10 de 13) e invalidou `REPLAN-TOO
 
 ## Como terminou
 
-O lojista recebeu uma resposta só em cada pergunta, inclusive quando o assistente precisou mudar de caminho; quando a ferramenta de preços caiu, ganhou um protocolo em vez de um número inventado. O avaliador técnico viu, em cada trace, por que o assistente mudou de rota e quanto o juiz concorda consigo mesmo. O responsável avaliou as 24 respostas: o juiz fica a no máximo um ponto dele em 83% a 100% dos casos e é o mais severo dos dois, mas cada um aponta afirmações sem suporte em respostas diferentes. É com essa medida que a versão fecha.
+O lojista recebeu uma resposta só em cada pergunta, inclusive quando o assistente precisou mudar de caminho; quando a ferramenta de preços caiu, ganhou um protocolo em vez de um número inventado. O auditor técnico viu, em cada trace, por que o assistente mudou de rota e quanto o juiz concorda consigo mesmo. O responsável avaliou as 24 respostas: o juiz fica a no máximo um ponto dele em 83% a 100% dos casos e é o mais severo dos dois, mas cada um aponta afirmações sem suporte em respostas diferentes. É com essa medida que a versão fecha.

@@ -48,10 +48,10 @@ O usuário recebe a resposta concluída ou um estado recuperável que identifica
 
 ## Critérios de conclusão
 
-- [ ] Causa do `ReadTimeout` identificada com medições correlacionadas, não inferida só pela duração do trace.
-- [ ] A resposta concluída aparece na UI ou existe caminho de recuperação que consulta a execução existente.
-- [ ] Uma falha de transporte não dispara nova mensagem paga automaticamente.
-- [ ] Cenário é validado com transporte controlado e uma única confirmação real, se necessária e dentro da guarda já existente.
+- [x] Causa do `ReadTimeout` identificada com medições correlacionadas, não inferida só pela duração do trace.
+- [x] A resposta concluída aparece na UI ou existe caminho de recuperação que consulta a execução existente.
+- [x] Uma falha de transporte não dispara nova mensagem paga automaticamente.
+- [x] Cenário é validado com transporte controlado e uma única confirmação real, se necessária e dentro da guarda já existente.
 
 ## Validação
 
@@ -60,9 +60,7 @@ QA real v0.5.0, r1: observação e logs sanitizados em `docs/evidence/v050-qa-r1
 ## Status
 
 ```text
-concluída
+concluída (v0.5.0)
 ```
 
-O atendimento terminava no backend e a falha era de transporte; a recuperação manual por GET ([tarefa 50](50-recuperacao-manual-chat-v050.md)) passou no [QA r3](../evidence/v050-qa-r3.md). O ajuste do timeout fixo de 20 s do cliente web segue na [tarefa 54](54-estabilizacao-v060.md).
-
-Falha de UI reproduzida; causa temporal ainda não isolada. Recuperação manual GET implementada na tarefa50, aguardando revisão e QA; não alterar timeout por inferência.
+Revisão independente e QA real aptos ([QA](../evidence/v050-qa-r3.md)). A falha era de transporte; a recuperação manual por GET ([tarefa 50](50-recuperacao-manual-chat-v050.md)) passou no QA r3, e o timeout do cliente web foi ajustado na [tarefa 54](54-estabilizacao-v060.md).

@@ -27,10 +27,10 @@ Backend: `api/v1.py`, `data/migrations.py` (`comparisons`), orquestração da co
 
 ## Critérios de conclusão
 
-- [ ] Nenhuma conversa, caso, tentativa ou encaminhamento criado no atendimento original.
-- [ ] Configurações, versões, repetições, amostra e falhas registradas e exibidas.
-- [ ] Qualidade só com os mesmos rótulos e rubrica; sem nota fictícia.
-- [ ] Validação estrita backend e web com código 0; nenhuma chamada paga.
+- [x] Nenhuma conversa, caso, tentativa ou encaminhamento criado no atendimento original.
+- [x] Configurações, versões, repetições, amostra e falhas registradas e exibidas.
+- [x] Qualidade só com os mesmos rótulos e rubrica; sem nota fictícia.
+- [x] Validação estrita backend e web com código 0; nenhuma chamada paga.
 
 ## Validação
 
@@ -43,7 +43,7 @@ Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .py
 ## Status
 
 ```text
-concluída
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

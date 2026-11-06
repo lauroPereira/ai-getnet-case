@@ -24,10 +24,10 @@ Tarefa 70 com parecer apto (rubrica, migração 0011 e tabela `calibrations`). M
 
 ## Critérios de conclusão
 
-- [ ] CSV gerado sem nenhum score do juiz (teste procura os valores).
-- [ ] Kappa e concordâncias conferidos com números fixos em teste, inclusive casos de borda (todos iguais, uma linha).
-- [ ] CSV malformado → erro claro com a linha.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] CSV gerado sem nenhum score do juiz (teste procura os valores).
+- [x] Kappa e concordâncias conferidos com números fixos em teste, inclusive casos de borda (todos iguais, uma linha).
+- [x] CSV malformado → erro claro com a linha.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
 
@@ -54,7 +54,7 @@ Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080
 ## Status
 
 ```text
-Rodada 2 apta na revisão independente de af16869, com 79 testes focados.
-Calibração real importada em 2026-11-05 (campanha v080-all-r3, 24 linhas): docs/evidence/v080-calibracao.md.
-Defeito para a v0.9.0: a coluna evidence do CSV corta as passagens que o juiz viu inteiras; a amostra precisa trazer a evidência completa ou um arquivo companheiro.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([calibração](../evidence/v080-calibracao.md)).

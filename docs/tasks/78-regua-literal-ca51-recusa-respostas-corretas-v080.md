@@ -118,4 +118,8 @@ Resultados:
 
 ## Status
 
-Aberta pelo QA (r5), 2026-11-05. Implementada pelo Developer (rodada 1), 2026-11-05. Revisão da rodada 1 pediu correções. Correções aplicadas na rodada 2, 2026-11-05. Revisão da rodada 2 pediu correções. Correções aplicadas na rodada 3, 2026-11-05. Revisão da rodada 3 pediu correções (P2-7); o Supervisor limitou o critério à lista registrada. Correções aplicadas na rodada 4, 2026-11-05; aguarda revisão.
+```text
+concluída (v0.8.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

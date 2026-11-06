@@ -26,7 +26,7 @@ Testes, histórias, manifestos Git/hashes, README/changelog e evidências dos do
 
 ## Critérios de conclusão
 
-- [ ] Regressão do núcleo e v0.3.0 preservada, com custos/modos separados.
+- [x] Regressão do núcleo e v0.3.0 preservada, com custos/modos separados. *Regressão real do núcleo na v0.6.0.*
 - [x] Reviewer e QA independentes identificam o mesmo candidato backend/web.
 - [x] Nenhum requisito real concluído somente por testes programados; lacunas explícitas.
 - [x] APIs dentro de US$5 e autorização adicional própria; nenhum ledger reiniciado.
@@ -38,9 +38,8 @@ Backend `.venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`, com
 
 ## Status
 
-Verificação sem custo encerrada no r6: backend216/web14, revisão e QA das
-correções aptos; [resultado final](../evidence/v040-resultado.md). O responsável
-autorizou PR/merge privados e início da v0.5.0, mantendo CA-32 e catálogo
-autenticado pendentes. QA pago foi autorizado a partir da próxima versão,
-sob teto global e guarda persistente. A regressão real e o fechamento formal
-desses requisitos não são declarados concluídos pela evidência simulada.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0 e a regressão real do núcleo na v0.6.0.

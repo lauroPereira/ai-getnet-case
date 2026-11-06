@@ -34,8 +34,8 @@ Respostas no idioma da mensagem; exercitar português e inglês. Fontes fictíci
 
 ## Resultado da rodada
 
-Pendente: registrar candidato, ambiente, esperado e observado, limitações e defeitos reproduzíveis.
+Executada no QA funcional do candidato r6: candidato, ambiente, esperado e observado, limitações e defeitos estão no [QA r6](../evidence/v030-qa-r6.md).
 
 ## Como terminou
 
-A preencher após a rodada funcional, com o que o lojista conseguiu realizar e o que permaneceu pendente.
+Apto; o que o lojista conseguiu realizar está no [QA r6](../evidence/v030-qa-r6.md) e no [resultado da v0.3.0](../evidence/v030-resultado.md).

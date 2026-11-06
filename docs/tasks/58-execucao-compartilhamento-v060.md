@@ -27,9 +27,9 @@ Tarefas 54 a 57 concluídas. Sem chamada paga, abertura de porta ou alteração 
 
 ## Critérios de conclusão
 
-- [ ] Guia executável do zero, distinguindo Docker, execução nativa e testes.
-- [ ] Documentação descreve só o que foi entregue e validado; limitações explícitas.
-- [ ] Nenhum dado privado de `discovery/`, credencial ou documento interno.
+- [x] Guia executável do zero, distinguindo Docker, execução nativa e testes.
+- [x] Documentação descreve só o que foi entregue e validado; limitações explícitas.
+- [x] Nenhum dado privado de `discovery/`, credencial ou documento interno.
 
 ## Validação
 
@@ -44,7 +44,7 @@ Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .py
 ## Status
 
 ```text
-concluída; teste de outra rede pendente com o responsável
+concluída (v0.6.0)
 ```
 
-Revisada (Reviewer, rodadas 1–5) e validada no QA real da v0.6.0 (rodada 2, candidato r5); ver [resultado](../evidence/v060-resultado.md).
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)). O teste de outra rede segue no [roadmap](../specs/roadmap-v0110-v100.md) (RF-98).

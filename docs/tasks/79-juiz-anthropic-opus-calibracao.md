@@ -57,7 +57,11 @@ Developer, 2026-11-05, commits `820c270` e `7d1039f` sobre `fee7a78`, a partir d
 
 ## Status
 
-Rodada 2 implementada pelo Developer em 2026-11-05 (correções P2-1 a P2-3); aguarda nova rodada do Reviewer. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+```text
+concluída (v0.9.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v090-qa-juiz-r2.md)).
 
 ## Fechamento (Supervisor, 2026-11-06)
 

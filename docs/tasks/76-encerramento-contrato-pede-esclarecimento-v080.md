@@ -56,4 +56,8 @@ Developer, rodada 2 (2026-11-05), correção do P2-76 e do P3-76 da [revisão](.
 
 ## Status
 
-implementada (rodada 2); aguarda revisão
+```text
+concluída (v0.8.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

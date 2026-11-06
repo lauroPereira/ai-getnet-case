@@ -62,6 +62,8 @@ registra arquivos e resultados.
 
 ## Status
 
-Sincronização e verificações do Developer r3 concluídas; aguarda congelamento e
-reavaliação independente pelo mesmo Reviewer. Revisões r1/r2 e suas evidências
-permanecem preservadas; QA ainda não iniciou.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)).

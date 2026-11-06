@@ -31,15 +31,15 @@ O assistente emite e valida JWT; toda mensagem exige token; o lojista vem do pri
 
 ## Critérios de conclusão
 
-- [ ] CA-46: sem token `401`; token adulterado, expirado, revogado, de outro emissor ou sem a audiência `merchant-assistant` → `401`; `user_id` de outro lojista `403 identity_mismatch`; lojista B não lê conversa nem trace de A pelas rotas `/v1` e de demo.
-- [ ] CA-46: em uma execução programada com N tool calls há N registros de auditoria com principal, escopo e resultado, inclusive recusas por escopo e por lojista.
-- [ ] Token de operador ou de serviço em `POST /messages` → `403`; token de lojista não tem `handoff:operate`.
-- [ ] JWKS publicado valida o token emitido com uma biblioteca independente do emissor (teste com `jwt.PyJWKClient` ou equivalente sobre a resposta da rota); troca para JWKS externo coberta por teste com chave gerada no teste.
-- [ ] `client_credentials` do `ticketing-demo` emite token com `handoff:integrate` e sem lojista; segredo errado → `401 invalid_client`.
-- [ ] Rate limit: a (limite+1)-ésima requisição na janela recebe `429` sem chamada a modelo.
-- [ ] MCP recusa token inválido ou de operador e deriva o lojista do token.
-- [ ] Nenhuma chave privada ou senha em texto no banco, no log ou no Git.
-- [ ] `docker compose config` válido; smoke programado passa com token; suíte estrita com código 0.
+- [x] CA-46: sem token `401`; token adulterado, expirado, revogado, de outro emissor ou sem a audiência `merchant-assistant` → `401`; `user_id` de outro lojista `403 identity_mismatch`; lojista B não lê conversa nem trace de A pelas rotas `/v1` e de demo.
+- [x] CA-46: em uma execução programada com N tool calls há N registros de auditoria com principal, escopo e resultado, inclusive recusas por escopo e por lojista.
+- [x] Token de operador ou de serviço em `POST /messages` → `403`; token de lojista não tem `handoff:operate`.
+- [x] JWKS publicado valida o token emitido com uma biblioteca independente do emissor (teste com `jwt.PyJWKClient` ou equivalente sobre a resposta da rota); troca para JWKS externo coberta por teste com chave gerada no teste.
+- [x] `client_credentials` do `ticketing-demo` emite token com `handoff:integrate` e sem lojista; segredo errado → `401 invalid_client`.
+- [x] Rate limit: a (limite+1)-ésima requisição na janela recebe `429` sem chamada a modelo.
+- [x] MCP recusa token inválido ou de operador e deriva o lojista do token.
+- [x] Nenhuma chave privada ou senha em texto no banco, no log ou no Git.
+- [x] `docker compose config` válido; smoke programado passa com token; suíte estrita com código 0.
 
 ## Validação
 
@@ -61,5 +61,7 @@ Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md. Os critérios f
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

@@ -36,4 +36,8 @@ Migration 0006 verificou subida/descida para schema 5 preservando dados legados;
 
 ## Status
 
-Implementada e testada com estado sintético; revisão independente pendente.
+```text
+concluída (v0.4.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v040-resultado.md)).

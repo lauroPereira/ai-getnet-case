@@ -27,12 +27,12 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 
 ## Critérios de conclusão
 
-- [ ] CA-47 (fila): caso encaminhado aparece em `GET /v1/handoffs` com estado `open`, protocolo `HO-…`, resumo e rascunho.
-- [ ] CA-48: duas ações concorrentes com chaves diferentes → uma vence, a outra `409 already_resumed`; mesma chave → `200` com o mesmo registro e `replayed: true`; teste com threads reais sobre SQLite.
-- [ ] `409 claimed_by_other` para o segundo operador; reivindicação repetida pelo mesmo operador é idempotente.
-- [ ] CA-46: token de lojista recebe `403` nas rotas de fila.
-- [ ] Migração 0009 sobe e desce com dados preservados no sentido de subida.
-- [ ] Suíte estrita com código 0.
+- [x] CA-47 (fila): caso encaminhado aparece em `GET /v1/handoffs` com estado `open`, protocolo `HO-…`, resumo e rascunho.
+- [x] CA-48: duas ações concorrentes com chaves diferentes → uma vence, a outra `409 already_resumed`; mesma chave → `200` com o mesmo registro e `replayed: true`; teste com threads reais sobre SQLite.
+- [x] `409 claimed_by_other` para o segundo operador; reivindicação repetida pelo mesmo operador é idempotente.
+- [x] CA-46: token de lojista recebe `403` nas rotas de fila.
+- [x] Migração 0009 sobe e desce com dados preservados no sentido de subida.
+- [x] Suíte estrita com código 0.
 
 ## Validação
 
@@ -51,5 +51,7 @@ Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md, seção "Tarefa
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

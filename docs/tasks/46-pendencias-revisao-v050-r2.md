@@ -45,16 +45,20 @@ bloquear o QA real do candidato já apto. R2-06 foi decidido pelo responsável
 
 ## Critérios de conclusão
 
-- [ ] Cada item tem regressão sintética que falha antes e passa depois
+- [x] Cada item tem regressão sintética que falha antes e passa depois
   (ou risco aceito registrado, no caso de R2-04).
-- [ ] Nenhum teto gravado é alterado; montagem concorrente não falha.
-- [ ] `python tools/scripts/lint_and_tests.py --strict` passou; nenhuma chamada paga.
-- [ ] Novo candidato e revisão focada antes de integrar.
+- [x] Nenhum teto gravado é alterado; montagem concorrente não falha.
+- [x] `python tools/scripts/lint_and_tests.py --strict` passou; nenhuma chamada paga.
+- [x] Novo candidato e revisão focada antes de integrar.
 
 ## Validação
 
-Pendente.
+Feita na [tarefa 54](54-estabilizacao-v060.md).
 
 ## Status
 
-Incorporada à [tarefa 54](54-estabilizacao-v060.md) da v0.6.0 (2026-10-27): R2-01/02/03/05/07/08 serão corrigidos; R2-04 fica como risco aceito, sem contenção observada no QA real r1–r3.
+```text
+concluída (v0.6.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)). Itens corrigidos na [tarefa 54](54-estabilizacao-v060.md); R2-04 mantido por desenho, sem contenção observada no QA real.

@@ -57,4 +57,8 @@ Developer, rodada 3 (2026-11-05), P3-R2a e P3-R2b da [revisão](../evidence/v080
 
 ## Status
 
-implementada (rodada 3); aguarda revisão
+```text
+concluída (v0.8.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

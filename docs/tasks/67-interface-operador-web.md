@@ -28,11 +28,11 @@ A interface Streamlit autentica por usuário e senha (JWT do assistente), mostra
 
 ## Critérios de conclusão
 
-- [ ] CA-47: `AppTest` com clientes falsos cobre recepção, assumir, as três ações, envio pendente e resolução, incluindo `409 claimed_by_other` e `already_resumed` com mensagem de recuperação.
-- [ ] Repetir o clique após falha de transporte reenvia a mesma `idempotency_key` (teste).
-- [ ] Lojista não vê Ticketing; operador não vê Atendimento; token expirado volta ao login.
-- [ ] Nenhum POST em navegação e rerun (teste); senha nunca persistida nem exibida.
-- [ ] Script estrito do web com código 0.
+- [x] CA-47: `AppTest` com clientes falsos cobre recepção, assumir, as três ações, envio pendente e resolução, incluindo `409 claimed_by_other` e `already_resumed` com mensagem de recuperação.
+- [x] Repetir o clique após falha de transporte reenvia a mesma `idempotency_key` (teste).
+- [x] Lojista não vê Ticketing; operador não vê Atendimento; token expirado volta ao login.
+- [x] Nenhum POST em navegação e rerun (teste); senha nunca persistida nem exibida.
+- [x] Script estrito do web com código 0.
 
 ## Validação
 
@@ -41,5 +41,7 @@ A preencher pelo Developer.
 ## Status
 
 ```text
-pendente
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

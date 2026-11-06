@@ -24,10 +24,10 @@ Spec v0.8.0 aprovada; tarefa 69 integrada na branch `codex/v0.8.0-replan` (o rep
 
 ## Critérios de conclusão
 
-- [ ] Cada rótulo alterado tem justificativa por caso; nenhum check afrouxado sem motivo.
-- [ ] Regressão programada do Router com a pergunta em inglês e variações.
-- [ ] 40 casos e 4 conversas sem piora no eval programado.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Cada rótulo alterado tem justificativa por caso; nenhum check afrouxado sem motivo.
+- [x] Regressão programada do Router com a pergunta em inglês e variações.
+- [x] 40 casos e 4 conversas sem piora no eval programado.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
 
 ## Validação
 
@@ -46,5 +46,7 @@ Passagem, com a tabela caso a caso (rótulo ou prompt, antes e depois, justifica
 ## Status
 
 ```text
-Rodada 4 apta na revisão independente de bba6e04. A suíte integrada e a campanha real ainda vão validar o conjunto.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

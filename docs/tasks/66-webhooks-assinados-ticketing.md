@@ -27,12 +27,12 @@ Tarefa 65 com a retomada funcionando. O serviço de ticketing é a 66b (Time B, 
 
 ## Critérios de conclusão
 
-- [ ] CA-47: com receptor falso de ticketing em processo, `handoff.created` chega assinado e com corpo mascarado; `ticket.action` assinado com token de serviço retoma o grafo e gera `conversation.replied` para o ticketing e para o lojista; `ticket.solved` fecha o caso e gera `handoff.closed`.
-- [ ] CA-48: `ticket.action` repetido (mesmo `id` ou mesma `idempotency_key`) sem efeito novo; caso já retomado → `409 already_resumed`.
-- [ ] Assinatura errada, `t` fora da janela, token sem `handoff:integrate` ou token de operador na entrada → `401`/`403`; nada muda no caso.
-- [ ] Receptor fora do ar → três tentativas registradas e nenhuma exceção na requisição do lojista.
-- [ ] Corpo de webhook sem segredo, token nem dado de outro lojista (teste).
-- [ ] `docker compose config` válido; suíte estrita com código 0.
+- [x] CA-47: com receptor falso de ticketing em processo, `handoff.created` chega assinado e com corpo mascarado; `ticket.action` assinado com token de serviço retoma o grafo e gera `conversation.replied` para o ticketing e para o lojista; `ticket.solved` fecha o caso e gera `handoff.closed`.
+- [x] CA-48: `ticket.action` repetido (mesmo `id` ou mesma `idempotency_key`) sem efeito novo; caso já retomado → `409 already_resumed`.
+- [x] Assinatura errada, `t` fora da janela, token sem `handoff:integrate` ou token de operador na entrada → `401`/`403`; nada muda no caso.
+- [x] Receptor fora do ar → três tentativas registradas e nenhuma exceção na requisição do lojista.
+- [x] Corpo de webhook sem segredo, token nem dado de outro lojista (teste).
+- [x] `docker compose config` válido; suíte estrita com código 0.
 
 ## Validação
 
@@ -58,5 +58,7 @@ Developer, rodada 1 (2026-11-03). A passagem está em v070-developer.md, seção
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 5: queda no meio do turno e P3)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

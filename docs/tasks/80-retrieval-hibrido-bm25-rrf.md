@@ -53,7 +53,11 @@ Developer, 2026-11-05, commits `5d82fd0` e `c99aa90` na `codex/v0.9.0-juiz-retri
 
 ## Status
 
-Rodada 2 implementada pelo Developer em 2026-11-05 (P2-1 a P2-3 fechados; P3 registrados na passagem); aguarda nova rodada de revisão. Critérios da spec não marcados (Supervisor, depois da revisão e do QA).
+```text
+concluída (v0.9.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v090-qa-retrieval-r1.md)).
 
 ## Fechamento (Supervisor, 2026-11-06)
 

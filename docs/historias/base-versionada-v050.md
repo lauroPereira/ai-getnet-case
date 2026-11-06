@@ -34,4 +34,5 @@ guarda persistente. Candidato será fixado por commits/hashes dos dois repos.
 QA deve usar UI normal, HTTP, versão no snapshot, alterações de fonte e custo
 registrado. Baseline JEV/LLM real e modelos pendentes da v0.4 entram na rodada
 limitada, sem reescrever os relatórios anteriores. Resultados programados e
-pagos são separados. Esta história ainda não foi executada.
+pagos são separados. Executada no QA real da v0.5.0 ([QA r3](../evidence/v050-qa-r3.md),
+[resultado](../evidence/v050-resultado.md)).

@@ -25,9 +25,9 @@ Tarefas 63 a 66 e 66b com parecer apto; branch do Time B integrada pelo Supervis
 
 ## Critérios de conclusão
 
-- [ ] CA-46, CA-47 e CA-48 cobertos pelo teste da história, além dos testes de cada tarefa.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
-- [ ] Campanha `v070-qa` montável com US$0,20 (teste).
+- [x] CA-46, CA-47 e CA-48 cobertos pelo teste da história, além dos testes de cada tarefa.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Campanha `v070-qa` montável com US$0,20 (teste).
 
 ## Validação
 
@@ -49,5 +49,7 @@ Developer, rodada 1 (2026-11-03). A passagem está em v070-developer.md, seção
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 2: SC-HANDOFF do catálogo e P3 da revisão)
+concluída (v0.7.0)
 ```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

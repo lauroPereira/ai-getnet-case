@@ -51,4 +51,8 @@ Developer, rodada 2 (2026-11-05), P3 opcionais da [revisão](../evidence/v080-re
 
 ## Status
 
-implementada (rodada 2); aguarda revisão e aplicação pelo Supervisor
+```text
+concluída (v0.8.0)
+```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

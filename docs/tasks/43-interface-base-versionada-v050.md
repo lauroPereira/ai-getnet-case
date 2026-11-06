@@ -25,10 +25,18 @@ Projeto web app/cliente/fixtures/snapshot OpenAPI e testes AppTest.
 
 ## Critérios de conclusão
 
-- [ ] UI e backend aplicam permissões/origem; segredo não vai ao frontend.
-- [ ] Build/teste/ativação/retorno não se repetem em rerun.
-- [ ] Erro/confirmação claros; consumo só pela API documentada.
+- [x] UI e backend aplicam permissões/origem; segredo não vai ao frontend.
+- [x] Build/teste/ativação/retorno não se repetem em rerun.
+- [x] Erro/confirmação claros; consumo só pela API documentada.
 
 ## Validação e status
 
 Implementada pelo Developer r1. Jornada administrativa usa somente `/v1`; OpenAPI/cliente foram gerados de assembly sintético. Suíte web: 15 testes; Ruff e estrutura aprovados. A jornada com provedor real fica para QA após revisão.
+
+## Status
+
+```text
+concluída (v0.5.0)
+```
+
+Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

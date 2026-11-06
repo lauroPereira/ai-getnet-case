@@ -26,9 +26,9 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 
 ## Critérios de conclusão
 
-- [ ] CA-49, CA-50 (parte determinística) e CA-51 (parte programada) cobertos pelo teste da história.
-- [ ] Suíte estrita com código 0; nenhuma chamada paga.
-- [ ] Campanha `v080-qa` montável com US$0,50 e estimativa reproduzível (teste).
+- [x] CA-49, CA-50 (parte determinística) e CA-51 (parte programada) cobertos pelo teste da história.
+- [x] Suíte estrita com código 0; nenhuma chamada paga.
+- [x] Campanha `v080-qa` montável com US$0,50 e estimativa reproduzível (teste).
 
 ## Roteiro do QA (D17)
 
@@ -53,6 +53,7 @@ Tarefas 69, 70, 71 e 72b com parecer apto; branch do Time B integrada pelo Super
 ## Status
 
 ```text
-QA técnico da v0.8.0 concluído em 2026-11-05; CHANGELOG e README da v0.8.0 escritos.
-Calibração humana importada em 2026-11-05 (docs/evidence/v080-calibracao.md). Merge local na main feito em 2026-11-05 (d3740d0). Pendentes do responsável: push e tag v0.8.0.
+concluída (v0.8.0)
 ```
+
+Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).
