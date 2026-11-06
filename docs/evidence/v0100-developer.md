@@ -304,3 +304,51 @@ Reviewer, rodada 2, em contexto novo: `b802c36..HEAD` restrito aos arquivos acim
 ### Próxima ação
 
 Reviewer, rodada 2, em contexto novo: `5d1ea89..HEAD` restrito a `comparisons.py`, ao decorador da rota em `api/v1.py` e a `test_v0100_comparison_resume.py`, reaplicando M02, M12 e as sondas de P2-1 e P2-2. Depois, o QA da D6 com os comandos da rodada 1, que não mudaram.
+
+## Tarefa 85 — rodada 2
+
+- **Papel e responsável:** Developer, subagente despachado pelo Supervisor (time único), 2026-11-05.
+- **Objetivo:** fechar o [parecer da rodada 1](v0100-reviewer-t85.md) (P2-1; P3-1 a P3-6) com as decisões do Supervisor.
+- **Estado:** implementado; aguarda a rodada 2 da revisão.
+- **Branch e base:** `codex/v0.10.0-rubrica-operacao`, base `ac508ca`. Commits `bed7fe0` (código, teste e regras), `b9bb1ed` (README) e o commit desta passagem e da tarefa. Commits da rodada 2 da tarefa 84 (`c097f90`, `205336b`) entraram no meio, por outro Developer, sem arquivo em comum. Identidade conferida: `lauroPereira <lauro.s.pereira@gmail.com>`. Sem push.
+- **Independência:** não se aplica (implementação).
+
+### Arquivos
+
+- `src/merchant_assistant/observability/metrics.py`: conjuntos fechados `ROUTES`, `STATUSES`, `AGENTS`, `REPLAN_RULES`/`ORIGINS`, `TOOL_OUTCOMES` e `_providers()`; `_closed()` no lugar de `_label()` e da regex; `OPEN_TIMEOUT_SECONDS = 1`; leitura de cada banco protegida contra `sqlite3.Error`; `MetricsCollector` guarda a última leitura completa.
+- `tests/integration/test_v0100_metrics.py`: +5 testes e `present()` (série obrigatória); vocabulário sem `unknown` em rota e status e com `origin` fechado.
+- `alerts/rules.yml`: `runbook_url: https://github.com/lauroPereira/ai-getnet-case#observability` nas quatro regras.
+- `README.md` (seção Observability): rótulos fechados com `other`, comportamento com banco ilegível, e a nota do P3-6.
+
+### Como cada item foi fechado
+
+- **P2-1:** cada rótulo sai de um conjunto fechado do código, e qualquer outro valor (inclusive nulo) vira `other`. Rota: `get_args(Route)` + `human_reply`. Status: `get_args(Status)`. Agente: `router`, `knowledge`, `web`, `support`, `customer_support`, `escalation`, `personality`, `replan`, `rerank`, `judge`, `embeddings`. Origem: `model` ou `rule:<nome>`, com os 16 nomes do replanejador (10 regras de `RULES`, mais `planner_unavailable`, `nothing_to_review` e as recusas da guarda `no_repeat`, `unknown_merchant`, `hop_budget`, `request_limits`). Ferramenta: `TOOLS`. Resultado: `ok`/`error`. Provedor: `prices.json` + `scripted` + `unknown`. Teste novo `test_identifier_shaped_values_in_the_traces_come_out_as_other`: grava pelo `TraceStore` a rota `cliente1988`, o status `req_0123456789abcdef0123`, os agentes `op_ana` e `cliente1988`, as origens `cliente1988`, `op_ana` e `rule:conv_7f3a9c`, uma ferramenta `tool:cliente1988` e a rota `op_ana`. Confere que nenhum desses textos aparece na exposição e que as séries saem como `other` com as contagens certas. Teste novo `test_closed_sets_follow_the_names_in_the_code`: os nomes de regra extraídos de `replanner.py` (`Match("…"`, `"rule:…"`, `refusal = ("…"`) são iguais a `REPLAN_RULES`, e todo `agent="…"`/`AGENT = "…"` de `src/` está em `AGENTS`. Um agente ou regra novo quebra a suíte em vez de virar `other` em silêncio.
+- **P3-1:** `test_histogram_inf_bucket_counts_requests_above_the_last_bound`, com uma requisição de 61,5 s e outra rápida: `le="60"` = 1, `+Inf` = 2, `_count` = 2, `_sum` ≥ 61,5.
+- **P3-2:** `present()` exige a série `cost_usd_total{provider="scripted"}` (antes, uma série ausente lia como 0).
+- **P3-3:** `test_unreadable_stores_never_fail_the_scrape` cobre dois casos. Bancos vazios (sem tabela) dão famílias zeradas e `budget_remaining_usd` = teto. Com o banco travado por `BEGIN EXCLUSIVE` de outra conexão, `render` volta em menos de `OPEN_TIMEOUT_SECONDS + 3` com as famílias zeradas, e o coletor devolve a última leitura completa; destravado, conta de novo. `test_metrics_endpoint_answers_200_when_the_trace_store_is_empty`: `GET /metrics` responde 200 com um arquivo de traces vazio.
+- **P3-5:** URL absoluta, e o teste de coerência compara a URL exata.
+- **P3-6:** nota no README: `requests_total` e o histograma contam também as respostas do operador (`human_reply`) e as retomadas, que entram nos denominadores da taxa de encaminhamento e do p95. Sem filtro na regra (decisão do Supervisor).
+- **P3-4:** só registro. `/metrics` segue público como `/ready`; em produção, restringir por rede ou token de leitura. Com o P2-1 fechado, nenhum rótulo traz id.
+
+### Decisões tomadas além do texto do plano (reversíveis)
+
+1. **Última leitura completa em vez de zerar sempre (P3-3).** O Supervisor aceitou as duas saídas. Zerar contadores e depois voltar ao valor real é lido como reset pelo Prometheus, e o `rate()` contaria o total inteiro como aumento, disparando falsos alertas de taxa. Por isso o coletor serve a última exposição em que os dois bancos foram lidos por inteiro e registra um aviso com a idade. Antes da primeira leitura completa, ou chamando `render()` direto, as famílias saem zeradas. Não acrescentei gauge de idade: a idade fica só no log `merchant_assistant.metrics`.
+2. **`customer_support` e `embeddings` no conjunto de agentes.** São os nomes reais do código (`agents/support.py`, `mcp_server.py`, `rag/embed.py`), além dos nomes da lista do Supervisor. `web` e `support` ficam no conjunto, embora hoje nenhum código os use como nome de agente.
+3. **Nulo vira `other`, não `unknown`, em rota, status, agente e origem.** `unknown` fica só para o provedor de um modelo sem preço, como na rodada 1.
+4. **Nomes escritos em `metrics.py`, não importados do replanejador.** Importar `agents.replanner` puxaria o grafo para a camada de métricas. O teste de deriva cobre a divergência.
+
+### Evidência
+
+- Focados: `test_v0100_metrics.py` + `tests/unit/test_health.py` com **15 passed** (13 + 2). `ruff check` e `ruff format --check` limpos nos arquivos tocados.
+- Mutantes manuais em `metrics.py`, com restauração conferida por `cmp`: M01 (`+Inf` = último bucket finito), M19 (`scripted` → `unknown`), rota/status sem conjunto fechado, agente sem conjunto, origem sem conjunto, `except` trocado por `KeyError` e coletor sem a última leitura. **7 de 7 mortos.**
+- **Suíte estrita:** `python tools/scripts/lint_and_tests.py --strict` (`.venv`), HEAD `b9bb1ed`: **2147 passed, 1 skipped** em 1047,22 s; ruff `All checks passed!`; caminhos pessoais: nenhuma ocorrência em 772 arquivos; estrutura e skills válidas; "Validação estrita concluída sem falhas", exit 0. Log no diretório temporário do usuário (não versionado), SHA-256 `10ed5877…5c429e2`. A árvore tinha, sem commit, a alteração de `test_v0100_comparison_resume.py` da rodada 2 da tarefa 84, depois commitada como `205336b`, e a coleta a incluiu.
+- Nenhuma chamada paga, `.env` não lido, nenhum servidor iniciado; o único processo em segundo plano (a suíte) terminou.
+
+### Achados e limitações
+
+- Apareceu na raiz um diretório não rastreado com nome de caminho de scratchpad achatado (`Users…scratchpad suite-bt/`). Parece o `--basetemp` de outro agente, sem separadores. Não é meu e não toquei nele; o Supervisor decide.
+- Ainda pendentes para a tarefa 86, como na rodada 1: a linha 51 do README e `docs/contracts/api-v040.md`.
+
+### Próxima ação
+
+Reviewer, rodada 2, em contexto novo: `ac508ca..HEAD`, restrito a `metrics.py`, `test_v0100_metrics.py`, `rules.yml` e README (Observability), reaplicando M01, M19 e a reprodução do P2-1. Depois, QA do momento 6.

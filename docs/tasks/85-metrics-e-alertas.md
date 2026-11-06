@@ -39,6 +39,15 @@ Developer, 2026-11-05, branch `codex/v0.10.0-rubrica-operacao`, base `023dc61` (
 - Focados: `test_v0100_metrics.py` + `test_health.py` com **10 passed**; `test_messages_contract.py`, `test_v1_api.py`, `test_v060_r4.py` e `test_v070_story.py` com **38 passed**. `ruff check` e `ruff format --check` limpos nos arquivos tocados.
 - Suíte estrita: `python tools/scripts/lint_and_tests.py --strict` (`.venv`) com HEAD `2a561db`: **2132 passed, 1 skipped** em 960,31 s; ruff `All checks passed!`; caminhos pessoais: nenhuma ocorrência em 770 arquivos; estrutura e skills válidas; "Validação estrita concluída sem falhas", exit 0. Durante a rodada, outro escritor tinha alterações não commitadas em `cli.py`, `evaluation/`, `llm/prompts.py` e testes da tarefa 83, e a coleta incluiu essas alterações. Por isso o total é 2121 + 8 desta tarefa + 3 de lá.
 
+**Rodada 2** (correções do [parecer da rodada 1](../evidence/v0100-reviewer-t85.md)), Developer, 2026-11-05, base `ac508ca`. Commits `bed7fe0` (`metrics.py`, teste, `rules.yml`) e `b9bb1ed` (README). Mesmas condições: modelo programado, SQLite temporário, nenhuma chamada paga, `.env` não lido.
+
+- P2-1: todo rótulo passa por conjunto fechado do código (`route` ∈ `Route` + `human_reply`; `status` ∈ `Status`; `agent` ∈ `metrics.AGENTS`; `origin` ∈ `model` + `rule:<nome>` de `metrics.REPLAN_RULES`; `tool` ∈ `TOOLS`; `outcome` ∈ `ok`/`error`; `provider` ∈ `prices.json` + `scripted` + `unknown`); o resto, inclusive nulo, vira `other`. A regex de identificador saiu.
+- P3-1 e P3-2: requisição de 61,5 s distingue `+Inf` (2) de `le="60"` (1); `cost_usd_total{provider="scripted"}` exigido presente.
+- P3-3: abertura com `timeout=1`; banco vazio, corrompido ou travado não gera 500: o coletor serve a última leitura completa, ou famílias zeradas antes da primeira.
+- P3-5: `runbook_url` absoluto. P3-6: nota no README. P3-4: só na passagem.
+- Focados: `test_v0100_metrics.py` + `tests/unit/test_health.py` com **15 passed** (5 testes novos). Mutantes manuais M01, M19, rota/agente/origem sem conjunto fechado, sem `except` e sem a última leitura: todos mortos.
+- Suíte estrita (`.venv`, HEAD `b9bb1ed`, árvore com a rodada 2 da tarefa 84 em andamento): **2147 passed, 1 skipped** em 1047,22 s; ruff limpo; caminhos pessoais: nenhuma ocorrência em 772 arquivos; estrutura e skills válidas; exit 0.
+
 ## Status
 
-Implementada pelo Developer em 2026-11-05; aguarda revisão independente e o `/metrics` ao vivo do QA (momento 6). Critérios de aceite da spec não marcados (cabe ao Supervisor).
+Rodada 2 implementada pelo Developer em 2026-11-05 (P2-1, P3-1, P3-2, P3-3, P3-5 e P3-6 tratados; P3-4 registrado); aguarda a rodada 2 da revisão e o `/metrics` ao vivo do QA (momento 6). Critérios de aceite da spec não marcados (cabe ao Supervisor).
