@@ -673,7 +673,7 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 
 ## Operating notes
 
-- The compose runs the API with one worker, published on `127.0.0.1:8000`, with the ticketing service on `127.0.0.1:8002`.
+- Run the API with one worker (the compose does): the comparison registry lives in the API process. The compose publishes the API on `127.0.0.1:8000` and the ticketing service on `127.0.0.1:8002`.
 - The users, passwords and secrets in `.env.example` are fictitious demo values; replace them before exposing the API beyond the local machine.
 - Product answers come from snapshots of Getnet's official pages taken on 2026-10-26; refreshing a JavaScript-rendered page needs a browser capture.
 - Every paid call goes through the installation budget (`BUDGET_LIMIT_USD`, at most US$5.00); `/ready` shows what is left and `docker compose down -v` resets it.
