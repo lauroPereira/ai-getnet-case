@@ -37,7 +37,7 @@ Spec v0.8.0 aprovada pelo responsável; v0.7.0 na `main`; branch `codex/v0.8.0-r
 
 ## Validação
 
-Developer (Time A), 2026-11-04, branch `codex/v0.8.0-replan`, base `5134eff` (68b em `c1dd2d5`; código em `686d545`; testes e cenários em `1ba296f`). Scripted, sem chamada paga e sem rede. Passagem completa em [v080-developer.md](../evidence/v080-developer.md).
+Developer (Time A), 2026-11-04, branch `codex/v0.8.0-replan`, base `5134eff` (68b em `c1dd2d5`; código em `686d545`; testes e cenários em `1ba296f`). Scripted, sem chamada paga e sem rede. Passagem completa em v080-developer.md.
 
 | Critério | Prova |
 | --- | --- |

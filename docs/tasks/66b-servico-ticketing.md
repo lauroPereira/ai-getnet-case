@@ -38,7 +38,7 @@ Um sistema de ticketing próprio, separado do assistente, recebe o caso encaminh
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-ticketing`, base `fe9d12b`. Detalhes na [passagem](../evidence/v070-developer-time-b.md).
+Developer, rodada 1 (2026-11-03), worktree `time-b-v070`, branch `codex/v0.7.0-ticketing`, base `fe9d12b`. Detalhes na passagem.
 
 - Pacote `src/merchant_assistant/ticketing/` (`config`, `signing`, `store`, `auth`, `outbox`, `service`), com banco SQLite próprio em `TICKETING_DB_PATH`. Testes novos: `tests/unit/test_ticketing_units.py` (5) e `tests/integration/test_ticketing_service.py` (26 com parâmetros). Os testes usam um assistente falso que segue o contrato: chave RSA gerada no teste, JWKS, `client_credentials` e `POST /v1/integrations/ticketing/events`, que verifica assinatura, token e escopo `handoff:integrate`.
 - CA-47: `test_full_ticket_cycle_with_signed_events_and_service_token` cobre `handoff.created` → `new`, assumir → `open`, `reply` → `pending` com `conversation.replied` recebido durante a própria ação, resolver → `solved` e `handoff.closed` registrado. No histórico, as transições são `new`, `new→open`, `open→pending`, `pending→solved`; há 3 entregas recebidas e 3 enviadas, e um único token de serviço foi emitido.

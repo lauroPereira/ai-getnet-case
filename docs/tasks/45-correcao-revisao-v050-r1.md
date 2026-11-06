@@ -8,7 +8,7 @@ Corrigir R1-01 a R1-06 antes de fixar novo candidato para revisão e QA real.
 
 [Plano aprovado](../specs/base-versionada-v050-plano.md),
 [história v1](../historias/base-versionada-v050.md) e
-[parecer independente r1](../evidence/v050-reviewer-r1.md).
+parecer independente r1.
 São correções do escopo aprovado, sem ampliar API, permissões ou orçamento.
 
 ## Pré-condições
@@ -76,7 +76,7 @@ relacionados. Web somente se correção comprovada exigir, dentro do plano.
 
 Developer Claude Sonnet 5.5 (contexto novo), 2026-10-27, somente testes
 sintéticos e sem rede/provedor. Detalhes, achado a achado, em
-[Developer r2](../evidence/v050-developer-r2.md).
+Developer r2.
 
 - Estrita backend: `PYTHONDONTWRITEBYTECODE=1`, `PYTEST_ADDOPTS="--basetemp
   .pytest_cache/v050-t45-strict"`, `.venv/Scripts/python.exe

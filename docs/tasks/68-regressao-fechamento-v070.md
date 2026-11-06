@@ -31,7 +31,7 @@ Tarefas 63 a 66 e 66b com parecer apto; branch do Time B integrada pelo Supervis
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 68". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). A passagem está em v070-developer.md, seção "Tarefa 68". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística |
 | --- | --- |

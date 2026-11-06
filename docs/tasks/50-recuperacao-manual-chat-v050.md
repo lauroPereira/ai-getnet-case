@@ -8,7 +8,7 @@ impedir a interface de receber o resultado do POST.
 ## Especificação relacionada
 
 [Tarefa48](48-diagnostico-timeout-chat-ui-v050.md),
-[proposta aprovada](../evidence/v050-recuperacao-chat-proposta.md), plano v0.5,
+proposta aprovada, plano v0.5,
 história v1 e QA r1. Responsável aprovou explicitamente este escopo adicional.
 
 ## Pré-condições
@@ -57,7 +57,7 @@ Documentação de passagem. Backend somente esta tarefa e evidência.
 
 ## Validação
 
-Validação sintética registrada em [evidência Developer](../evidence/v050-developer-ui-r2.md). `lint_and_tests.py --strict` executou 20/20 testes e a estrutura/skills, mas retornou código 2 porque Ruff não existe no venv web; Ruff externo passou em `app.py src tests tools`. Nenhuma chamada real foi feita. Critérios visuais e jornada integrada aguardam Reviewer e QA no candidato r5.
+Validação sintética registrada em evidência Developer. `lint_and_tests.py --strict` executou 20/20 testes e a estrutura/skills, mas retornou código 2 porque Ruff não existe no venv web; Ruff externo passou em `app.py src tests tools`. Nenhuma chamada real foi feita. Critérios visuais e jornada integrada aguardam Reviewer e QA no candidato r5.
 
 ## Status
 

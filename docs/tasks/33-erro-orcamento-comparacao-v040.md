@@ -8,7 +8,7 @@ de comparação, preservando integralmente a guarda e a contabilização existen
 ## Especificação relacionada
 
 RF-47–49, RF-75, CA-34/CA-37/CA-45; plano v0.4.0 e contratos aprovados.
-Achado P2 da [revisão r1](../evidence/v040-reviewer-r1.md), candidato r1.
+Achado P2 da revisão r1, candidato r1.
 
 ## Pré-condições
 
@@ -51,7 +51,7 @@ com `request_budget_exceeded` ou `installation_budget_exceeded`; quando a
 primeira reserva foi liquidada, ela permanece em US$0,03 no ledger e a segunda
 chamada ao modelo não ocorre. Nenhum registro de comparação incompleta é
 criado. OpenAPI declara a resposta 429. A suíte strict r2 e os resultados
-completos estão na [passagem Developer r2](../evidence/v040-developer-r2.md).
+completos estão na passagem Developer r2.
 
 ## Status
 

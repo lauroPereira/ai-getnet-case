@@ -56,6 +56,6 @@ QA real r1 reproduziu o defeito. Correção Developer e regressão sintética em
 concluída
 ```
 
-Corrigida pela [tarefa 49](49-correcao-confirmacoes-qa-v050.md) e revalidada no [QA r2](../evidence/v050-qa-r2.md).
+Corrigida pela [tarefa 49](49-correcao-confirmacoes-qa-v050.md) e revalidada no QA r2.
 
 Corrigido localmente na branch de trabalho. O novo candidato deve ser fixado pelo Supervisor após revisão.

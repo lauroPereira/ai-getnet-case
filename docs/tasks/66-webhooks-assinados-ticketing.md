@@ -36,7 +36,7 @@ Tarefa 65 com a retomada funcionando. O serviço de ticketing é a 66b (Time B, 
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 66, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). A passagem está em v070-developer.md, seção "Tarefa 66, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística (`tests/integration/test_v070_webhooks.py`, salvo indicação) |
 | --- | --- |
@@ -50,7 +50,7 @@ Developer, rodada 1 (2026-11-03). A passagem está em [v070-developer.md](../evi
 | URL vazia | `test_turn_without_handoff_sends_nothing_and_empty_urls_send_nothing` |
 | Receptor do lojista no `mocks` | `test_mocks_merchant_receiver_checks_the_signature_and_ignores_repeated_ids`; `test_assistant_delivers_to_the_mocks_merchant_receiver` (assinatura de um lado validada pelo outro) |
 | Migração 0009 | `tests/unit/data/test_migrations.py`: `webhook_inbox` e as colunas `event_id`/`error` sobem e descem com a 0009 |
-| Migração 0010 (rodada 4) | `tests/unit/data/test_migrations.py`: a descida recusa com erro claro e sem alterar nada enquanto a outbox tiver linha não entregue (`pending`, `rejected`, `failed`); com tabela vazia ou só `delivered` a descida segue e a 0010 sobe de novo. Passagem: [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 66, rodada 4 (descida da 0010)" |
+| Migração 0010 (rodada 4) | `tests/unit/data/test_migrations.py`: a descida recusa com erro claro e sem alterar nada enquanto a outbox tiver linha não entregue (`pending`, `rejected`, `failed`); com tabela vazia ou só `delivered` a descida segue e a 0010 sobe de novo. Passagem: v070-developer.md, seção "Tarefa 66, rodada 4 (descida da 0010)" |
 | Queda no meio do turno, rodada 5 (P2-1) | `tests/integration/test_v070_webhooks.py`: `test_case_of_a_turn_that_died_is_completed_when_the_message_is_sent_again[before_checkpoint\|after_checkpoint]` (subprocesso encerrado entre o `INSERT` do caso e a transação final; o reenvio da mesma mensagem salva o fluxo, enfileira e entrega `handoff.created` uma vez e a ação do operador é aceita) e `test_case_of_a_turn_whose_outbox_write_failed_is_completed_when_the_message_is_sent_again`. Teto de tentativas (P2-2): `tests/unit/test_webhook_outbox.py::test_pending_row_with_every_attempt_used_fails_without_a_request`. P3: exclusão entre processos (caso e entrega), `enqueue` sem substituir, destino sem URL, recuperação que não impede a subida, `api` depende do `ticketing` no compose. Passagem: seção "Tarefa 66, rodada 5" |
 | `docker compose config` | Válido (código 0) numa cópia do compose sem `.env` |
 | Suíte estrita | Antes do commit: 1 falha de teste meu (sombreamento de variável), corrigida; 523 passed. Suíte completa com código 0 na passagem (rodada 2 da 65, mesma base) |

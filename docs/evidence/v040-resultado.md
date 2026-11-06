@@ -7,7 +7,7 @@ O responsável aceitou a integração privada com as limitações registradas.
 [PR backend #5](https://github.com/lauroPereira/ai-getnet-case/pull/5) e
 [PR web #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1) integrados.
 Mains remotas conferidas em `ea2355b5ba8fa8dcff66200f34461ae063183250`
-e `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`; [confirmação](v040-integracao-confirmada.json).
+e `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`; confirmação.
 CA-32/JEV real e disponibilidade autenticada de modelos permanecem pendentes;
 QA pago foi autorizado a partir da v0.5.0. Não houve inferência paga v0.4.0.
 
@@ -22,12 +22,12 @@ História versão 1 e critérios aprovados preservados.
 
 | Escopo | Evidência | Resultado e limite |
 | --- | --- | --- |
-| Base web independente | [Manifesto inicial](v040-base-web.json) | Template 0.2.0, 47 fontes identificadas, nove skills sincronizadas; governança adaptada sob aprovação |
-| Implementação/regressão backend | [Developer r5](v040-developer-r5.md) | 216 testes estritos, Ruff/skills; separa reserva de parâmetro aplicado, sem inferência paga |
-| Contrato e interface | [Developer r6](v040-developer-r6.md) | 14 testes web, Ruff/estrutura; corrige seleção sem mudar backend/contrato OpenAPI |
+| Base web independente | Manifesto inicial | Template 0.2.0, 47 fontes identificadas, nove skills sincronizadas; governança adaptada sob aprovação |
+| Implementação/regressão backend | Developer r5 | 216 testes estritos, Ruff/skills; separa reserva de parâmetro aplicado, sem inferência paga |
+| Contrato e interface | Developer r6 | 14 testes web, Ruff/estrutura; corrige seleção sem mudar backend/contrato OpenAPI |
 | Revisão técnica independente | [Reviewer r6](v040-reviewer-r6.md) | Apto para QA; dois sentidos da troca, contadores próprios e hashes conferidos |
 | Build e execução instalados | [Docker r6](v040-docker-r6.json) | Reutiliza imagem r5 por igualdade completa de runtime/build; 124 arquivos instalados coincidem com r6 |
-| História funcional | [QA r6](v040-qa-r6.md) e [positivos r5](v040-qa-r5.md) | R6 apto na tarefa 38 nos dois sentidos; Gravado, publicação/parâmetro, snapshot e rejeição já comprovados em r5 |
+| História funcional | [QA r6](v040-qa-r6.md) e positivos r5 | R6 apto na tarefa 38 nos dois sentidos; Gravado, publicação/parâmetro, snapshot e rejeição já comprovados em r5 |
 | Conferência final do Supervisor | [Auditoria r6](v040-verificacao-final-r6.json) | Mapas 51/84/127/128, 29 protegidos web e 124 instalados, sem divergências; API/interface200 |
 
 O backend completo tem fingerprint de runtime
@@ -43,7 +43,7 @@ do Dockerfile canônico. R6 reutiliza essa imagem por igualdade completa dos
 mapas de runtime/build; somente a interface, seus testes e README mudaram,
 além da tarefa 38. O frontend r6 usa seu venv próprio.
 
-O [ambiente r6](v040-qa-environment-r6.json) usa API `127.0.0.1:18841` e
+O ambiente r6 usa API `127.0.0.1:18841` e
 Streamlit `127.0.0.1:18540`, ambos prontos com HTTP 200.
 O transporte HTTP é real; modelos/embeddings são programados e fontes são
 sintéticas/públicas. A seleção Real(API) não transforma essa montagem em
@@ -111,7 +111,7 @@ recebeu 401/401/403; nenhum ID foi obtido. Não foi feita consulta autenticada
 nem inferência; o resultado não fecha a lacuna de verificação via API.
 
 O responsável autorizou commits/pushes necessários aos PRs e merges e a
-criação do remoto web privado. [Registro da integração](v040-integracao.md)
+criação do remoto web privado. Registro da integração
 identifica commits e escopo. A v0.3.0 permanece integrada e tagueada. Retorno previsto pela tag
 v0.3.0 e pela migração 0006→0005, validada somente em bancos sintéticos isolados.
 

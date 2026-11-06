@@ -9,8 +9,8 @@ ou repetição de chamadas pagas em reruns.
 
 [Plano aprovado](../specs/base-versionada-v050-plano.md), história v1,
 [defeito47](47-formularios-confirmacao-ui-v050.md),
-[proposta aprovada](../evidence/v050-correcao-qa-proposta.md) e
-[QA r1](../evidence/v050-qa-r1.md).
+proposta aprovada e
+QA r1.
 
 ## Pré-condições
 
@@ -58,8 +58,8 @@ correção; nenhum código, contrato, migração, guarda ou configuração prote
 
 ## Validação
 
-Implementação local concluída. Regressão sintética e validação web registradas em [evidência Developer](../evidence/v050-developer-ui-r1.md); aguarda revisão independente e nova rodada QA no candidato fixado.
+Implementação local concluída. Regressão sintética e validação web registradas em evidência Developer; aguarda revisão independente e nova rodada QA no candidato fixado.
 
 ## Status
 
-Concluída — revisada ([Reviewer UI r1/r2](../evidence/v050-reviewer-ui-r2.md)) e revalidada no [QA r2](../evidence/v050-qa-r2.md); integrada na v0.5.0.
+Concluída — revisada (Reviewer UI r1/r2) e revalidada no QA r2; integrada na v0.5.0.

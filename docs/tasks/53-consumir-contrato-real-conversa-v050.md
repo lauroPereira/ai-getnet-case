@@ -8,7 +8,7 @@ sem reenviar a pergunta paga.
 ## Especificação relacionada
 
 [Defeito52](52-recuperar-conversa-get-ui-v050.md), tarefa50 e
-[QA r2](../evidence/v050-qa-r2.md). Correção no escopo de recuperação já
+QA r2. Correção no escopo de recuperação já
 aprovado, mesmos Developer → Reviewer → QA gpt-6-luna/high.
 
 ## Pré-condições
@@ -53,7 +53,7 @@ código de backend, API pública, autenticação, timeout, modelo ou guarda.
 
 ## Validação
 
-Detalhes em [passagem Developer UI r4](../evidence/v050-developer-ui-r4.md).
+Detalhes em passagem Developer UI r4.
 Payload de referência confirmado sem imprimir seus textos: SHA-256
 `c43c8e2d273570be2587c05c82adb2333284da92448913ab8580c85572168b7f`. A fixture
 versionada no web contém valores sintéticos com o esquema completo da resposta

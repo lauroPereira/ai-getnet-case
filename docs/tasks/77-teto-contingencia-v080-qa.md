@@ -6,11 +6,11 @@ Permitir que a campanha `v080-qa`, já montada com o cap fixo de US$1,10, receba
 
 ## Especificação relacionada
 
-[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), "Requisitos não funcionais", item "Contingência autorizada em 2026-11-05"; [plano](../specs/evolucao-pos-feedback-plano.md), "Decisão aprovada em 2026-11-04". Precedente: commit `27add60` e [transição](../evidence/v080-orcamento-transicao.md).
+[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), "Requisitos não funcionais", item "Contingência autorizada em 2026-11-05"; [plano](../specs/evolucao-pos-feedback-plano.md), "Decisão aprovada em 2026-11-04". Precedente: commit `27add60` e transição.
 
 ## Motivo registrado
 
-Após o reteste r4 ([parecer](../evidence/v080-d12-pre-holdout-r4.md)), o cap tem US$0,51835345 restantes e as fases reservadas (juiz repetido US$0,07709880 e holdout US$0,36062993) deixam US$0,08062472 livres. O reteste r5 (8 jornadas datadas, `REPLAN-PROCEDURE`, `REPLAN-TOOL-DOWN`, `PRICE-INSUFFICIENT` EN/PT e `CONTRACT-TERMINATION`, três repetições) custou entre US$0,09 e US$0,12 nas rodadas anteriores. Sem a contingência, o reteste ou o holdout ficariam bloqueados pela guarda.
+Após o reteste r4 (parecer), o cap tem US$0,51835345 restantes e as fases reservadas (juiz repetido US$0,07709880 e holdout US$0,36062993) deixam US$0,08062472 livres. O reteste r5 (8 jornadas datadas, `REPLAN-PROCEDURE`, `REPLAN-TOOL-DOWN`, `PRICE-INSUFFICIENT` EN/PT e `CONTRACT-TERMINATION`, três repetições) custou entre US$0,09 e US$0,12 nas rodadas anteriores. Sem a contingência, o reteste ou o holdout ficariam bloqueados pela guarda.
 
 ## Pré-condições
 
@@ -40,7 +40,7 @@ Developer (2026-11-05), branch `codex/v0.8.0-replan`:
 - **Guarda** (`src/merchant_assistant/orchestration/budget.py`): `FixedBudgetGuard` aceita teto até 1,40 só para `v080-qa` e só como continuação. Acima de 1,10 exige ledger e sidecar existentes e um registro de cap já gravado; nunca insere um cap novo acima de 1,10. Os valores 0,50, 1,00 e 1,10 não mudam.
 - **Transição** (`tools/scripts/v080_contingency_transition.py`): dry-run por padrão (somente leitura); `--apply` exige `--primary`, `--campaign` e `--audit-dir` novo. Faz backup SQLite verificado e dos bytes dos sidecars, confere zero reservas e nenhum processo do projeto (`merchant_assistant`, `merchant-assistant`, `uvicorn`), grava `prepared.json`, aplica (cap 1,10 → 1,40, sidecar da campanha 1,40, sidecar do primário 1,70 → 2,00, preservando o terminador de linha de cada sidecar), confere e grava `applied.json`. É idempotente e retoma uma aplicação interrompida.
 - **Ensaio em cópia** (`.pytest_cache/t77-rehearsal-20261105/`, cópia byte a byte dos quatro arquivos de `data/runtime/`): antes, primário 1,70 com 2.733 entradas (último ID 2733), US$1,14385079 e 0 reservas; campanha 1,10 com 1.117 entradas (último ID 1117), US$0,58164655 e 0 reservas. Depois, 2,00 e 1,40, com entradas, últimos IDs, comprometidos e SHA-256 lógico iguais (primário `845ee88e…6181`, campanha `9fae30f5…e100`). Folga após a transição: primário US$0,85614921 ≥ campanha US$0,81835345. A segunda execução retornou `already_applied` sem escrever. Com a cópia, a CLI aceitou 1,40 (estimativa verificada US$1,03174096, restante combinado US$0,81835345) e recusou 1,10. Os ledgers reais conferem por SHA-256 com os valores anteriores à cópia. **Não aplicado nos ledgers reais.**
-- `tests/unit/test_t77_contingency_cap.py` (22 testes); regressão de orçamento e história da v0.8.0 (`test_budget_and_router`, `test_v080_story`, `test_campaign`): 51 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 ([passagem](../evidence/v080-developer.md)).
+- `tests/unit/test_t77_contingency_cap.py` (22 testes); regressão de orçamento e história da v0.8.0 (`test_budget_and_router`, `test_v080_story`, `test_campaign`): 51 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 (passagem).
 - Pendente: revisão independente, aplicação pelo Supervisor e QA.
 
 Developer, rodada 2 (2026-11-05), P3 opcionais da [revisão](../evidence/v080-reviewer-t75-77.md):

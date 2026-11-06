@@ -6,7 +6,7 @@ Garantir que "I want to close my contract." seja encaminhado a um atendente huma
 
 ## Especificação relacionada
 
-[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), CA-51 e D16 (rota medida pelo plano inicial). Parecer: [v080-d12-pre-holdout-r4.md](../evidence/v080-d12-pre-holdout-r4.md).
+[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), CA-51 e D16 (rota medida pelo plano inicial). Parecer: v080-d12-pre-holdout-r4.md.
 
 ## Pré-condições
 
@@ -44,7 +44,7 @@ Developer (2026-11-05), branch `codex/v0.8.0-replan`:
 - Regra pós-modelo em `router.enforce` (`src/merchant_assistant/agents/router.py`), sem mudar `router.v6`: em conversa nova, sem `safety`, quando a mensagem inteira é um pedido explícito de encerramento do contrato (EN: close, end, terminate ou cancel + my/the/our [Getnet] contract [with Getnet], com "I want/need/would like to" ou "please" opcionais; PT: encerrar, cancelar, rescindir, fechar, terminar, finalizar e imperativos + [o] [meu/nosso] contrato [com a/da/na Getnet], com "quero/preciso/desejo/gostaria de" ou "por favor" opcionais), a rota vira `human_handoff` com `topic = contract`. Se o modelo já escolheu `human_handoff`, a decisão dele fica como está.
 - Fora da regra (seguem com o modelo): mensagem que cita serviço ou produto ("Quero cancelar o serviço X", "contrato da maquininha", "Payment Link contract"), pergunta ("How do I close my contract?", "Quero encerrar meu contrato?"), negação, pedido misto e conversa em andamento.
 - `tests/unit/test_t76_contract_termination.py` (74 testes): 17 variantes positivas EN/PT × 3 rotas do modelo, 19 negativas, conversa em andamento e `safety`, decisão do modelo preservada, e a jornada `V030-CONTRACT-TERMINATION` com o Router programado para pedir esclarecimento (a falha da r4): três repetições com rota `human_handoff`, status `handoff`, protocolo `HO-` distinto e todas as checagens do runner; PT encaminha e "Quero cancelar o serviço X." continua em `clarify`.
-- Travas de D18: história, webhooks, retomada e encaminhamentos da v0.7.0, jornadas, replanejamento e história da v0.8.0 e testes do Router: 429 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 ([passagem](../evidence/v080-developer.md)).
+- Travas de D18: história, webhooks, retomada e encaminhamentos da v0.7.0, jornadas, replanejamento e história da v0.8.0 e testes do Router: 429 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 (passagem).
 - Pendente: revisão independente e QA (campanha real).
 
 Developer, rodada 2 (2026-11-05), correção do P2-76 e do P3-76 da [revisão](../evidence/v080-reviewer-t75-77.md):

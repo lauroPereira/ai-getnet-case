@@ -39,7 +39,7 @@ Tarefas 54 a 57 concluídas. Sem chamada paga, abertura de porta ou alteração 
 - `test_shared_interface_can_lock_the_backend_address` cobre o travamento do endereço do backend.
 - Não executado pelo Developer: `docker compose config`/build (o `.env` local não podia ser lido; build fica com o QA), abertura de porta, firewall, roteador e acesso de outra rede (ações do responsável/QA).
 
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: [v060-developer.md](../evidence/v060-developer.md).
+Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md.
 
 ## Status
 

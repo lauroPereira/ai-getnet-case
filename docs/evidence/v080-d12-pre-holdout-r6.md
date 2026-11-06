@@ -108,7 +108,7 @@ Lado do produto: as duas respostas dizem o que a jornada espera, com valores e d
 
 ## CA-49: replanejamento (rota pelo plano inicial, D16)
 
-Composição da r5 (quatro cenários válidos, sem reexecução nesta rodada), com o comportamento conferido em [v080-d12-pre-holdout-r5.md](v080-d12-pre-holdout-r5.md#ca-49--replanejamento-rota-pelo-plano-inicial-d16-caminho-executado-à-parte):
+Composição da r5 (quatro cenários válidos, sem reexecução nesta rodada), com o comportamento conferido em v080-d12-pre-holdout-r5.md:
 
 | ID | Origem | `request_id` (1–3) | Check |
 |---|---|---|---|

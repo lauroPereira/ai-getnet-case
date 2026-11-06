@@ -34,7 +34,7 @@ Testes, histórias, manifestos Git/hashes, README/changelog e evidências dos do
 
 ## Validação
 
-Backend `.venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`, com `PYTHONDONTWRITEBYTECODE=1` e `PYTEST_ADDOPTS=--basetemp=.pytest_cache/v040-strict-r4-final-20261027`: **214 passed**, Ruff e skills passaram. Web `.venv-v040/Scripts/python.exe -m pytest -q --basetemp=.pytest_cache/v040-web-r4-final-20261027`: **12 passed**; Ruff check/format passou. AppTest Real e fluxo API HTTP sintéticos cobrem login, perfil, conversa, comparação, uso único, administração, catálogo/parâmetro, trace, logout e 401 na mesma conexão após 204 vazio. Ver [passagem Developer r4](../evidence/v040-developer-r4.md). CA-32 não executado; sem chamadas pagas. Reviewer e QA da rodada r4 ainda não aprovaram o candidato.
+Backend `.venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`, com `PYTHONDONTWRITEBYTECODE=1` e `PYTEST_ADDOPTS=--basetemp=.pytest_cache/v040-strict-r4-final-20261027`: **214 passed**, Ruff e skills passaram. Web `.venv-v040/Scripts/python.exe -m pytest -q --basetemp=.pytest_cache/v040-web-r4-final-20261027`: **12 passed**; Ruff check/format passou. AppTest Real e fluxo API HTTP sintéticos cobrem login, perfil, conversa, comparação, uso único, administração, catálogo/parâmetro, trace, logout e 401 na mesma conexão após 204 vazio. Ver passagem Developer r4. CA-32 não executado; sem chamadas pagas. Reviewer e QA da rodada r4 ainda não aprovaram o candidato.
 
 ## Status
 

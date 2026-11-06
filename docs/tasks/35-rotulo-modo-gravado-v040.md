@@ -38,5 +38,5 @@ Código da interface web e testes de apresentação dos modos Simulado/Gravado.
 ## Status
 
 Concluída no escopo sem custo: implementação r4, revisão e confirmação pela
-UI no [QA r5](../evidence/v040-qa-r5.md); modo Gravado e snapshot coerentes.
+UI no QA r5; modo Gravado e snapshot coerentes.
 

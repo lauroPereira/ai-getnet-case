@@ -38,7 +38,7 @@ O encaminhamento interrompe o grafo com estado durável; a ação do operador re
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 65, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md, seção "Tarefa 65, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística (`tests/integration/test_v070_resume.py`, salvo indicação) |
 | --- | --- |
@@ -55,7 +55,7 @@ Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v0
 
 ### Rodada 2 (2026-11-03)
 
-Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D27 e D28. Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 65, rodada 2".
+Correções do [parecer da rodada 1](../evidence/v070-reviewer.md) e decisões D27 e D28. Passagem em v070-developer.md, seção "Tarefa 65, rodada 2".
 
 | Achado ou decisão | Evidência |
 | --- | --- |

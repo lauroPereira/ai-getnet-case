@@ -43,7 +43,7 @@ Proxy registrou uma única POST `/v1/messages` upstream200, com resposta descart
 
 ## Validação
 
-Reprodução de QA r2 no candidato r6: POST original caiu apenas no transporte após conclusão do upstream; GET manual 200; estado UI não recuperou. Ver payload `.pytest_cache/v050-qa-real-runtime/recovery-get-r2-sanitized.json`, eventos `.pytest_cache/v050-qa-real-runtime/proxy-r2-events.jsonl` e relatório [v050-qa-r2.md](../evidence/v050-qa-r2.md). Correção e regressões sintéticas estão registradas em [passagem Developer UI r4](../evidence/v050-developer-ui-r4.md); QA real ainda deve revalidar no candidato r7.
+Reprodução de QA r2 no candidato r6: POST original caiu apenas no transporte após conclusão do upstream; GET manual 200; estado UI não recuperou. Ver payload `.pytest_cache/v050-qa-real-runtime/recovery-get-r2-sanitized.json`, eventos `.pytest_cache/v050-qa-real-runtime/proxy-r2-events.jsonl` e relatório v050-qa-r2.md. Correção e regressões sintéticas estão registradas em passagem Developer UI r4; QA real ainda deve revalidar no candidato r7.
 
 ## Status
 

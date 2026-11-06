@@ -6,7 +6,7 @@ Fazer a medição de CA-51 aceitar as respostas corretas sobre falta de evidênc
 
 ## Especificação relacionada
 
-[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), CA-51 e D15. Parecer: [v080-d12-pre-holdout-r4.md](../evidence/v080-d12-pre-holdout-r4.md).
+[Orquestração e avaliação v0.8.0](../specs/orquestracao-avaliacao-v080.md), CA-51 e D15. Parecer: v080-d12-pre-holdout-r4.md.
 
 ## Pré-condições
 
@@ -38,7 +38,7 @@ Developer (2026-11-05), branch `codex/v0.8.0-replan`:
 
 - Rótulos dev em `tests/scenarios/business_journeys.jsonl`: `must_include_any` ganhou duas formas por idioma, tiradas das respostas reais (`no fee rule or recorded charge`, `no pricing-rule details or recorded charge`; `não há uma taxa esperada disponível`, `não havia uma regra de preço aplicável`). `must_not_assert` ganhou as contradições de taxa correta, incorreta, confirmada e divergente nos dois idiomas. O catálogo da bancada não espelha estes dois IDs (nenhum `source_case` aponta para eles), então não muda.
 - Reavaliação offline pela função `_checks` do runner (`tests/unit/evaluation/test_t75_price_insufficient_archived.py`, 54 testes): as quatro `request_id` passam em todas as checagens determinísticas; as 12 respostas arquivadas da r3 e da r4 destes IDs continuam passando; 51 controles negativos são recusados (17 contradições sozinhas e 34 anexadas a uma das quatro respostas aceitas).
-- Testes focados (rótulos, runner, jornadas, catálogo da v0.7.0): 224 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 ([passagem](../evidence/v080-developer.md)).
+- Testes focados (rótulos, runner, jornadas, catálogo da v0.7.0): 224 passed. Suíte estrita no `HEAD` `94bf7b3`: 1247 passed, ruff e skills ok, exit 0 (passagem).
 - Pendente: revisão independente e QA (campanha real).
 
 Developer, rodada 2 (2026-11-05), correção do P2-75 da [revisão](../evidence/v080-reviewer-t75-77.md):
@@ -53,7 +53,7 @@ Developer, rodada 3 (2026-11-05), P3-R2a e P3-R2b da [revisão](../evidence/v080
 - `runner.py`: só as formas de dúvida anteriores à v0.8.0 mantêm a janela de 100 caracteres ("cannot confirm/verify/determine/tell whether", "not sure/uncertain/not clear whether", "cannot say", "não consigo… confirmar se", "não sei se", "não posso dizer"). Toda forma nova da v0.8.0, todo complemento com "that"/"que" (inclusive "not sure that", "cannot say that", "não posso dizer que"), "unclear", "don't know whether", "não sabemos se" e "não posso/podemos afirmar" exigem a asserção logo depois do qualificador. As cinco frases do parecer voltam a ser recusadas.
 - `tests/unit/evaluation/test_t75_price_insufficient_archived.py`: 165 testes (127 + 38): 11 frases com qualificador não adjacente (as cinco do parecer e variações) e 4 com travessão/meia-risca são recusadas; 22 ressalvas honestas adjacentes (U+2019, U+2018, U+02BC; "don't/doesn't know whether", "unclear whether", "não podemos afirmar que"…) seguem aceitas; um teste mostra que é o travessão que recusa as sondas.
 - Re-pontuação offline de `v080-healthy-r4.json` e `v080-all-r3.json`: 195 respostas, 1.755 checagens, comparadas com o runner de `663ce09` e com o de `94bf7b3`: nenhuma muda.
-- Testes focados: 542 passed. Suíte estrita: ver [passagem](../evidence/v080-developer.md), rodada 3.
+- Testes focados: 542 passed. Suíte estrita: ver passagem, rodada 3.
 
 ## Status
 

@@ -55,7 +55,7 @@ Developer, rodada 4 (2026-10-28). Testes novos (cada um falharia no candidato r3
   - CHANGELOG corrigido para dez cenários.
 - Não alterados, conforme instrução: a rubrica e os prompts do Router (os casos de preço e o `EN-PRICE-CONDITIONS` ficam como limitação) e o estado "QA aprovado" no README/CHANGELOG.
 
-Validação estrita backend: **347 passed**, Ruff "All checks passed!", código 0. Web: **40 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em [v060-developer.md](../evidence/v060-developer.md#rodada-4--2026-10-28).
+Validação estrita backend: **347 passed**, Ruff "All checks passed!", código 0. Web: **40 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md.
 
 Developer, rodada 5 (2026-10-28), resíduos da revisão r4:
 
@@ -67,7 +67,7 @@ Developer, rodada 5 (2026-10-28), resíduos da revisão r4:
   - `test_comparison_cells_that_failed_after_paid_calls_without_a_trace_are_not_given_back`: duas células falham depois das chamadas pagas, sem trace e com linhas no ledger, e o contador fica em 2. Pega a mutação J5 (decidir pelo trace).
   - `test_comparison_never_gives_back_a_started_cell_when_the_ledger_is_unreadable`: com o ledger ilegível, a célula iniciada continua contada e só a que nunca iniciou é devolvida, de modo que o contador fica em 1. Pega a mutação J7.
 
-Validação estrita backend: **349 passed**, Ruff "All checks passed!", código 0. Web: **42 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em [v060-developer.md](../evidence/v060-developer.md#rodada-5--2026-10-28).
+Validação estrita backend: **349 passed**, Ruff "All checks passed!", código 0. Web: **42 passed**, Ruff sem achados, código 0. Nenhuma chamada paga. Detalhes em v060-developer.md.
 
 ## Status
 

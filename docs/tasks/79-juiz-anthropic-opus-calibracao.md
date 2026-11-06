@@ -35,7 +35,7 @@ Branch `codex/v0.9.0-juiz-retrieval` criada da `main` com a v0.8.0. Nenhuma cham
 
 ## Validação
 
-Developer, 2026-11-05, commits `ffe9803` e `c0045a5` na `codex/v0.9.0-juiz-retrieval`. Passagem: [v090-developer.md](../evidence/v090-developer.md).
+Developer, 2026-11-05, commits `ffe9803` e `c0045a5` na `codex/v0.9.0-juiz-retrieval`. Passagem: v090-developer.md.
 
 - SDK conferido no pacote instalado (`anthropic 2.5.0`): `messages.create(..., output_config={"format": {"type": "json_schema", "schema": ...}})`; `JSONOutputFormatParam` não tem campo `strict`, e o esquema estrito vem de `anthropic.transform_schema` (`additionalProperties: false`, todos os campos em `required`). `thinking` e `effort` omitidos.
 - Provedor programado: o cliente real do SDK sobre `httpx2.MockTransport` (`llm/scripted_anthropic.py`); nenhuma rede, nenhuma chamada paga, `.env` não lido.
@@ -46,7 +46,7 @@ Developer, 2026-11-05, commits `ffe9803` e `c0045a5` na `codex/v0.9.0-juiz-retri
 
 ### Rodada 2 (correções da revisão)
 
-Developer, 2026-11-05, commits `820c270` e `7d1039f` sobre `fee7a78`, a partir do [parecer da rodada 1](../evidence/v090-reviewer-t79.md) e das decisões do Supervisor. Passagem: [v090-developer.md](../evidence/v090-developer.md), seção "Tarefa 79 — rodada 2".
+Developer, 2026-11-05, commits `820c270` e `7d1039f` sobre `fee7a78`, a partir do [parecer da rodada 1](../evidence/v090-reviewer-t79.md) e das decisões do Supervisor. Passagem: v090-developer.md, seção "Tarefa 79 — rodada 2".
 
 - **P2-1:** testes com julgamento válido no texto sob `refusal`, `max_tokens` e `model_context_window_exceeded` (adaptador, `Judge.evaluate` e fluxo da CLI); tirar qualquer um dos três de `FAILED_STOPS` derruba a suíte (mutação conferida numa cópia).
 - **P2-2:** cada julgamento gravado leva o nome da execução (`--name` do `eval`, ou o nome padrão do relatório) em `evaluator.run`, sem migração. `eval-calibrate --import --judge <par>` ganhou `--judge-run <nome>`: o juiz A é lido só nessa execução (concordância, consistência, custo e tokens); sem `--judge-run`, mais de uma execução do juiz sobre os 24 pedidos é erro que lista as execuções. O juiz B é lido nas execuções dos julgamentos ligados às notas (`legado` para os gravados sem nome). O relatório diz, por juiz, as execuções e quantos julgamentos entraram em cada bloco. O teste do momento 3 roda a sonda antes das 3 repetições e uma rodada extra do juiz original.

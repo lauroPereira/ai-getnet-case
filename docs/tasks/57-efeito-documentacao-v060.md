@@ -32,12 +32,12 @@ Tarefa 55 concluída (catálogo e Resultados). Documento fictício de dispositiv
 
 ## Validação
 
-- Diferença esperada registrada antes de qualquer edição real em [v060-qa-preparacao.md](../evidence/v060-qa-preparacao.md); pergunta `SC-DOC-EFFECT` no catálogo; V2 em `data/scenarios/kb-demo-devices-v2.md` (só acrescenta a seção "Alternativa de venda com a maquininha sem conexão").
+- Diferença esperada registrada antes de qualquer edição real em v060-qa-preparacao.md; pergunta `SC-DOC-EFFECT` no catálogo; V2 em `data/scenarios/kb-demo-devices-v2.md` (só acrescenta a seção "Alternativa de venda com a maquininha sem conexão").
 - `test_document_edit_changes_tool_use_and_rollback_restores_it`: V1 sem `get_contract_snapshot`; rascunho V2 com diff só de adição; build, teste e ativação; V2 com o trecho novo nos `hits`, `get_device_status` → `get_contract_snapshot`, fonte do contrato e oferta condicionada ao fato; retorno a `kb_initial` restaura o comportamento; três conversas independentes com o mesmo cenário, perfil, digest, Router e conjunto de prompts.
 - `test_v2_text_adds_no_deadline_amount_or_new_tool`: a seção nova não tem dígitos (prazo, valor, taxa) e só cita a ferramenta já autorizada.
 - Limite: a política programada aplica o procedimento recuperado; o comportamento do modelo real fica para o QA, com o roteiro na preparação.
 
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: [v060-developer.md](../evidence/v060-developer.md).
+Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md.
 
 ## Status
 

@@ -8,11 +8,11 @@
 
 ## Fluxo e correções
 
-Três subagentes Claude Opus 5.5, esforço high, contexto novo, em sequência (substitutos de `gpt-6-luna`, indisponível nesta sessão, escolhidos pelo responsável); os mesmos agentes nas correções; sem delegação aninhada. Detalhes em [supervisão](v060-supervisao.md).
+Três subagentes Claude Opus 5.5, esforço high, contexto novo, em sequência (substitutos de `gpt-6-luna`, indisponível nesta sessão, escolhidos pelo responsável); os mesmos agentes nas correções; sem delegação aninhada. Detalhes em supervisão.
 
 | Etapa | Resultado | Evidência |
 | --- | --- | --- |
-| Developer, tarefas 54–58 | Implementação completa, 326/30 testes | [Passagem](v060-developer.md) |
+| Developer, tarefas 54–58 | Implementação completa, 326/30 testes | Passagem |
 | Reviewer r1 | Apto, 10 P3 | [Parecer](v060-reviewer.md) |
 | Developer r2–r3 (tarefa 60) | P3 de orçamento, integridade e aceite corrigidos | Passagem, rodadas 2–3 |
 | Reviewer r2–r3 | Apto; resíduos corrigidos | Parecer, rodadas 2–3 |
@@ -61,7 +61,7 @@ A sonda inconclusiva da v0.5.0 não foi convertida em reprovação; o efeito da 
 
 ## Integração
 
-Integrada na `main` em 2026-10-28, com confirmação explícita do responsável, por merge local com a identidade do projeto: backend `6773630` ([backend #7](https://github.com/lauroPereira/ai-getnet-case/pull/7)) e web `601eb4b` ([web #3](https://github.com/lauroPereira/ai-getnet-case-web/pull/3)), ambos marcados como merged no GitHub. A árvore da `main` ficou idêntica à do candidato validado. Depois do merge, só documentação mudou: o `.gitignore` passou a ignorar a pasta local de preparação da apresentação, e o README foi reorganizado para o avaliador (mapa do desafio, acréscimos numa seção própria, contagens corrigidas e evidência da v0.6.0). Por decisão do responsável, o guia de demonstração e os roteiros de teste manual e de vídeo saíram do repositório depois do merge, substituídos por material local de apresentação; a versão integrada continua no histórico (`6773630`). A tag `v0.6.0` vem depois dessas correções. Detalhes na [supervisão](v060-supervisao.md#integração-da-v060).
+Integrada na `main` em 2026-10-28, com confirmação explícita do responsável, por merge local com a identidade do projeto: backend `6773630` ([backend #7](https://github.com/lauroPereira/ai-getnet-case/pull/7)) e web `601eb4b` ([web #3](https://github.com/lauroPereira/ai-getnet-case-web/pull/3)), ambos marcados como merged no GitHub. A árvore da `main` ficou idêntica à do candidato validado. Depois do merge, só documentação mudou: o `.gitignore` passou a ignorar a pasta local de preparação da apresentação, e o README foi reorganizado para o avaliador (mapa do desafio, acréscimos numa seção própria, contagens corrigidas e evidência da v0.6.0). Por decisão do responsável, o guia de demonstração e os roteiros de teste manual e de vídeo saíram do repositório depois do merge, substituídos por material local de apresentação; a versão integrada continua no histórico (`6773630`). A tag `v0.6.0` vem depois dessas correções. Detalhes na supervisão.
 
 ## Limpeza do Docker
 

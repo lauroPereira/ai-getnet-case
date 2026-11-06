@@ -36,7 +36,7 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md), seção "Tarefa 64, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md, seção "Tarefa 64, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística |
 | --- | --- |

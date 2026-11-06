@@ -7,7 +7,7 @@ contrato backend após a adição do erro operacional de orçamento.
 
 ## Especificação relacionada
 
-RF-42, CA-34/CA-37, tarefa 33 e [revisão r2](../evidence/v040-reviewer-r2.md).
+RF-42, CA-34/CA-37, tarefa 33 e revisão r2.
 O plano completo autoriza contrato e cliente; não há nova funcionalidade.
 
 ## Pré-condições
@@ -57,7 +57,7 @@ envelope em `APIError(429, "request_budget_exceeded", ...)`.
 --basetemp=.pytest_cache/v040-openapi-r3-final-20261027`: **9 passaram**.
 Ruff `check --no-cache .` e `format --check --no-cache .`: passaram; 72 arquivos
 formatados. Nenhum backend/guarda, runtime, chave ou chamada de inferência foi
-alterado/utilizado nesta tarefa. A [passagem Developer r3](../evidence/v040-developer-r3.md)
+alterado/utilizado nesta tarefa. A passagem Developer r3
 registra arquivos e resultados.
 
 ## Status

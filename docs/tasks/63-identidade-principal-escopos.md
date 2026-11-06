@@ -43,7 +43,7 @@ O assistente emite e valida JWT; toda mensagem exige token; o lojista vem do pri
 
 ## Validação
 
-Developer, rodada 1 (2026-11-03). Passagem em [v070-developer.md](../evidence/v070-developer.md). Os critérios ficam desmarcados até a revisão e o QA.
+Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md. Os critérios ficam desmarcados até a revisão e o QA.
 
 | Critério | Evidência determinística |
 | --- | --- |
