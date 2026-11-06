@@ -57,7 +57,7 @@ class Orchestrator(Protocol):
 
 
 class PlaceholderOrchestrator:
-    """Used until the agent graph is wired: always asks for clarification."""
+    """Fallback when the app is built without an orchestrator (tests): always asks for clarification."""
 
     def handle(
         self, request: MessageRequest, request_id: str, *, principal: Principal | None = None, channel: str = "api"
