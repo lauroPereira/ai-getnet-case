@@ -438,9 +438,34 @@ tests), with `store=false`:
   retrieval hits and guard results. `GET /traces/{request_id}` in demo mode.
 - **Budget ledger** (`runtime/budget.sqlite3`): every paid call with reserved and actual cost; `/ready` shows what
   is left.
-- **Production next steps:** export the same spans to OpenTelemetry/Langfuse, dashboards for route mix, handoff
-  rate, guard blocks, p95 latency and cost per resolved case, and alerts on error rate, budget burn and retrieval
-  score drift.
+- **Metrics** (`GET /metrics`, public like `/ready`): Prometheus text format 0.0.4, computed on demand from the
+  traces and the ledger and cached for 5 s, with no Prometheus library. Labels come from closed sets in the code
+  (route, status, agent, tool, outcome, replan origin, provider); no message text, request id, merchant or operator.
+
+  | Metric | Type | Labels |
+  | --- | --- | --- |
+  | `requests_total` | counter | `route`, `status` |
+  | `model_calls_total` | counter | `agent` |
+  | `tool_calls_total` | counter | `tool`, `outcome` |
+  | `tool_failures_total` | counter | `tool` |
+  | `handoffs_total` | counter | — |
+  | `replan_total` | counter | `origin` |
+  | `request_duration_seconds` | histogram (1, 2, 5, 10, 20, 30, 60 s, +Inf) | — |
+  | `cost_usd_total` | counter (settled spend) | `provider` |
+  | `budget_remaining_usd`, `budget_limit_usd` | gauge | — |
+
+- **Alert rules** in [`alerts/rules.yml`](alerts/rules.yml) (Prometheus format, group `merchant-assistant`): budget
+  below 10% of the limit, tool failure rate above 5% over 15 min, handoff rate above 30% over 1 h, p95 duration
+  above 20 s over 15 min. A test checks that every metric in the rules exists in `/metrics`. To scrape it with a
+  local Prometheus, add to `scrape_configs` (and `rule_files: [alerts/rules.yml]`):
+
+  ```yaml
+  - job_name: merchant-assistant
+    static_configs: [{targets: ["localhost:8000"]}]
+  ```
+
+- **Production next steps:** export the same spans to OpenTelemetry/Langfuse (OTLP), dashboards for route mix,
+  handoff rate, guard blocks, p95 latency and cost per resolved case, and alerts on retrieval score drift.
 
 ## Testing and evaluation
 
