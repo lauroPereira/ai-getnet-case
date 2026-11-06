@@ -92,7 +92,7 @@ Useful endpoints:
 | `POST /v1/auth/token` | OAuth 2.0 token (form encoded): `grant_type=password` for the demo users, `client_credentials` for the ticketing service; returns a JWT (RS256) |
 | `POST /messages` | The assistant. Header `Authorization: Bearer <token>`. Body: `{"message": "...", "conversation_id": "conv_..." (optional), "user_id": "..." (optional; must match the token, otherwise `403 identity_mismatch`)}` |
 | `GET /health`, `GET /ready` | Liveness; readiness reports index size, database and remaining budget |
-| `GET /traces/{request_id}` | Step-by-step trace with a token: merchants see only their own (demo mode, on by default in compose) |
+| `GET /traces/{request_id}` | Step-by-step trace with a token: merchants see only their own (demo mode, on with the shipped `.env.example` and in compose) |
 | `GET /.well-known/jwks.json` | Public keys that validate the tokens |
 | `GET /docs` | OpenAPI UI with the 10 challenge examples preloaded |
 
@@ -155,7 +155,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
 | `MAX_MODEL_CALLS`, `MAX_TOOL_CALLS`, `MAX_REQUEST_SECONDS` | `8`, `8`, `90` | Per-request limits |
 | `WEB_SEARCH_MAX_CALLS` | `1` | Searches per general question |
-| `DEMO_MODE` | `false` (`true` in compose) | Enables `GET /traces/{id}` |
+| `DEMO_MODE` | `false` in code; `true` in `.env.example` and in compose | Enables `GET /traces/{id}` (token required; merchants see only their own) |
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
 | `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
 | `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
