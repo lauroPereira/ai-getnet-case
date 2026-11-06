@@ -46,10 +46,22 @@ Developer, rodada 1 (2026-11-06), branch `docs/pente-fino`, base `0c8bd1b`, cód
 - `git grep -i -E "feedback|avaliador|evaluator|ranking|benchmark|minha falha|erro do reviewer|descartad"`: as ocorrências restantes são de contexto legítimo: o avaliador sob demanda do produto (`EVALUATOR_*`, `run_evaluations.evaluator`, "avaliador fixo", "comentário do avaliador por IA"), o rotulador humano da calibração ("avaliador humano", colunas do avaliador), o feedback do lojista no acompanhamento técnico, ranking de retrieval, "resposta descartada" pelo proxy e caches descartados, nomes antigos dentro dos manifestos JSON de candidatos (registro com hashes), o modelo `docs/templates/decision-record.md`, esta tarefa, e AGENTS.md e CLAUDE.md (não editados).
 - `python tools/scripts/lint_and_tests.py --strict --basetemp=<scratchpad da sessão>/... -p no:cacheprovider -rs` (`.venv` do worktree, árvore limpa em `d00aba2`, sem mudança durante a execução): **2153 passed, 1 skipped** em 1103 s; Ruff `All checks passed!`; estrutura, skills, caminhos e links válidos; exit 0. O skip é de ambiente (`test_v070_identity_r2.py:277`, só roda com basetemp sob `.pytest_cache`).
 
+Developer, rodada 2 (2026-11-06), sobre a revisão independente da rodada 1; código e testes da suíte em `2555631`. Sem chamada paga.
+
+- **P2-1:** a v0.4.0 aparece como validada com modelos programados: status do README ("independent review; QA uses real models … from v0.5.0 on"), tarefas 27 a 34, história `perfis-interface-v040.md` por momento (CA-33 por testes e revisão; CA-28 e RF-53 por regressão automatizada) e nota em "Notes" da 0.4.0 no CHANGELOG.
+- **P2-2:** regras de operação voltaram ao imperativo no CHANGELOG (holdouts marcados como vistos, `bootstrap` no mesmo dia) e no README (captura no navegador, `bootstrap` antes da execução paga); a ADR 0020 voltou a citar o relacre após a revisão dos rótulos e a contagem por arquivo de relatório.
+- **P2-3:** linhas de comportamento nas ADRs 0018 (`503` repetível após 5 s; bloqueios exercitados no Windows), 0019 (rota `knowledge_and_support` sem replanejamento) e 0022 (reivindicação compara o estado; registro por processo; lease no roadmap).
+- **P2-4:** nota do worker único no README como regra de operação.
+- **P2-5:** `docs/relatorios/` no `.gitignore`; o modelo de relatório aponta para `discovery/relatorios/`.
+- **P2-6:** as transições de teto da v0.8.0 (primário 1,00 → 1,70 em 2026-11-04 e 1,70 → 2,00 em 2026-11-05; cap 1,10 → 1,40) estão consolidadas em [orcamento.md](../evidence/orcamento.md); `v080-custo-estimativa-r3.json` voltou.
+- **P3:** `lint_and_tests.py` recusa argumento desconhecido sem `--strict`; `checar-links.py` resolve alvos contra `git ls-files`, com testes de alvo fora da raiz, título repetido e arquivo não rastreado (7 testes); o índice de evidências diz que os originais estão nas tags; as menções em texto a registros removidos citam a tag da versão; R2-04 voltou a "risco aceito"; "limitação" e "pós-feedback" saíram dos quatro pontos apontados.
+- `checar-links.py`: nenhum alvo ausente em 322 arquivos Markdown; 1 aviso pendente (AGENTS.md:18). `checar-caminhos-pessoais.py`: nenhuma ocorrência em 634 arquivos.
+- `python tools/scripts/lint_and_tests.py --strict --basetemp=<scratchpad da sessão>/... -rs` (`.venv` do worktree, árvore limpa em `2555631`): **2156 passed, 1 skipped** em 974 s; Ruff `All checks passed!`; estrutura, skills, caminhos e links válidos; exit 0. O skip é o mesmo de ambiente da rodada 1.
+
 ## Status
 
 ```text
-pronta para revisão (Developer, rodada 1)
+pronta para revisão (Developer, rodada 2)
 ```
 
 Aberta pelo Supervisor em 2026-11-06.
