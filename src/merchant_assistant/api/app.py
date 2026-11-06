@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from merchant_assistant import __version__
+from merchant_assistant import __version__, comparisons
 from merchant_assistant.api.identity import Identity, Principal, check_configuration
 from merchant_assistant.api.integrations import router as integrations_router
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
@@ -135,6 +135,10 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
             app.state.webhooks.recover_pending_intents()
         except Exception:
             log.exception("could not recover the pending webhook intentions")
+        try:  # no comparison thread survives the process: `running` comparisons become `interrupted` (task 84)
+            comparisons.interrupt_orphans(app.state)
+        except Exception:
+            log.exception("could not mark the interrupted comparisons")
         yield
         close = getattr(app.state.orchestrator, "close", None)
         if close:

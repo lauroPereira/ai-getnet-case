@@ -8,6 +8,7 @@ stored normally and marked with purpose=comparison. One knowledge-base version i
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import sqlite3
 import tempfile
@@ -25,6 +26,8 @@ from merchant_assistant.profiles import digest, get_profile
 MIN_PROFILES, MAX_PROFILES, MAX_SCENARIOS, MAX_REPETITIONS = 2, 3, 3, 2
 MAX_CELLS = MAX_PROFILES * MAX_SCENARIOS * MAX_REPETITIONS
 JUDGE_CRITERIA = ("answers_question", "clarity_and_tone", "honesty")
+
+log = logging.getLogger("merchant_assistant.comparisons")
 
 _ACTIVE: dict[str, threading.Thread] = {}
 _ACTIVE_LOCK = threading.Lock()
@@ -285,12 +288,23 @@ def start(app, principal: dict, selection: dict, *, confirmed: bool, max_cost_us
     return comparison_id
 
 
-def _run(app, comparison_id: str, principal: dict, config: dict, cells: list[dict], knowledge) -> None:
+def _run(
+    app,
+    comparison_id: str,
+    principal: dict,
+    config: dict,
+    cells: list[dict],
+    knowledge,
+    *,
+    failures: list[dict] | None = None,
+    spent: float = 0.0,
+) -> None:
+    """Runs every cell that has no result yet (`request_id`). A resume passes the recorded failures and the cost
+    already accumulated, so the cap applies to the whole comparison and the cost keeps adding up (task 84)."""
     from merchant_assistant.api import v1
 
     settings, orchestrator = app.state.settings, app.state.orchestrator
-    failures: list[dict] = []
-    spent = 0.0
+    failures = [] if failures is None else failures
     workdir = Path(tempfile.mkdtemp(prefix="comparison-"))
     conn = connect(settings.db_path)
     try:
@@ -304,12 +318,15 @@ def _run(app, comparison_id: str, principal: dict, config: dict, cells: list[dic
         if knowledge[1] != config["fixed_factors"]["knowledge_base_version_id"]:
             failures.append({"code": "knowledge_base_changed", "message": "The active knowledge base changed."})
             for cell in cells:
-                cell["status"] = "skipped"
+                if not cell.get("request_id"):  # a resumed comparison keeps the results it already has
+                    cell["status"] = "skipped"
             return
         profiles = {(p["profile_id"], p["profile_version"]): p for p in config["profiles"]}
         stopped = None
         per_cell = float(settings.max_request_cost_usd)
         for cell in cells:
+            if cell.get("request_id"):  # result already recorded (a resumed comparison): never run twice
+                continue
             scenario = scenario_catalog.get(settings.data_dir, cell["scenario_id"])
             if stopped:
                 cell.update(status="skipped", error=stopped)
@@ -341,6 +358,10 @@ def _run(app, comparison_id: str, principal: dict, config: dict, cells: list[dic
                 "agents": profiles[key]["agents"],
             }
             request_id = f"req_{uuid.uuid4().hex[:20]}"
+            # Recorded before the call: if the process dies during it, the attempt (and what the ledger holds for
+            # it) stays attached to the cell, which is still pending and runs again on resume (task 84).
+            cell["in_flight_request_id"] = request_id
+            _save(conn, comparison_id, cells=cells, failures=failures)
             cell["request_id"] = request_id
             try:
                 result = v1.execute_run(
@@ -380,26 +401,34 @@ def _run(app, comparison_id: str, principal: dict, config: dict, cells: list[dic
                     cell.update(status="failed", error="budget_denied")
                     stopped = "budget_denied"
                     failures.append({"code": stopped, "request_id": request_id})
+            cell.pop("in_flight_request_id", None)
             _save(conn, comparison_id, cells=cells, failures=failures, cost_usd=round(spent, 8))
     except Exception as exc:  # unexpected: keep what was recorded and mark the comparison failed
         failures.append({"code": "comparison_failed", "message": type(exc).__name__})
     finally:
+        for cell in cells:
+            cell.pop("in_flight_request_id", None)
         completed = sum(cell.get("status") == "completed" for cell in cells)
         state = "completed" if completed == len(cells) else ("partial" if completed else "failed")
         try:
             # New cells were counted against the demo limit at the start; give back those that made no model call
             # (skipped by a knowledge-base change, the confirmed cap or a budget refusal, or refused before a call).
             # The decision uses the ledger rows of each run; when they cannot be read nothing is given back (P3-R3-01).
+            # A cell given back is flagged (`demo_refunded`): a resume counts it again before running it, and a
+            # cell is never given back twice.
             unused = 0
             for cell in cells:
-                if cell.get("source") != "new":
+                if cell.get("source") != "new" or cell.get("demo_refunded"):
                     continue
                 if not cell.get("request_id"):  # never started: certainly no model call
                     cell["model_calls"] = 0
+                    cell["demo_refunded"] = True
                     unused += 1
                     continue
-                cell["model_calls"] = v1.model_calls_made(orchestrator, cell["request_id"])
+                if "model_calls" not in cell:  # cells finished by an earlier run keep their count
+                    cell["model_calls"] = v1.model_calls_made(orchestrator, cell["request_id"])
                 if v1.paid_attempts(orchestrator.budget, cell["request_id"]) == 0:
+                    cell["demo_refunded"] = True
                     unused += 1
             v1.refund_demo_messages(conn, principal, unused)
         except Exception:  # accounting never hides the comparison result
@@ -423,6 +452,170 @@ def _alive(comparison_id: str) -> bool:
         return comparison_id in _ACTIVE and _ACTIVE[comparison_id].is_alive()
 
 
+def _ledger_cost(budget, request_id: str) -> float | None:
+    """Committed cost of `request_id` in the persistent ledger (settled amount, or the reservation of a call that was
+    never settled because the process died). None when the ledger cannot be read."""
+    from merchant_assistant.api import v1
+
+    if v1.paid_attempts(budget, request_id) is None:  # same ledger resolution, and the same "unreadable" answer
+        return None
+    guard = getattr(budget, "primary", budget)
+    guard = getattr(guard, "guard", guard)
+    try:
+        ledger = sqlite3.connect(guard.path, timeout=10)
+        try:
+            row = ledger.execute(
+                "SELECT COALESCE(SUM(CASE WHEN status='settled' THEN actual_usd WHEN status='reserved' "
+                "THEN reserved_usd ELSE 0 END), 0) FROM ledger WHERE request_id=?",
+                (request_id,),
+            ).fetchone()
+        finally:
+            ledger.close()
+    except sqlite3.Error:
+        return None
+    return float(row[0] or 0.0)
+
+
+def _mark_interrupted(conn, app_state, row) -> bool:
+    """`running` without a live thread becomes `interrupted` (task 84). The cells keep their results; the call that
+    was in flight when the process stopped is kept in `interrupted_attempts` of its cell, with what the ledger holds
+    for it, which is added to `cost_usd`. Only applies while the row is still `running`."""
+    cells, failures = json.loads(row["cells"]), json.loads(row["failures"])
+    cost = float(row["cost_usd"] or 0.0)
+    budget = getattr(getattr(app_state, "orchestrator", None), "budget", None)
+    for cell in cells:
+        request_id = cell.pop("in_flight_request_id", None)
+        if request_id:
+            attempt_cost = _ledger_cost(budget, request_id) if budget is not None else None
+            cell.setdefault("interrupted_attempts", []).append({"request_id": request_id, "cost_usd": attempt_cost})
+            cost += attempt_cost or 0.0
+    failures.append({"code": "interrupted", "message": "The API process stopped before the comparison ended."})
+    updated = conn.execute(
+        "UPDATE comparisons SET cells=?,failures=?,state='interrupted',cost_usd=?,updated_at=? "
+        "WHERE comparison_id=? AND state='running'",
+        (json.dumps(cells), json.dumps(failures), round(cost, 8), _now(), row["comparison_id"]),
+    )
+    return updated.rowcount == 1
+
+
+def interrupt_orphans(app_state) -> list[str]:
+    """At API startup no comparison thread of this process exists: every `running` comparison without a live thread
+    becomes `interrupted` (task 84)."""
+    conn = connect(app_state.settings.db_path)
+    try:
+        marked = []
+        for row in conn.execute("SELECT * FROM comparisons WHERE state='running'").fetchall():
+            if not _alive(row["comparison_id"]) and _mark_interrupted(conn, app_state, row):
+                marked.append(row["comparison_id"])
+                log.info("comparison interrupted", extra={"event": {"comparison_id": row["comparison_id"]}})
+        return marked
+    finally:
+        conn.close()
+
+
+def resume(app, principal: dict, comparison_id: str, *, retry_failed: bool = False) -> dict:
+    """Continues an `interrupted`, `partial` or `failed` comparison with its recorded configuration (task 84). Cells
+    with a result (`request_id`) are never run again; failed cells run again only with `retry_failed`. The budget
+    and the demo limit are checked only for the cells that still have to run."""
+    from merchant_assistant.api import v1
+
+    settings, orchestrator = app.state.settings, app.state.orchestrator
+    conn = connect(settings.db_path)
+    try:
+        row = conn.execute(
+            "SELECT * FROM comparisons WHERE comparison_id=? AND principal_id=?",
+            (comparison_id, principal["principal_id"]),
+        ).fetchone()
+        if row is None:
+            raise ComparisonError(404, "not_found", "Comparison not found.")
+        if row["state"] == "running" and not _alive(comparison_id):
+            _mark_interrupted(conn, app.state, row)
+            row = conn.execute("SELECT * FROM comparisons WHERE comparison_id=?", (comparison_id,)).fetchone()
+        if row["state"] == "running":
+            raise ComparisonError(409, "comparison_running", "The comparison is still running.")
+        if row["state"] == "completed":
+            raise ComparisonError(409, "comparison_completed", "The comparison already completed; nothing to resume.")
+        running = [
+            item[0]
+            for item in conn.execute(
+                "SELECT comparison_id FROM comparisons WHERE principal_id=? AND state='running'",
+                (principal["principal_id"],),
+            )
+        ]
+        if any(_alive(item) for item in running):
+            raise ComparisonError(409, "comparison_running", "Another comparison is still running; refresh it first.")
+        config, cells = json.loads(row["config"]), json.loads(row["cells"])
+        fixed = config["fixed_factors"]
+        kb = getattr(orchestrator, "knowledge_base", None)
+        knowledge = kb.capture_active() if kb else (orchestrator.index, None)
+        if (
+            knowledge[1] != fixed["knowledge_base_version_id"]
+            or prompt_versions(settings.prompts_dir) != fixed["prompt_set"]
+            or _execution_mode(orchestrator) != config["execution_mode"]
+        ):
+            raise ComparisonError(
+                409,
+                "fixed_factors_changed",
+                "The knowledge base, prompts or execution mode changed since the comparison started; start a new one.",
+            )
+        for cell in cells:
+            if cell.get("request_id") and not (retry_failed and cell.get("status") == "failed"):
+                continue  # recorded result: kept as it is
+            previous = cell.pop("request_id", None)
+            if previous:  # the failed attempt stays attached to the cell (and in the ledger under its own id)
+                cell.setdefault("previous_request_ids", []).append(previous)
+            for key in ("error", "origin", "checks", "model_calls", *_cell_metrics({})):
+                cell.pop(key, None)
+            cell["status"] = "pending"
+        todo = [cell for cell in cells if cell["status"] == "pending"]
+        if not todo:
+            raise ComparisonError(
+                409, "nothing_to_resume", "Every cell has a result; use retry_failed=true to run the failed ones again."
+            )
+        new_cells = sum(cell["source"] == "new" for cell in todo)
+        if new_cells * float(settings.max_request_cost_usd) > orchestrator.budget.remaining():
+            raise ComparisonError(429, "installation_budget_exceeded", "The remaining cells exceed the budget.")
+        recount = [cell for cell in todo if cell["source"] == "new" and cell.get("demo_refunded")]
+        for cell in recount:  # counted again below: given back again only if it makes no paid call this time
+            cell.pop("demo_refunded", None)
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            claimed = conn.execute(
+                "UPDATE comparisons SET state='running',cells=?,updated_at=? WHERE comparison_id=? AND state=?",
+                (json.dumps(cells), _now(), comparison_id, row["state"]),
+            )
+            if claimed.rowcount != 1:
+                raise ComparisonError(409, "comparison_running", "The comparison was resumed by another request.")
+            if (
+                principal["role"] in v1.LIMITED_ROLES
+                and recount
+                and not v1.consume_demo_messages(conn, principal, len(recount), settings)
+            ):
+                raise ComparisonError(
+                    429,
+                    "demo_message_limit_reached",
+                    "This demo session cannot run that many new executions; start a new session.",
+                )
+            conn.execute("COMMIT")
+        except BaseException:
+            conn.execute("ROLLBACK")
+            raise
+        failures, spent = json.loads(row["failures"]), float(row["cost_usd"] or 0.0)
+    finally:
+        conn.close()
+    thread = threading.Thread(
+        target=_run,
+        args=(app, comparison_id, principal, config, cells, knowledge),
+        kwargs={"failures": failures, "spent": spent},
+        name=f"comparison-{comparison_id}",
+        daemon=True,
+    )
+    with _ACTIVE_LOCK:
+        _ACTIVE[comparison_id] = thread
+    thread.start()
+    return {"comparison_id": comparison_id, "state": "running", "resumed_cells": len(todo)}
+
+
 def read(app_state, conn, principal: dict, comparison_id: str) -> dict:
     row = conn.execute(
         "SELECT * FROM comparisons WHERE comparison_id=? AND principal_id=?", (comparison_id, principal["principal_id"])
@@ -430,18 +623,9 @@ def read(app_state, conn, principal: dict, comparison_id: str) -> dict:
     if row is None:
         raise ComparisonError(404, "not_found", "Comparison not found.")
     if row["state"] == "running" and not _alive(comparison_id):
-        # The API process restarted while the thread was running. The update only applies while the row is still
-        # `running`, so a thread that recorded its final state in the meantime is never overwritten (P3-01).
-        cells, failures = json.loads(row["cells"]), json.loads(row["failures"])
-        failures.append({"code": "interrupted", "message": "The API process stopped before the comparison ended."})
-        for cell in cells:
-            if cell.get("status") == "pending":
-                cell.update(status="skipped", error="interrupted")
-        conn.execute(
-            "UPDATE comparisons SET cells=?,failures=?,state='failed',updated_at=? "
-            "WHERE comparison_id=? AND state='running'",
-            (json.dumps(cells), json.dumps(failures), _now(), comparison_id),
-        )
+        # The API process restarted while the thread was running: the comparison becomes `interrupted` and can be
+        # resumed (task 84). A thread that recorded its final state in the meantime is never overwritten (P3-01).
+        _mark_interrupted(conn, app_state, row)
         row = conn.execute("SELECT * FROM comparisons WHERE comparison_id=?", (comparison_id,)).fetchone()
     state = row["state"]
     cells, failures = json.loads(row["cells"]), json.loads(row["failures"])

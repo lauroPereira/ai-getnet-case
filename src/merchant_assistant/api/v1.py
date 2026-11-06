@@ -1439,6 +1439,24 @@ def comparison_create(payload: ComparisonCreateRequest, request: Request, princi
     return JSONResponse(status_code=202, content={"comparison_id": comparison_id, "state": "running"})
 
 
+@router.post("/comparisons/{comparison_id}/resume", status_code=202, responses={409: {"model": ErrorBody}})
+def comparison_resume(comparison_id: str, request: Request, retry_failed: bool = False, principal=READER):
+    """Continues an `interrupted`, `partial` or `failed` comparison (task 84): cells with a recorded result are not
+    run again; failed cells run again only with `retry_failed=true`. `409 comparison_running`,
+    `409 comparison_completed`, `409 nothing_to_resume`, `409 fixed_factors_changed`; `429` budget or demo limit."""
+    if _ensure_not_error(principal):
+        return principal
+    if limited := rate_limited(request, principal):
+        return limited
+    if not principal["customer_id"]:
+        return _error(422, "admin_scope_required", "Admin sessions require a configured synthetic customer.", request)
+    try:
+        body = comparisons.resume(request.app, principal, comparison_id, retry_failed=retry_failed)
+    except comparisons.ComparisonError as exc:
+        return _error(exc.status, exc.code, exc.message, request)
+    return JSONResponse(status_code=202, content=body)
+
+
 @router.get("/comparisons/{comparison_id}")
 def comparison_read(comparison_id: str, request: Request, principal=READER):
     if _ensure_not_error(principal):
