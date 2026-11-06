@@ -455,8 +455,9 @@ def test_migration_0008_round_trip_on_a_synthetic_database(settings, api):
     conn.row_factory = sqlite3.Row
     snapshots = conn.execute("SELECT * FROM run_snapshots").fetchall()
     sessions = conn.execute("SELECT session_id, principal_id FROM api_sessions").fetchall()
-    assert current_version(conn) == 11
+    assert current_version(conn) == 12
     assert migrate(conn, 7) == [
+        "down 0012_comparison_interrupted",
         "down 0011_evaluation_rubric",
         "down 0010_webhook_outbox",
         "down 0009_identity_hitl",

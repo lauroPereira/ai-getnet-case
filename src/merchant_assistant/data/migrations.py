@@ -656,6 +656,47 @@ def _calibrations_down_guard(conn: sqlite3.Connection) -> None:
         )
 
 
+# v0.10.0 (spec D3, task 84). A comparison stopped by an API restart becomes `interrupted` (resumable) instead of
+# `failed`. SQLite cannot change a CHECK in place, so the table is rebuilt (new table, copy, drop, rename); nothing
+# references `comparisons`. The rollback turns `interrupted` rows into `failed`, the state the 0011 schema used for
+# them, and restores the previous CHECK; the cells and failures are kept as they are.
+_COMPARISONS_COLUMNS = (
+    "comparison_id, principal_id, state, config, cells, failures, estimate, cost_usd, created_at, updated_at"
+)
+
+
+def _comparisons_rebuild(states: str, state_expr: str) -> str:
+    return f"""
+BEGIN;
+CREATE TABLE comparisons_rebuild (
+    comparison_id TEXT PRIMARY KEY,
+    principal_id TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ({states})),
+    config TEXT NOT NULL,
+    cells TEXT NOT NULL,
+    failures TEXT NOT NULL,
+    estimate TEXT NOT NULL,
+    cost_usd REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+INSERT INTO comparisons_rebuild ({_COMPARISONS_COLUMNS})
+SELECT comparison_id, principal_id, {state_expr}, config, cells, failures, estimate, cost_usd, created_at, updated_at
+FROM comparisons;
+DROP INDEX IF EXISTS comparisons_owner_v060;
+DROP TABLE comparisons;
+ALTER TABLE comparisons_rebuild RENAME TO comparisons;
+CREATE INDEX comparisons_owner_v060 ON comparisons(principal_id, created_at);
+COMMIT;
+"""
+
+
+COMPARISON_INTERRUPTED_UP = _comparisons_rebuild("'running', 'completed', 'failed', 'partial', 'interrupted'", "state")
+COMPARISON_INTERRUPTED_DOWN = _comparisons_rebuild(
+    "'running', 'completed', 'failed', 'partial'", "CASE state WHEN 'interrupted' THEN 'failed' ELSE state END"
+)
+
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -668,6 +709,7 @@ MIGRATIONS: list[Migration] = [
     Migration(9, "identity_hitl", IDENTITY_UP, IDENTITY_DOWN),
     Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN, _outbox_down_guard),
     Migration(11, "evaluation_rubric", EVAL_RUBRIC_UP, EVAL_RUBRIC_DOWN, _calibrations_down_guard),
+    Migration(12, "comparison_interrupted", COMPARISON_INTERRUPTED_UP, COMPARISON_INTERRUPTED_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 
