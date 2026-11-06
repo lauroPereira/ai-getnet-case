@@ -238,7 +238,12 @@ def _principal(request: Request, authorization: str | None = Header(default=None
     """Verifies the bearer token (the single verifier of `api.identity`) and returns the principal as the dict the
     routes use. `session_id` is the token's `jti` (per-token counters such as the demo action limit)."""
     if not authorization or not authorization.startswith("Bearer "):
-        return _unauthorized(request, "token_required", "A bearer access token is required.")
+        return _unauthorized(
+            request,
+            "token_required",
+            "A bearer access token is required: POST /v1/auth/token with grant_type=password (demo users and "
+            "passwords are in .env.example), then send Authorization: Bearer <access_token>.",
+        )
     token = authorization[7:].strip()
     if not token or len(token) > 8192:
         return _unauthorized(request, "invalid_token", "The access token is invalid, expired or revoked.")

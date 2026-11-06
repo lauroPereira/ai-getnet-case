@@ -2,6 +2,13 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Each release lists features, contract and data changes, validation, limitations and how to return to the previous version.
 
+## [Unreleased]
+
+### Changed
+- **`401 token_required` says how to get a token.** The challenge's literal payload (`message` + `user_id`, no header) now gets a message that names `POST /v1/auth/token` with the password grant and the demo users of `.env.example`, then the `Authorization: Bearer` header; code, status and `WWW-Authenticate` are unchanged. Covered by `tests/integration/test_token_required_hint.py`.
+- **`.env.example` ships `DEMO_MODE=true`** so `GET /traces/{request_id}` works on the documented Compose path (Compose interpolates the copied `.env`; a clean-clone smoke of the README found the 404). The code default stays `false`.
+- README: the `/metrics` paragraph, the version table order, the `judge.v4` result table in the human review section and the `DEMO_MODE` rows.
+
 ## [0.10.0] — 2026-11-06 (validated: review and real QA)
 
 Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rules ([spec](docs/specs/rubrica-operacao-v0100.md), [story](docs/historias/rubrica-operacao-v0100.md), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md), tasks 83–86).
