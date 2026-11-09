@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 from pydantic import ValidationError
 
-from merchant_assistant.agents.common import LANGUAGE_NAME, format_history, policy, prompt
-from merchant_assistant.conversations import MAX_TECHNICAL_CYCLES, PREFIX_TTL
+from merchant_assistant.agents.common import LANGUAGE_NAME, format_history, history_coverage_instruction, policy, prompt
+from merchant_assistant.conversations import MAX_TECHNICAL_CYCLES, PREFIX_TTL, PROMPT_HISTORY
 from merchant_assistant.data.clock import today
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.orchestration.budget import BudgetExceeded
@@ -114,21 +114,29 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         procedure = "\n".join(f"- {p}" for p in state.knowledge.points)
     p = prompt(ctx, "support")
     ctx.step_notes["prompt"] = p.ref
+    instructions = p.render(
+        now=now.isoformat(timespec="minutes"),
+        timezone=ctx.settings.timezone,
+        today=d0.isoformat(),
+        yesterday=(d0 - timedelta(days=1)).isoformat(),
+        prefix=_prefix_summary(state.prefix) or "- Nothing.",
+        procedure=procedure or "- None.",
+        language_name=LANGUAGE_NAME[language],
+        history=format_history(
+            state.history,
+            limit=PROMPT_HISTORY["support"],
+            summary=state.summary,
+            facts=state.prompt_facts.get("support"),
+            uncovered=state.uncovered_history,
+            incomplete=state.history_incomplete,
+        ),
+        case_status=state.case.get("state", "in_progress"),
+        case_signal=signal,
+        attempts=_attempts_summary(state.case.get("attempts", [])),
+    ) + history_coverage_instruction(state.history_incomplete)
     spec = CallSpec(
         agent="customer_support",
-        instructions=p.render(
-            now=now.isoformat(timespec="minutes"),
-            timezone=ctx.settings.timezone,
-            today=d0.isoformat(),
-            yesterday=(d0 - timedelta(days=1)).isoformat(),
-            prefix=_prefix_summary(state.prefix) or "- Nothing.",
-            procedure=procedure or "- None.",
-            language_name=LANGUAGE_NAME[language],
-            history=format_history(state.history, limit=8),
-            case_status=state.case.get("state", "in_progress"),
-            case_signal=signal,
-            attempts=_attempts_summary(state.case.get("attempts", [])),
-        ),
+        instructions=instructions,
         input=f"Merchant message:\n<<<\n{state.message}\n>>>"
         + (
             "\n\nInstruction from the human support agent who reviewed this case (follow it to answer the "
@@ -170,7 +178,9 @@ def run(state: GraphState, ctx: RunContext) -> dict:
         return {"support": result, "agents": agents, "errors": [*state.errors, f"support: {exc}"]}
     specialist = set(AGENT_TOOLS["customer_support"])
     used = [o for o in ctx.outcomes[before:] if o.name in specialist]
-    result = SupportResult(**draft.model_dump(), tools_used=[o.name for o in used])
+    result = SupportResult(
+        **draft.model_dump(), tools_used=[o.name for o in used], tools_ok=[o.name for o in used if o.ok]
+    )
     if instruction:
         result = result.model_copy(update={"escalate": False, "escalation_reason": None})
     ctx.step_notes.update(

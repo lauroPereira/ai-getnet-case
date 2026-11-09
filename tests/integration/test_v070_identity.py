@@ -67,7 +67,7 @@ def test_password_grant_issues_tokens_per_principal(offline, settings, caplog):
     body = merchant.json()
     assert set(body) == {"access_token", "token_type", "expires_in", "scope"}
     assert body["token_type"] == "Bearer" and body["expires_in"] == 3600
-    assert set(body["scope"].split()) == {"support:read", "handoff:create", "conversation:read"}
+    assert set(body["scope"].split()) == {"support:read", "handoff:create", "conversation:read", "support:write"}
     claims = jwt.decode(body["access_token"], options={"verify_signature": False})
     assert (claims["sub"], claims["customer_id"], claims["client_id"]) == (
         "merchant:cliente_demo_002",

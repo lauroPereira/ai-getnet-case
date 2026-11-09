@@ -369,14 +369,15 @@ def _within_limits(ctx: RunContext) -> bool:
     """One more specialist and the final reply must still fit the request's calls, time and cost."""
     s = ctx.settings
     return (
-        ctx.model_calls + 2 <= s.max_model_calls
+        ctx.limited_calls + 2 <= s.max_model_calls  # the summary has its own allowance (task 92)
         and ctx.remaining_seconds() > 0
         and ctx.cost_usd < s.max_request_cost_usd
     )
 
 
 def _guard(chosen: Chosen, o: Observed, ctx: RunContext) -> Chosen:
-    """Last word, for rules and model alike. A refusal becomes `finish` with the gap declared."""
+    """Last word, for rules and model alike. A refusal becomes `finish` with the gap declared; it keeps the refused
+    step, its origin and, for the model, the candidates it was given (task 93: `eval-compare` lists them)."""
     refusal = None
     if chosen.next in SPECIALISTS and chosen.next in o.done:
         refusal = ("no_repeat", f"{chosen.next} already ran in this request")
@@ -393,7 +394,8 @@ def _guard(chosen: Chosen, o: Observed, ctx: RunContext) -> Chosen:
     return Chosen(
         "finish", "incomplete", f"{why}; finishing with what was collected", f"rule:{name}",
         gap=(*chosen.gap, "information that another check could have added"),
-        notes={"refused": chosen.next, "refused_origin": chosen.origin},
+        notes={"refused": chosen.next, "refused_origin": chosen.origin}
+        | ({"candidates": chosen.notes["candidates"]} if "candidates" in chosen.notes else {}),
     )
 
 

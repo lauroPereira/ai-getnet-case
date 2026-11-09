@@ -17,14 +17,14 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.11.0. The campaign judge defaults to `judge.v5`; hybrid retrieval uses the measured `hybrid@36` control and reranks by default. What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
+**Status:** v0.12.0 (not released). The campaign judge defaults to `judge.v5`; hybrid retrieval uses the measured `hybrid@36` control and reranks by default. What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
 
 ### Where each part of the challenge lives
 
 | Challenge item | Section | Code |
 | --- | --- | --- |
 | Three or more cooperating agents and how they communicate | [Architecture](#architecture), [Message workflow](#message-workflow) | `orchestration/graph.py`, `orchestration/state.py` |
-| Router as entry point and workflow manager | [Architecture](#architecture) | `agents/router.py`, `prompts/router.v6.md` |
+| Router as entry point and workflow manager | [Architecture](#architecture) | `agents/router.py`, `prompts/router.v7.md` |
 | Knowledge Agent: RAG over Getnet's site plus web search | [RAG pipeline](#rag-pipeline) | `rag/`, `agents/knowledge.py` |
 | Customer Support Agent with tools | [Support tools and data](#support-tools-and-synthetic-data) | `tools/`, `agents/support.py` |
 | HTTP endpoint with a JSON body | [Run it](#run-it), [Message workflow](#message-workflow) | `api/app.py`, `api/schemas.py` |
@@ -117,7 +117,9 @@ merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.j
 merchant-assistant eval-retrieval --mode hybrid --split dev --out docs/evidence/retrieval.md   # Recall@6, MRR, nDCG@6 per mode; --split holdout_v090 once, last
 merchant-assistant eval --judge-repeat 3 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --rubric v4 --name my-run  # re-judge the calibration sample under another rubric or judge
 merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
-merchant-assistant eval-retrieval        # Recall@k of the RAG index; the default reranker adds metered model calls
+merchant-assistant eval-retrieval        # Recall@k of the RAG index; reranking is enabled by default and can be disabled with RERANK=off
+merchant-assistant eval --judge --replan off --name ablation-off   # evaluate the same cases without replanning (REPLAN=off)
+merchant-assistant eval-compare --a docs/evidence/ablation-off.json --b docs/evidence/ablation-on.json --out docs/evidence  # paired report; no model call
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
 ```
 
@@ -139,6 +141,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
 | `MAX_MODEL_CALLS`, `MAX_TOOL_CALLS`, `MAX_REQUEST_SECONDS` | `8`, `8`, `90` | Per-request limits |
 | `WEB_SEARCH_MAX_CALLS` | `1` | Searches per general question |
+| `REPLAN` | `on` | `off` runs the fixed edges of v0.7.0, without the `replan` and web-search steps (the ablation measured by `eval --replan off` and `eval-compare`) |
 | `DEMO_MODE` | `false` in code; `true` in `.env.example` and in compose | Enables `GET /traces/{id}` (token required; merchants see only their own) |
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
 | `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
@@ -166,6 +169,8 @@ flowchart LR
     R -->|knowledge_and_support| SP
     R -->|human_handoff| SP
     R -->|clarify / out_of_scope / acknowledgement| P
+    R -->|sale cancellation waiting| C[Confirmation<br/>yes or no checked in code]
+    C -->|explicit yes or no| P
     SP -->|support| S[Customer Support Agent<br/>tool calling]
     SP -->|knowledge_and_support| K
     SP -->|human_handoff| E[Escalation Agent]
@@ -191,11 +196,13 @@ The reported route remains the Router's initial plan; the trace records the path
 | --- | --- | --- |
 | Router Agent | LLM, structured output | Picks one of the 8 routes below, the language, the support topic and a safety label |
 | Knowledge Agent | LLM + RAG / web search | Answers from retrieved official passages (with citations) or one web search; gives the official procedure on combined routes |
-| Customer Support Agent | LLM + function calling | Looks up the merchant's data with 9 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation |
+| Customer Support Agent | LLM + function calling | Looks up the merchant's data with 10 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation; may ask for a sale cancellation, which waits for the merchant's yes |
 | Replanner | Rules + LLM on ambiguity | Reviews specialist evidence after each step and selects the next action within a three-hop limit |
+| Cancellation confirmation | Deterministic code | While a sale cancellation waits, an explicit yes or no (the Router's label, validated in code) confirms or declines it; any other turn follows the Router's route and counts as unanswered |
 | Escalation Agent | LLM + persistence | Writes the handover summary, opens an idempotent case with an `HO-` protocol and pauses the graph until an operator acts on the ticket ([human in the loop](#identity-and-human-in-the-loop-v070)) |
 | Personality | LLM | Turns the agents' structured contributions into one reply, in the merchant's language, without changing facts |
 | Input / output guards, case prefix | Deterministic code | Masking and injection blocking; history + healthcheck at case opening; evidence check of values |
+| Conversation memory | LLM summary + deterministic register | Rolling summary of the older turns of a long conversation and a register of the facts its tools returned ([details](#conversations-and-case-follow-up)) |
 
 **Communication mechanism.** A LangGraph `StateGraph` over a typed Pydantic state. Agents are plain functions that
 read the state and return updates (direct calls, no queue). The Router's decision is validated by code and then
@@ -213,7 +220,7 @@ tools, budget meter, limits and the trace recorder.
 | `human_handoff` | Merchant asks for a person | Prefix → Escalation |
 | `clarify` | Too vague | Personality asks one question |
 | `out_of_scope` | Unsafe, sensitive or injection | Personality declines and says what it can do |
-| `acknowledgement` | Reaction to the previous reply with no new request ("it works now", "thanks") | Personality; case state updated |
+| `acknowledgement` | Reaction to the previous reply with no new request ("it works now", "thanks"); a message that asks something (`?`) goes to `support` instead | Personality; case state updated |
 
 ## Message workflow
 
@@ -275,6 +282,13 @@ deterministic, free, and auditable by name. The four replanning scenarios passed
 (`REPLAN-ACCOUNT` 2 hops, `REPLAN-WEB` 1, `REPLAN-PROCEDURE` 0 extra, `REPLAN-TOOL-DOWN` 1 with an `HO-` protocol
 instead of an invented number) ([pre-holdout QA](docs/evidence/v080-d12-pre-holdout-r6.md)).
 
+Since v0.12.0 the gain is measurable on the whole case set: `REPLAN=off` (or `eval --replan off`) keeps the Router's
+initial plan and the fixed edges of v0.7.0, and `eval-compare --a <off> --b <on>` pairs the two reports by case and
+repetition, per criterion and per route, with a bootstrap interval of the difference, the replanning decisions
+counted by origin and each decision the model made listed. Why a graph with rule-based replanning and not a
+supervisor calling the specialists as tools is in [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md),
+with the condition that would reopen it.
+
 ## Conversations and case follow-up
 
 Since v0.2.0 a conversation carries memory and a case state.
@@ -283,6 +297,17 @@ Since v0.2.0 a conversation carries memory and a case state.
   `404 conversation_not_found`. Without an id, the server creates one and returns it.
 - **History.** The last turns (up to 10 messages / 1,200 tokens, masked) go to the Router, Customer Support and
   Personality as data, so "I already did that" is understood in context.
+- **Long conversations (v0.12.0).** Older turns are folded into a rolling summary (`summary.v1`, at most 200
+  tokens, masked) after three turns leave the window, in a model call outside the per-request call limit. Up to 12
+  uncovered messages are also passed to the reply-writing agents, with older-message text capped at 600 characters
+  per message. The summary receives each covered message in full, so its input can be larger while remaining bounded
+  to 12 messages. If reply context clips a message or older unsummarized messages exceed that bounded context, the
+  assistant says the history is incomplete and asks the merchant to repeat any missing detail. A failed summary keeps
+  the cursor and warning; stored messages are retried when a later call succeeds. A fact register preserves
+  protocols, amounts, dates, products and statuses taken only from tool results and cases, never from model text.
+  Support and Personality may quote registered facts as recorded; the summary is context, never a source of values,
+  and the output guard accepts registered values, not summarized ones. `GET /v1/conversations/{id}` returns both the
+  summary and the fact register.
 - **Case state.** `in_progress` → `awaiting_customer` after each reply → `resolved` only with evidence
   (`customer_confirmed` when the merchant says it works, or `tool_verified` when a tool shows it) → or `handoff`.
   "Thanks" alone never resolves. The state is returned in `resolution`.
@@ -345,7 +370,7 @@ English questions retrieve Portuguese content directly, so no query translation 
 
 ## Support tools and synthetic data
 
-The Support Agent has nine tools, plus two used by code at case opening.
+The Support Agent has ten tools, plus two used by code at case opening.
 
 | Tool | Arguments from the model | Returns |
 | --- | --- | --- |
@@ -357,7 +382,8 @@ The Support Agent has nine tools, plus two used by code at case opening.
 | `simulate_pricing` | `period`, `payment_type`, `installments`, `sale_date` (optional filters) | Independent pricing rule and charge evidence, compared in integer cents |
 | `get_fee_breakdown` | Same bounded sale filters | Read-only recorded charge components |
 | `get_enablement_requests` | `scheme` (optional) | Existing protocol, request/activation status and device availability |
-| `get_sale_cancellation_context` | `period` | Existing sale cancellation status; no action is executed |
+| `get_sale_cancellation_context` | `period`, `payment_type`, `installments`, `channel`, `sale_date`, `amount` (cents) | Each sale of the period (filtered by what the merchant named) with payment type, installments, channel, amount and date, its cancellation (or none) and its latest cancellation request; the cancellation records, each with its sale and the protocol of one confirmed in the conversation. The status the merchant reads is written by code from this result |
+| `request_sale_cancellation` | `sale_id` | A cancellation request for the sale, with amount and date, waiting for the merchant's explicit yes (scope `support:write`); nothing changes in the account yet |
 | `get_complaint_history` *(prefix)* | `topic` | Previous cases and attempts |
 | `run_customer_healthcheck` *(prefix)* | `topic` | Predefined checks: ok, pending, attention, unknown, unavailable |
 
@@ -377,8 +403,14 @@ The Support Agent has nine tools, plus two used by code at case opening.
   and internally consistent component/instalment totals. The four outcomes are consistent, different conditions,
   divergence and insufficient evidence. All values and rules are fictional.
 - **Read-only journeys.** A pending card-scheme request reuses its protocol; account activation and device
-  availability remain separate facts. Sale cancellation is a lookup. Contract termination goes to an attendant and
-  does not call sale tools. No financial, enablement, cancellation or contract action is executed.
+  availability remain separate facts. Contract termination goes to an attendant and does not call sale tools. No
+  financial, enablement or contract action is executed.
+- **Sale cancellation with explicit confirmation (v0.12.0).** The only write. The Support model can only ask for it:
+  the reply shows the sale, amount and date and asks for a yes. Confirming runs in code, never by function calling:
+  in the next turn, a message that is only a yes or a no, labelled by the Router and validated in code, confirms the
+  request (with a protocol) or declines it; "yes, but first…" is neither; two turns without an answer expire it.
+  Without a yes nothing changes. A repeated request or yes returns the same request and protocol; every call is
+  audited with the `support:write` scope, which only merchant tokens carry. The MCP server stays read-only.
 
 ## How the LLM tools are used
 
@@ -552,6 +584,10 @@ Recorded as ADRs (in Portuguese) in [`docs/architecture/decisions/`](docs/archit
   ([ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md)). Model evaluation is a judge over persisted
   replies, calibrated against a human sample.
 
+- **A graph with a Router plan and rule-based replanning**, not a supervisor with specialists as tools: every
+  decision has a named origin, hop and scope limits live in code, and the whole flow is testable with a scripted
+  model ([ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md)).
+
 Other choices: a deterministic case prefix (history + healthcheck) instead of letting the model decide; Personality
 as a separate, guarded step (from the challenge diagram) so tone changes cannot alter facts; answers in the
 merchant's language while code, prompts and this README are in English.
@@ -572,6 +608,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 | v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | Retrieval chosen by a rule written before measuring it on unseen questions, and the judge chosen by experiment rather than preference |
 | v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 measured with both judges; a comparison survives a restart without paying a cell twice; the operation gets metrics and alerts |
+| v0.12.0 | Bounded rolling summary and fact register; `REPLAN=off` and `eval-compare`; sale cancellation with explicit confirmation, idempotency, and audit; [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md) | Long conversations keep a bounded context and disclose when older details are missing; replanning can be compared across cases; cancellation executes only after explicit confirmation |
 | v0.11.0 | Web-page evidence for evaluation; `judge.v5` by claim; two-rater calibration; measured `hybrid@36` control and BM25 floor; combined deterministic and content ruler; reranker default enabled by the D7 rule | Answers are checked against cited web text and each individual claim; retrieval uses an independent depth control |
 
 ### Identity and human in the loop (v0.7.0)

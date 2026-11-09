@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ValidationError
 
-from merchant_assistant.api.identity import SUPPORT_READ
+from merchant_assistant.api.identity import SUPPORT_READ, SUPPORT_WRITE
 from merchant_assistant.tools import domain
 from merchant_assistant.tools.base import ToolEnv, ToolError, access_error, write_audit
 
@@ -26,6 +26,9 @@ class ToolSpec:
     fn: Callable[[ToolEnv, Any], dict]
     phase: Literal["bootstrap", "specialist"]
     scope: str
+    # The argument naming the resource a call touches, kept in the audit row of a call refused by scope (task 94):
+    # the tool does not run then, so it never notes the resource itself.
+    resource_arg: str | None = None
 
 
 TOOLS: dict[str, ToolSpec] = {
@@ -102,12 +105,55 @@ TOOLS: dict[str, ToolSpec] = {
         ),
         ToolSpec(
             "get_sale_cancellation_context",
-            "Read a merchant's existing sale cancellation status. This is a lookup and never executes cancellation "
-            "or contract termination.",
+            "Read the merchant's sales of a period, each with its payment type, installments, channel, amount and "
+            "date, its cancellation (null when it has none) and its latest cancellation request. Filter by the "
+            "payment type, installments, channel or date the merchant named. This is a lookup and never executes "
+            "cancellation or contract termination.",
             domain.CancellationArgs,
             domain.get_sale_cancellation_context,
             "specialist",
             SUPPORT_READ,
+        ),
+        ToolSpec(
+            "request_sale_cancellation",
+            "Ask to cancel one of the merchant's sales (sale_id from get_sale_cancellation_context). Nothing is "
+            "cancelled: it records a request that waits for the merchant's explicit yes in the next message and "
+            "returns the sale, amount and date to show. Never for contract termination.",
+            domain.SaleCancellationArgs,
+            domain.request_sale_cancellation,
+            "specialist",
+            SUPPORT_WRITE,
+            "sale_id",
+        ),
+        # Run by code only (task 94): an explicit yes or no to a pending request, or a turn without an answer;
+        # never offered to a model.
+        ToolSpec(
+            "confirm_sale_cancellation",
+            "Execute a pending sale cancellation request after the merchant's explicit yes.",
+            domain.CancellationRequestArgs,
+            domain.confirm_sale_cancellation,
+            "bootstrap",
+            SUPPORT_WRITE,
+            "request_id",
+        ),
+        ToolSpec(
+            "decline_sale_cancellation",
+            "Close a pending sale cancellation request after the merchant's explicit no.",
+            domain.CancellationRequestArgs,
+            domain.decline_sale_cancellation,
+            "bootstrap",
+            SUPPORT_WRITE,
+            "request_id",
+        ),
+        ToolSpec(
+            "count_unanswered_cancellation_turn",
+            "Count a turn that neither confirmed nor declined a pending sale cancellation request; the second one "
+            "expires it.",
+            domain.CancellationRequestArgs,
+            domain.count_unanswered_turn,
+            "bootstrap",
+            SUPPORT_WRITE,
+            "request_id",
         ),
         ToolSpec(
             "get_complaint_history",
@@ -139,8 +185,11 @@ AGENT_TOOLS: dict[str, tuple[str, ...]] = {
         "get_fee_breakdown",
         "get_enablement_requests",
         "get_sale_cancellation_context",
+        "request_sale_cancellation",
     ),
 }
+# The MCP server stays read-only (decision 0010): a cancellation request can only be confirmed in a conversation.
+AGENT_TOOLS["mcp"] = tuple(n for n in AGENT_TOOLS["customer_support"] if TOOLS[n].scope == SUPPORT_READ)
 
 
 def _strip_titles(schema: Any) -> Any:
@@ -207,6 +256,8 @@ def execute(name: str, arguments: dict | str | None, env: ToolEnv, *, agent: str
             raise ToolError("INVALID_ARGUMENT", f"Unknown tool: {name}")
         spec = TOOLS[name]
         if denied := access_error(env.customer, spec.scope):
+            attempted = raw.get(spec.resource_arg) if spec.resource_arg else None
+            env.resource_id = attempted[:64] if isinstance(attempted, str) else None  # the resource it tried
             raise denied
         if agent is not None and name not in AGENT_TOOLS.get(agent, ()):
             raise ToolError("INVALID_ARGUMENT", f"Tool {name} is not allowed for {agent}")

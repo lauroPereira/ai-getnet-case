@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     web_search_max_calls: int = 1
     # v0.8.0 replanning (task 69, spec D6): decisions that send the flow away from the Router's initial plan
     max_plan_hops: int = Field(default=3, ge=0, le=6)
+    # v0.12.0 (task 93, D3): `off` is the ablation of the replanning: the fixed edges of v0.7.0, without `replan` and
+    # `web` (the Router's initial plan; knowledge -> support on the combined route; support -> escalation when it asks
+    # for a human; the request limits still hold). `eval --replan` overrides it.
+    replan: Literal["on", "off"] = "on"
 
     # v0.6.0 demonstration controls
     demo_session_message_limit: int = Field(default=20, ge=1, le=1000)

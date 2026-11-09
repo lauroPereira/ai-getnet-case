@@ -77,8 +77,9 @@ ToolCaller = Callable[[str, dict], str]
 
 @dataclass
 class CallSpec:
-    """What an agent asks of the model. `context` carries structured data for scripted tests; real providers
-    only see `instructions` and `input`."""
+    """What an agent asks of the model. `context` carries structured data for scripted tests; real providers see
+    `instructions` and `input`, except the JEV adapter, which also reads `context["pending_cancellation"]` (server
+    data, never the merchant's text) to decide whether to ask the `confirmation` question (task 94)."""
 
     agent: str
     instructions: str

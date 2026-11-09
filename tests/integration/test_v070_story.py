@@ -168,7 +168,7 @@ def test_story_moments_1_to_15_and_17(offline, settings, tmp_path):
         issuer=settings.jwt_issuer,
     )
     assert claims["sub"] == "merchant:cliente1988" and claims["customer_id"] == "cliente1988"
-    assert set(claims["scope"].split()) == {"support:read", "handoff:create", "conversation:read"}
+    assert set(claims["scope"].split()) == {"support:read", "handoff:create", "conversation:read", "support:write"}
     assert issued["token_type"] == "Bearer" and 0 < issued["expires_in"] <= 3600
 
     # 3. Tampered token, then a revoked one: 401 for both; a new login works.
@@ -365,7 +365,7 @@ def test_story_moments_1_to_15_and_17(offline, settings, tmp_path):
     audited = db_rows(settings, "SELECT COUNT(*) AS n FROM audit_events WHERE tool NOT LIKE 'handoff%'")[0]["n"]
     assert traced > 1 and audited == traced
     versions = client.get("/ready").json()["versions"]
-    assert versions["schema"] == 13 and versions["app"] == "0.11.0"
+    assert versions["schema"] == 14 and versions["app"] == "0.12.0"
 
 
 # --- moment 16: restart between handing off and acting (two processes) ------------------------------------------------

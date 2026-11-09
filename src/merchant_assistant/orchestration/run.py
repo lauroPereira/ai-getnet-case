@@ -17,6 +17,8 @@ from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import ToolEnv
 from merchant_assistant.tools.registry import ToolOutcome, execute, record
 
+OWN_ALLOWANCE = {"summary": 1}  # task 92 (review P2-1): calls outside `max_model_calls`, still in the cost limits
+
 
 class LimitExceeded(Exception):
     def __init__(self, kind: str) -> None:
@@ -46,7 +48,8 @@ class RunContext:
     agent_llms: dict[str, LLM] = field(default_factory=dict)
     router_override: RouterDecision | None = None
     channel: str = "in_process"  # where the merchant talks: api (POST /messages), web (/v1/messages), in_process
-    model_calls: int = 0
+    model_calls: int = 0  # every model call of the request, the ones under their own allowance included
+    allowance_calls: dict[str, int] = field(default_factory=dict)  # calls made under `OWN_ALLOWANCE`, by agent
     tool_calls: int = 0
     cost_usd: float = 0.0
     outcomes: list[ToolOutcome] = field(default_factory=list)
@@ -68,6 +71,11 @@ class RunContext:
     def remaining_seconds(self) -> float:
         return self.settings.max_request_seconds - (time.perf_counter() - self.started)
 
+    @property
+    def limited_calls(self) -> int:
+        """The calls that count in `max_model_calls`: all but those made under their own allowance (the summary)."""
+        return self.model_calls - sum(self.allowance_calls.values())
+
     # --- Meter protocol -------------------------------------------------------------------------------------------
 
     def reserve(
@@ -81,13 +89,19 @@ class RunContext:
         effective_parameters: dict[str, int] | None = None,
     ) -> Reservation:
         self.check_time()
-        if self.model_calls >= self.settings.max_model_calls:
+        allowance = OWN_ALLOWANCE.get(agent)
+        if allowance is not None:
+            if self.allowance_calls.get(agent, 0) >= allowance:
+                raise LimitExceeded(f"{agent}_calls")
+        elif self.limited_calls >= self.settings.max_model_calls:
             raise LimitExceeded("model_calls")
         amount = pricing.estimate(model, est_input_tokens, max_output_tokens, web_search_calls)
         if self.cost_usd + amount > self.settings.max_request_cost_usd:
             raise BudgetExceeded("request", amount, self.settings.max_request_cost_usd - self.cost_usd)
         ledger_id = self.budget.reserve(request_id=self.request_id, agent=agent, model=model, amount=amount)
         self.model_calls += 1
+        if allowance is not None:
+            self.allowance_calls[agent] = self.allowance_calls.get(agent, 0) + 1
         if effective_parameters:
             self.effective_parameters_by_agent[agent] = dict(effective_parameters)
         return Reservation(ledger_id, agent, model, amount)

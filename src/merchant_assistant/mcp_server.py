@@ -19,7 +19,7 @@ from merchant_assistant.api.identity import Identity, InvalidToken, Principal
 from merchant_assistant.tools.base import ToolEnv
 from merchant_assistant.tools.registry import ToolOutcome, execute, model_tool_schemas, record
 
-AGENT = "customer_support"
+TOOLSET = "mcp"  # the read tools of the Support agent (`registry.AGENT_TOOLS["mcp"]`, task 94)
 INSTRUCTIONS = (
     "Read-only tools over the synthetic Getnet demo systems for one merchant, fixed when the server starts. "
     "Errors come back as tool results with is_error=true and a code such as FORBIDDEN_RESOURCE or NOT_FOUND."
@@ -32,7 +32,7 @@ def build_server(env_factory: Callable[[], ToolEnv], authorize: Callable[[object
     as `INVALID_TOKEN` without running the tool."""
     tools = [
         types.Tool(name=s["name"], description=s["description"], input_schema=s["parameters"])
-        for s in model_tool_schemas(AGENT)
+        for s in model_tool_schemas(TOOLSET)
     ]
 
     async def on_list_tools(ctx, params) -> types.ListToolsResult:
@@ -54,7 +54,7 @@ def build_server(env_factory: Callable[[], ToolEnv], authorize: Callable[[object
                 env.resource_id = None
                 record(env, outcome)
             else:
-                outcome = execute(params.name, dict(params.arguments or {}), env, agent=AGENT)
+                outcome = execute(params.name, dict(params.arguments or {}), env, agent=TOOLSET)
         finally:
             env.conn.close()
         payload = outcome.data if outcome.ok else {"error": outcome.error}

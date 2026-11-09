@@ -416,6 +416,38 @@
    "must_include_amounts": [],
    "must_include_any": [],
    "expect_sources": true
+  },
+  {
+   "id": "SC-CANCEL-CONFIRM",
+   "title": "Cancelamento de venda com confirmação explícita (3 turnos: pedido, sim, consulta)",
+   "journey": "cancellation_confirm",
+   "source_case": null,
+   "conversation_case": "V0120-CANCEL-CONFIRM",
+   "message": "Quero cancelar a venda de débito de ontem.",
+   "follow_up_messages": [
+    "Sim",
+    "Qual o status do cancelamento da venda de débito de ontem?"
+   ],
+   "language": "pt",
+   "accepted_routes": [
+    "support"
+   ],
+   "expected_status": "answered",
+   "expected_tools": [
+    "request_sale_cancellation"
+   ],
+   "must_include_amounts": [
+    15000
+   ],
+   "must_include_any": [],
+   "expect_sources": true,
+   "must_not_include": [
+    "venda foi cancelada",
+    "cancelei",
+    "cancelamento foi realizado",
+    "cancelamento confirmado"
+   ],
+   "precondition": "a merchant session (scope support:write); the next two messages go in the same conversation"
   }
  ]
 }

@@ -565,15 +565,17 @@ def _eval_ruler(args, judged: bool) -> str:
     return "literal" if getattr(args, "rubric", None) == LITERAL_RULER or not judged else "combined"
 
 
-def _report_name(args, answers_split: str | None = None) -> str:
+def _report_name(args, answers_split: str | None = None, replan: str | None = None) -> str:
     """The report name: `--name`, or a default that never overwrites another kind of report (a holdout run is not the
     development run, a judge-only run is not the run it grades, and the judge's report on the holdout answers is not
-    the one on the development answers: `answers_split` is the split the recorded answers belong to)."""
+    the one on the development answers: `answers_split` is the split the recorded answers belong to; a run without
+    replanning is not the run with it: `replan` is the setting in force, `REPLAN` or `--replan`)."""
     if getattr(args, "name", None):
         return args.name
     if getattr(args, "judge_repeat", None) is not None:
         return "avaliacao-juiz" + ("" if answers_split in (None, "all") else "-" + answers_split.replace("_", "-"))
-    return "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
+    name = "avaliacao-holdout-v080" if args.split == "holdout_v080" else "avaliacao"
+    return name + ("-replan-off" if (replan or getattr(args, "replan", None)) == "off" else "")  # task 93
 
 
 def _store_judgements(db_path, judge, rows, persist, run: str) -> None:
@@ -612,7 +614,11 @@ def cmd_eval(settings: Settings, args) -> int:
     ):
         raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
     if getattr(args, "judge_repeat", None) is not None:
+        if getattr(args, "replan", None):
+            print("eval: --replan is ignored with --judge-repeat: the agent does not run.", file=sys.stderr)
         return cmd_eval_rejudge(settings, args)
+    # task 93 (D3): the ablation of the replanning; the configuration of the campaign records it
+    settings = settings.model_copy(update={"replan": getattr(args, "replan", None) or settings.replan})
     if getattr(args, "claims_from", None):
         raise SystemExit("eval: --claims-from goes with --judge-repeat and --rubric v5 (it grades recorded answers).")
     if getattr(args, "only_route", None):
@@ -695,6 +701,7 @@ def cmd_eval(settings: Settings, args) -> int:
         "repeat": repeat,
         "limit": case_limit,
         "include_replan": bool(getattr(args, "include_replan", False)),
+        "replan": settings.replan,
         "web_evidence": "on" if pages is not None else "off",
         "ruler": ruler,
         "campaign": getattr(args, "campaign", None),
@@ -703,7 +710,7 @@ def cmd_eval(settings: Settings, args) -> int:
         else None,
         "cases": len(cases),
     }
-    name = _report_name(args)
+    name = _report_name(args, replan=settings.replan)
     md, js = write_report(rows, summary, Path(args.out), name, config)
     _append_web_evidence(md, summary)
     print(json.dumps(summary["overall"], indent=1))
@@ -738,6 +745,26 @@ def _append_web_evidence(md: Path, summary: dict) -> None:
         line = evidence.web_note_line(summary["web_evidence"])
         section = f"\n## Evidência da busca web\n\n{line}\n"
         md.write_text(md.read_text(encoding="utf-8") + section, encoding="utf-8")
+
+
+def cmd_eval_compare(settings: Settings, args) -> int:
+    """`eval-compare --a <report> --b <report>` (task 93, D3): the two reports paired by case and repetition, by
+    criterion and route, with the bootstrap interval of the difference and the decisions of the `replan` step by
+    origin. Reads the two JSON reports only: no model call, no settings used."""
+    from merchant_assistant.evaluation.compare import write
+
+    md, js, data = write(Path(args.a), Path(args.b), Path(args.out), args.name, seed=args.seed)
+    passed = data["by_criterion"].get("passed")
+    if passed:
+        print(f"pairs: {data['pairs']}; passed A {passed['a']:.3f}, B {passed['b']:.3f}, B - A {passed['diff']:+.3f}")
+    else:
+        print(f"pairs: {data['pairs']}")
+    unpaired = data["unpaired"]
+    if unpaired["a_only"] or unpaired["b_only"]:
+        print(f"unpaired: {len(unpaired['a_only'])} only in A, {len(unpaired['b_only'])} only in B")
+    print(f"report: {md}")
+    print(f"results: {js}")
+    return 0
 
 
 def cmd_eval_rejudge(settings: Settings, args) -> int:
@@ -1824,6 +1851,25 @@ def main(argv: list[str] | None = None) -> int:
         "the split of the answers appended, for example avaliacao-juiz-holdout-v080).",
     )
     p_evalx.add_argument("--no-conversations", action="store_true", help="Skip the multi-turn scenarios.")
+    p_evalx.add_argument(
+        "--replan",
+        choices=["on", "off"],
+        default=None,
+        help="Default: REPLAN (on). off is the ablation of the replanning: the fixed edges of v0.7.0, without the "
+        "replan and web steps (the Router's initial plan; knowledge then support on the combined route; escalation "
+        "when the Support asks for a human; the request limits hold). The configuration of the report records it, "
+        "and the default name gets -replan-off.",
+    )
+    p_compare = sub.add_parser(
+        "eval-compare",
+        help="Pair two eval reports by case and repetition, by criterion and route, with a bootstrap interval of the "
+        "difference and the replanning decisions by origin (no model call).",
+    )
+    p_compare.add_argument("--a", required=True, help="Report JSON of side A (for the ablation: REPLAN=off).")
+    p_compare.add_argument("--b", required=True, help="Report JSON of side B (for the ablation: REPLAN=on).")
+    p_compare.add_argument("--out", default=str(PROJECT_ROOT / "docs" / "evidence"))
+    p_compare.add_argument("--name", default="comparacao-replan", help="Report name (.md and .json).")
+    p_compare.add_argument("--seed", type=int, default=93, help="Seed of the bootstrap (default 93).")
     p_estimate = sub.add_parser(
         "eval-estimate", help="Project the v0.8.0 campaign cost from a five-case measured eval report (no model call)."
     )
@@ -2007,6 +2053,7 @@ def main(argv: list[str] | None = None) -> int:
         "smoke": cmd_smoke,
         "eval": cmd_eval,
         "eval-estimate": cmd_eval_estimate,
+        "eval-compare": cmd_eval_compare,
         "eval-calibrate": cmd_eval_calibrate,
         "migrate": cmd_migrate,
         "mcp": cmd_mcp,

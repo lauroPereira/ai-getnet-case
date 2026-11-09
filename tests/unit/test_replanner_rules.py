@@ -124,7 +124,7 @@ def test_allowed_steps_exclude_the_specialists_that_already_ran():
 
 def ctx(**settings):
     return SimpleNamespace(
-        settings=Settings(_env_file=None, **settings), model_calls=2, cost_usd=0.0, remaining_seconds=lambda: 10.0
+        settings=Settings(_env_file=None, **settings), limited_calls=2, cost_usd=0.0, remaining_seconds=lambda: 10.0
     )
 
 

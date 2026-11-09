@@ -16,9 +16,11 @@ DOWN_12 = "down 0012_comparison_interrupted"
 UP_12 = "up 0012_comparison_interrupted"
 DOWN_13 = "down 0013_evaluation_claims"
 UP_13 = "up 0013_evaluation_claims"
-DOWN_TO_9 = [DOWN_13, DOWN_12, "down 0011_evaluation_rubric", "down 0010_webhook_outbox"]
+DOWN_14 = "down 0014_memory_and_writes"
+UP_14 = "up 0014_memory_and_writes"
+DOWN_TO_9 = [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric", "down 0010_webhook_outbox"]
 DOWN_TO_8 = [*DOWN_TO_9, "down 0009_identity_hitl"]
-UP_FROM_9 = ["up 0010_webhook_outbox", "up 0011_evaluation_rubric", UP_12, UP_13]
+UP_FROM_9 = ["up 0010_webhook_outbox", "up 0011_evaluation_rubric", UP_12, UP_13, UP_14]
 UP_FROM_8 = ["up 0009_identity_hitl", *UP_FROM_9]
 
 
@@ -83,6 +85,7 @@ def test_down_and_up_keep_core_data(tmp_path):
     conn = connect(tmp_path / "db.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     assert migrate(conn, 1) == [
+        DOWN_14,
         DOWN_13,
         DOWN_12,
         "down 0011_evaluation_rubric",
@@ -111,6 +114,7 @@ def test_down_and_up_keep_core_data(tmp_path):
         "up 0011_evaluation_rubric",
         UP_12,
         UP_13,
+        UP_14,
     ]
     assert current_version(conn) == LATEST
 
@@ -145,6 +149,7 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT sale_id, gross_minor FROM sales ORDER BY sale_id").fetchall()
     assert migrate(conn, 4) == [
+        DOWN_14,
         DOWN_13,
         DOWN_12,
         "down 0011_evaluation_rubric",
@@ -441,7 +446,7 @@ def v3_result(repetition, claim):
 
 def test_0011_round_trip_keeps_every_evaluation_and_rebuilds_the_columns_from_result(tmp_path):
     conn = connect(tmp_path / "evaluations.sqlite3")
-    assert migrate(conn, 10) == [DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
+    assert migrate(conn, 10) == [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
     assert not {"scores", "repetition", "unsupported_claim"} & set(columns(conn, "run_evaluations"))
     add_evaluation(conn, "eval_v2", result='{"answers_question":4,"clarity_and_tone":4,"honesty":5,"comment":"ok"}')
     add_evaluation(conn, "eval_v3_a", rubric_version="3", result=v3_result(2, False))
@@ -462,19 +467,19 @@ def test_0011_round_trip_keeps_every_evaluation_and_rebuilds_the_columns_from_re
         "eval_v3_failed": (4, None, None),  # a failed judgement has no scores or verdict, only its repetition
     }
     # the upgrade rebuilds the columns from `result`
-    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13]
+    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13, UP_14]
     assert state() == expected
 
     before = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     # nothing is lost: result keeps the whole judgement
-    assert migrate(conn, 10) == [DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
+    assert migrate(conn, 10) == [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
     assert not {"scores", "repetition", "unsupported_claim"} & set(columns(conn, "run_evaluations"))
     rows = {r["evaluation_id"]: r for r in conn.execute("SELECT * FROM run_evaluations")}
     assert set(rows) == set(expected) and rows["eval_v3_b"]["result"] == v3_result(3, True)
     assert rows["eval_v3_b"]["rubric_version"] == "3" and rows["eval_v3_b"]["evaluator"].count("deepseek") == 2
     assert "calibrations" not in tables(conn)
 
-    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13] and current_version(conn) == LATEST
+    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13, UP_14] and current_version(conn) == LATEST
     assert state() == expected  # the repetition and the verdict came back with the second upgrade
     after = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     assert {k: v | {"scores": None} for k, v in after.items()} == {k: v | {"scores": None} for k, v in before.items()}
@@ -508,7 +513,7 @@ def test_rollback_of_0011_is_refused_while_human_scores_exist_and_changes_nothin
     assert conn.execute("SELECT repetition, unsupported_claim FROM run_evaluations").fetchone()[:] == (3, 1)
 
     conn.execute("DELETE FROM calibrations")
-    assert migrate(conn, 10) == [DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
+    assert migrate(conn, 10) == [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
     assert current_version(conn) == 10
 
 
@@ -564,7 +569,7 @@ def test_0012_round_trip_turns_interrupted_into_failed_and_keeps_every_row(tmp_p
         add_comparison(conn, f"pcmp_{state}", state)
     before = comparison_rows(conn)
 
-    assert migrate(conn, 11) == [DOWN_13, DOWN_12]
+    assert migrate(conn, 11) == [DOWN_14, DOWN_13, DOWN_12]
     after = comparison_rows(conn)
     assert after["pcmp_interrupted"]["state"] == "failed"  # the 0011 schema has no `interrupted`
     assert {k: v | {"state": None} for k, v in after.items()} == {k: v | {"state": None} for k, v in before.items()}
@@ -575,7 +580,7 @@ def test_0012_round_trip_turns_interrupted_into_failed_and_keeps_every_row(tmp_p
         add_comparison(conn, "pcmp_again", "interrupted")
     assert conn.execute("PRAGMA index_list(comparisons)").fetchall()
 
-    assert migrate(conn) == [UP_12, UP_13] and current_version(conn) == LATEST == 13
+    assert migrate(conn) == [UP_12, UP_13, UP_14] and current_version(conn) == LATEST == 14
     assert comparison_rows(conn) == after
     add_comparison(conn, "pcmp_again", "interrupted")
     assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
@@ -599,7 +604,7 @@ V5_CLAIMS = {
 
 def test_0013_round_trip_keeps_the_claims_in_result_and_rebuilds_the_column(tmp_path):
     conn = connect(tmp_path / "claims.sqlite3")
-    assert migrate(conn, 12) == [DOWN_13]
+    assert migrate(conn, 12) == [DOWN_14, DOWN_13]
     assert "claims" not in columns(conn, "run_evaluations")
     v5_result = json.dumps({"repetition": 1, "groundedness": 2, "unsupported_claim": True, "claims": V5_CLAIMS})
     add_evaluation(conn, "eval_v5", rubric_version="5", result=v5_result)
@@ -612,18 +617,147 @@ def test_0013_round_trip_keeps_the_claims_in_result_and_rebuilds_the_column(tmp_
         return {r["evaluation_id"]: r["claims"] and json.loads(r["claims"]) for r in rows}
 
     expected = {"eval_odd": None, "eval_v3": None, "eval_v5": V5_CLAIMS, "eval_v5_failed": None}
-    assert migrate(conn) == [UP_13] and current_version(conn) == LATEST == 13
+    assert migrate(conn) == [UP_13, UP_14] and current_version(conn) == LATEST == 14
     assert claims() == expected  # the upgrade fills the column from `result`
 
     before = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
-    assert migrate(conn, 12) == [DOWN_13]
+    assert migrate(conn, 12) == [DOWN_14, DOWN_13]
     assert "claims" not in columns(conn, "run_evaluations")
     after_down = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     assert after_down == {k: {c: v for c, v in row.items() if c != "claims"} for k, row in before.items()}
     assert json.loads(after_down["eval_v5"]["result"])["claims"] == V5_CLAIMS  # nothing is lost
 
-    assert migrate(conn) == [UP_13] and claims() == expected
+    assert migrate(conn) == [UP_13, UP_14] and claims() == expected
     assert {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")} == before
     with pytest.raises(sqlite3.IntegrityError):  # the column holds JSON only
         conn.execute("UPDATE run_evaluations SET claims='not json' WHERE evaluation_id='eval_v3'")
     assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+# --- 0014: rolling summary and fact register of a conversation (task 92) ---------------------------------------------
+
+
+def test_0014_round_trip_keeps_conversations_and_messages_and_drops_the_memory(tmp_path):
+    conn = connect(tmp_path / "memory.sqlite3")
+    conn.execute(
+        "INSERT INTO conversations (conversation_id, customer_id, state, technical_cycles, created_at, updated_at, "
+        "summary, summary_until_message_id) VALUES ('conv_m','cliente1988','in_progress',0,'2026-10-26','2026-10-26',"
+        "'Lojista perguntou da habilitação Visa.', 2)"
+    )
+    conn.execute(
+        "INSERT INTO messages (conversation_id, request_id, role, text, tokens, created_at) "
+        "VALUES ('conv_m','req_1','merchant','Olá',1,'2026-10-26')"
+    )
+    conn.execute(
+        "INSERT INTO conversation_facts (conversation_id, kind, value, source_tool, source_message_id, created_at) "
+        "VALUES ('conv_m','protocol','SIM-BND-1988-001','get_enablement_requests',1,'2026-10-26')"
+    )
+    with pytest.raises(sqlite3.IntegrityError):  # closed set of kinds
+        conn.execute(
+            "INSERT INTO conversation_facts (conversation_id, kind, value, source_tool, created_at) "
+            "VALUES ('conv_m','opinion','x','model','2026-10-26')"
+        )
+    conn.execute(  # one row per (conversation, kind, value): a repeated value keeps its first origin
+        "INSERT OR IGNORE INTO conversation_facts (conversation_id, kind, value, source_tool, source_message_id, "
+        "created_at) VALUES ('conv_m','protocol','SIM-BND-1988-001','handoff',9,'2026-10-27')"
+    )
+    assert conn.execute("SELECT COUNT(*), MIN(source_tool) FROM conversation_facts").fetchone()[:] == (
+        1,
+        "get_enablement_requests",
+    )
+    conversation = [tuple(r) for r in conn.execute("SELECT conversation_id, state, created_at FROM conversations")]
+    messages = [tuple(r) for r in conn.execute("SELECT * FROM messages")]
+
+    assert migrate(conn, 13) == [DOWN_14]
+    assert "conversation_facts" not in tables(conn)
+    assert not {"summary", "summary_until_message_id"} & set(columns(conn, "conversations"))
+    assert [tuple(r) for r in conn.execute("SELECT conversation_id, state, created_at FROM conversations")] == (
+        conversation
+    )
+    assert [tuple(r) for r in conn.execute("SELECT * FROM messages")] == messages
+
+    assert migrate(conn) == [UP_14] and current_version(conn) == LATEST == 14
+    assert {"summary", "summary_until_message_id"} <= set(columns(conn, "conversations"))
+    assert conn.execute("SELECT summary, summary_until_message_id FROM conversations").fetchone()[:] == (None, None)
+    assert conn.execute("SELECT COUNT(*) FROM conversation_facts").fetchone()[0] == 0
+    assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+# --- 0014: sale cancellation requests (task 94) -------------------------------------------------------------------
+
+
+def add_request(
+    conn, request_id, state, *, sale_id="sale_1988_0001", protocol=None, confirmed_at=None, amount=15000, turns=0
+):
+    conn.execute(
+        "INSERT INTO sale_cancellation_requests (request_id, customer_id, sale_id, amount, sale_date, state, protocol, "
+        "created_at, confirmed_at, idempotency_key, conversation_id, turns_waited, updated_at) VALUES "
+        "(?,'cliente1988',?,?,'2026-10-25',?,?,'2026-10-26',?,?,'conv_c',?,'2026-10-26')",
+        (request_id, sale_id, amount, state, protocol, confirmed_at, f"cancel_sale:cliente1988:{sale_id}", turns),
+    )
+
+
+def assert_request_checks(conn):
+    """Protocol and confirmation time only on a confirmed request, a positive amount, never a negative count."""
+    other = {"sale_id": "sale_1988_0003"}
+    for state in ("pending_confirmation", "declined", "expired"):
+        with pytest.raises(sqlite3.IntegrityError):  # a protocol on a request not confirmed (round 1 let it in)
+            add_request(conn, "scr_p", state, protocol="CAN-20261026-BBBBBB", **other)
+        with pytest.raises(sqlite3.IntegrityError):  # a confirmation time on a request that was not confirmed
+            add_request(conn, "scr_t", state, confirmed_at="2026-10-26", **other)
+        with pytest.raises(sqlite3.IntegrityError):  # both
+            add_request(conn, "scr_b", state, protocol="CAN-20261026-BBBBBB", confirmed_at="2026-10-26", **other)
+    with pytest.raises(sqlite3.IntegrityError):  # confirmed with only one of the two
+        add_request(conn, "scr_c", "confirmed", protocol="CAN-20261026-CCCCCC", **other)
+    for amount in (0, -15000):
+        with pytest.raises(sqlite3.IntegrityError):
+            add_request(conn, "scr_a", "expired", amount=amount, **other)
+    with pytest.raises(sqlite3.IntegrityError):
+        add_request(conn, "scr_n", "expired", turns=-1, **other)
+    add_request(conn, "scr_ok2", "confirmed", protocol="CAN-20261026-DDDDDD", confirmed_at="2026-10-26", **other)
+    conn.execute("DELETE FROM sale_cancellation_requests WHERE request_id = 'scr_ok2'")
+    with pytest.raises(sqlite3.IntegrityError):  # an update cannot get round them either
+        conn.execute("UPDATE sale_cancellation_requests SET turns_waited = -1 WHERE state = 'pending_confirmation'")
+
+
+def test_0014_cancellation_requests_round_trip_and_constraints(tmp_path):
+    conn = connect(tmp_path / "cancel.sqlite3")
+    seed(conn, FixedClock("2026-10-26T10:00:00"))
+    add_request(conn, "scr_1", "pending_confirmation")
+    with pytest.raises(sqlite3.IntegrityError):  # one active request per merchant and sale
+        add_request(conn, "scr_2", "pending_confirmation")
+    add_request(conn, "scr_3", "expired")  # closed requests do not count
+    with pytest.raises(sqlite3.IntegrityError):  # a confirmed request always has its protocol and time
+        add_request(conn, "scr_4", "confirmed", sale_id="sale_1988_0003")
+    with pytest.raises(sqlite3.IntegrityError):  # closed set of states
+        add_request(conn, "scr_5", "cancelled", sale_id="sale_1988_0003")
+    with pytest.raises(sqlite3.IntegrityError):  # the sale must exist
+        add_request(conn, "scr_6", "pending_confirmation", sale_id="sale_unknown")
+    assert_request_checks(conn)
+    sales = [tuple(r) for r in conn.execute("SELECT * FROM sales ORDER BY sale_id")]
+    cancellations = [tuple(r) for r in conn.execute("SELECT * FROM sale_cancellations ORDER BY transaction_id")]
+
+    assert migrate(conn, 13) == [DOWN_14]  # nothing confirmed: the rollback goes through
+    assert not {"sale_cancellation_requests", "conversation_facts"} & tables(conn)
+    assert [tuple(r) for r in conn.execute("SELECT * FROM sales ORDER BY sale_id")] == sales
+    assert [tuple(r) for r in conn.execute("SELECT * FROM sale_cancellations ORDER BY transaction_id")] == cancellations
+
+    assert migrate(conn) == [UP_14] and current_version(conn) == LATEST == 14
+    assert conn.execute("SELECT COUNT(*) FROM sale_cancellation_requests").fetchone()[0] == 0
+    add_request(conn, "scr_7", "pending_confirmation")
+    assert_request_checks(conn)  # the same constraints after down and up
+    assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_rollback_of_0014_is_refused_while_a_confirmed_request_exists_and_the_seed_clears_them(tmp_path):
+    conn = connect(tmp_path / "cancel_guard.sqlite3")
+    seed(conn, FixedClock("2026-10-26T10:00:00"))
+    add_request(conn, "scr_ok", "confirmed", protocol="CAN-20261026-AAAAAA", confirmed_at="2026-10-26")
+    with pytest.raises(RollbackRefused, match="confirmed cancellation request"):
+        migrate(conn, 13)
+    assert current_version(conn) == 14 and "sale_cancellation_requests" in tables(conn)
+    seed(conn, FixedClock("2026-10-26T10:00:00"))  # synthetic data: reseeding starts the requests over
+    assert conn.execute("SELECT COUNT(*) FROM sale_cancellation_requests").fetchone()[0] == 0
+    assert migrate(conn, 13) == [DOWN_14]

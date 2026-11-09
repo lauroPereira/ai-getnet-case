@@ -37,6 +37,7 @@ from merchant_assistant.config import Settings
 Role = Literal["merchant", "operator", "service", "demo", "admin"]
 
 SUPPORT_READ = "support:read"
+SUPPORT_WRITE = "support:write"  # v0.12.0 (task 94): ask for a sale cancellation, executed only after an explicit yes
 HANDOFF_CREATE = "handoff:create"
 CONVERSATION_READ = "conversation:read"
 HANDOFF_OPERATE = "handoff:operate"
@@ -44,9 +45,10 @@ HANDOFF_INTEGRATE = "handoff:integrate"
 KB_ADMIN = "kb:admin"
 PROFILES_ADMIN = "profiles:admin"
 
-# Single role -> scopes table (spec v0.7.0, "Contrato entre os times / Identidade").
+# Single role -> scopes table (spec v0.7.0, "Contrato entre os times / Identidade"). Only the merchant itself may write
+# to its account (`support:write`, spec v0.12.0 D5); the shared demo session, operators and services may not.
 ROLE_SCOPES: dict[str, tuple[str, ...]] = {
-    "merchant": (SUPPORT_READ, HANDOFF_CREATE, CONVERSATION_READ),
+    "merchant": (SUPPORT_READ, HANDOFF_CREATE, CONVERSATION_READ, SUPPORT_WRITE),
     "demo": (SUPPORT_READ, HANDOFF_CREATE, CONVERSATION_READ),
     "operator": (HANDOFF_OPERATE, SUPPORT_READ),
     "service": (HANDOFF_INTEGRATE,),

@@ -63,6 +63,11 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
 
     conn.execute("BEGIN")
     try:
+        # Task 94: the cancellation requests reference the seeded sales, and the account state they changed
+        # (`sale_cancellations`) is reseeded, so they start over with it (the table exists from schema 14 on).
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "sale_cancellation_requests" in tables:
+            conn.execute("DELETE FROM sale_cancellation_requests")
         for table in SYNTHETIC_TABLES:
             conn.execute(f"DELETE FROM {table}")  # noqa: S608 - fixed table names
 
