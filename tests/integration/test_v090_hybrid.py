@@ -19,7 +19,7 @@ def test_knowledge_answers_in_both_modes_with_the_configured_one(settings, mode)
 
     from merchant_assistant.api.app import create_app
 
-    configured = settings.model_copy(update={"retrieval_mode": mode})
+    configured = settings.model_copy(update={"retrieval_mode": mode, "rerank": "on"})
     orchestrator, _ = offline_orchestrator(configured)
     client = TestClient(create_app(orchestrator, configured))
     response = client.post(
@@ -34,6 +34,8 @@ def test_knowledge_answers_in_both_modes_with_the_configured_one(settings, mode)
     assert active.mode == mode  # the per-request index keeps RETRIEVAL_MODE
     hits = knowledge_hits(orchestrator, body["request_id"])
     assert hits and any("maquininhas" in hit["doc"] for hit in hits)
+    knowledge = next(s for s in orchestrator.trace(body["request_id"])["steps"] if s["step"] == "knowledge")
+    assert ("rerank" in knowledge["detail"]) is (mode == "hybrid")
 
 
 # --- round 2 (review P2-3: M10 and M12) -------------------------------------------------------------------------

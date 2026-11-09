@@ -4,7 +4,8 @@ ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN python -m venv /venv && /venv/bin/pip install .
+# the `ingest` extra brings the HTML extractor (`rag.collect.extract_text`) the web evidence of `eval` uses (task 91)
+RUN python -m venv /venv && /venv/bin/pip install ".[ingest]"
 
 FROM python:3.13.13-slim
 ENV PATH="/venv/bin:$PATH" \

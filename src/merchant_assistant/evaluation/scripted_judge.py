@@ -1,15 +1,29 @@
-"""Deterministic stand-in for the model judge `judge.v3` (zero cost, offline).
+"""Deterministic stand-in for the campaign judge (zero cost, offline).
 
 It reads the same JSON a real judge receives and applies fixed rules, so the campaign path (evidence, repetitions,
 aggregation, reports) runs end to end in tests and in `eval --scripted --judge`. It says nothing about the real
-quality of a reply. Kept apart from `scripted_policy.py`, which belongs to the attendance agents."""
+quality of a reply. Kept apart from `scripted_policy.py`, which belongs to the attendance agents.
+
+Under `judge.v5` (spec v0.11.0 D3) it answers both calls: the claims step gets one claim per sentence of the reply, and
+the judgement step marks `not_found` a claim with an amount the v3 rules would hold against the reply; every other
+claim is `supported`. The verdict computed from the claims is therefore the v3 stand-in's verdict."""
 
 from __future__ import annotations
 
 import json
 import re
 
-from merchant_assistant.evaluation.judge import RUBRIC, Judge, rubric_version
+from merchant_assistant.evaluation.judge import (
+    CLAIM_RUBRICS,
+    RUBRIC,
+    SUPPORT_MAX_CHARS,
+    ClaimList,
+    Judge,
+    JudgeScoreV5,
+    claims_max_output_tokens_for,
+    max_output_tokens_for,
+    rubric_version,
+)
 from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm.base import LLM, Meter, NullMeter
 from merchant_assistant.llm.prompts import load_prompt
@@ -50,8 +64,60 @@ def handler(call: ScriptedCall) -> dict:
     merchant message contains (and the verdict turns on); relevance follows the words the reply shares with the
     question; usefulness follows the length of the reply. Like `judge.v3`, it does not hold a missing passage against a
     reply whose evidence notes say that its source text is not available (a web answer), but it keeps flagging data of
-    the merchant's own account that no tool result shows."""
+    the merchant's own account that no tool result shows. The two calls of `judge.v5` are told apart by the schema
+    asked for."""
     data = json.loads(call.spec.input)
+    if call.schema is ClaimList:
+        return claims_handler(data)
+    if call.schema is JudgeScoreV5:
+        return verdicts_handler(data)
+    return _scores(data)
+
+
+# One claim per sentence; a standard phrase of the service (protocol, handing over, clarification, courtesy) is
+# `standard`, a sentence with an amount is `value`, one with a date is `date`, the rest is `fact`.
+_SENTENCES = re.compile(r"(?<=[.!?])\s+|\n+")
+_STANDARD = re.compile(
+    r"\bHO-\d{8}|\bprotocol|\bencaminh|\bhanded over|\bhand(?:ing)? (?:it |this )?over|\bposso ajudar|\bcan I help|"
+    r"\bobrigad|\bthank|\bdesculp|\bsorry\b",
+    re.IGNORECASE,
+)
+_DATE = re.compile(r"\b\d{1,2}/\d{1,2}(?:/\d{2,4})?\b|\b\d{4}-\d{2}-\d{2}\b")
+
+
+def _kind(sentence: str) -> str:
+    if amounts(sentence):
+        return "value"
+    if _STANDARD.search(sentence) or sentence.endswith("?"):
+        return "standard"
+    return "date" if _DATE.search(sentence) else "fact"
+
+
+def claims_handler(data: dict) -> dict:
+    """The claims step: it sees the reply only (no evidence), as `judge_claims.v1` does."""
+    sentences = [part.strip() for part in _SENTENCES.split(data["reply"]) if part.strip()]
+    return {"claims": [{"n": n, "text": text, "kind": _kind(text)} for n, text in enumerate(sentences, start=1)]}
+
+
+def verdicts_handler(data: dict) -> dict:
+    """The judgement step: a claim with an amount the v3 rules hold against the reply is `not_found`; a claim with an
+    amount found in an evidence item is `supported`, quoting that item; every other claim is `supported` with no
+    quote. The four criteria are the v3 stand-in's."""
+    invented, _ = _invented_amounts(data)
+    verdicts = []
+    for claim in data["claims"]:
+        stated = amounts(claim["text"])
+        if stated & invented:
+            verdicts.append({"n": claim["n"], "verdict": "not_found", "support": ""})
+            continue
+        quote = next((item["text"] for item in data["evidence"] if stated and stated <= amounts(item["text"])), "")
+        verdicts.append({"n": claim["n"], "verdict": "supported", "support": quote[:SUPPORT_MAX_CHARS]})
+    scores = _scores(data)
+    del scores["unsupported_claim"]  # judge.v5 does not ask the model for the verdict
+    return {"claim_verdicts": verdicts, **scores}
+
+
+def _scores(data: dict) -> dict:
     reply = data["reply"]
     invented, account = _invented_amounts(data)
     shared = len(_words(data["merchant_message"]) & _words(reply))
@@ -83,12 +149,26 @@ def scripted_judge(
     prompts_dir, meter: Meter | None = None, llm: LLM | None = None, rubric: str | None = None
 ) -> Judge:
     """The stand-in under `judge.v3`, or under the rubric named (`rubric`, spec v0.10.0 D1). Its rules are the same
-    for both: it records which prompt it was given, it does not imitate the new sentence of `judge.v4`."""
+    for all: it records which prompt it was given, it does not imitate the new sentence of `judge.v4`. Under
+    `judge.v5` it runs the two calls (spec v0.11.0 D3) with the output caps of the paid judges."""
+    version = rubric_version(rubric)
+    if version not in CLAIM_RUBRICS:
+        return Judge(
+            llm or scripted_llm(),
+            "scripted",
+            MODEL,
+            load_prompt(prompts_dir, RUBRIC, version),
+            meter or NullMeter(),
+            "scripted",
+        )
     return Judge(
         llm or scripted_llm(),
         "scripted",
         MODEL,
-        load_prompt(prompts_dir, RUBRIC, rubric_version(rubric)),
+        load_prompt(prompts_dir, RUBRIC, version),
         meter or NullMeter(),
         "scripted",
+        max_output_tokens_for("scripted", version),
+        claims_prompt=load_prompt(prompts_dir, *CLAIM_RUBRICS[version]),
+        claims_max_output_tokens=claims_max_output_tokens_for("scripted"),
     )

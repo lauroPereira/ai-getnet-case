@@ -22,19 +22,23 @@ COMMANDS = ["index", "bootstrap", "eval-retrieval"]
 
 
 class FakeOpenAI:
-    """Synthetic embeddings transport. It records every call and what the ledger looked like at that moment."""
+    """Synthetic embedding and rerank transport; records calls and the ledger state before each provider call."""
 
     def __init__(self, ledger=None, *, usage="ok", fail=None) -> None:
         self.embeddings = self
+        self.responses = SimpleNamespace(parse=self.parse)
         self.ledger, self.usage, self.fail = ledger, usage, fail
         self.calls = 0
         self.ledger_at_call: list[tuple[int, int]] = []
 
-    def create(self, *, model, input):  # noqa: A002 - mirrors the provider signature
+    def record_call(self):
         self.calls += 1
         if self.ledger is not None and self.ledger.exists():
             rows = ledger_rows(self.ledger)
             self.ledger_at_call.append((sum(r[0] == "reserved" for r in rows), sum(r[0] == "settled" for r in rows)))
+
+    def create(self, *, model, input):  # noqa: A002 - mirrors the provider signature
+        self.record_call()
         if self.fail:
             raise self.fail
         usage = {
@@ -46,6 +50,13 @@ class FakeOpenAI:
         return SimpleNamespace(
             usage=usage, data=[SimpleNamespace(index=i, embedding=[0.1] * 1536) for i in range(len(input))]
         )
+
+    def parse(self, *, text_format, **kwargs):
+        self.record_call()
+        if self.fail:
+            raise self.fail
+        usage = SimpleNamespace(input_tokens=5, output_tokens=1, input_tokens_details=None)
+        return SimpleNamespace(output_parsed=text_format(order=["P1"]), usage=usage, output=[])
 
 
 def ledger_rows(path):

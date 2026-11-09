@@ -1,0 +1,44 @@
+# Selo da amostra de calibração da v0.11.0 (spec D5): campanha v0110-qa, semente 20261107, 36 respostas de v0110-qa.json+v0110-qa-holdout-v080.json.
+# 1ª linha: SHA-256 da identidade de cada resposta e das suas afirmações numeradas (eval-calibrate --seal); eval-calibrate --import recusa a amostra se o hash dos arquivos devolvidos for outro.
+# 2ª linha (calibration_v0110.amostra): SHA-256 só da identidade das respostas (sample_id, request_id, case_id, rota, split), conferido por --seal antes de listar qualquer afirmação.
+# Demais linhas: SHA-256 de cada arquivo gravado (amostra, afirmações e pacotes com a resposta e a evidência), caminho relativo à pasta do sample.csv; confira com `sha256sum -c --ignore-missing calibration_v0110.sha256` a partir dessa pasta.
+4397b970ff518f864930b2c469eb2b4bbae3a26fa1dae4a6bbb89dbcc63f55ba  calibration_v0110
+9170f04cd925f494c0837eeedfac460d43f502cfa6993da992feecf9eeb7bda4  calibration_v0110.amostra
+337f0f94744d5ed814766c00a707d686ad1c8aa3e62a17b69f6ef43ad80ac34b  v0110-calibracao-amostra.csv
+a409cf6fc715311dc3a6285f4d3ab7d0165eabe8ea8f547552ca55342815dadf  v0110-calibracao-amostra-claims.csv
+09ea11dbf0a5512c93982c559fc7393e06d98364461f9e6c7f9d700d35ecb059  v0110-calibracao-amostra-pacotes/S01.md
+9a1762f48f7d8a24dfea4581d37b8062ed0dcdc34d2bb9bc5f0dd8fd84e5edcd  v0110-calibracao-amostra-pacotes/S02.md
+3a1fbfe4b107010387f88feeb29623e21ba276a3c3d750b3b48390ecb155ba5c  v0110-calibracao-amostra-pacotes/S03.md
+26f211f5177d6ca4c0f6f04aec07e3be8e16c9981fabf486ac24ff48b6a5591f  v0110-calibracao-amostra-pacotes/S04.md
+b84dd1963c100c4bb10ae52992ae199e4f6f120936fec1d66dbd0c83fb8f1266  v0110-calibracao-amostra-pacotes/S05.md
+ff98161955d3f2270c3ffa1fd52c7fa382d672db53f0e3ae0b105e0f82cdf7ae  v0110-calibracao-amostra-pacotes/S06.md
+260573d8dc2096796bbfaab3a11a9822b4138c74321a206472be6aefc5c4f026  v0110-calibracao-amostra-pacotes/S07.md
+60714202875fdfa96ff96fdeea6c88ecdf69e2654c2ce491743c7fea8b1184e6  v0110-calibracao-amostra-pacotes/S08.md
+3cd4984d9e0b00ab99a721d66a5abed66da0dcded76d6172d85e4dd260a33458  v0110-calibracao-amostra-pacotes/S09.md
+47f152cd065550baa0c71f4dfb8eb6d4ed1c71837ab5b2ecd6e05bfa54f36e6c  v0110-calibracao-amostra-pacotes/S10.md
+e2fa9dcf0ba1f5c2bccfb6ed81a2bfde0664620d2acb3609edc5056b23785e7e  v0110-calibracao-amostra-pacotes/S11.md
+7b06298e33561c8d038d3997bbd31ff31b9c58e3128b4e2cd872bdd402acb1bd  v0110-calibracao-amostra-pacotes/S12.md
+1a942f22db0c11ad2cfb36bd32225cfa0315ad2afcabc49201c38926d2ec5049  v0110-calibracao-amostra-pacotes/S13.md
+70627208045fda2b212659f12a1ac9295e6d76024fac7eb42ca613e687ecd6e2  v0110-calibracao-amostra-pacotes/S14.md
+f318ed5fb6dd1277a13f75f48eb65d4bb71c107a5831734cb234e7167302b956  v0110-calibracao-amostra-pacotes/S15.md
+e282da3d98c0e286bc2ca3b8f80a4c5e92fac479957f851c9bd63f31a95a6ceb  v0110-calibracao-amostra-pacotes/S16.md
+dd82b33933d8d1f2e234e66244c2018962f321f7bdf7dec5e7c372bdd86a157e  v0110-calibracao-amostra-pacotes/S17.md
+aca5c6f5661c2464ca4eb93ba846b04c64ee0894b4ba1a7306e9d07a380cc5f5  v0110-calibracao-amostra-pacotes/S18.md
+075314bd27681d86528fd92e0c23cf5ce92298cd6aae707f81a2380a6d7dc00f  v0110-calibracao-amostra-pacotes/S19.md
+24ff6f38d5ac4e53351ca5264b83f682709ace9a3ec21d12b5efb770980d7e21  v0110-calibracao-amostra-pacotes/S20.md
+eef5d5d3598ba1c7fc5b9ed46ed01504516860fa98e9684b9a49edd89d0a2b04  v0110-calibracao-amostra-pacotes/S21.md
+691a3ce47a936d0e21bc0313d07d6cee032711056a7ff69f6ca9cb23364d0d81  v0110-calibracao-amostra-pacotes/S22.md
+715a00632cfca1858107d3e48649ccd589e2ece533e1848f6c51d72609182b44  v0110-calibracao-amostra-pacotes/S23.md
+8f1aa4709ce2a45aaa7b28532a1467efbc2bc5c534a5480dda3ef619ab0f5ead  v0110-calibracao-amostra-pacotes/S24.md
+0fde11cae5141399fe72afa1fa90694ae4e306f269c3aaf8e5d23826ac6bb034  v0110-calibracao-amostra-pacotes/S25.md
+71b81071941f867a4e7ba4bb59f16293e9f8bd72365cc4ad46224fe2346b0878  v0110-calibracao-amostra-pacotes/S26.md
+76df2938297a31efbe54b3138564bf032f0790241ff847384d0c320ff6c8b495  v0110-calibracao-amostra-pacotes/S27.md
+b1668107a9bd88cb2d250aedecaabe7b21ecb9c934776051108e37fa557dcede  v0110-calibracao-amostra-pacotes/S28.md
+be8724720c73a12a1dd206db8efd58b5218ae0e59122f9c1b7fe95dd298ed4c3  v0110-calibracao-amostra-pacotes/S29.md
+b5d414c2dbef1e23b27ff08f2693f7ac7f6fc322c84113673c8d09a39168b529  v0110-calibracao-amostra-pacotes/S30.md
+6fc0717808c4a8280cf3c6f069297fb0e1355a3d90db0949d279858d563cdec0  v0110-calibracao-amostra-pacotes/S31.md
+7e5b8499f50ab72ff6291b4e85c6e26490b2e789d99bbe9ec34d4bb63a776016  v0110-calibracao-amostra-pacotes/S32.md
+4722eb803752fb87adbaef3910fb63017a28ccde0e3b8a3c95c0bc437b8b7483  v0110-calibracao-amostra-pacotes/S33.md
+e7b8245ac60b61a57a8bcc1d1e8b20ea14580518cce0fae4e904a1b5c39b733a  v0110-calibracao-amostra-pacotes/S34.md
+1a13a22857bf94477d9a9891a6586ce40b7ab22d4a215a73abb26d44f2033ccb  v0110-calibracao-amostra-pacotes/S35.md
+5249709572af973a8e12dc3696e2c5740497a1fc60fa7d9712d0548322205356  v0110-calibracao-amostra-pacotes/S36.md

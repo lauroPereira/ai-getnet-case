@@ -53,7 +53,7 @@ def experiment(settings, tmp_path):
     names = ("challenge_examples.jsonl", "core_cases.jsonl", "business_journeys.jsonl")
     cases = load_cases([SCENARIOS / name for name in names])[:CASES]
     orchestrator, _ = offline_orchestrator(settings)
-    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
     rows = run(orchestrator, cases, judge=judge)
     _, report = write_report(rows, summarize(rows), tmp_path / "out", "original", {"mode": "scripted"})
     conn = connect(settings.db_path)
@@ -98,6 +98,7 @@ def eval_args(tmp_path, **overrides) -> argparse.Namespace:
         "repeat": 1,
         "judge_repeat": 3,
         "answers_from": None,
+        "rubric": "v3",
         "only_sample": None,
         "limit": None,
     }
@@ -232,6 +233,7 @@ def calibrate_args(experiment, out, **overrides) -> argparse.Namespace:
         "out": str(out),
         "judge": OPUS,
         "judge_run": None,
+        "rubric": "3",
     }
     return argparse.Namespace(**(values | overrides))
 
@@ -259,7 +261,8 @@ def test_moment_3_both_judges_against_the_same_human_ratings(experiment, opus, t
         row | {"judge_runs": [row["judge"] | {"evaluation_id": "x" + row["judge"]["evaluation_id"]}]}
         for row in original
     ]
-    persist_judgements(conn, scripted_judge(PROJECT_ROOT / "prompts", NullMeter()), again, run="outra-rodada")
+    legacy_judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
+    persist_judgements(conn, legacy_judge, again, run="outra-rodada")
     conn.close()
     out = tmp_path / "v090-juiz-opus.md"
     capsys.readouterr()

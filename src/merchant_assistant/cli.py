@@ -284,8 +284,16 @@ def cmd_eval_retrieval(settings: Settings, args) -> int:
     mode = getattr(args, "mode", None) or settings.retrieval_mode
     rerank = (getattr(args, "rerank", None) or (settings.rerank if mode == "hybrid" else "off")) == "on"
     split = getattr(args, "split", None) or "dev"
+    # task 90, review P3-3: the floor here is the flag only, never RETRIEVAL_BM25_MIN_SCORE, so the four rows of the
+    # D7 line are always measured without it and a row with the floor is always asked for
+    given = getattr(args, "bm25_min_score", None)
+    floor = given if given is not None else 0.0
     if rerank and mode != "hybrid":
         raise SystemExit("eval-retrieval: --rerank on runs after the hybrid fusion; use --mode hybrid.")
+    if not 0 <= floor <= 1:
+        raise SystemExit("eval-retrieval: --bm25-min-score is a fraction of the best BM25 score, from 0 to 1.")
+    if floor > 0 and mode == "dense":
+        raise SystemExit("eval-retrieval: --bm25-min-score filters the BM25 list of a fusion; use a hybrid mode.")
     if args.fake and split in retrieval.SEALED_SPLITS and retrieval.SCENARIOS == retrieval.PROJECT_SCENARIOS:
         # review P3-11: offline runs would show holdout results (the BM25 half is real) outside the measurement
         raise SystemExit(f"eval-retrieval: --fake does not run on the sealed {split}; it is measured once per mode "
@@ -297,7 +305,9 @@ def cmd_eval_retrieval(settings: Settings, args) -> int:
     budget = None if args.fake else _budget_guard(settings)
     embedder = build_embedder(settings, fake=args.fake, budget=budget)
     reranker, meter = _retrieval_reranker(settings, fake=args.fake, budget=budget) if rerank else (None, None)
-    index = KnowledgeIndex(open_qdrant(":memory:", settings.runtime_path), "eval_retrieval", embedder)
+    index = KnowledgeIndex(
+        open_qdrant(":memory:", settings.runtime_path), "eval_retrieval", embedder, bm25_min_score=floor
+    )
     manifest = index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
     report = evaluate(index, cases, k=args.k, mode=mode, reranker=reranker, meter=meter)
     report["split"] = split
@@ -495,7 +505,7 @@ def _eval_judge(
 ):
     """The campaign judge (`eval --judge`): the scripted stand-in offline, otherwise the configured independent
     evaluator, or a refusal that leaves before anything is built or called (spec v0.8.0 D11). `rubric` is the stored
-    version of the rubric (`--rubric`, spec v0.10.0 D1; `judge.v3` when `None`)."""
+    version of the rubric (`--rubric`, spec v0.11.0 D6(g); `judge.v5` when `None`)."""
     from merchant_assistant.evaluation import judge as judge_module
 
     if scripted:
@@ -533,15 +543,26 @@ def _eval_judge_preflight(
         raise SystemExit(f"eval: {exc}") from None
 
 
+LITERAL_RULER = "literal"  # `eval --rubric literal` (task 90, D8): the journeys' literal ruler, judge at its default
+
+
 def _eval_rubric(args) -> str:
-    """The stored version of `--rubric`: the one named, else the configured default (`judge.RUBRIC_VERSION`, v3 until
-    task 86, spec v0.10.0 D1). `eval-calibrate` resolves through the same `judge.rubric_version`."""
+    """The stored version of `--rubric`: the one named, else the configured default (`judge.RUBRIC_VERSION`, v5 under
+    spec v0.11.0 D6(g)). `eval-calibrate` resolves through the same `judge.rubric_version`. `--rubric literal` names
+    the ruler, not a rubric: the judge, if any, keeps the default one."""
     from merchant_assistant.evaluation import judge as judge_module
 
+    choice = getattr(args, "rubric", None)
     try:
-        return judge_module.rubric_version(getattr(args, "rubric", None))
+        return judge_module.rubric_version(None if choice == LITERAL_RULER else choice)
     except judge_module.JudgeRefused as exc:
         raise SystemExit(f"eval: {exc}") from None
+
+
+def _eval_ruler(args, judged: bool) -> str:
+    """The ruler of `passed` (spec v0.11.0 D8): `combined` when a judge grades the answers, `literal` with
+    `--rubric literal` or without a judge (the content half needs a judgement)."""
+    return "literal" if getattr(args, "rubric", None) == LITERAL_RULER or not judged else "combined"
 
 
 def _report_name(args, answers_split: str | None = None) -> str:
@@ -573,15 +594,17 @@ def cmd_eval(settings: Settings, args) -> int:
     (variation of the judge, `cmd_eval_rejudge`)."""
     import tempfile
 
-    from merchant_assistant.evaluation import aggregate
+    from merchant_assistant.evaluation import aggregate, evidence
     from merchant_assistant.evaluation.runner import (
         BudgetMeter,
+        apply_ruler,
         load_cases,
         persist_judgements,
         run,
         summarize,
         write_report,
     )
+    from merchant_assistant.evaluation.web_pages import WebPages
 
     if getattr(args, "campaign", None) is None and (
         getattr(args, "campaign_cap_usd", V080_QA_CAP_USD) != V080_QA_CAP_USD
@@ -590,6 +613,10 @@ def cmd_eval(settings: Settings, args) -> int:
         raise SystemExit("eval: --campaign-cap-usd and --campaign-estimate require --campaign v080-qa.")
     if getattr(args, "judge_repeat", None) is not None:
         return cmd_eval_rejudge(settings, args)
+    if getattr(args, "claims_from", None):
+        raise SystemExit("eval: --claims-from goes with --judge-repeat and --rubric v5 (it grades recorded answers).")
+    if getattr(args, "only_route", None):
+        print("eval: --only-route is ignored without --judge-repeat: it selects recorded answers.", file=sys.stderr)
     if getattr(args, "only_sample", None):
         print(
             "eval: --only-sample is ignored without --judge-repeat: this runs the agent over the whole selection of "
@@ -600,8 +627,9 @@ def cmd_eval(settings: Settings, args) -> int:
     if repeat < 1:
         raise SystemExit("eval: --repeat must be at least 1.")
     rubric = _eval_rubric(args)
-    if not args.judge and getattr(args, "rubric", None) is not None:
+    if not args.judge and getattr(args, "rubric", None) not in (None, LITERAL_RULER):
         print("eval: --rubric is ignored without --judge or --judge-repeat: no judge runs.", file=sys.stderr)
+    ruler = _eval_ruler(args, bool(args.judge))
     scenarios = PROJECT_ROOT / "tests" / "scenarios"
     case_files = [
     scenarios / name
@@ -646,8 +674,14 @@ def cmd_eval(settings: Settings, args) -> int:
         mode, agent_provider, db_path = "real", "openai", settings.db_path
     if judge is not None:
         judge.meter = BudgetMeter(orchestrator.budget)
-    rows = run(orchestrator, cases, judge=judge, repeat=repeat, keep_evidence=repeat > 1)
+    # task 87 (D2): the pages a web-search reply cited are fetched for the judge's evidence, after each reply and never
+    # in the turn; the scripted run stays offline (its citations are example.com placeholders).
+    pages = None if args.scripted else WebPages.from_settings(settings)
+    with evidence.use_web_pages(pages):
+        rows = run(orchestrator, cases, judge=judge, repeat=repeat, keep_evidence=repeat > 1)
+    apply_ruler(rows, ruler)
     summary = summarize(rows)
+    _note_web_evidence(summary, rows)
     if judge is not None and repeat > 1:
         summary["variation"] = aggregate.variation(rows, "assistant", repeat)
     config = {
@@ -661,6 +695,8 @@ def cmd_eval(settings: Settings, args) -> int:
         "repeat": repeat,
         "limit": case_limit,
         "include_replan": bool(getattr(args, "include_replan", False)),
+        "web_evidence": "on" if pages is not None else "off",
+        "ruler": ruler,
         "campaign": getattr(args, "campaign", None),
         "campaign_cap_usd": getattr(args, "campaign_cap_usd", V080_QA_CAP_USD)
         if getattr(args, "campaign", None)
@@ -669,6 +705,7 @@ def cmd_eval(settings: Settings, args) -> int:
     }
     name = _report_name(args)
     md, js = write_report(rows, summary, Path(args.out), name, config)
+    _append_web_evidence(md, summary)
     print(json.dumps(summary["overall"], indent=1))
     if judge is not None:
         _store_judgements(db_path, judge, rows, persist_judgements, name)
@@ -685,6 +722,24 @@ def cmd_eval(settings: Settings, args) -> int:
     return 0
 
 
+def _note_web_evidence(summary: dict, rows: list[dict]) -> None:
+    """Answers per form of the web note (task 87), in the JSON summary of the report."""
+    from merchant_assistant.evaluation import evidence
+
+    counts = evidence.web_note_counts(rows)
+    if counts["answers"]:
+        summary["web_evidence"] = counts
+
+
+def _append_web_evidence(md: Path, summary: dict) -> None:
+    from merchant_assistant.evaluation import evidence
+
+    if "web_evidence" in summary:
+        line = evidence.web_note_line(summary["web_evidence"])
+        section = f"\n## Evidência da busca web\n\n{line}\n"
+        md.write_text(md.read_text(encoding="utf-8") + section, encoding="utf-8")
+
+
 def cmd_eval_rejudge(settings: Settings, args) -> int:
     """`eval --judge-repeat N --answers-from <report.json>`: the answers recorded by an earlier campaign (its first
     execution) graded N times, without running the agent. Variation of the judge alone (spec v0.8.0 D12)."""
@@ -693,7 +748,10 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     from merchant_assistant.evaluation import aggregate
     from merchant_assistant.evaluation.runner import (
         BudgetMeter,
+        apply_ruler,
+        load_cases,
         load_recorded_answers,
+        mark_journeys,
         persist_judgements,
         rejudge,
         summarize,
@@ -722,6 +780,9 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     except (OSError, ValueError, KeyError) as exc:
         raise SystemExit(f"eval: {exc}") from None
     rows, selection = _select_recorded_answers(rows, args)
+    given_claims = _claims_from(args, rows, rubric)
+    if given_claims is not None:
+        selection["claims_from"] = [Path(path).name for path in _listed_args(args.claims_from)]
     splits = {row["split"] for row in rows}
     name = _report_name(args, next(iter(splits)) if len(splits) == 1 else None)
     if (Path(args.out) / f"{name}.json").resolve() == Path(args.answers_from).resolve():
@@ -747,8 +808,12 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     else:
         judge.meter = BudgetMeter(budget, request_id="eval-judge-repeat")
         db_path, mode = settings.db_path, "real"
-    graded = rejudge(rows, judge, args.judge_repeat)
+    graded = rejudge(rows, judge, args.judge_repeat, given_claims)
+    ruler = _eval_ruler(args, True)
+    mark_journeys(graded, load_cases([PROJECT_ROOT / "tests" / "scenarios" / "business_journeys.jsonl"]))
+    apply_ruler(graded, ruler)
     summary = summarize(graded)
+    _note_web_evidence(summary, graded)
     summary["variation"] = aggregate.variation(graded, "judge", args.judge_repeat)
     config = {
         "mode": mode,
@@ -762,6 +827,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         "judge_repeat": args.judge_repeat,
         "answers_from": Path(args.answers_from).name,
         **selection,
+        "ruler": ruler,
         "campaign": getattr(args, "campaign", None),
         "campaign_cap_usd": getattr(args, "campaign_cap_usd", V080_QA_CAP_USD)
         if getattr(args, "campaign", None)
@@ -769,6 +835,7 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
         "cases": len(graded),
     }
     md, js = write_report(graded, summary, Path(args.out), name, config)
+    _append_web_evidence(md, summary)
     print(json.dumps(summary["overall"], indent=1))
     _store_judgements(db_path, judge, graded, persist_judgements, name)
     print(f"report: {md}")
@@ -776,14 +843,60 @@ def cmd_eval_rejudge(settings: Settings, args) -> int:
     return 0
 
 
+def _claims_from(args, rows: list[dict], rubric: str) -> dict[str, tuple[list[dict], str]] | None:
+    """`--claims-from <sample-claims.csv>` (repeatable, task 89 round 2): the claims of calibration samples, so that a
+    judge.v5 judgement grades the very claims the raters mark (paired by number). Every file is read and its SHA-256
+    checked, and every answer to grade must have its list, before any call; None without the option."""
+    paths = [Path(path) for path in _listed_args(getattr(args, "claims_from", None))]
+    if not paths:
+        return None
+    from merchant_assistant.evaluation import calibration
+    from merchant_assistant.evaluation import calibration_packets as packets
+
+    if rubric != "5":
+        raise SystemExit("eval: --claims-from needs --rubric v5 (only judge.v5 judges a list of claims).")
+    found: dict[str, tuple[list[dict], str]] = {}
+    for path in paths:
+        try:
+            read = packets.read_claims(calibration._read_text(path), calibration.META_KEYS)
+        except (packets.ClaimsError, calibration.CalibrationError) as exc:
+            raise SystemExit(f"eval: --claims-from {path.name}: {exc}") from None
+        problems = packets.verify_claims(read, path.name)
+        if problems:
+            raise SystemExit(f"eval: --claims-from {problems[0]}")
+        origin = f"{calibration.CLAIMS_FROM_SAMPLE}{path.name}#{read.meta['claims_sha256'][:12]}"
+        for request_id, answer in read.answers.items():
+            listed = [
+                {"n": claim.n, "kind": claim.kind, "text": " ".join(claim.text.split())}
+                for claim in sorted(answer.claims, key=lambda claim: claim.n)
+            ]
+            if request_id in found and found[request_id][0] != listed:
+                raise SystemExit(
+                    f"eval: --claims-from: the request {request_id} has different claims in two files; give one list."
+                )
+            found.setdefault(request_id, (listed, origin))
+    missing = [row["request_id"] for row in rows if row["request_id"] not in found]
+    if missing:
+        raise SystemExit(
+            f"eval: --claims-from: {len(missing)} of the {len(rows)} answers to grade have no claims in "
+            f"{', '.join(path.name for path in paths)} (for example {missing[0]}); select them with --only-sample or "
+            "give their sample's claims CSV. No call was made."
+        )
+    names = ", ".join(path.name for path in paths)
+    print(f"eval: judging the claims of {names} ({len(rows)} answers, no listing call)")
+    return found
+
+
 def _select_recorded_answers(rows: list[dict], args) -> tuple[list[dict], dict]:
     """`--only-sample <csv>` keeps the recorded answers whose request_id is in the calibration CSV, in the order of the
-    CSV (spec v0.9.0 D1); `--limit K` then keeps the first K (the probe). Returns the rows and what was filtered, which
-    goes into the report's configuration."""
+    CSV (spec v0.9.0 D1); `--only-route R` keeps those the Router sent to route R (task 87: the web answers again with
+    the pages); `--limit K` then keeps the first K (the probe). Returns the rows and what was filtered, which goes into
+    the report's configuration."""
     only, limit = getattr(args, "only_sample", None), getattr(args, "limit", None)
+    route = getattr(args, "only_route", None)
     if limit is not None and limit < 1:
         raise SystemExit("eval: --limit must be at least 1.")
-    if only is None and limit is None:
+    if only is None and limit is None and route is None:
         return rows, {}
     selection: dict = {"recorded_answers": len(rows)}
     if only is not None:
@@ -802,6 +915,11 @@ def _select_recorded_answers(rows: list[dict], args) -> tuple[list[dict], dict]:
             )
         rows = [by_id[request_id] for request_id in wanted]
         selection |= {"only_sample": Path(only).name, "only_sample_ids": len(wanted)}
+    if route is not None:
+        rows = [row for row in rows if row.get("route") == route]
+        if not rows:
+            raise SystemExit(f"eval: --only-route: no recorded answer has route {route!r}.")
+        selection["only_route"] = route
     if limit is not None:
         rows = rows[:limit]
         selection["limit"] = limit
@@ -809,6 +927,7 @@ def _select_recorded_answers(rows: list[dict], args) -> tuple[list[dict], dict]:
     print(
         f"eval: grading {len(rows)} of {selection['recorded_answers']} recorded answers"
         + (f" ({selection['only_sample_ids']} request ids in {selection['only_sample']})" if only else "")
+        + (f", route {route}" if route is not None else "")
         + (f", --limit {limit}" if limit is not None else "")
         + ".",
         file=sys.stderr,
@@ -994,14 +1113,44 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
     back, stores the ratings in `calibrations` and measures the agreement with the judge (spec v0.8.0 D10, D19). No
     model is called."""
     from merchant_assistant.evaluation import calibration
+    from merchant_assistant.evaluation import calibration_packets as packets_module
 
+    if getattr(args, "merge_panel", None) or getattr(args, "sample_csv", None):
+        return _merge_panel(args)
     size, filled = getattr(args, "sample", None), getattr(args, "import_csv", None)
+    raters = _calibrate_raters(args)
+    two = any(len(entry) > 1 for entry in raters) or getattr(args, "adjudication", None) is not None
+    if two and filled:
+        raise SystemExit(
+            "eval-calibrate: give the files with --rater <name> <sample.csv> [<sample-claims.csv>], not with --import."
+        )
+    if two and len(raters) == 1 and len(raters[0]) == 2 and getattr(args, "adjudication", None) is None:
+        filled, two = raters[0][1], False  # one rater, one file, no claims: the v0.8.0 import, unchanged
+    if two and filled is None:
+        filled = ""
+    if two and getattr(args, "campaign", None):
+        raise SystemExit("eval-calibrate: with --rater files, each sample brings its campaign; leave out --campaign.")
     if (size is None) == (filled is None):
         raise SystemExit("eval-calibrate: choose --sample N --from <report.json>, or --import <csv>.")
+    if size is None and not two and not filled:
+        raise SystemExit("eval-calibrate: --import needs the CSV (or --rater <name> <sample.csv> ...).")
+    if size is not None and (len(raters) > 1 or len(raters[0]) > 1 or getattr(args, "adjudication", None)):
+        raise SystemExit("eval-calibrate: --rater and --adjudication are used with --import.")
+    sample_only = ("exclude", "enrich", "packets", "seal", "scripted")
+    if size is None and any(getattr(args, key, None) for key in sample_only):
+        raise SystemExit("eval-calibrate: --exclude, --enrich, --packets, --seal and --scripted go with --sample.")
     if size is not None and getattr(args, "judge", None):
         raise SystemExit("eval-calibrate: --judge is used with --import (the sample never shows a judge's scores).")
     if getattr(args, "judge_run", None) and not getattr(args, "judge", None):
         raise SystemExit("eval-calibrate: --judge-run is used with --judge (it picks the execution of that judge).")
+    majority = bool(getattr(args, "judge_majority", False))
+    if majority and not getattr(args, "judge", None):
+        raise SystemExit("eval-calibrate: --judge-majority is used with --judge (the majority of that judge's votes).")
+    if majority and two:
+        raise SystemExit(
+            "eval-calibrate: --judge-majority compares one rater with the judge (--import <csv>); with two raters "
+            "each block still brings the judgement of repetition 1."
+        )
     blocks = _calibrate_blocks(args)
     evidence_dir = PROJECT_ROOT / "docs" / "evidence"
     try:
@@ -1010,18 +1159,38 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
                 raise SystemExit("eval-calibrate: --sample needs --from <report.json> (a campaign with --judge).")
             seed = calibration.DEFAULT_SEED if args.seed is None else args.seed
             split = getattr(args, "split", "development")
-            rows, meta = calibration.make_sample(Path(args.source), size, seed, args.campaign, split)
+            enrich = [r for r in (getattr(args, "enrich", None) or "").split(",") if r.strip()]
+            exclude = [Path(path) for path in getattr(args, "exclude", None) or []]
+            sources = [Path(path) for path in _listed_args(args.source)]
+            sealing = bool(getattr(args, "seal", False))
+            drawn, meta = calibration.draw(
+                sources, size, seed, args.campaign, split, exclude=exclude, enrich=enrich, exact=sealing
+            )
+            rows = calibration.sample_rows(drawn)
             out = Path(args.out) if args.out else evidence_dir / "v080-calibracao-amostra.csv"
-            calibration.write_csv(out, rows, meta, delimiter=args.delimiter)
+            packed = None
+            if getattr(args, "packets", False) or sealing:
+                packed = _calibration_packets(settings, args, out, rows, drawn, meta)
+            else:
+                calibration.write_csv(out, rows, meta, delimiter=args.delimiter)
             print(
                 f"sample: {len(rows)} answers of {meta['eligible']} eligible, seed {seed}, campaign {meta['campaign']}"
             )
+            if meta.get("excluded") is not None:
+                print(f"excluded: {meta['excluded']} answers already calibrated (request id)")
+            if meta.get("enriched"):
+                print(f"enriched: {meta['enriched']} of {len(rows)} in the routes {', '.join(enrich)}")
             print(f"csv: {out}")
+            if packed:
+                print(f"claims: {packed['claims']} ({meta['claims']})")
+                print(f"packets: {packed['folder']}")
+                if packed.get("seal"):
+                    print(f"seal: {packed['digest']} in {packed['seal']}")
             if meta["left_out"]:
                 left = ", ".join(f"{name} {count}" for name, count in sorted(meta["left_out"].items()))
                 print(
                     f"eval-calibrate: judged answers left out of the sample (only {meta['splits']} are drawn; the "
-                    f"holdout_v080 is never sampled, D17): {left}.",
+                    f"holdout_v080 is never sampled, D17, unless --split all): {left}.",
                     file=sys.stderr,
                 )
             if len(rows) < calibration.DEFAULT_SAMPLE:
@@ -1036,16 +1205,44 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         from merchant_assistant.data.db import connect
 
         conn = connect(settings.db_path)
+        if two:
+            try:
+                result = calibration.import_raters(
+                    conn,
+                    [
+                        calibration.RaterFiles(name, Path(e[1]), Path(e[2]) if len(e) > 2 else None, kind)
+                        for e in raters
+                        for name, kind in [_rater_entry(e[0])]
+                    ],
+                    adjudication=Path(args.adjudication) if getattr(args, "adjudication", None) else None,
+                    blocks=blocks,
+                    seal_path=PROJECT_ROOT / packets_module.SEAL_FILE,
+                )
+            finally:
+                conn.close()
+            out = Path(args.out) if args.out else evidence_dir / "v0110-calibracao.md"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(result["report"], encoding="utf-8")
+            for group, counts in result["stored"].items():
+                print(f"calibrations {group}: {counts['created']} stored, {counts['updated']} updated")
+            sealed, every = result["scopes"][0][1], result["scopes"][1][1]
+            print(
+                f"answers: {every['n']} rated, {every['both']} by both raters, {every['gold']} with a gold label, "
+                f"{sealed['n']} sealed; adjudicated: {len(result['adjudicated'])}"
+            )
+            print(f"report: {out}")
+            return 0
         try:
             result = calibration.import_filled(
                 conn,
                 Path(filled),
-                rater=args.rater,
+                rater=_rater_name(args),
                 campaign=args.campaign,
                 judge=blocks[0][0] if blocks else None,
                 judge_run=blocks[0][1] if blocks else None,
                 rubric=blocks[0][2] if blocks else None,
                 more=blocks[1:],
+                majority=majority,
             )
         finally:
             conn.close()
@@ -1070,6 +1267,8 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
                     f"block {block['label']}: {block['judge']} judge.v{block['rubric']} "
                     f"(execution {', '.join(block['runs'])})"
                 )
+            if compared.get("majority"):
+                print("verdict of each compared block: the majority of its completed judgements of each answer")
         if result["outside"]:
             print(
                 f"eval-calibrate: {len(result['outside'])} rating(s) of this campaign and rater are in the database "
@@ -1079,10 +1278,211 @@ def cmd_eval_calibrate(settings: Settings, args) -> int:
         print(f"report: {out}")
         return 0
     except calibration.CalibrationError as exc:
-        shown = exc.messages[: calibration.MAX_REPORTED_ERRORS]
+        # with two raters every divergence that needs an adjudication is listed, so one pass shows them all
+        shown = exc.messages if two else exc.messages[: calibration.MAX_REPORTED_ERRORS]
         more = len(exc.messages) - len(shown)
         lines = [f"eval-calibrate: {shown[0]}", *shown[1:], *([f"(+{more} more)"] if more else [])]
         raise SystemExit("\n".join(lines)) from None
+
+
+def _merge_panel(args) -> int:
+    """`eval-calibrate --merge-panel <member1-claims.csv> <member2-claims.csv> --sample-csv <a.csv> <b.csv> --out
+    <panel.csv>` (task 89 round 4, spec v0.11.0 D6(c)): the panel's label is the agreement of its two members. The
+    sample CSVs are required and --out may not exist (round 5). No database, no model call."""
+    from merchant_assistant.evaluation import calibration
+    from merchant_assistant.evaluation import calibration_packets as packets_module
+
+    claims, samples = getattr(args, "merge_panel", None), getattr(args, "sample_csv", None)
+    if not claims:
+        raise SystemExit("eval-calibrate: --sample-csv goes with --merge-panel <claims1.csv> <claims2.csv>.")
+    others = (
+        "sample",
+        "import_csv",
+        "rater",
+        "adjudication",
+        "judge",
+        "judge_run",
+        "rubric",
+        "judge_majority",
+        "exclude",
+        "enrich",
+    )
+    if any(getattr(args, key, None) not in (None, False, []) for key in (*others, "packets", "seal")):
+        raise SystemExit(
+            "eval-calibrate: --merge-panel only joins the files of the two panel members; run --import afterwards."
+        )
+    if not samples:
+        raise SystemExit(
+            "eval-calibrate: --merge-panel needs --sample-csv <member1.csv> <member2.csv>, the sample CSVs of the two "
+            "members in the order of their claims CSVs."
+        )
+    if not getattr(args, "out", None):
+        raise SystemExit("eval-calibrate: --merge-panel needs --out <panel.csv> (the claims go to <panel>-claims.csv).")
+    try:
+        result = calibration.merge_panel(
+            [Path(path) for path in claims],
+            [Path(path) for path in samples],
+            Path(args.out),
+            seal_path=PROJECT_ROOT / packets_module.SEAL_FILE,
+        )
+    except calibration.CalibrationError as exc:
+        raise SystemExit("\n".join(["eval-calibrate: " + exc.messages[0], *exc.messages[1:]])) from None
+    for number, member in enumerate(result["members"], start=1):
+        rated = f"{member['rated']} answers rated, "
+        share = f" ({member['in_agreement'] / member['marked']:.0%})" if member["marked"] else ""
+        print(
+            f"member {number} ({member['claims'].name}): {rated}{member['marked']} claims marked; the same mark as "
+            f"the other member on {member['in_agreement']}{share}"
+        )
+    print(f"panel claims: {result['claims']} ({result['claims_written']} marks of {result['claims_compared']} claims "
+          "both members marked; blank where they differ)")
+    print(
+        f"panel sample: {result['sample']} ({result['scores_agreed']} of {result['scores_compared']} scores and "
+        f"{result['verdicts_agreed']} of {result['both_rated']} verdicts in agreement; blank where they differ)"
+    )
+    if result["blank"]:
+        print(
+            f"left blank (not rated by the panel: one member did not rate it, or they agree on no score nor verdict): "
+            f"{len(result['blank'])} answers"
+        )
+    return 0
+
+
+def _calibrate_raters(args) -> list[list[str]]:
+    """`--rater`: a name (`--rater lauro`, as before v0.11.0, or a string in a namespace built by hand), or one entry
+    per `--rater <name> <sample.csv> [<sample-claims.csv>]` (task 89). Without it, the rater is `owner`."""
+    value = getattr(args, "rater", None)
+    if value is None:
+        return [["owner"]]
+    if isinstance(value, str):
+        return [[value]]
+    entries = [[value] if isinstance(value, str) else list(value) for value in value]
+    for entry in entries:
+        if not 1 <= len(entry) <= 3:
+            raise SystemExit("eval-calibrate: --rater takes <name> [<sample.csv> [<sample-claims.csv>]].")
+    if len(entries) > 1 and any(len(entry) == 1 for entry in entries):
+        raise SystemExit("eval-calibrate: with more than one --rater, each one names its files.")
+    return entries
+
+
+def _rater_entry(token: str) -> tuple[str, str | None]:
+    """`<name>`, `<name>:human` or `<name>:model:<models>` (spec v0.11.0 D4, Q22): the name and the declared kind."""
+    from merchant_assistant.evaluation import calibration
+
+    try:
+        return calibration.parse_rater(token)
+    except calibration.CalibrationError as exc:
+        raise SystemExit(f"eval-calibrate: {exc.messages[0]}") from None
+
+
+def _rater_name(args) -> str:
+    """The rater of the one-rater import (the v0.8.0 calibration): a human one, with or without `:human`."""
+    from merchant_assistant.evaluation import calibration
+
+    name, kind = _rater_entry(_calibrate_raters(args)[0][0])
+    if calibration.is_model(kind):
+        raise SystemExit(
+            "eval-calibrate: a model rater (a declared panel) is imported beside a human one, in the two-rater "
+            "calibration; the one-rater import is the human calibration of v0.8.0."
+        )
+    return name
+
+
+def _calibration_packets(settings: Settings, args, out: Path, rows, drawn, meta) -> dict:
+    """`--packets` (and `--seal`, task 89): the claims of each answer (recorded by a judge.v5 judgement, else listed by
+    one `judge_claims.v1` call per answer, through the budget guard; `--scripted` uses the scripted judge, for tests),
+    then the sample CSV, the claims CSV (with the SHA-256 of its claims in the sample line) and one packet per answer;
+    with `--seal`, the seal in `tests/scenarios/calibration_v0110.sha256`: the hash of the sample, of its identity and
+    of every file written. An existing seal of another sample is refused before any claim is listed (its identity
+    line), and a seal whose lines would change before anything is written."""
+    from merchant_assistant.evaluation import calibration
+    from merchant_assistant.evaluation import calibration_packets as packets
+
+    seal_path = PROJECT_ROOT / packets.SEAL_FILE
+    sealing = getattr(args, "seal", False)
+    identity = packets.identity_digest(rows)
+    existing = packets.read_seal_lines(seal_path) if sealing else None
+    if existing is not None and existing.get(packets.IDENTITY_LINE) != identity:
+        raise SystemExit(
+            f"eval-calibrate: {packets.SEAL_FILE.as_posix()} already seals another sample (its answers are not these); "
+            "a sealed sample does not change. Nothing was listed or written."
+        )
+    claims: dict[str, list[dict]] = {}
+    origins: dict[str, str] = {}
+    for row in drawn:
+        listed = packets.recorded_claims(row)
+        if listed is not None:
+            claims[row["request_id"]], origins[row["request_id"]] = listed, packets.RECORDED
+    missing = [row for row in drawn if row["request_id"] not in claims]
+    judge_name = None
+    if missing:
+        config = json.loads(Path(_listed_args(args.source)[0]).read_text(encoding="utf-8")).get("config", {})
+        scripted = getattr(args, "scripted", False)
+        plan = (
+            None
+            if scripted
+            else _eval_judge_preflight(
+                settings, agent_model=config.get("model"), agent_provider=config.get("agent_provider"), rubric="5"
+            )
+        )
+        budget = None if scripted else _evaluation_budget_guard(settings)
+        judge = _eval_judge(
+            settings,
+            scripted=scripted,
+            agent_model=config.get("model"),
+            agent_provider=config.get("agent_provider"),
+            validated_plan=plan,
+            rubric="5",
+        )
+        if budget is not None:
+            from merchant_assistant.evaluation.runner import BudgetMeter
+
+            judge.meter = BudgetMeter(budget, request_id="eval-calibrate-claims")
+        judge_name = f"{judge.provider}/{judge.model}"
+        for row in missing:
+            try:
+                claims[row["request_id"]] = packets.list_claims(judge, row["judge_input"])
+            except Exception as exc:  # nothing is written: the sample needs the claims of every answer
+                raise SystemExit(
+                    f"eval-calibrate: the claims of {row['request_id']} could not be listed "
+                    f"({type(exc).__name__}); nothing was written."
+                ) from None
+            origins[row["request_id"]] = packets.LISTED
+    recorded = sum(origin == packets.RECORDED for origin in origins.values())
+    meta["claims"] = "+".join(
+        part
+        for part in (
+            f"{packets.RECORDED}-{recorded}" if recorded else "",
+            f"{packets.LISTED}-{judge_name.replace('/', '.')}-{len(missing)}" if missing else "",
+        )
+        if part
+    )
+    claim_rows = packets.claims_rows(rows, claims)
+    digest = packets.seal_digest(packets.seal_entries(rows, claim_rows))
+    meta["claims_sha256"] = packets.rows_digest(claim_rows)
+    if sealing:
+        meta["seal"] = packets.SEAL_NAME
+    stamp = calibration.sample_stamp(rows, meta)
+    files = {out: calibration.csv_bytes(rows, meta, delimiter=args.delimiter)}
+    files |= packets.packet_files(
+        out, rows, drawn, claims, origins, meta | {"drawn": len(rows)}, stamp, delimiter=args.delimiter
+    )
+    text = None
+    if sealing:
+        listed = [(path.relative_to(out.parent).as_posix(), packets.file_digest(data)) for path, data in files.items()]
+        text = packets.seal_text(digest, identity, listed, meta | {"drawn": len(rows)})
+        if existing is not None and existing != packets.seal_lines(text):
+            raise SystemExit(
+                f"eval-calibrate: {packets.SEAL_FILE.as_posix()} already seals this sample with other claims or files; "
+                "a sealed sample does not change. Nothing was written."
+            )
+    packets.write_files(files)
+    result = {"claims": packets.claims_path(out), "folder": packets.packets_dir(out), "digest": digest}
+    if text is not None:
+        seal_path.parent.mkdir(parents=True, exist_ok=True)
+        seal_path.write_text(text, encoding="utf-8", newline="\n")
+        result["seal"] = seal_path
+    return result
 
 
 def _listed_args(value) -> list:
@@ -1095,7 +1495,8 @@ def _listed_args(value) -> list:
 def _calibrate_blocks(args) -> list[tuple[str, str | None, str | None]]:
     """`--judge`, `--judge-run` and `--rubric` of `eval-calibrate --import`, paired in order (spec v0.10.0, task 83):
     one block per `--judge`. With one judge, `--judge-run` and `--rubric` may be left out; with more, every judge
-    needs its `--judge-run`, and `--rubric` is given for none (all judge.v3) or for each."""
+    needs its `--judge-run`. If `--rubric` is omitted, use the configured default (`judge.v5`); otherwise, give one
+    value per judge."""
     judges, runs, rubrics = (_listed_args(getattr(args, key, None)) for key in ("judge", "judge_run", "rubric"))
     if rubrics and not judges:
         raise SystemExit("eval-calibrate: --rubric is used with --judge (the rubric of that judge's judgements).")
@@ -1293,7 +1694,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_eval.add_argument("--fake", action="store_true")
     p_eval.add_argument("-k", type=int, default=6)
-    p_eval.add_argument("--mode", choices=["dense", "hybrid"], default=None, help="Default: RETRIEVAL_MODE.")
+    p_eval.add_argument(
+        "--mode",
+        choices=["dense", "hybrid", "hybrid@36"],
+        default=None,
+        help="Default: RETRIEVAL_MODE. hybrid@36 is the reranker's control: the fusion the reranker reads (depth 36) "
+        "cut to k without a model.",
+    )
+    p_eval.add_argument(
+        "--bm25-min-score",
+        type=float,
+        default=None,
+        help="Drop, before the fusion, the hits only BM25 found whose BM25 score over the query's best is below this "
+        "(0 to 1; default 0 = off; RETRIEVAL_BM25_MIN_SCORE is not read here). Measured as a configuration of its own.",
+    )
     p_eval.add_argument(
         "--rerank", choices=["on", "off"], default=None, help="Rerank the hybrid top 12 (default: RERANK)."
     )
@@ -1321,7 +1735,7 @@ def main(argv: list[str] | None = None) -> int:
     p_evalx.add_argument(
         "--judge",
         action="store_true",
-        help="Add the model-graded rubric judge.v3 (or the one --rubric names; paid). The judge is set by "
+        help="Add the model-graded rubric judge.v5 by default (or the one --rubric names; paid). The judge is set by "
         "JUDGE_PROVIDER and JUDGE_MODEL "
         "(default deepseek/deepseek-flash), which need DEEPSEEK_API_KEY (anthropic/claude-opus-5-5 needs "
         "ANTHROPIC_API_KEY). Refused, before any call, when the judge equals the agent or its key is missing.",
@@ -1344,16 +1758,34 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_evalx.add_argument(
         "--rubric",
-        choices=["v3", "v4"],
+        choices=["v3", "v4", "v5", LITERAL_RULER],
         default=None,
-        help="Rubric of the judge with --judge or --judge-repeat: v3 or v4, which also flags a general claim stated "
-        "as fact with no source (spec v0.10.0 D1). Left out, the configured default (v3 until task 86). Each "
-        "judgement records the version.",
+        help="Rubric of the judge with --judge or --judge-repeat: v3; v4, which also flags a general claim stated "
+        "as fact with no source (spec v0.10.0 D1); or v5, two calls per judgement that list the claims of the reply "
+        "and judge each one, the verdict computed from them (spec v0.11.0 D3). Left out, the default is judge.v5; use "
+        "v3 to select the earlier single-call judge. Each judgement records the version. With a judge, an answer "
+        "passes by the combined ruler "
+        "(spec v0.11.0 D8: the deterministic checks without the required phrases, and the judge's content floor); "
+        "literal keeps the earlier ruler (every deterministic check, required phrases included) with the default "
+        "rubric.",
     )
     p_evalx.add_argument(
         "--only-sample",
         default=None,
         help="With --judge-repeat: grade only the answers whose request_id is in this calibration CSV, in its order.",
+    )
+    p_evalx.add_argument(
+        "--claims-from",
+        action="append",
+        default=None,
+        help="With --judge-repeat and --rubric v5: grade the claims of this calibration claims CSV "
+        "(eval-calibrate --packets) instead of listing them, paired by number with the sample; repeatable. Every "
+        "answer graded needs its list.",
+    )
+    p_evalx.add_argument(
+        "--only-route",
+        default=None,
+        help="With --judge-repeat: grade only the recorded answers of this route (for example general_web).",
     )
     p_evalx.add_argument(
         "--limit",
@@ -1402,18 +1834,97 @@ def main(argv: list[str] | None = None) -> int:
         help="Human calibration of the judge: --sample writes the CSV to rate, --import measures the agreement.",
     )
     p_calibrate.add_argument("--sample", type=int, default=None, help="Draw N answers (at least 24) into a CSV.")
-    p_calibrate.add_argument("--from", dest="source", default=None, help="Campaign report JSON (used with --sample).")
-    p_calibrate.add_argument("--import", dest="import_csv", default=None, help="The CSV the owner filled in.")
+    p_calibrate.add_argument(
+        "--from",
+        dest="source",
+        action="append",
+        default=None,
+        help="Campaign report JSON (used with --sample). Repeatable: the reports of one campaign (the development run "
+        "and the holdout_v080 run) are drawn together.",
+    )
+    p_calibrate.add_argument(
+        "--import",
+        dest="import_csv",
+        nargs="?",
+        const="",
+        default=None,
+        help="The CSV the owner filled in; with two raters, --import alone and the files in --rater.",
+    )
     p_calibrate.add_argument("--seed", type=int, default=None, help="Seed of the draw (default 20261104).")
     p_calibrate.add_argument("--campaign", default=None, help="Campaign name (default: the report name).")
     p_calibrate.add_argument(
         "--split",
-        choices=["development", "dev", "holdout"],
+        choices=["development", "dev", "holdout", "all"],
         default="development",
-        help="Splits the sample is drawn from (default development: dev and holdout). The holdout_v080 is never "
-        "sampled.",
+        help="Splits the sample is drawn from (default development: dev and holdout; all adds the holdout_v080, for "
+        "the v0.11.0 sample, which measures the judge and not the agent).",
     )
-    p_calibrate.add_argument("--rater", default="owner", help="Who rated, stored with the ratings (with --import).")
+    p_calibrate.add_argument(
+        "--rater",
+        nargs="+",
+        action="append",
+        default=None,
+        metavar="NAME[:KIND] [CSV [CLAIMS_CSV]]",
+        help="Who rated (default owner), stored with the ratings (with --import). Task 89: repeat --rater "
+        "<name>:human|model:<models> <sample.csv> [<sample-claims.csv>] for two raters, each with its kind (human, or "
+        "model:<models> for a declared panel, e.g. painel:model:claude-opus+gpt-5); with the claims CSV the verdict "
+        "is computed from the marks. One rater with one CSV is the v0.8.0 import, a human one.",
+    )
+    p_calibrate.add_argument(
+        "--adjudication",
+        default=None,
+        help="With two raters: CSV with request_id, gold_verdict, gold_scores (criterion=value), reason and, "
+        "optionally, gold_claims (n=mark); required wherever the raters diverge.",
+    )
+    p_calibrate.add_argument(
+        "--merge-panel",
+        nargs=2,
+        default=None,
+        metavar=("MEMBER1_CLAIMS_CSV", "MEMBER2_CLAIMS_CSV"),
+        help="Join the files of the two members of a panel of models (same sample, checked by the SHA-256 of the "
+        "claims and the identity of the answers) into the panel's: a mark, a score or the verdict where both gave "
+        "the same, blank where they differ. Needs --sample-csv. Writes --out <panel.csv> and <panel>-claims.csv, "
+        "neither of which may exist, for --import --rater <name>:model:<model1>+<model2>.",
+    )
+    p_calibrate.add_argument(
+        "--sample-csv",
+        nargs=2,
+        default=None,
+        metavar=("MEMBER1_CSV", "MEMBER2_CSV"),
+        help="With --merge-panel (required): the sample CSVs of the two members, in the same order as their claims "
+        "CSVs.",
+    )
+    p_calibrate.add_argument(
+        "--exclude",
+        action="append",
+        default=None,
+        help="With --sample: a calibration CSV whose answers (request_id) stay out. Repeatable.",
+    )
+    p_calibrate.add_argument(
+        "--enrich",
+        default=None,
+        help="With --sample: comma-separated routes that hold at least half of the sample (e.g. "
+        "knowledge,knowledge_and_support); a draw short of the size asked for is refused.",
+    )
+    p_calibrate.add_argument(
+        "--packets",
+        action="store_true",
+        help="With --sample: also write <stem>-claims.csv and one <id>.md packet per answer in <stem>-pacotes/. "
+        "Claims come from recorded judge.v5 judgements, else from one judge_claims.v1 call per answer (paid, "
+        "through the budget guard).",
+    )
+    p_calibrate.add_argument(
+        "--seal",
+        action="store_true",
+        help="With --sample (implies --packets): write the SHA-256 of the sample, of its identity and of every file "
+        "written to tests/scenarios/calibration_v0110.sha256; --import refuses that sample if its hash changes. A draw "
+        "short of the size asked for, or a seal of another sample, is refused before any claim is listed.",
+    )
+    p_calibrate.add_argument(
+        "--scripted",
+        action="store_true",
+        help="With --packets: list the claims with the scripted judge (offline, for tests; not for a real sample).",
+    )
     p_calibrate.add_argument(
         "--judge",
         action="append",
@@ -1434,11 +1945,19 @@ def main(argv: list[str] | None = None) -> int:
     p_calibrate.add_argument(
         "--rubric",
         action="append",
-        choices=["v3", "v4"],
+        choices=["v3", "v4", "v5"],
         default=None,
-        help="With --judge: the rubric of that judge's judgements (v3 when left out, spec v0.10.0 D1). With v4 or more "
-        "than one --judge, the report has one block per judge beside the original, the table of the four general "
+        help="With --judge: the rubric of that judge's judgements (configured default v5 when left out). With v3, v4, "
+        "v5 or more than one --judge, the report has one block per judge beside the original, the table of the four "
         "claims with no source and the D2 line.",
+    )
+    p_calibrate.add_argument(
+        "--judge-majority",
+        action="store_true",
+        help="With --import and --judge: compare each judge by the majority of its completed judgements of each answer "
+        "in the execution (eval --judge-repeat 3), not by the first: unsupported_claim is yes when more than half say "
+        "yes, each score is the median, the claim marks are those of the first judgement with the majority's verdict. "
+        "An even number of judgements of an answer is refused (judge it once more under the same --name).",
     )
     p_calibrate.add_argument(
         "--delimiter",

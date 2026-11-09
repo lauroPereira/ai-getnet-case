@@ -1,6 +1,10 @@
 """Retrieval evaluation: Recall@k (any relevant passage), MRR and nDCG@k over a labeled question set, with the mean
 time per query. Two splits (task 81, D8): `dev` (`retrieval.jsonl`, labels by document, used while developing) and
-`holdout_v090` (`retrieval_holdout_v090.jsonl`, labels by chunk with grades, sealed by sha256 and measured last)."""
+`holdout_v090` (`retrieval_holdout_v090.jsonl`, labels by chunk with grades, sealed by sha256 and measured last).
+
+v0.11.0 (task 90, D7): a fourth configuration, `hybrid@36`, the fusion the reranker reads cut to k without a model, so
+`hybrid+rerank - hybrid@36` is the reranker's own gain; and the BM25 floor (`--bm25-min-score`), measured as a
+configuration of its own."""
 
 from __future__ import annotations
 
@@ -12,14 +16,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from merchant_assistant.config import PROJECT_ROOT
-from merchant_assistant.rag.index import KnowledgeIndex
+from merchant_assistant.rag.index import CONTROL_MODE, KnowledgeIndex
 from merchant_assistant.rag.rerank import RERANK_CANDIDATES
 
 SCENARIOS = PROJECT_ROOT / "tests" / "scenarios"
 PROJECT_SCENARIOS = SCENARIOS  # the versioned sets; tests point SCENARIOS at synthetic ones
 SPLITS = {"dev": "retrieval.jsonl", "holdout_v090": "retrieval_holdout_v090.jsonl"}
 SEALED_SPLITS = frozenset({"holdout_v090"})
-CONFIGURATIONS = ("dense", "hybrid", "hybrid+rerank")
+CONFIGURATIONS = ("dense", "hybrid", CONTROL_MODE, "hybrid+rerank")
+METRICS = ("recall_at_k", "mrr", "ndcg_at_k")
 
 
 class SealError(ValueError):
@@ -103,9 +108,12 @@ def evaluate(
     meter=None,
 ) -> dict:
     rows = []
+    floor = 0.0 if (mode or index.mode) == "dense" else index.bm25_min_score
     for case in cases:
         notes: dict = {}
         extra = {"reranker": reranker, "meter": meter, "notes": notes} if reranker is not None else {}
+        if floor > 0:  # task 90: the index writes the BM25-only hits its floor dropped
+            extra["notes"] = notes
         started = time.perf_counter()
         hits = index.search(case.question, k=k, mode=mode, **extra)[:k]
         elapsed_ms = (time.perf_counter() - started) * 1000
@@ -124,6 +132,8 @@ def evaluate(
             row["category"] = case.category
         if reranker is not None:
             row["rerank"] = notes.get("rerank", {}).get("status")
+        if floor > 0:  # task 90: how many BM25-only hits the floor dropped before the fusion of this query
+            row["bm25_dropped"] = len(notes.get("bm25_dropped", []))
         rows.append(row)
 
     def summary(selected: list[dict]) -> dict:
@@ -149,14 +159,23 @@ def evaluate(
         report["by_category"] = {c: summary([r for r in rows if r.get("category") == c]) for c in categories}
     if reranker is not None:
         report["rerank_failures"] = sum(r["rerank"] == "failed" for r in rows)
+    report["bm25_min_score"] = floor
+    if floor > 0:
+        report["bm25_dropped"] = sum(r["bm25_dropped"] for r in rows)
     return report
 
 
 # --- accumulated report: one row per split and configuration, and the D7 suggestion ------------------------------
 
 
-def configuration(mode: str, rerank: bool) -> str:
-    return "hybrid+rerank" if rerank else mode
+def configuration(mode: str, rerank: bool, bm25_min_score: float = 0.0) -> str:
+    """The row of the table: the mode (or `hybrid+rerank`) and, when the BM25 floor is on, the floor."""
+    name = "hybrid+rerank" if rerank else mode
+    return f"{name} bm25>={bm25_min_score:g}" if bm25_min_score > 0 else name
+
+
+def _base(config: str) -> str:
+    return config.split(" ")[0]
 
 
 def record_run(previous: dict | None, run: dict) -> dict:
@@ -168,7 +187,7 @@ def record_run(previous: dict | None, run: dict) -> dict:
             f"the report has embeddings {report['embedding_model']} and k={report['k']}; this run has "
             f"{run['embedding_model']} and k={run['k']}: use another --out"
         )
-    split, config = run["split"], configuration(run["mode"], run["rerank"])
+    split, config = run["split"], configuration(run["mode"], run["rerank"], run.get("bm25_min_score", 0.0))
     earlier = report["results"].get(split, {}).get(config)
     entry = {
         "overall": run["overall"],
@@ -176,7 +195,7 @@ def record_run(previous: dict | None, run: dict) -> dict:
         "runs": (earlier["runs"] + 1) if earlier else 1,
         "measured_at": run["measured_at"],
     }
-    for key in ("by_category", "rerank_failures", "rerank_usage", "holdout"):
+    for key in ("by_category", "rerank_failures", "rerank_usage", "holdout", "bm25_min_score", "bm25_dropped"):
         if key in run:
             entry[key] = run[key]
     report["results"].setdefault(split, {})[config] = entry
@@ -185,7 +204,8 @@ def record_run(previous: dict | None, run: dict) -> dict:
 
 def suggest_default(report: dict) -> str:
     """Rule D7, written before measuring: hybrid if its nDCG@k beats dense in dev and in the holdout; the reranker
-    only if hybrid+rerank beats hybrid in nDCG@k in both. A suggestion for the Supervisor, not the decision."""
+    only if hybrid+rerank beats its control at the same depth, hybrid@36, in nDCG@k in both (ADR 0020; spec v0.11.0
+    D7). A suggestion for the Supervisor, not the decision. The rows with a BM25 floor are not part of the rule."""
     results = report.get("results", {})
     splits = ("dev", "holdout_v090")
     missing = [f"{s}/{c}" for s in splits for c in CONFIGURATIONS if c not in results.get(s, {})]
@@ -196,7 +216,7 @@ def suggest_default(report: dict) -> str:
         return results[split][config]["overall"]["ndcg_at_k"]
 
     hybrid = all(nd(s, "hybrid") > nd(s, "dense") for s in splits)
-    rerank = hybrid and all(nd(s, "hybrid+rerank") > nd(s, "hybrid") for s in splits)
+    rerank = hybrid and all(nd(s, "hybrid+rerank") > nd(s, CONTROL_MODE) for s in splits)
     numbers = "; ".join(
         f"{s}: " + ", ".join(f"{c} {nd(s, c):.3f}" for c in CONFIGURATIONS) for s in splits
     )
@@ -214,6 +234,24 @@ def rerank_failures(report: dict) -> tuple[int, int]:
     return sum(e.get("rerank_failures", 0) for e in entries), sum(e["overall"]["n"] for e in entries)
 
 
+def own_gain(report: dict) -> dict[str, dict[str, float]]:
+    """Per split with both rows: `hybrid+rerank - hybrid@36` in Recall@k, MRR and nDCG@k, the reranker's own gain at
+    the same fusion depth (rows without a BM25 floor)."""
+    gains = {}
+    for split in SPLITS:
+        rows = report.get("results", {}).get(split, {})
+        if "hybrid+rerank" in rows and CONTROL_MODE in rows:
+            a, b = rows["hybrid+rerank"]["overall"], rows[CONTROL_MODE]["overall"]
+            gains[split] = {m: round(a[m] - b[m], 3) for m in METRICS}
+    return gains
+
+
+def _ordered(rows: dict) -> list[str]:
+    """The configurations of a split in table order: the four modes, each followed by its rows with a BM25 floor."""
+    order = {c: i for i, c in enumerate(CONFIGURATIONS)}
+    return sorted(rows, key=lambda c: (order.get(_base(c), len(order)), rows[c].get("bm25_min_score", 0.0), c))
+
+
 def render_markdown(report: dict) -> str:
     k = report["k"]
     lines = [
@@ -225,24 +263,41 @@ def render_markdown(report: dict) -> str:
         "",
         f"`hybrid+rerank`: o modelo reordena os {RERANK_CANDIDATES} primeiros de uma fusão de profundidade "
         f"{3 * max(k, RERANK_CANDIDATES)}, contra {3 * k} do `hybrid`; numa consulta em que o reranker falha, a "
-        "resposta é a do `hybrid`.",
+        f"resposta é a do `hybrid`. `{CONTROL_MODE}` é o controle: a mesma fusão cortada em k pela ordem do RRF, sem "
+        "modelo.",
         "",
-        f"| Split | Configuração | n | Recall@{k} | MRR | nDCG@{k} | Tempo médio (ms) | Execuções "
-        "| Falhas do reranker |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "Piso BM25: hits achados só pelo BM25 com score (sobre o maior score BM25 da consulta) abaixo do piso saem "
+        "antes da fusão; `0` é desligado. A coluna Descartados soma esses hits em todas as consultas.",
+        "",
+        f"| Split | Configuração | Piso BM25 | n | Recall@{k} | MRR | nDCG@{k} | Tempo médio (ms) | Execuções "
+        "| Falhas do reranker | Descartados |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for split in SPLITS:
-        for config in CONFIGURATIONS:
-            entry = report["results"].get(split, {}).get(config)
-            if entry is None:
-                continue
+        rows = report["results"].get(split, {})
+        for config in _ordered(rows):
+            entry = rows[config]
             o = entry["overall"]
             runs = str(entry["runs"]) + (" (holdout já visto)" if split in SEALED_SPLITS and entry["runs"] > 1 else "")
-            failed = f"{entry.get('rerank_failures', 0)} de {o['n']}" if config == "hybrid+rerank" else "—"
+            failed = f"{entry.get('rerank_failures', 0)} de {o['n']}" if _base(config) == "hybrid+rerank" else "—"
+            floor = "—" if _base(config) == "dense" else f"{entry.get('bm25_min_score', 0.0):g}"
+            dropped = str(entry["bm25_dropped"]) if "bm25_dropped" in entry else "—"
             lines.append(
-                f"| {split} | {config} | {o['n']} | {o['recall_at_k']:.3f} | {o['mrr']:.3f} | {o['ndcg_at_k']:.3f} "
-                f"| {o['mean_ms']:.1f} | {runs} | {failed} |"
+                f"| {split} | {config} | {floor} | {o['n']} | {o['recall_at_k']:.3f} | {o['mrr']:.3f} "
+                f"| {o['ndcg_at_k']:.3f} | {o['mean_ms']:.1f} | {runs} | {failed} | {dropped} |"
             )
+    gains = own_gain(report)
+    if gains:
+        lines += [
+            "",
+            f"Ganho próprio do reranker (`hybrid+rerank` menos `{CONTROL_MODE}`, mesma profundidade de fusão, sem "
+            "piso):",
+            "",
+            f"| Split | Diferença Recall@{k} | Diferença MRR | Diferença nDCG@{k} |",
+            "| --- | --- | --- | --- |",
+        ]
+        for split, gain in gains.items():
+            lines.append(f"| {split} | " + " | ".join(f"{gain[m]:+.3f}" for m in METRICS) + " |")
     holdout = next(
         (e["holdout"] for e in report["results"].get("holdout_v090", {}).values() if "holdout" in e), None
     )

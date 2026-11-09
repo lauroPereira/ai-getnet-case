@@ -1275,7 +1275,10 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
         conn.close()
 
 
-STEP_DETAIL_FIELDS = ("prompt", "mode", "hits", "citations", "agent", "arguments", "topic", "tools", "failed", "reused")
+STEP_DETAIL_FIELDS = (
+    "prompt", "mode", "hits", "citations", "agent", "arguments", "topic", "tools", "failed", "reused",
+    "web_summary", "web_summary_truncated", "web_urls",  # task 87 (D1): masked in the step, the search summary
+)
 REPLAN_STEP_FIELDS = ("next", "reason", "review", "hops", "origin", "observed")  # only the `replan` step (task 69, D7)
 
 

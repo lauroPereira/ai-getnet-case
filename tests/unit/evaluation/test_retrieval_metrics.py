@@ -58,6 +58,8 @@ def test_gains_by_chunk_grade_and_by_first_relevant_document():
 
 
 class FixedIndex:
+    mode, bm25_min_score = "hybrid", 0.0  # the attributes `evaluate` reads from a KnowledgeIndex
+
     def __init__(self, ranking: dict[str, list[str]]) -> None:
         self.ranking, self.calls = ranking, []
 
@@ -142,10 +144,15 @@ def run(split: str, mode: str, rerank: bool, ndcg: float, model: str = "text-emb
             "by_language": {}, "measured_at": "2026-11-05T12:00:00+00:00", **extra}
 
 
-def table(dev: tuple[float, float, float], holdout: tuple[float, float, float], failures: dict | None = None) -> dict:
+MODES = (("dense", False), ("hybrid", False), ("hybrid@36", False), ("hybrid", True))  # task 90: four rows
+
+
+def table(dev: tuple[float, ...], holdout: tuple[float, ...], failures: dict | None = None) -> dict:
+    """nDCG@6 per configuration in MODES order; a three-value tuple (v0.9.0) gives hybrid@36 the hybrid value."""
     report = None
     for split, values in (("dev", dev), ("holdout_v090", holdout)):
-        for (mode, rerank), value in zip((("dense", False), ("hybrid", False), ("hybrid", True)), values, strict=True):
+        values = values if len(values) == 4 else (values[0], values[1], values[1], values[2])
+        for (mode, rerank), value in zip(MODES, values, strict=True):
             extra = {"rerank_failures": (failures or {}).get(split, 0)} if rerank else {}
             report = record_run(report, run(split, mode, rerank, value, **extra))
     return report
@@ -159,11 +166,16 @@ def table(dev: tuple[float, float, float], holdout: tuple[float, float, float], 
         ((0.5, 0.6, 0.5), (0.5, 0.6, 0.7), "RETRIEVAL_MODE=hybrid, RERANK=off"),  # nor dev
         ((0.5, 0.6, 0.7), (0.6, 0.6, 0.7), "RETRIEVAL_MODE=dense, RERANK=off"),  # hybrid not confirmed in holdout
         ((0.6, 0.5, 0.9), (0.5, 0.6, 0.9), "RETRIEVAL_MODE=dense, RERANK=off"),  # hybrid worse in dev
+        # task 90 (ADR 0020, D7): the reranker is compared with its control at depth 36, not with hybrid
+        ((0.5, 0.6, 0.75, 0.7), (0.5, 0.6, 0.65, 0.7), "RETRIEVAL_MODE=hybrid, RERANK=off"),  # beaten by hybrid@36
+        ((0.5, 0.6, 0.7, 0.7), (0.5, 0.6, 0.65, 0.7), "RETRIEVAL_MODE=hybrid, RERANK=off"),  # a tie is not a gain
+        ((0.5, 0.6, 0.55, 0.7), (0.5, 0.6, 0.65, 0.7), "RETRIEVAL_MODE=hybrid, RERANK=on"),  # beats it in both
     ],
 )
 def test_d7_suggestion(dev, holdout, expected):
     line = suggest_default(table(dev, holdout))
     assert line.startswith(expected + " (reranker com 0 falhas em 40 consultas; nDCG@6: dev: dense ")
+    assert "hybrid@36" in line
 
 
 @pytest.mark.parametrize("failures", [{"dev": 1}, {"holdout_v090": 3}])
@@ -175,22 +187,22 @@ def test_reranker_failures_make_its_suggestion_unavailable_and_show_in_the_table
     line = suggest_default(report)
     assert line.startswith(f"RETRIEVAL_MODE=hybrid, RERANK=indisponível (reranker com {count} falhas em 40 consultas")
     text = render_markdown(report)
-    assert f"| {split} | hybrid+rerank | 20 | 0.900 | 0.700 | 0.700 | 12.5 | 1 | {count} de 20 |" in text
-    assert "| dev | hybrid | 20 | 0.900 | 0.700 | 0.600 | 12.5 | 1 | — |" in text
+    assert f"| {split} | hybrid+rerank | 0 | 20 | 0.900 | 0.700 | 0.700 | 12.5 | 1 | {count} de 20 | — |" in text
+    assert "| dev | hybrid | 0 | 20 | 0.900 | 0.700 | 0.600 | 12.5 | 1 | — | — |" in text
     assert f"Modo padrão sugerido (regra D7, a decisão é do Supervisor): {line}" in text
 
 
 def test_markdown_states_the_fusion_depth_of_the_reranker():
     text = render_markdown(table((0.5, 0.6, 0.7), (0.5, 0.6, 0.7)))
     assert "reordena os 12 primeiros de uma fusão de profundidade 36, contra 18 do `hybrid`" in text
-    assert "| dev | hybrid+rerank | 20 | 0.900 | 0.700 | 0.700 | 12.5 | 1 | 0 de 20 |" in text
+    assert "| dev | hybrid+rerank | 0 | 20 | 0.900 | 0.700 | 0.700 | 12.5 | 1 | 0 de 20 | — |" in text
 
 
 def test_suggestion_waits_for_every_split_and_configuration():
     report = record_run(None, run("dev", "dense", False, 0.5))
     report = record_run(report, run("dev", "hybrid", True, 0.6))
-    assert suggest_default(report) == "indisponível: faltam dev/hybrid, holdout_v090/dense, holdout_v090/hybrid, " \
-        "holdout_v090/hybrid+rerank"
+    assert suggest_default(report) == "indisponível: faltam dev/hybrid, dev/hybrid@36, holdout_v090/dense, " \
+        "holdout_v090/hybrid, holdout_v090/hybrid@36, holdout_v090/hybrid+rerank"
 
 
 def test_record_run_counts_repeats_and_refuses_other_embeddings():
@@ -200,7 +212,7 @@ def test_record_run_counts_repeats_and_refuses_other_embeddings():
     entry = report["results"]["holdout_v090"]["dense"]
     assert entry["runs"] == 2 and entry["overall"]["ndcg_at_k"] == 0.5 and entry["holdout"] == holdout
     text = render_markdown(report)
-    assert "| holdout_v090 | dense | 20 | 0.900 | 0.700 | 0.500 | 12.5 | 2 (holdout já visto) | — |" in text
+    assert "| holdout_v090 | dense | — | 20 | 0.900 | 0.700 | 0.500 | 12.5 | 2 (holdout já visto) | — | — |" in text
     assert "Holdout de retrieval: usado, lacre `ffffffffffff…` conferido." in text
     assert "Modo padrão sugerido (regra D7, a decisão é do Supervisor): indisponível" in text
     with pytest.raises(ValueError, match="another --out"):
@@ -209,5 +221,5 @@ def test_record_run_counts_repeats_and_refuses_other_embeddings():
 
 def test_markdown_flags_hash_embeddings_and_an_unused_holdout():
     text = render_markdown(record_run(None, run("dev", "hybrid", True, 0.6, model="hash-embedder-v1")))
-    assert "| dev | hybrid+rerank | 20 |" in text and "Holdout de retrieval: não usado." in text
+    assert "| dev | hybrid+rerank | 0 | 20 |" in text and "Holdout de retrieval: não usado." in text
     assert "Embeddings de hash (sem rede)" in text

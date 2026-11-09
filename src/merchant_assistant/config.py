@@ -70,9 +70,12 @@ class Settings(BaseSettings):
     # v0.9.0 (task 80, D7): `hybrid` fuses dense and BM25 by RRF. Default `hybrid` since task 82: by the D7 rule it
     # beat `dense` on nDCG@6 in dev (0.974 > 0.868) and in the sealed holdout (0.921 > 0.880). `dense` is v0.8.0.
     retrieval_mode: Literal["dense", "hybrid"] = "hybrid"
-    # v0.9.0 (task 81, D7): the agent model reorders the first 12 results of the hybrid fusion (prompt rerank.v1).
-    # Off until it improves nDCG@6 in dev and in the retrieval holdout; it requires RETRIEVAL_MODE=hybrid.
-    rerank: Literal["on", "off"] = "off"
+    # v0.9.0 (task 81, D7; v0.11.0 task 90 adds hybrid@36 as the control): the agent model reorders the first 12
+    # results of the hybrid fusion (prompt rerank.v1). It requires RETRIEVAL_MODE=hybrid; set RERANK=off to disable.
+    rerank: Literal["on", "off"] = "on"
+    # v0.11.0 (task 90, D7): floor for the hits only BM25 found, on the BM25 score over the best BM25 score of the
+    # query (0 to 1). Below it they are dropped before the fusion (hybrid only). 0 is off, the v0.9.0 search.
+    retrieval_bm25_min_score: float = Field(default=0.0, ge=0, le=1, allow_inf_nan=False)
 
     budget_limit_usd: float = Field(default=1.00, ge=0, le=ABSOLUTE_BUDGET_LIMIT_USD, allow_inf_nan=False)
     max_request_cost_usd: float = 0.05
@@ -91,6 +94,11 @@ class Settings(BaseSettings):
     # is refused before any call when it equals the agent, has no provider key or has no price.
     judge_provider: str = "deepseek"
     judge_model: str = "deepseek-flash"
+    # v0.11.0 (task 87, D2): the evaluation fetches the pages a web-search reply cited and gives their text to the
+    # judge (cache under <runtime>/web_evidence). Never during a merchant's turn. off keeps the v0.10.0 note.
+    web_evidence: Literal["on", "off"] = "on"
+    web_evidence_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    web_evidence_max_bytes: int = Field(default=2 * 1024 * 1024, ge=1024, le=20 * 1024 * 1024)
 
     user_id_pattern: str = Field(default=r"^[A-Za-z0-9_\-.]{1,64}$")
 

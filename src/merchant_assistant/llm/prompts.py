@@ -24,12 +24,19 @@ class Prompt:
 
 def prompt_versions(prompts_dir: Path) -> dict[str, str]:
     """Version in use of every prompt in the directory, as recorded in its front matter: the latest file, except the
-    judge, whose version is the configured rubric (`judge.RUBRIC_VERSION`, spec v0.10.0 D1: judge.v4 exists, judge.v3
-    stays the default until task 86)."""
-    from merchant_assistant.evaluation.judge import RUBRIC_VERSION  # imported here: evaluation depends on this module
+    judge, whose version is the configured rubric (`judge.RUBRIC_VERSION`, judge.v5 since task 91). The claim-list
+    prompt is included only while `judge.v5` is configured; its version is pinned by that rubric."""
+    from merchant_assistant.evaluation.judge import (  # imported here: evaluation depends on this module
+        CLAIM_RUBRICS,
+        RUBRIC_VERSION,
+    )
 
     pinned = {"judge": RUBRIC_VERSION}
-    names = sorted({p.name.split(".v")[0] for p in prompts_dir.glob("*.v*.md")})
+    in_use = CLAIM_RUBRICS.get(RUBRIC_VERSION)
+    if in_use:
+        pinned[in_use[0]] = in_use[1]
+    unused = {name for name, _ in CLAIM_RUBRICS.values()} - set(pinned)
+    names = sorted({p.name.split(".v")[0] for p in prompts_dir.glob("*.v*.md")} - unused)
     return {
         name: load_prompt(prompts_dir, name, _pinned(prompts_dir, name, pinned.get(name))).version for name in names
     }
