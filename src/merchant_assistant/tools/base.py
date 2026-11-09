@@ -68,6 +68,7 @@ class ToolEnv:
     faults: dict[str, str] = field(default_factory=dict)  # tool name -> error code, for failure tests
     mock_services: object | None = None
     resource_id: str | None = None  # resource the current tool call touched, written to its audit row
+    conversation_id: str | None = None  # the conversation of the turn, set by the server (a cancellation waits in it)
 
 
 class ToolError(Exception):

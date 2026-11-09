@@ -14,6 +14,13 @@ Topic = Literal[
 Language = Literal["pt", "en"]
 Safety = Literal["none", "unsafe", "sensitive", "injection"]
 CaseSignal = Literal["none", "resolved", "still_failing", "thanks_only"]
+Confirmation = Literal["yes", "no", "other"]
+
+
+def _no_default_in_schema(schema: dict) -> None:
+    """The model always answers the field (strict structured output); the default only serves decisions built in
+    code and scripted models written before the field existed."""
+    schema.pop("default", None)
 
 
 class RouterDecision(BaseModel):
@@ -26,6 +33,12 @@ class RouterDecision(BaseModel):
     case_signal: CaseSignal = Field(
         description="Merchant's reaction to the assistant's previous reply in this conversation: resolved, "
         "still_failing, thanks_only, or none."
+    )
+    confirmation: Confirmation = Field(  # router.v7 (task 94); validated in code by `router.enforce`
+        default="other",
+        description="Only when a sale cancellation waits for the merchant's answer: yes when the message only "
+        "confirms it, no when it only refuses it; anything else, or no pending cancellation, is other.",
+        json_schema_extra=_no_default_in_schema,
     )
 
 
@@ -71,6 +84,7 @@ class SupportResult(SupportDraft):
     steps_given: list[str] = []
     issue_verified_by_tool: bool = False
     tools_used: list[str] = []
+    tools_ok: list[str] = []  # the specialist tools that answered (no error)
 
 
 class EscalationDraft(BaseModel):
@@ -117,7 +131,13 @@ class GraphState(BaseModel):
     user_id: str
     customer_known: bool
     message: str
-    history: list[dict] = []
+    history: list[dict] = []  # the short history (`ConversationStore.history()['recent']`)
+    summary: str | None = None  # task 92 (D1): what left the short history; data for prompts, never evidence
+    uncovered_history: list[dict] = []  # up to 12 messages outside the window that are not covered by the summary
+    history_incomplete: bool = False  # older uncovered messages were omitted from the bounded prompt context
+    facts: list[dict] = []  # task 92 (D2): the fact register of earlier turns, evidence for the output guard
+    # The facts each prompt shows, by agent (`support`, `personality`): from messages older than its recent turns.
+    prompt_facts: dict[str, list[dict]] = {}
     case: dict = {}
     prefix_cache: dict | None = None
     guard_findings: list[str] = []
@@ -137,3 +157,10 @@ class GraphState(BaseModel):
     case_next: dict = {}
     operator: dict | None = None  # set when an operator resumes the flow: action, text, operator_id
     plan: dict = {}  # replanning (task 69): `hops` taken away from the initial plan, `next` step, `gap` declared
+    # task 94 (D5): the sale cancellation request waiting for an answer in this conversation when the turn started
+    # (request_id, sale_date, amount, turns_waited), and what the code did with it in this turn (the request's view)
+    cancellation: dict | None = None
+    cancellation_event: dict | None = None
+    # the conversation already had a cancellation request of this merchant (waiting or closed) when the
+    # turn started
+    cancellation_in_conversation: bool = False

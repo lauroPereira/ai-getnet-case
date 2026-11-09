@@ -144,6 +144,14 @@ def test_cancellation_lookup_is_read_only_and_customer_scoped(tmp_path):
             "requested_at": "2026-10-25T13:10:00-03:00",
             "processed_at": None,
             "reason_code": "merchant_request",
+            "sale": {  # the sale the cancellation belongs to, as the merchant recognizes it
+                "sale_id": "sale_1988_0002",
+                "sale_date": "2026-10-25",
+                "payment_type": "credit",
+                "installments": 1,
+                "channel": "pos",
+                "gross_amount": {"minor": 120000, "currency": "BRL", "display": "R$ 1.200,00"},
+            },
         }
     ]
     rendered = str(data["cancellations"])

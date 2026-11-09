@@ -23,11 +23,13 @@ class JevRouter:
         self.timeout = timeout
 
     @staticmethod
-    def _questions() -> dict:
+    def _questions(pending_cancellation: bool = False) -> dict:
+        """The judgment's questions; `confirmation` only when a sale cancellation waits for the merchant's answer
+        (task 94). `router.enforce` still validates the answer against the message in code."""
         from merchant_assistant.orchestration.state import RouterDecision
 
         fields = RouterDecision.model_fields
-        return {
+        questions = {
             "route": {
                 "type": "choice",
                 "instructions": fields["route"].description or "Choose the route",
@@ -86,12 +88,24 @@ class JevRouter:
                 },
             },
         }
+        if pending_cancellation:
+            questions["confirmation"] = {
+                "type": "choice",
+                "instructions": fields["confirmation"].description or "Answer to the pending sale cancellation",
+                "criteria": {
+                    "yes": "The message only confirms the pending sale cancellation",
+                    "no": "The message only refuses the pending sale cancellation",
+                    "other": "Anything else",
+                },
+            }
+        return questions
 
     def parse(self, spec: CallSpec, schema: type[T], meter: Meter) -> LLMResult[T]:
         from merchant_assistant.orchestration.state import RouterDecision
 
         if schema is not RouterDecision or spec.agent != "router":
             raise LLMError("Jev is supported only for the RouterDecision schema.")
+        questions = self._questions(spec.context.get("pending_cancellation") is not None)
         reservation = meter.reserve(
             agent=spec.agent,
             model=self.model,
@@ -106,7 +120,7 @@ class JevRouter:
                     json={
                         "model": self.model,
                         "state": f"{spec.instructions}\n\n{spec.input}",
-                        "questions": self._questions(),
+                        "questions": questions,
                     },
                     timeout=self.timeout,
                 )
@@ -117,13 +131,13 @@ class JevRouter:
                     {
                         "model": self.model,
                         "state": f"{spec.instructions}\n\n{spec.input}",
-                        "questions": self._questions(),
+                        "questions": questions,
                     }
                 )
             if body.get("model") != self.model:
                 raise LLMError("Jev returned an unexpected model version.")
             answers = body["answers"]
-            values = {key: answers[key]["choice"] for key in self._questions()}
+            values = {key: answers[key]["choice"] for key in questions}
             if values["topic"] == "none":
                 values["topic"] = None
             values["intents"] = []

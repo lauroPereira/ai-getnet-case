@@ -215,7 +215,7 @@ def test_readiness(offline):
     client, _, _ = offline()
     ready = client.get("/ready").json()
     assert ready["ready"] is True and ready["index_chunks"] > 100
-    assert ready["versions"]["schema"] == 13 and ready["versions"]["app"].startswith("0.11.0")
+    assert ready["versions"]["schema"] == 14 and ready["versions"]["app"].startswith("0.12.0")
     assert ready["versions"]["prompts"]["router"]
 
 
@@ -276,7 +276,8 @@ def test_contract_termination_does_not_call_sale_tools(offline):
             "answered",
         ),
         ("Já pedi habilitação Visa, qual é o protocolo?", "sim-bnd-1988-001", "answered"),
-        ("Qual o status do cancelamento da venda de ontem?", "status do cancelamento da venda", "answered"),
+        # the status comes from code, one line per sale of the lookup
+        ("Qual o status do cancelamento da venda de ontem?", "está com status solicitado", "answered"),
         ("Quero encerrar meu contrato.", "atendente", "handoff"),
     ],
 )

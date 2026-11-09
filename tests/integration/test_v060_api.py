@@ -57,10 +57,12 @@ def test_scenario_catalog_requires_a_session_and_lists_labeled_scenarios(api):
     assert client.get("/v1/scenarios").status_code == 401
     body = client.get("/v1/scenarios", headers=login(client)).json()
     ids = [item["scenario_id"] for item in body["scenarios"]]
-    assert body["version"] == "1" and len(ids) == 14 and len(set(ids)) == len(ids)  # 10 + 4 of v0.8.0 (replan)
+    # 10 + 4 of v0.8.0 (replan) + 1 of v0.12.0 (the cancellation with confirmation, task 94)
+    assert body["version"] == "1" and len(ids) == 15 and len(set(ids)) == len(ids)
     journeys = {item["journey"] for item in body["scenarios"]}
     assert journeys >= {"knowledge", "receivables", "device", "authorization", "pricing", "enablement"}
     assert journeys >= {"cancellation", "handoff", "safety", "doc_effect", "replan"}  # P3-08: every essential journey
+    assert "cancellation_confirm" in journeys and "SC-CANCEL-CONFIRM" in ids
     assert sorted(i for i in ids if i.startswith("SC-REPLAN-")) == [
         "SC-REPLAN-ACCOUNT", "SC-REPLAN-PROCEDURE", "SC-REPLAN-TOOL-DOWN", "SC-REPLAN-WEB"
     ]
@@ -456,8 +458,9 @@ def test_migration_0008_round_trip_on_a_synthetic_database(settings, api):
     conn.row_factory = sqlite3.Row
     snapshots = conn.execute("SELECT * FROM run_snapshots").fetchall()
     sessions = conn.execute("SELECT session_id, principal_id FROM api_sessions").fetchall()
-    assert current_version(conn) == 13
+    assert current_version(conn) == 14
     assert migrate(conn, 7) == [
+        "down 0014_memory_and_writes",
         "down 0013_evaluation_claims",
         "down 0012_comparison_interrupted",
         "down 0011_evaluation_rubric",

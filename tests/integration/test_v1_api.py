@@ -427,6 +427,7 @@ def test_migration_0006_round_trip_preserves_legacy_synthetic_records(settings):
 
     conn = connect(settings.db_path)
     assert migrate(conn, 6) == [
+        "down 0014_memory_and_writes",
         "down 0013_evaluation_claims",
         "down 0012_comparison_interrupted",
         "down 0011_evaluation_rubric",

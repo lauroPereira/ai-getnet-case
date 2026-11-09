@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from merchant_assistant import comparisons, handoffs
 from merchant_assistant import scenarios as scenario_catalog
-from merchant_assistant.agents.common import format_history
+from merchant_assistant.agents.common import format_history, history_coverage_instruction
 from merchant_assistant.agents.router import enforce
 from merchant_assistant.api.identity import (
     DEFAULT_PUBLIC_CLIENT,
@@ -55,6 +55,7 @@ from merchant_assistant.profiles import (
 )
 from merchant_assistant.rag.kb import KBBuildFailure
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
+from merchant_assistant.tools.domain import pending_sale_cancellation
 
 router = APIRouter(prefix="/v1", tags=["v1"])
 COMPARISON_TTL = timedelta(minutes=5)
@@ -783,17 +784,29 @@ def _router_spec(request: Request, message: str, history: list[dict], case: dict
     from merchant_assistant.llm.prompts import load_prompt
 
     p = load_prompt(settings.prompts_dir, "router")
+    pending = case.get("cancellation")  # task 94: the same line the Router reads in the turn
+    waiting = (
+        f"Sale cancellation waiting for the merchant's yes or no: sale of {pending['amount']} on "
+        f"{pending['sale_date']}\n\n"
+        if pending
+        else ""
+    )
+    history_block = format_history(
+        history, summary=case.get("summary"), incomplete=case.get("history_incomplete", False)
+    )
+    instructions = p.render() + history_coverage_instruction(case.get("history_incomplete", False))
     return CallSpec(
         agent="router",
-        instructions=p.render(),
+        instructions=instructions,
         input=(
-            f"Conversation so far (oldest first):\n{format_history(history)}\n\n"
+            f"Conversation so far (oldest first):\n{history_block}\n\n"
             f"Current case: state={case.get('state', 'in_progress')}, topic={case.get('topic')}\n\n"
+            f"{waiting}"
             f"Merchant message:\n<<<\n{message}\n>>>"
         ),
         effort="none",
         max_output_tokens=300,
-        context={"message": message, "history": history, "case": case},
+        context={"message": message, "history": history, "case": case, "pending_cancellation": pending},
     )
 
 
@@ -810,7 +823,8 @@ def _read_conversation(
     if row["customer_id"] != customer_id:
         raise ConversationNotFound(conversation_id)
     store = ConversationStore(conn, clock)
-    history = store.history(conversation_id)
+    memory = store.history(conversation_id)
+    history = memory["recent"]
     state = {
         "conversation_id": conversation_id,
         "customer_id": customer_id,
@@ -819,7 +833,12 @@ def _read_conversation(
         "technical_cycles": row["technical_cycles"],
         "updated_at": row["updated_at"],
         "history": history,
+        "history_incomplete": memory["incomplete"],
     }
+    if memory["summary"]:  # task 92: the Router reads the rolling summary as in a conversation turn
+        state["summary"] = memory["summary"]
+    if pending := pending_sale_cancellation(conn, conversation_id, customer_id):  # task 94: and a waiting cancellation
+        state["cancellation"] = pending
     return history, state, digest(state)
 
 
@@ -854,7 +873,13 @@ def _decision(request: Request, context: RunContext, spec: CallSpec, mechanism: 
     llm = request.app.state.orchestrator._profile_llm("router", config)
     before = context.cost_usd
     result = llm.parse(spec, RouterDecision, context)
-    decision = enforce(result.value, new_conversation=not spec.context.get("history"))
+    decision = enforce(  # the same rules as `router.run`, a waiting sale cancellation included (task 94)
+        result.value,
+        new_conversation=not spec.context.get("history"),
+        message=spec.context["message"],
+        case_state=spec.context["case"].get("state", ""),
+        pending_cancellation=spec.context.get("pending_cancellation") is not None,
+    )
     parameters_for = getattr(llm, "effective_parameters_for", None)
     if callable(parameters_for):
         effective_parameters = parameters_for(spec)
@@ -864,6 +889,9 @@ def _decision(request: Request, context: RunContext, spec: CallSpec, mechanism: 
         )
     return {
         "decision": decision.model_dump(),
+        # Stored, not returned: `/v1/messages` hands the model's own decision to `router.run`, which applies `enforce`
+        # again (same message and state, so the same decision) and so traces what the rules did (rule, confirmation).
+        "model_decision": result.value.model_dump(),
         "model": result.model,
         "usage": result.usage.__dict__,
         "cost_estimate_usd": round(context.cost_usd - before, 8),
@@ -937,7 +965,7 @@ def compare(payload: CompareRequest, request: Request, principal=READER):
         execution_mode = "simulated" if type(request.app.state.orchestrator.llm).__name__ == "ScriptedLLM" else "real"
         return {
             "comparison_id": comparison_id,
-            "decisions": decisions,
+            "decisions": {m: {k: v for k, v in d.items() if k != "model_decision"} for m, d in decisions.items()},
             "selected_mechanism": payload.selected_mechanism,
             "expires_at": expires.isoformat(),
             "execution_mode": execution_mode,
@@ -1119,7 +1147,10 @@ def execute_run(
         request_id,
         agent_models=agent_models,
         router_llm=router_llm,
-        router_decision=RouterDecision.model_validate(selected["decision"]) if selected else None,
+        # the model's decision when stored (comparisons from v0.12.0 on), so the Router traces what `enforce` did
+        router_decision=RouterDecision.model_validate(selected.get("model_decision", selected["decision"]))
+        if selected
+        else None,
         db_path=domain_db_path,
         knowledge=knowledge,
         trace_tags=tags,

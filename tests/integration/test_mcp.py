@@ -42,7 +42,9 @@ def text(result):
 
 def test_lists_only_the_support_tools(settings):
     listed, _ = run(setup(settings), [])
-    assert sorted(t.name for t in listed.tools) == sorted(AGENT_TOOLS["customer_support"])
+    assert sorted(t.name for t in listed.tools) == sorted(AGENT_TOOLS["mcp"])
+    # task 94: the MCP server stays read-only; a cancellation can only be asked for and confirmed in a conversation
+    assert set(AGENT_TOOLS["customer_support"]) - set(AGENT_TOOLS["mcp"]) == {"request_sale_cancellation"}
     assert all("customer" not in json.dumps(t.input_schema) for t in listed.tools)
 
 

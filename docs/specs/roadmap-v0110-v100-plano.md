@@ -6,6 +6,8 @@
 
 [Roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md). Este plano detalha as capacidades e decisões técnicas das versões relacionadas.
 
+A numeração de tarefas, migrações e decisões arquiteturais acompanha as versões descritas neste plano.
+
 ## Decisões técnicas
 
 ### v0.11.0 — Juiz e retrieval
@@ -21,11 +23,11 @@
 
 ### v0.12.0 — Orquestração, memória e escrita
 
-9. **Resumo rolante** (RF-116). `conversations.summary`, `conversations.summary_until_message_id`; `ConversationStore.history()` devolve `{"summary": str | None, "recent": [...]}`; o resumo é gerado por `summary.v1` (esforço mínimo, ≤ 200 tokens, mascarado) só quando há mensagem nova fora da janela; prompts de Router, Support e Personality recebem o resumo como bloco de dados "Earlier in this conversation (summary)". Cacheado por id: uma chamada por avanço da janela.
+9. **Resumo rolante** (RF-116). `conversations.summary`, `conversations.summary_until_message_id`; `ConversationStore.history()` devolve `{"summary": str | None, "recent": [...]}`; o resumo é gerado por `summary.v1` (esforço mínimo, ≤ 200 tokens, mascarado) só quando há mensagem nova fora da janela; prompts de Router, Support e Personality recebem o resumo como bloco de dados "Earlier in this conversation (summary)". Avança após seis mensagens antigas ainda não resumidas, mantendo-as no bloco recente até lá; há no máximo 12 mensagens por chamada e no bloco. A chamada ocorre depois da guarda de entrada e tem uma posição própria por turno fora de `max_model_calls`, mas permanece no ledger e no teto de custo.
 10. **Registro de fatos** (RF-116). Tabela `conversation_facts(conversation_id, kind, value, source_tool, source_message_id, created_at)`, preenchida em `orchestration/graph.py` ao final do turno a partir de `ctx.outcomes` (valores, datas, protocolos, status, produtos) e de `cases.py` (protocolo `HO-`, pedido de cancelamento); nunca a partir de texto do modelo. A guarda de saída (`personality.py`) une `evidence_texts` com os valores do registro. O resumo nunca entra na guarda.
 11. **Ablação** (RF-117). `Settings.replan = on|off`; com `off`, o grafo liga cada especialista diretamente a `personality` como antes da v0.8.0 (o plano inicial do Router continua). `eval --replan off` grava `replan=off` na configuração da campanha; `eval-compare --a <rel> --b <rel>` (sem chamada) gera o relatório pareado por caso, critério e rota, com bootstrap da diferença, e a seção "decisões de origem `model`" lida dos traces.
 12. **ADR 0024** (RF-118). Documento; sem código. Inclui o diagrama dos dois desenhos e a condição de revisão (por exemplo, ablação mostrando ganho só nas decisões do modelo).
-13. **Cancelamento com confirmação** (RF-119). Tabela `sale_cancellation_requests(request_id, customer_id, sale_id, amount, sale_date, state ∈ {pending_confirmation, confirmed, declined, expired}, protocol, created_at, confirmed_at, idempotency_key)`; ferramenta `request_sale_cancellation(sale_id)` com escopo `support:write`, que cria `pending_confirmation` e devolve o resumo; `confirm_sale_cancellation(request_id)` executada **por código**, não por function calling, quando o turno seguinte do lojista é uma confirmação explícita (classificação pelo Router: rótulo `confirmation` com `yes|no|other`); `no` ou 2 turnos sem confirmação → `declined`/`expired`. `support.v8` instrui a mostrar o resumo e pedir confirmação. Auditoria com o escopo de escrita. Jornada `V0120-CANCEL-CONFIRM` (3 turnos) no catálogo.
+13. **Cancelamento com confirmação** (RF-119). Tabela `sale_cancellation_requests(request_id, customer_id, sale_id, amount, sale_date, state ∈ {pending_confirmation, confirmed, declined, expired}, protocol, created_at, confirmed_at, idempotency_key, conversation_id, turns_waited, updated_at)`, com índice único parcial por chave de idempotência (lojista e venda) para pedido pendente ou confirmado e CHECK de protocolo em pedido confirmado ; ferramenta `request_sale_cancellation(sale_id)` com escopo `support:write`, que cria `pending_confirmation` e devolve o resumo; `confirm_sale_cancellation(request_id)` executada **por código**, não por function calling, quando o turno seguinte do lojista é uma confirmação explícita (classificação pelo Router: rótulo `confirmation` com `yes|no|other`); `no` ou 2 turnos sem confirmação → `declined`/`expired`. `support.v9` instrui a mostrar o resumo e pedir confirmação. Auditoria com o escopo de escrita. Jornada `V0120-CANCEL-CONFIRM` (3 turnos) no catálogo e em `tests/scenarios/cancellation.jsonl`, arquivo próprio de conversa. A sessão `demo` não recebe o escopo de escrita.
 
 ### v0.13.0 — Segurança e operação
 
@@ -56,7 +58,7 @@
 | `observability/` | — | — | `otel.py` novo, `grafana/assistant.json` | — |
 | `rag/` | `index.py` (piso BM25, `hybrid@36`) | — | — | — |
 | `data/migrations.py` | 0013 | 0014 | 0015, 0016 | — |
-| `prompts/` | `judge_claims.v1`, `judge.v5` | `summary.v1`, `support.v8`, `router.v7` | — | — |
+| `prompts/` | `judge_claims.v1`, `judge.v5` | `summary.v1`, `personality.v6`, `support.v8`, `support.v9`, `router.v7` | — | — |
 | `cli.py` | `eval-calibrate` (pacotes, `--rater`, `--adjudication`), `eval-retrieval --mode hybrid@36`, `--rubric v5` | `eval --replan`, `eval-compare` | — | — |
 | `tests/` | páginas em processo, v5, calibração a dois, piso, régua combinada | resumo, fatos, ablação, cancelamento, jornada | PKCE, refresh rotativo, emissor externo, Telegram falso, dois processos, resend, órfãos, OTLP | links, imagem |
 | `docker-compose.yml`, `.env.example` | — | — | perfis `oidc`, `telegram`, `otel`; `--workers 2` | `image:` |
@@ -142,9 +144,9 @@ Chamadas a modelos com custo passam pela guarda de orçamento persistente da apl
 
 92. Resumo rolante e registro de fatos; guarda de saída com fatos; migração 0014 (RF-116).
 93. `replan=off`, `eval --replan`, `eval-compare`, seção das decisões `model` (RF-117).
-94. Cancelamento com confirmação: tabela, ferramentas, rótulo de confirmação no Router, `support.v8`, jornada (RF-119).
+94. Cancelamento com confirmação: tabela, ferramentas, rótulo de confirmação no Router, `support.v9`, jornada (RF-119).
 95. ADR 0024 supervisor × grafo (RF-118).
-96. Fechamento: regressão, candidato, revisão, QA real (conversa longa, ablação, jornada), evidência, README/CHANGELOG, tag.
+96. Atualização da documentação do produto, do changelog e dos metadados de versão.
 
 **v0.13.0 — Segurança e operação**
 
@@ -152,7 +154,7 @@ Chamadas a modelos com custo passam pela guarda de orçamento persistente da apl
 98. Emissor OIDC externo (Dex) no compose e `OIDC_ISSUERS` (RF-121).
 99. Lease multi-worker, locks removidos, WAL, `--workers 2`, teste com dois processos; `exhausted` e resend; `recover_orphans`; migração 0016 (RF-123, RF-124, RF-125).
 100. Adaptador Telegram (RF-122).
-101. OTLP e dashboard (RF-126); fechamento: regressão, candidato, revisão, QA real, evidência, ADR 0025, README/CHANGELOG, tag.
+101. OTLP e dashboard (RF-126).
 
 **v1.0.0 — Leitura e acesso**
 

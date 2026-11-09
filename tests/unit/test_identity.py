@@ -48,8 +48,9 @@ def db(settings) -> sqlite3.Connection:
 
 
 def test_role_scopes_follow_the_contract_table():
-    assert set(ROLE_SCOPES["merchant"]) == {"support:read", "handoff:create", "conversation:read"}
-    assert ROLE_SCOPES["demo"] == ROLE_SCOPES["merchant"]
+    assert set(ROLE_SCOPES["merchant"]) == {"support:read", "handoff:create", "conversation:read", "support:write"}
+    # v0.12.0 (task 94): only the merchant itself writes to its account; the shared demo session reads as before
+    assert set(ROLE_SCOPES["demo"]) == set(ROLE_SCOPES["merchant"]) - {"support:write"}
     assert set(ROLE_SCOPES["operator"]) == {"handoff:operate", "support:read"}
     assert ROLE_SCOPES["service"] == ("handoff:integrate",)
     assert set(ROLE_SCOPES["admin"]) == {
@@ -71,7 +72,13 @@ def test_principal_ids_and_audiences():
 
 
 def test_every_tool_declares_its_scope():
-    assert {spec.scope for spec in TOOLS.values()} == {"support:read"}
+    assert {spec.scope for spec in TOOLS.values()} == {"support:read", "support:write"}
+    assert {name for name, spec in TOOLS.items() if spec.scope == "support:write"} == {  # task 94
+        "request_sale_cancellation",
+        "confirm_sale_cancellation",
+        "decline_sale_cancellation",
+        "count_unanswered_cancellation_turn",  # unanswered turns are counted by the registry
+    }
 
 
 # --- accounts -----------------------------------------------------------------------------------------------------
@@ -170,7 +177,7 @@ def claims_of(identity, token):
 def test_issued_token_follows_the_rfc9068_profile(identity):
     response = identity.issue(Principal.merchant("cliente_demo_002"), "merchant-assistant-web")
     assert response["token_type"] == "Bearer" and response["expires_in"] == 3600
-    assert response["scope"] == "support:read handoff:create conversation:read"
+    assert response["scope"] == "support:read handoff:create conversation:read support:write"
     header = jwt.get_unverified_header(response["access_token"])
     assert (header["alg"], header["typ"], header["kid"]) == ("RS256", "at+jwt", identity.key.kid)
     claims = claims_of(identity, response["access_token"])

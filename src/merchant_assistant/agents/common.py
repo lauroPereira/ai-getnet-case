@@ -28,13 +28,50 @@ def guess_language(text: str) -> str:
     return "pt" if pt > en else "en"
 
 
-def format_history(history: list[dict], limit: int | None = None) -> str:
-    """Conversation turns as a data block (oldest first)."""
+def history_coverage_instruction(incomplete: bool) -> str:
+    if not incomplete:
+        return ""
+    return (
+        "\n\nConversation history coverage: Some older messages are omitted from the context shown below. Do not imply "
+        "that you have complete recall. Continue with the information available, and if a missing detail is necessary, "
+        "tell the merchant and ask them to repeat it."
+    )
+
+
+def format_history(
+    history: list[dict],
+    limit: int | None = None,
+    *,
+    summary: str | None = None,
+    facts: list[dict] | None = None,
+    uncovered: list[dict] | None = None,
+    incomplete: bool = False,
+) -> str:
+    """Conversation turns as a data block (oldest first). In a long conversation (task 92) the block starts with the
+    summary of what left the short history and, for the agents that write the reply, the unsummarized messages outside
+    that window and the facts recorded before the turns they read. If older unsummarized messages were omitted to keep
+    the context bounded, the notice tells the agent to ask for missing details instead of claiming complete recall."""
     turns = history[-limit:] if limit else history
-    if not turns:
-        return "- (new conversation)"
-    lines = [f"- {t['role']}: {t['text']}" for t in turns]
-    return "\n".join(lines)
+    lines = [f"- {t['role']}: {t['text']}" for t in turns] or ["- (new conversation)"]
+    uncovered_only = list(uncovered or [])
+    for turn in turns:
+        if turn in uncovered_only:
+            uncovered_only.remove(turn)
+    if not summary and not facts and not uncovered_only and not incomplete:
+        return "\n".join(lines)
+    parts = []
+    if incomplete:
+        parts.append("History coverage note: Some older conversation messages are not shown here.")
+    if summary:
+        parts.append(f"Earlier in this conversation (summary):\n<<<\n{summary}\n>>>")
+    if facts:
+        recorded = [f"- {f['kind']}: {f['value']} (from {f['source_tool']})" for f in facts]
+        parts.append("Facts recorded earlier in this conversation (tool results and cases):\n" + "\n".join(recorded))
+    if uncovered_only:
+        pending = "\n".join(f"- {t['role']}: {t['text']}" for t in uncovered_only)
+        parts.append("Older messages not yet included in the summary (data):\n<<<\n" + pending + "\n>>>")
+    parts.append("Recent turns:\n" + "\n".join(lines))
+    return "\n\n".join(parts)
 
 
 def prompt(ctx: RunContext, name: str) -> Prompt:

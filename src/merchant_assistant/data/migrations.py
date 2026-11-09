@@ -714,6 +714,79 @@ ALTER TABLE run_evaluations DROP COLUMN claims;
 """
 
 
+# v0.12.0 (spec D1, D2, D6, task 92). The rolling summary of a long conversation and the id of the last message it
+# covers, and the register of facts read from tool results and cases (never from a model's text), one row per
+# (conversation, kind, value) with the tool and the merchant message of the turn where it first appeared. The rollback
+# drops both: the summary is a cache the next turn rebuilds, and the facts come from tool results the tools can return
+# again; messages and conversations are kept as they are.
+# Task 94 (D5) adds `sale_cancellation_requests`: a sale cancellation the merchant asked for, waiting for an
+# explicit yes in the conversation (`pending_confirmation`), then `confirmed` (with its protocol), `declined` or
+# `expired`. Beyond the fields of decision 13: the conversation where it waits for the answer, the turns it has
+# waited (2 without an answer expire it) and when it last changed. One active request (pending or confirmed) per
+# idempotency key (merchant and sale); a protocol and a confirmation time only on a confirmed one, a positive amount
+# in cents and a count of turns that never goes below zero. The table is synthetic data (it references the seeded
+# sales and the seed clears it); the rollback is refused while a confirmed request exists: its protocol was given to
+# the merchant and no other table keeps it.
+MEMORY_UP = """
+ALTER TABLE conversations ADD COLUMN summary TEXT;
+ALTER TABLE conversations ADD COLUMN summary_until_message_id INTEGER;
+CREATE TABLE IF NOT EXISTS conversation_facts (
+    fact_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id),
+    kind TEXT NOT NULL CHECK (kind IN ('protocol', 'amount', 'percent', 'date', 'status', 'product')),
+    value TEXT NOT NULL,
+    source_tool TEXT NOT NULL,
+    source_message_id INTEGER REFERENCES messages(id),
+    created_at TEXT NOT NULL,
+    UNIQUE (conversation_id, kind, value)
+);
+CREATE INDEX IF NOT EXISTS conversation_facts_conversation ON conversation_facts(conversation_id, fact_id);
+CREATE TABLE IF NOT EXISTS sale_cancellation_requests (
+    request_id TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+    sale_id TEXT NOT NULL REFERENCES sales(sale_id),
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    sale_date TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('pending_confirmation', 'confirmed', 'declined', 'expired')),
+    protocol TEXT UNIQUE,
+    created_at TEXT NOT NULL,
+    confirmed_at TEXT,
+    idempotency_key TEXT NOT NULL,
+    conversation_id TEXT,
+    turns_waited INTEGER NOT NULL DEFAULT 0 CHECK (turns_waited >= 0),
+    updated_at TEXT NOT NULL,
+    CHECK ((state = 'confirmed') = (protocol IS NOT NULL)),
+    CHECK ((state = 'confirmed') = (confirmed_at IS NOT NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS sale_cancellation_requests_active ON sale_cancellation_requests(idempotency_key)
+    WHERE state IN ('pending_confirmation', 'confirmed');
+CREATE INDEX IF NOT EXISTS sale_cancellation_requests_conversation
+    ON sale_cancellation_requests(conversation_id, state);
+"""
+
+MEMORY_DOWN = """
+DROP INDEX IF EXISTS sale_cancellation_requests_conversation;
+DROP INDEX IF EXISTS sale_cancellation_requests_active;
+DROP TABLE IF EXISTS sale_cancellation_requests;
+DROP INDEX IF EXISTS conversation_facts_conversation;
+DROP TABLE IF EXISTS conversation_facts;
+ALTER TABLE conversations DROP COLUMN summary_until_message_id;
+ALTER TABLE conversations DROP COLUMN summary;
+"""
+
+
+
+def _cancellations_down_guard(conn: sqlite3.Connection) -> None:
+    """A confirmed cancellation request holds the protocol the merchant received; no other table keeps it."""
+    count = conn.execute("SELECT COUNT(*) FROM sale_cancellation_requests WHERE state = 'confirmed'").fetchone()[0]
+    if count:
+        raise RollbackRefused(
+            f"cannot roll back 0014_memory_and_writes: sale_cancellation_requests still holds {count} confirmed "
+            "cancellation request(s) whose protocol was given to the merchant. Reseed the synthetic data (which "
+            "clears them) or export them first, then roll back again. Nothing was changed."
+        )
+
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -728,6 +801,7 @@ MIGRATIONS: list[Migration] = [
     Migration(11, "evaluation_rubric", EVAL_RUBRIC_UP, EVAL_RUBRIC_DOWN, _calibrations_down_guard),
     Migration(12, "comparison_interrupted", COMPARISON_INTERRUPTED_UP, COMPARISON_INTERRUPTED_DOWN),
     Migration(13, "evaluation_claims", EVAL_CLAIMS_UP, EVAL_CLAIMS_DOWN),
+    Migration(14, "memory_and_writes", MEMORY_UP, MEMORY_DOWN, _cancellations_down_guard),
 ]
 LATEST = MIGRATIONS[-1].version
 

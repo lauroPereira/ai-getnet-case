@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import uuid
 from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -505,25 +506,351 @@ def get_enablement_requests(env: ToolEnv, args: EnablementArgs) -> dict:
 
 class CancellationArgs(_Args):
     period: Literal["today", "yesterday", "last_7_days"] = "last_7_days"
+    # the sale the merchant named. With any of these, `sales` holds only the matching sales.
+    payment_type: Literal["debit", "credit", "pix"] | None = Field(default=None, description="Payment type named.")
+    installments: int | None = Field(default=None, ge=1, le=24, description="Installment count named.")
+    channel: Literal["pos", "payment_link"] | None = Field(
+        default=None, description="Card machine (pos) or payment link."
+    )
+    sale_date: date | None = Field(default=None, description="Exact sale date (YYYY-MM-DD); replaces the period.")
+    amount: int | None = Field(
+        default=None, ge=1, description="Gross amount named, in cents as an integer (R$ 500,00 is 50000)."
+    )
+
+
+_SELECTED_COLUMN = {"payment_type": "payment_type", "installments": "installments", "channel": "channel",
+                    "amount": "gross_minor"}
+
+
+def _sale_identity(row: sqlite3.Row) -> dict:
+    """How the merchant recognizes a sale: payment type, installments, channel, gross amount and date."""
+    return {
+        "sale_id": row["sale_id"],
+        "sale_date": row["captured_at"][:10],
+        "payment_type": row["payment_type"],
+        "installments": row["installments"],
+        "channel": row["channel"],
+        "gross_amount": money(row["gross_minor"], row["currency"]),
+    }
 
 
 def get_sale_cancellation_context(env: ToolEnv, args: CancellationArgs) -> dict:
-    start, end = resolve_period(args.period, env.clock)
+    """Each sale of the period (or of `sale_date`) with its cancellation and its latest cancellation request, so a
+    status is always read against the sale it belongs to; `cancellations` keeps the records themselves,
+    each with the sale it cancels. A request waiting for an answer, declined or expired is not a cancellation."""
+    cid = env.customer.customer_id
+    start, end = (args.sale_date, args.sale_date) if args.sale_date else resolve_period(args.period, env.clock)
     rows = env.conn.execute(
-        """SELECT c.* FROM sale_cancellations c JOIN sales s ON s.sale_id = c.transaction_id
+        """SELECT c.*, q.protocol AS request_protocol, s.sale_id, s.captured_at, s.payment_type, s.installments,
+                  s.channel, s.gross_minor, s.currency
+           FROM sale_cancellations c
+           JOIN sales s ON s.sale_id = c.transaction_id
+           LEFT JOIN sale_cancellation_requests q
+             ON q.sale_id = c.transaction_id AND q.customer_id = c.customer_id AND q.state = 'confirmed'
            WHERE c.customer_id = ? AND s.customer_id = ?
              AND substr(s.captured_at,1,10) BETWEEN ? AND ?
            ORDER BY c.requested_at DESC""",
-        (env.customer.customer_id, env.customer.customer_id, start.isoformat(), end.isoformat()),
+        (cid, cid, start.isoformat(), end.isoformat()),
     ).fetchall()
+    record_keys = ("transaction_id", "customer_id", "status", "requested_at", "processed_at", "reason_code")
+
+    def item(row: sqlite3.Row) -> dict:
+        data = {k: row[k] for k in record_keys}
+        if row["request_protocol"]:  # asked for and confirmed in a conversation (task 94): its protocol
+            data["protocol"] = row["request_protocol"]
+        data["sale"] = _sale_identity(row)
+        return data
+
+    selection = {
+        k: v
+        for k, v in {
+            "payment_type": args.payment_type,
+            "installments": args.installments,
+            "channel": args.channel,
+            "sale_date": args.sale_date.isoformat() if args.sale_date else None,
+            "amount": args.amount,
+        }.items()
+        if v is not None
+    }
+
+    def selected(row: sqlite3.Row) -> bool:  # the sale date is already the range of the query
+        return all(row[_SELECTED_COLUMN[k]] == v for k, v in selection.items() if k != "sale_date")
+
+    cancellations = [item(r) for r in rows if selected(r)]
+    by_sale = {c["transaction_id"]: c for c in cancellations}
+    sales = []
+    for sale in env.conn.execute(
+        "SELECT * FROM sales WHERE customer_id = ? AND substr(captured_at,1,10) BETWEEN ? AND ? "
+        "ORDER BY captured_at, sale_id",
+        (cid, start.isoformat(), end.isoformat()),
+    ):
+        if not selected(sale):
+            continue
+        record = by_sale.get(sale["sale_id"])
+        latest = env.conn.execute(
+            "SELECT request_id, state FROM sale_cancellation_requests WHERE sale_id = ? AND customer_id = ? "
+            "ORDER BY updated_at DESC, rowid DESC LIMIT 1",
+            (sale["sale_id"], cid),
+        ).fetchone()
+        sales.append(
+            {
+                **_sale_identity(sale),
+                "cancellation": {
+                    k: record[k] for k in ("status", "requested_at", "processed_at", "protocol") if k in record
+                }
+                if record
+                else None,
+                "cancellation_request": {"request_id": latest["request_id"], "state": latest["state"]}
+                if latest
+                else None,
+            }
+        )
     return {
-        "cancellations": [dict(r) for r in rows],
+        "selection": selection or None,
+        "sales": sales,
+        "cancellations": cancellations,
         "date_from": start.isoformat(),
         "date_to": end.isoformat(),
         "source": "SaleCancellationMock",
         "observed_at": _observed(env),
-        "note": "Read-only lookup. No sale cancellation or contract termination is executed.",
+        "note": "Read-only lookup. No sale cancellation or contract termination is executed. Each sale lists its own "
+        "cancellation (null when it has none) and its latest cancellation request; give only the status of the sale "
+        "the merchant asked about. A request waiting for an answer, declined or expired is not a cancellation.",
     }
+
+
+# --- sale cancellation with confirmation (task 94, spec v0.12.0 D5) -----------------------------------------------
+#
+# `request_sale_cancellation` (offered to the Support model) only records a request waiting for the merchant's explicit
+# yes; nothing in the account changes. `confirm_sale_cancellation` and `decline_sale_cancellation` are never offered to
+# a model: the graph runs them by code when the Router labels the next turn as an explicit yes or no (checked in code).
+# Each later turn of the conversation without an answer counts; the second one expires the request.
+
+TURNS_TO_EXPIRE = 2
+_NOTES = {
+    "pending_confirmation": (
+        "Nothing is cancelled yet. Show the merchant the sale, amount and date and ask for an explicit yes to cancel "
+        "it or no to keep it; the system cancels the sale only after that yes."
+    ),
+    "confirmed": "The sale cancellation was requested after the merchant's explicit yes; give the protocol.",
+    "declined": "The merchant said no: nothing was cancelled and the sale stays as it was.",
+    "expired": "No answer in time: nothing was cancelled. The merchant may ask again.",
+}
+
+
+class SaleCancellationArgs(_Args):
+    sale_id: str = Field(
+        min_length=1,
+        max_length=64,
+        description="Id of one of the merchant's sales (from get_sale_cancellation_context).",
+    )
+
+
+class CancellationRequestArgs(_Args):
+    request_id: str = Field(min_length=1, max_length=64)
+
+
+def _request_row(env: ToolEnv, request_id: str) -> sqlite3.Row:
+    return env.conn.execute("SELECT * FROM sale_cancellation_requests WHERE request_id = ?", (request_id,)).fetchone()
+
+
+def _request_view(env: ToolEnv, row: sqlite3.Row, *, repeated: bool = False) -> dict:
+    sale = env.conn.execute(
+        "SELECT payment_type, installments FROM sales WHERE sale_id = ?", (row["sale_id"],)
+    ).fetchone()
+    return {
+        "request_id": row["request_id"],
+        "status": row["state"],
+        "sale": {
+            "sale_id": row["sale_id"],
+            "sale_date": row["sale_date"],
+            "amount": money(row["amount"]),
+            "payment_type": sale["payment_type"] if sale else None,
+            "installments": sale["installments"] if sale else None,
+        },
+        "protocol": row["protocol"],
+        "executed": row["state"] == "confirmed",
+        "repeated": repeated,
+        "note": _NOTES[row["state"]],
+        "source": "SaleCancellationRequests",
+        "observed_at": _observed(env),
+    }
+
+
+def _own_request(env: ToolEnv, request_id: str) -> sqlite3.Row:
+    row = _request_row(env, request_id)
+    if row is None:
+        raise ToolError("NOT_FOUND", "Unknown cancellation request.")
+    note_resource(env, request_id)
+    if row["customer_id"] != env.customer.customer_id:
+        raise ToolError("FORBIDDEN_RESOURCE", "This cancellation request does not belong to this merchant.")
+    return row
+
+
+def idempotency_key(customer_id: str, sale_id: str) -> str:
+    """One active request (pending or confirmed) per merchant and sale."""
+    return f"cancel_sale:{customer_id}:{sale_id}"
+
+
+def request_sale_cancellation(env: ToolEnv, args: SaleCancellationArgs) -> dict:
+    """Records a request to cancel one of the merchant's sales, waiting for an explicit yes in this conversation;
+    nothing in the account changes. The same sale asked again returns the same request (pending or confirmed, with the
+    same protocol). A newer request in the conversation replaces an older pending one, which expires."""
+    if not env.conversation_id:
+        raise ToolError("INVALID_ARGUMENT", "A sale cancellation needs a conversation to be confirmed in.")
+    # One write transaction (`BEGIN IMMEDIATE`, or a savepoint inside the caller's): two requests for the same sale at
+    # the same time read and write one after the other, so the second returns the request the first created.
+    nested = env.conn.in_transaction
+    env.conn.execute("SAVEPOINT request_sale_cancellation" if nested else "BEGIN IMMEDIATE")
+    try:
+        result = _request_sale_cancellation(env, args)
+    except BaseException:
+        env.conn.execute("ROLLBACK TO request_sale_cancellation" if nested else "ROLLBACK")
+        if nested:
+            env.conn.execute("RELEASE request_sale_cancellation")
+        raise
+    env.conn.execute("RELEASE request_sale_cancellation" if nested else "COMMIT")
+    return result
+
+
+def _request_sale_cancellation(env: ToolEnv, args: SaleCancellationArgs) -> dict:
+    sale = env.conn.execute("SELECT * FROM sales WHERE sale_id = ?", (args.sale_id,)).fetchone()
+    if sale is None:
+        raise ToolError("NOT_FOUND", "Unknown sale id.")
+    note_resource(env, args.sale_id)
+    cid = env.customer.customer_id
+    if sale["customer_id"] != cid:
+        raise ToolError("FORBIDDEN_RESOURCE", "This sale does not belong to this merchant.")
+    now = _observed(env)
+    key = idempotency_key(cid, args.sale_id)
+    active = env.conn.execute(
+        "SELECT * FROM sale_cancellation_requests WHERE idempotency_key = ? "
+        "AND state IN ('pending_confirmation', 'confirmed')",
+        (key,),
+    ).fetchone()
+    if active is None:
+        existing = env.conn.execute(
+            "SELECT status FROM sale_cancellations WHERE transaction_id = ?", (args.sale_id,)
+        ).fetchone()
+        if existing is not None:
+            raise ToolError(
+                "INVALID_ARGUMENT",
+                f"This sale already has a cancellation ({existing['status']}); use get_sale_cancellation_context.",
+            )
+    env.conn.execute(  # one pending request per conversation: an older one for another sale expires
+        "UPDATE sale_cancellation_requests SET state = 'expired', updated_at = ? WHERE conversation_id = ? "
+        "AND state = 'pending_confirmation' AND idempotency_key <> ?",
+        (now, env.conversation_id, key),
+    )
+    if active is not None:
+        if active["state"] == "pending_confirmation":  # asked again: it waits in this conversation, from now
+            env.conn.execute(
+                "UPDATE sale_cancellation_requests SET conversation_id = ?, turns_waited = 0, updated_at = ? "
+                "WHERE request_id = ?",
+                (env.conversation_id, now, active["request_id"]),
+            )
+        return _request_view(env, _request_row(env, active["request_id"]), repeated=True)
+    request_id = f"scr_{uuid.uuid4().hex[:16]}"
+    env.conn.execute(
+        "INSERT INTO sale_cancellation_requests (request_id, customer_id, sale_id, amount, sale_date, state, "
+        "created_at, idempotency_key, conversation_id, turns_waited, updated_at) "
+        "VALUES (?,?,?,?,?,'pending_confirmation',?,?,?,0,?)",
+        (
+            request_id,
+            cid,
+            args.sale_id,
+            sale["gross_minor"],
+            sale["captured_at"][:10],
+            now,
+            key,
+            env.conversation_id,
+            now,
+        ),
+    )
+    return _request_view(env, _request_row(env, request_id))
+
+
+def confirm_sale_cancellation(env: ToolEnv, args: CancellationRequestArgs) -> dict:
+    """Run by code after an explicit yes, never by a model. Records the cancellation of the sale (`sale_cancellations`,
+    status `requested`) and the protocol in one step; confirming again returns the same protocol and changes nothing."""
+    row = _own_request(env, args.request_id)
+    if row["state"] == "confirmed":
+        return _request_view(env, row, repeated=True)
+    if row["state"] != "pending_confirmation":
+        raise ToolError("INVALID_ARGUMENT", f"This cancellation request is {row['state']}; nothing was cancelled.")
+    now = _observed(env)
+    protocol = f"CAN-{now[:10].replace('-', '')}-{row['request_id'][-6:].upper()}"
+    env.conn.execute("SAVEPOINT confirm_sale_cancellation")
+    try:
+        if env.conn.execute("SELECT 1 FROM sale_cancellations WHERE transaction_id = ?", (row["sale_id"],)).fetchone():
+            raise ToolError("INVALID_ARGUMENT", "This sale already has a cancellation; nothing was changed.")
+        changed = env.conn.execute(
+            "UPDATE sale_cancellation_requests SET state = 'confirmed', protocol = ?, confirmed_at = ?, updated_at = ? "
+            "WHERE request_id = ? AND state = 'pending_confirmation'",
+            (protocol, now, now, row["request_id"]),
+        ).rowcount
+        if changed != 1:
+            raise ToolError("INVALID_ARGUMENT", "This cancellation request is no longer waiting for confirmation.")
+        env.conn.execute(
+            "INSERT INTO sale_cancellations (transaction_id, customer_id, status, requested_at, processed_at, "
+            "reason_code) VALUES (?,?,'requested',?,NULL,'merchant_confirmed')",
+            (row["sale_id"], row["customer_id"], now),
+        )
+        env.conn.execute("RELEASE confirm_sale_cancellation")
+    except BaseException:
+        env.conn.execute("ROLLBACK TO confirm_sale_cancellation")
+        env.conn.execute("RELEASE confirm_sale_cancellation")
+        raise
+    return _request_view(env, _request_row(env, args.request_id))
+
+
+def decline_sale_cancellation(env: ToolEnv, args: CancellationRequestArgs) -> dict:
+    """Run by code after an explicit no, never by a model: the request is closed and the account stays as it was."""
+    row = _own_request(env, args.request_id)
+    if row["state"] == "declined":
+        return _request_view(env, row, repeated=True)
+    if row["state"] != "pending_confirmation":
+        raise ToolError("INVALID_ARGUMENT", f"This cancellation request is {row['state']}.")
+    env.conn.execute(
+        "UPDATE sale_cancellation_requests SET state = 'declined', updated_at = ? WHERE request_id = ? "
+        "AND state = 'pending_confirmation'",
+        (_observed(env), row["request_id"]),
+    )
+    return _request_view(env, _request_row(env, args.request_id))
+
+
+def pending_sale_cancellation(conn: sqlite3.Connection, conversation_id: str, customer_id: str) -> dict | None:
+    """The request waiting for an answer in this conversation, read by the server at the start of a turn."""
+    row = conn.execute(
+        "SELECT * FROM sale_cancellation_requests WHERE conversation_id = ? AND customer_id = ? "
+        "AND state = 'pending_confirmation' ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (conversation_id, customer_id),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "request_id": row["request_id"],
+        "sale_date": row["sale_date"],
+        "amount": money(row["amount"])["display"],
+        "turns_waited": row["turns_waited"],
+    }
+
+
+def count_unanswered_turn(env: ToolEnv, args: CancellationRequestArgs) -> dict:
+    """Run by code, never by a model: a later turn of the conversation that neither confirmed nor declined the pending
+    request; the second one expires it. Nothing in the account changes either way."""
+    request_id = args.request_id
+    row = _own_request(env, request_id)
+    if row["state"] != "pending_confirmation":
+        return _request_view(env, row)
+    waited = row["turns_waited"] + 1
+    state = "expired" if waited >= TURNS_TO_EXPIRE else "pending_confirmation"
+    env.conn.execute(
+        "UPDATE sale_cancellation_requests SET turns_waited = ?, state = ?, updated_at = ? WHERE request_id = ? "
+        "AND state = 'pending_confirmation'",
+        (waited, state, _observed(env), request_id),
+    )
+    return _request_view(env, _request_row(env, request_id))
 
 
 # --- support prefix: history and healthcheck ----------------------------------------------------------------------

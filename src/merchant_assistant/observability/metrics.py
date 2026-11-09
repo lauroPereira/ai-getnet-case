@@ -35,7 +35,7 @@ STATUSES = frozenset(get_args(Status))
 AGENTS = frozenset(
     {
         "router", "knowledge", "web", "support", "customer_support", "escalation", "personality", "replan",
-        "rerank", "judge", "embeddings",
+        "rerank", "judge", "embeddings", "summary",
     }
 )  # fmt: skip
 REPLAN_RULES = frozenset(

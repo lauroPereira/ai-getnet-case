@@ -118,7 +118,7 @@ Quatro versões, cada uma com spec complementar curta, tarefas, Developer, Revie
 | CA-63 | Tabela híbrido × `hybrid@36` × reranker em dev e holdout de retrieval, decisão de `RERANK` pela regra; piso BM25 medido | `eval-retrieval` |
 | CA-64 | Jornadas ≥ 12/13 pela régua combinada, com as duas colunas no relatório | Campanha real |
 | CA-65 | Conversa real de 20+ turnos devolve protocolo e valor do início; teste determinístico equivalente; resumo gerado uma vez por avanço da janela | Campanha v0.12.0 e suíte |
-| CA-66 | Relatório com × sem replan nos mesmos casos (dev + holdout + conversas), por critério e rota, com a lista das decisões de origem `model` | `docs/evidence/v0120-ablacao-replan.md` |
+| CA-66 | Relatório pareado de `eval-compare` com e sem replanejamento nos mesmos casos, por critério e rota, incluindo decisões de origem `model` | Relatórios JSON e Markdown gerados pelo comando |
 | CA-67 | Cancelamento só executa após confirmação explícita; repetição idempotente; recusa deixa a conta intacta; auditoria com escopo de escrita | Suíte e jornada real |
 | CA-68 | Authorization code com PKCE e refresh rotativo funcionando na interface; token do emissor externo aceito; token de emissor desconhecido recusado | Suíte, QA na interface com os dois emissores |
 | CA-69 | Caso chega ao Telegram e a resposta do operador chega ao lojista; adaptador desligado por padrão | QA real com bot do responsável |

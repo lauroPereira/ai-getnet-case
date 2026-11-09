@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from pydantic import ValidationError
 
-from merchant_assistant.agents.common import format_history, guess_language, policy, prompt
+from merchant_assistant.agents.common import (
+    format_history,
+    guess_language,
+    history_coverage_instruction,
+    policy,
+    prompt,
+)
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.orchestration.budget import BudgetExceeded
 from merchant_assistant.orchestration.run import LimitExceeded, RunContext
@@ -36,12 +43,68 @@ _TERMINATE_PT = (
 )
 _CONTRACT_TERMINATION = re.compile(rf"\s*(?:{_TERMINATE_EN}|{_TERMINATE_PT})\s*[.!]*\s*", re.IGNORECASE)
 
+# Task 94 (D5): the only answers to a pending sale cancellation that count as explicit. The whole message must be made
+# of these phrases (accents ignored, punctuation other than "?" dropped), with at least one of its kind: "sim, mas..."
+# or "yes, but first..." has other words, a question mark makes it a question, and yes and no together are neither.
+_YES_PHRASES = (
+    "sim", "s", "pode cancelar", "pode sim", "pode", "pode seguir", "confirmo", "eu confirmo", "confirmado",
+    "confirmar", "cancele", "cancela", "quero cancelar", "isso", "yes", "y", "yeah", "yep", "confirm", "i confirm",
+    "confirmed", "go ahead", "cancel it", "do it",
+)
+_NO_PHRASES = (
+    "nao", "n", "nao quero", "nao cancele", "nao cancela", "nao precisa", "nao pode", "deixa", "deixa pra la",
+    "pode deixar", "mudei de ideia", "desisto", "manter", "mantenha", "no", "nope", "do not cancel", "dont cancel",
+    "don't cancel", "keep it", "never mind", "nevermind",
+)
+_FILLER_PHRASES = ("por favor", "obrigado", "obrigada", "ok", "please", "thanks", "thank you")
+
+
+def explicit_answer(message: str) -> str | None:
+    """`yes` or `no` when the message only confirms or only refuses; otherwise None."""
+    if "?" in message:
+        return None
+    text = unicodedata.normalize("NFKD", message.casefold())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    words = re.sub(r"[,;.!:\-\u2013\u2014]+", " ", text).split()
+    phrases = (
+        [(p.split(), "yes") for p in _YES_PHRASES]
+        + [(p.split(), "no") for p in _NO_PHRASES]
+        + [(p.split(), None) for p in _FILLER_PHRASES]
+    )
+    # every way of reading the words as a sequence of known phrases: reach[i] = the kinds met to cover words[:i]
+    reach: list[set[frozenset[str]]] = [set() for _ in range(len(words) + 1)]
+    reach[0].add(frozenset())
+    for i in range(len(words)):
+        for met in reach[i]:
+            for phrase, kind in phrases:
+                if words[i : i + len(phrase)] == phrase:
+                    reach[i + len(phrase)].add(met | {kind} if kind else met)
+    answers = {next(iter(met)) for met in reach[len(words)] if len(met) == 1} if words else set()
+    return answers.pop() if len(answers) == 1 else None
+
 
 def enforce(
-    decision: RouterDecision, *, new_conversation: bool = False, message: str = "", case_state: str = ""
+    decision: RouterDecision,
+    *,
+    new_conversation: bool = False,
+    message: str = "",
+    case_state: str = "",
+    pending_cancellation: bool = False,
 ) -> RouterDecision:
     """Deterministic rules applied after the model decision."""
     data = decision.model_dump()
+    # Task 94 (D5): a yes or no counts only with a cancellation waiting for it, in a safe message that is nothing but
+    # that answer; then it is the cancellation's turn (support, topic cancellation) and not a reaction to the case,
+    # so the model's case signal is dropped. Anything else is `other`.
+    answer = explicit_answer(message) if pending_cancellation and decision.safety == "none" else None
+    if decision.confirmation == "other" or decision.confirmation != answer:
+        data["confirmation"] = "other"
+    else:
+        data |= {"route": "support", "topic": "cancellation", "clarification_question": None, "case_signal": "none"}
+    if data["route"] == "acknowledgement" and decision.safety == "none" and "?" in message:
+        # a message that asks something is not only a reaction to the previous reply ("Obrigado! Qual era o
+        # protocolo?"); the Support answers it, from its tools or from the facts recorded in the conversation.
+        data |= {"route": "support", "topic": None, "clarification_question": None}
     if new_conversation:  # there is no previous reply to react to
         data["case_signal"] = "none"
         if data["route"] == "acknowledgement":
@@ -51,7 +114,7 @@ def enforce(
     elif (
         case_state == "awaiting_customer"
         and decision.safety == "none"
-        and decision.case_signal == "resolved"
+        and data["case_signal"] == "resolved"
         and decision.route != "human_handoff"
         and _ISOLATED_RESOLUTION.fullmatch(message)
     ):
@@ -70,12 +133,22 @@ def enforce(
 def run(state: GraphState, ctx: RunContext) -> dict:
     agents = [*state.agents, "router"]
     p = prompt(ctx, "router")
+    pending = state.cancellation
+    waiting = (  # task 94: only a turn with a cancellation waiting for an answer shows it (router.v7, `confirmation`)
+        f"Sale cancellation waiting for the merchant's yes or no: sale of {pending['amount']} on "
+        f"{pending['sale_date']}\n\n"
+        if pending
+        else ""
+    )
+    history_block = format_history(state.history, summary=state.summary, incomplete=state.history_incomplete)
+    instructions = p.render() + history_coverage_instruction(state.history_incomplete)
     spec = CallSpec(
         agent="router",
-        instructions=p.render(),
+        instructions=instructions,
         input=(
-            f"Conversation so far (oldest first):\n{format_history(state.history)}\n\n"
+            f"Conversation so far (oldest first):\n{history_block}\n\n"
             f"Current case: state={state.case.get('state', 'in_progress')}, topic={state.case.get('topic')}\n\n"
+            f"{waiting}"
             f"Merchant message:\n<<<\n{state.message}\n>>>"
         ),
         effort="none",
@@ -85,16 +158,25 @@ def run(state: GraphState, ctx: RunContext) -> dict:
             "findings": state.guard_findings,
             "history": state.history,
             "case": state.case,
+            "pending_cancellation": pending,
         },
     )
     errors = list(state.errors)
     try:
         result = ctx.router_override or ctx.llm_for("router").parse(spec, RouterDecision, ctx).value
         decision = enforce(
-            result, new_conversation=not state.history, message=state.message, case_state=state.case.get("state", "")
+            result,
+            new_conversation=not state.history,
+            message=state.message,
+            case_state=state.case.get("state", ""),
+            pending_cancellation=pending is not None,
         )
+        if pending is not None:
+            ctx.step_notes["confirmation"] = {"model": result.confirmation, "validated": decision.confirmation}
         if decision.route == "human_handoff" and result.route != "human_handoff":
             ctx.step_notes["rule"] = "contract_termination"  # the only rule in `enforce` that makes a handoff
+        elif result.route == "acknowledgement" and decision.route == "support":
+            ctx.step_notes["rule"] = "question_not_acknowledgement"
     except (LLMError, ValidationError, LimitExceeded, BudgetExceeded) as exc:
         errors.append(f"router: {exc}")
         ctx.step_notes["router_unavailable"] = True

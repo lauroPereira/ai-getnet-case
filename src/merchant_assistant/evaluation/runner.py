@@ -357,6 +357,19 @@ def executed_path(agents: list[str]) -> str:
     return " → ".join(agent for agent in agents if agent not in FRAMING_AGENTS)
 
 
+REPLAN_FIELDS = ("next", "origin", "reason", "review", "hops", "observed", "candidates", "refused", "refused_origin")
+
+
+def replan_decisions(trace: dict) -> list[dict]:
+    """The decisions of the `replan` steps of a trace, in order (task 93): what `eval-compare` counts by origin and
+    lists when the model decided. Empty with `REPLAN=off` or when no specialist ran."""
+    return [
+        {key: step["detail"][key] for key in REPLAN_FIELDS if key in step["detail"]}
+        for step in trace["steps"]
+        if step["step"] == "replan"
+    ]
+
+
 def run(
     orchestrator,
     cases: list[Case],
@@ -404,6 +417,7 @@ def _run_case(orchestrator, case: Case, repetition: int, judge: Judge | None, ne
         "model_calls": trace["model_calls"],
         "errors": trace["errors"],
         "violations": trace["detail"].get("output_violations", []),
+        "replan": replan_decisions(trace),
         **checks,
     }
     row["passed"] = all(row[k] for k in CHECK_KEYS)

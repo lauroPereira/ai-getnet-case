@@ -87,3 +87,17 @@ Resumo da busca no trace ([especificação v0.11.0](../specs/juiz-retrieval-v011
 | `GET /v1/runs/{request_id}` | Bearer/dono | os passos de busca web (`knowledge` em modo `web` e `web`) passam a mostrar `web_summary` (texto da busca escrito pelo modelo, mascarado, até 4 000 caracteres; é o resumo do assistente, não a página), `web_summary_truncated` (booleano) e `web_urls` (lista de `{title, url}` citados, mascarados) |
 
 Dados: sem migração; os campos vivem no `detail` de cada passo do trace.
+
+## Acréscimos da v0.12.0
+
+Memória de conversa e escrita com confirmação ([especificação v0.12.0](../specs/memoria-escrita-v0120.md), D1, D2, D5, D6; tarefas 92 e 94). Campos, escopo e passos aditivos; as rotas mantêm o comportamento.
+
+| Rota | Acesso | Efeito |
+| --- | --- | --- |
+| `GET /v1/conversations/{conversation_id}` e `GET /conversations/{conversation_id}` (demo) | Bearer/dono | acrescentam `summary` (resumo rolante da conversa longa, texto ou `null`; o cursor interno não aparece) e `facts` (registro de fatos lidos de resultados de ferramenta e de casos, nunca de texto de modelo: `[{kind, value, source_tool, source_message_id, created_at}]`, `kind` em `protocol`, `amount`, `percent`, `date`, `status` ou `product`, na ordem em que foram registrados) |
+| `POST /v1/auth/token` | público | o token do papel `merchant` passa a trazer o escopo `support:write` (pedir o cancelamento de uma venda, executado só depois de um sim explícito); `demo`, `operator`, `service` e `admin` não recebem. Token emitido antes da v0.12.0, sem o escopo, consulta mas não pede nem confirma: a recusa é auditada como `forbidden_scope` |
+| `GET /v1/runs/{request_id}` | Bearer/dono | `steps` pode listar `summary` (atualização do resumo, com `prompt`; primeiro passo do turno, só para mensagem que a guarda de entrada deixa passar, com folga própria de uma chamada fora de `max_model_calls`) e `confirmation` (logo depois de `router`, enquanto um pedido de cancelamento espera resposta; confirma ou recusa por código quando o sim ou o não é validado) |
+| `GET /v1/scenarios` | Bearer | acrescenta `SC-CANCEL-CONFIRM` (jornada `cancellation_confirm`, três turnos: pedido, "Sim", consulta do status) |
+| `POST /v1/messages` e `POST /messages` | Bearer | `get_sale_cancellation_context` aceita filtros como `payment_type`, `installments`, `channel`, `sale_date` e `amount` (centavos), e retorna os itens selecionados e as vendas com dados de pagamento, valor, data, cancelamento e pedido mais recente. Cada cancelamento inclui a venda relacionada e recebe `protocol` após confirmação. Em turnos de cancelamento, o status é composto em código a partir das consultas daquela conversa; sem venda identificada, o assistente pede qual venda consultar. Pedidos pendentes, recusados, expirados ou sem escopo usam respostas fixas; uma resposta de operador não é substituída. Uma pergunta com rótulo `acknowledgement` segue para Support. |
+
+Dados: migração 0014 reversível (`conversations.summary` e `summary_until_message_id`, `conversation_facts`, `sale_cancellation_requests` com índice único parcial por chave de idempotência para pedido pendente ou confirmado). A descida é recusada enquanto houver pedido `confirmed`, cujo protocolo foi entregue ao lojista e não existe em outra tabela; nada é alterado. Versão do esquema 14, reportada em `/ready`.

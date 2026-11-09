@@ -26,6 +26,16 @@ CONDITIONS_QUESTION = (
     r"(?=.*\b(?:yesterday|today|last|latest|ontem|hoje|passad[ao]|[uú]ltim[ao])\b)"
 )
 
+# Task 94: asking to cancel one of the merchant's sales (not its status, not the contract).
+CANCEL_REQUEST = (
+    r"\b(?:cancel(?:ar|e|a)|quero cancelar)\s+(?:a|minha|essa|esta)\s+venda\b|"
+    r"\bcancel\s+(?:my|the|this)\s+(?:\w+\s+)?sale\b"
+)
+# What a model does with a waiting cancellation: a message that starts with a yes or a no is labelled as one (the code
+# then checks that it is nothing but that answer, so "Sim, mas..." still ends as `other`).
+SCRIPTED_YES = r"^\W*(?:sim|yes|confirmo|pode cancelar)\b"
+SCRIPTED_NO = r"^\W*(?:n[aã]o|no|pode deixar)\b"
+
 ROUTE_RULES: list[tuple[str, str, str | None]] = [
     (
         r"encerrar (?:o |meu )?contrato|fechar (?:o |meu )?contrato|terminate (?:the )?contract|close (?:my )?contract",
@@ -37,6 +47,7 @@ ROUTE_RULES: list[tuple[str, str, str | None]] = [
     (r"weather|previs[aã]o do tempo|\bclima\b|forecast", "general_web", None),
     (r"exchange rate|c[aâ]mbio|cota[cç][aã]o|\beuro\b|d[oó]lar", "general_web", None),
     (r"bandeira|card scheme|habilita[cç][aã]o|enablement|visa|mastercard", "support", "enablement"),
+    (CANCEL_REQUEST, "support", "cancellation"),
     (
         r"cancelamento|cancelar venda|sale cancellation|cancel sale|cancellation status",
         "support",
@@ -107,6 +118,15 @@ def _router(call: ScriptedCall) -> dict:
     if route == "clarify":
         question = "Sobre o que você precisa de ajuda?" if language == "pt" else "What do you need help with?"
     safety = "unsafe" if route == "out_of_scope" else "none"
+    confirmation = "other"
+    if ctx.get("pending_cancellation"):
+        if re.search(SCRIPTED_YES, message, flags=re.IGNORECASE):
+            confirmation = "yes"
+        elif re.search(SCRIPTED_NO, message, flags=re.IGNORECASE):
+            confirmation = "no"
+    if re.search(SCRIPTED_YES, message, flags=re.IGNORECASE) or re.search(SCRIPTED_NO, message, flags=re.IGNORECASE):
+        # a bare "Sim" has no language hints, with or without a request waiting: the words themselves tell it
+        language = "pt" if re.search(r"^\W*(?:sim|n[aã]o|confirmo|pode)\b", message, re.IGNORECASE) else "en"
     return {
         "route": route,
         "language": language,
@@ -115,6 +135,7 @@ def _router(call: ScriptedCall) -> dict:
         "safety": safety,
         "clarification_question": question,
         "case_signal": signal,
+        "confirmation": confirmation,
     }
 
 
@@ -358,26 +379,18 @@ def _support(call: ScriptedCall) -> ToolPlan:
                 }
             ),
         )
+    if topic == "cancellation" and re.search(CANCEL_REQUEST, message, flags=re.IGNORECASE):
+        return _cancellation_request(message, pt, failed)
     if topic == "cancellation":
         return ToolPlan(
-            [("get_sale_cancellation_context", {"period": "yesterday"})],
-            final=lambda r: (
-                failed(r)
-                or {
-                    "points": [
-                        (
-                            f"Status do cancelamento da venda: {item['status']}. Consulta sem execução de ação."
-                            if pt
-                            else f"Sale cancellation status: {item['status']}. This is a read-only lookup."
-                        )
-                        for item in _load(r, 0).get("cancellations", [])
-                    ],
-                    "needs_selection": False,
-                    "missing": [],
-                    "escalate": False,
-                    "escalation_reason": None,
-                }
-            ),
+            [("get_sale_cancellation_context", cancellation_filters(message))],
+            final=lambda r: failed(r) or {
+                "points": _cancellation_status_points(_load(r, 0), pt),
+                "needs_selection": False,
+                "missing": [],
+                "escalate": False,
+                "escalation_reason": None,
+            },
         )
     return ToolPlan(
         [("get_contract_snapshot", {})],
@@ -392,6 +405,110 @@ def _support(call: ScriptedCall) -> ToolPlan:
             }
         ),
     )
+
+
+PAYMENT_WORDS = {"debit": r"d[eé]bito|debit", "credit": r"cr[eé]dito|credit", "pix": r"\bpix\b"}
+
+
+def cancellation_filters(message: str) -> dict:
+    """What a model passes to `get_sale_cancellation_context` under support.v10: the period (yesterday when
+    the merchant says so, else the tool's last 7 days) and the payment type, installments and channel named."""
+    yesterday = re.search(r"\bontem\b|yesterday", message, flags=re.IGNORECASE)
+    args: dict = {"period": "yesterday" if yesterday else "last_7_days"}
+    kinds = [kind for kind, words in PAYMENT_WORDS.items() if re.search(words, message, flags=re.IGNORECASE)]
+    if len(kinds) == 1:
+        args["payment_type"] = kinds[0]
+    if found := re.search(r"(\d+)\s*(?:x\b|vezes|parcelas|installments)", message, flags=re.IGNORECASE):
+        args["installments"] = int(found.group(1))
+    if re.search(r"\blink\b", message, flags=re.IGNORECASE):
+        args["channel"] = "payment_link"
+    if found := re.search(r"R\$\s*(\d{1,3}(?:\.\d{3})*),(\d{2})", message):
+        args["amount"] = int(found.group(1).replace(".", "")) * 100 + int(found.group(2))
+    return args
+
+
+def _cancellation_status_points(data: dict, pt: bool) -> list[str]:
+    """Each sale the lookup selected with its own status; without a selection, the cancellation records."""
+    if data.get("selection"):
+        points = []
+        for sale in data.get("sales", []):
+            status = (sale.get("cancellation") or {}).get("status")
+            protocol = (sale.get("cancellation") or {}).get("protocol")
+            amount = sale["gross_amount"]["display"]
+            if pt:
+                points.append(
+                    f"Venda de {amount} em {sale['sale_date']} ({sale['payment_type']}): "
+                    + (f"cancelamento com status {status}." if status else "sem cancelamento.")
+                    + (f" Protocolo: {protocol}." if protocol else "")
+                )
+            else:
+                points.append(
+                    f"Sale of {amount} on {sale['sale_date']} ({sale['payment_type']}): "
+                    + (f"cancellation status {status}." if status else "no cancellation.")
+                    + (f" Protocol: {protocol}." if protocol else "")
+                )
+        return points
+    return [
+        (
+            f"Status do cancelamento da venda: {item['status']}. Consulta sem execução de ação."
+            + (f" Protocolo: {item['protocol']}." if item.get("protocol") else "")
+            if pt
+            else f"Sale cancellation status: {item['status']}. This is a read-only lookup."
+            + (f" Protocol: {item['protocol']}." if item.get("protocol") else "")
+        )
+        for item in data.get("cancellations", [])
+    ]
+
+
+def _cancellation_request(message: str, pt: bool, failed) -> ToolPlan:
+    """Task 94, support.v10: the sales the merchant named, then a request for the only one that matches."""
+
+    def matching(results: list[str]) -> list[dict]:
+        return _load(results, 0).get("sales", [])
+
+    def follow(results: list[str]) -> list[tuple[str, dict]]:
+        found = matching(results)
+        return [("request_sale_cancellation", {"sale_id": found[0]["sale_id"]})] if len(found) == 1 else []
+
+    def final(results: list[str]) -> dict:
+        refused = (_load(results, 1).get("error") or {}).get("code")
+        if refused in ("FORBIDDEN_SCOPE", "INVALID_ARGUMENT"):  # not allowed in this session, or already cancelled
+            return {
+                "points": ["Não consegui registrar o pedido de cancelamento dessa venda." if pt
+                           else "I couldn't record the request to cancel that sale."],
+                "needs_selection": False,
+                "missing": [],
+                "escalate": False,
+                "escalation_reason": None,
+            }
+        if (error := failed(results)) is not None:
+            return error
+        found = matching(results)
+        if len(found) != 1:
+            return {
+                "points": [f"{r['sale_date']}: {r['gross_amount']['display']} ({r['payment_type']})" for r in found],
+                "needs_selection": True,
+                "missing": ["Qual venda?" if pt else "Which sale?"],
+                "escalate": False,
+                "escalation_reason": None,
+            }
+        request = _load(results, 1)
+        sale = request["sale"]
+        return {
+            "points": [
+                f"Venda de {sale['amount']['display']} em {sale['sale_date']} ({sale['payment_type']})."
+                if pt
+                else f"Sale of {sale['amount']['display']} on {sale['sale_date']} ({sale['payment_type']}).",
+                "Responda sim para cancelar ou não para manter a venda." if pt
+                else "Reply yes to cancel it or no to keep the sale.",
+            ],
+            "needs_selection": False,
+            "missing": [],
+            "escalate": False,
+            "escalation_reason": None,
+        }
+
+    return ToolPlan([("get_sale_cancellation_context", cancellation_filters(message))], final=final, follow_up=follow)
 
 
 def _web(call: ScriptedCall) -> dict | Exception:
@@ -457,7 +574,18 @@ def _personality(call: ScriptedCall) -> dict:
         parts += c["support"]["points"]
     if "handoff" in c:
         parts.append(c["handoff"]["message"])
+    if "cancellation" in c:  # task 94
+        parts.append(c["cancellation"]["message"])
     return {"answer": "\n".join(p for p in parts if p)}
+
+
+def _summary(call: ScriptedCall) -> dict:
+    """The previous summary plus the merchant's older messages, one short line each (task 92)."""
+    ctx = call.spec.context
+    asked = [t["text"][:80] for t in ctx["turns"] if t["role"] == "merchant"]
+    lines = [ctx["previous"]] if ctx.get("previous") else []
+    lines += [f"Merchant asked: {text}" for text in asked]
+    return {"summary": " ".join(lines)[-700:] or "No new facts."}
 
 
 def _rerank(call: ScriptedCall) -> dict:
@@ -496,6 +624,8 @@ def handler(call: ScriptedCall):
         }
     if agent == "personality":
         return _personality(call)
+    if agent == "summary":  # task 92: deterministic stand-in for the rolling summary
+        return _summary(call)
     if agent == "rerank":  # task 81: deterministic stand-in for the reranker; says nothing about real quality
         return _rerank(call)
     if agent == "judge":  # deterministic stand-in for the model judge; says nothing about real quality

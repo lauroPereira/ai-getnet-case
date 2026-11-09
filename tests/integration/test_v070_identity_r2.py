@@ -268,14 +268,22 @@ def test_unexpected_tool_exception_is_audited_as_error(settings, monkeypatch):
 # --- P3-5: the synthetic v0.4.0 script uses the v0.7.0 credentials -------------------------------------------------
 
 
-def test_synthetic_v040_script_logs_in_with_passwords(tmp_path):
+def test_synthetic_v040_script_logs_in_with_passwords(tmp_path, monkeypatch):
     path = PROJECT_ROOT / "tools" / "scripts" / "run_synthetic_v040_api.py"
     spec = importlib.util.spec_from_file_location("run_synthetic_v040_api", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    if module.CACHE.resolve() not in tmp_path.resolve().parents:
-        pytest.skip("the script only writes under .pytest_cache (run with the project's --basetemp)")
-    client = TestClient(module.build(tmp_path / "v040"))
+    assert module.CACHE == PROJECT_ROOT / ".pytest_cache"  # where the script writes when it runs for real
+    # the test's directory stands in for `.pytest_cache`, wherever pytest puts it (O1 of the real QA): the guard of
+    # `build` still refuses a runtime outside it and one that already exists
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(module, "CACHE", cache)
+    with pytest.raises(ValueError, match="new child of .pytest_cache"):
+        module.build(tmp_path / "outside")
+    (cache / "taken").mkdir(parents=True)
+    with pytest.raises(FileExistsError):
+        module.build(cache / "taken")
+    client = TestClient(module.build(cache / "v040"))
     for user, password in (("demo", "v040-synthetic-demo-password"), ("admin", "v040-synthetic-admin-password")):
         token = client.post("/v1/auth/token", data={"grant_type": "password", "username": user, "password": password})
         assert token.status_code == 200, (user, token.text)

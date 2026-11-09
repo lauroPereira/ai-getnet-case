@@ -1,6 +1,27 @@
 # Changelog
 
-All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Entries summarize product behavior, contract and data changes, and the operating or rollback notes that matter to users.
+All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Entries summarize product behavior, contract and data changes.
+
+## [0.12.0] — not released
+
+Conversation memory, replanning controls, and sale cancellation with explicit confirmation ([spec](docs/specs/memoria-escrita-v0120.md), [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md)). Builds on v0.11.0 and migration 0013.
+
+### Added
+- **Rolling summary and fact register.** `summary.v1` retains earlier context in bounded, masked summaries. A deterministic per-conversation register stores protocols, values, dates, products, and statuses from tool outcomes and case records; only registered facts can support protected values in replies.
+- **Replanning ablation.** `REPLAN=on|off` controls the replanning node while preserving the initial Router plan and request limits. `eval-compare` pairs runs by case and repetition, reports differences by criterion and route with a bootstrap interval, and lists model-origin decisions without another model call.
+- **Sale cancellation with explicit confirmation.** Support can request cancellation using the `support:write` scope. The request shows the sale, amount, and date; code confirms only an explicit yes, while no or two unanswered turns leave the account unchanged. Requests are idempotent and audited.
+- **Orchestration decision.** [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md) records the graph design, its tradeoffs, and the condition for reviewing it.
+
+### Changed
+- Only merchant tokens carry `support:write`; demo, operator, service, and admin tokens remain read-only for cancellation.
+- New prompts add rolling summaries, confirmation routing, and cancellation guidance while preserving earlier prompt versions.
+- Cancellation context includes sale payment details and the latest request. Replies about cancellation status use looked-up records; when a specific sale has not been identified, the assistant asks which sale to check. Human operator replies remain unchanged.
+- The Router validates confirmation against the pending request and message text. Ambiguous replies, including a qualified yes such as “yes, but…”, do not confirm.
+- The MCP server exposes read tools only; cancellation confirmation runs within the conversation flow.
+
+### Contract and data
+- **Migration 0014** adds conversation summaries, registered facts, and cancellation requests. It is reversible unless a cancellation has been confirmed, since its delivered protocol must be retained. Schema version is 14.
+- Conversation endpoints add `summary` and `facts`; run details may include `summary` and `confirmation` steps. The scenario catalog adds `SC-CANCEL-CONFIRM`; OpenAPI changes are additive.
 
 ## [0.11.0] — 2026-11-09
 

@@ -3,9 +3,14 @@
 input_guard -> router -> {knowledge | support_prefix -> [knowledge] -> support | escalation} -> personality
 -> output_guard. Every node is traced; recoverable failures are handled inside the agents.
 
+Sale cancellation (task 94, spec v0.12.0 D5): while a request waits for the merchant's answer in the conversation, the
+turn passes by `confirmation` after the Router; an explicit yes or no runs the confirmation or the refusal by code and
+goes to the reply, any other turn counts as unanswered and follows the Router's route.
+
 Replanning (task 69, spec v0.8.0): after `knowledge`, `web` and `support` the `replan` node observes the result and
 picks the next step (finish, knowledge, web, support, escalation or a question to the merchant). The Router's route
 stays the initial plan; each specialist runs at most once and the changes of plan are limited by `MAX_PLAN_HOPS`.
+`REPLAN=off` (task 93) builds the graph without it, for the ablation.
 
 Human review (ADR 0018, v0.7.0): when Escalation opens a case, the state at the end of the handed-off turn enters the
 review graph, compiled with a SQLite checkpointer, and stops in `human_review` with `interrupt()` under
@@ -30,12 +35,13 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
-from merchant_assistant.agents import escalation, knowledge, personality, replanner, router, support
+from merchant_assistant.agents import cancellation, escalation, knowledge, personality, replanner, router, support
+from merchant_assistant.agents import summary as rolling_summary
 from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.schemas import Handoff, MessageRequest, MessageResponse, Resolution, Source
 from merchant_assistant.config import Settings
-from merchant_assistant.conversations import Conversation, ConversationStore
+from merchant_assistant.conversations import PROMPT_HISTORY, Conversation, ConversationStore, facts_from_tool
 from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.webhook_outbox import TARGETS, enqueue, webhook_targets
@@ -55,6 +61,8 @@ from merchant_assistant.orchestration.state import (
 )
 from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
+from merchant_assistant.tools.domain import pending_sale_cancellation
+from merchant_assistant.tools.registry import ToolOutcome
 
 log = logging.getLogger("merchant_assistant.orchestrator")
 
@@ -70,6 +78,9 @@ TOOL_TITLES = {
     "get_fee_breakdown": "Recorded fee breakdown (synthetic charge service)",
     "get_enablement_requests": "Card-scheme enablement requests (your account)",
     "get_sale_cancellation_context": "Sale cancellation status (your account)",
+    "request_sale_cancellation": "Sale cancellation request (your account)",
+    "confirm_sale_cancellation": "Sale cancellation, confirmed by you (your account)",
+    "decline_sale_cancellation": "Sale cancellation, declined by you (your account)",
 }
 
 
@@ -133,6 +144,16 @@ def _after_guard(s: GraphState) -> str:
 
 
 def _after_router(s: GraphState) -> str:
+    """With a sale cancellation waiting for an answer (task 94), each turn the Router reads passes by `confirmation`."""
+    return "confirmation" if s.cancellation else _route(s)
+
+
+def _after_confirmation(s: GraphState) -> str:
+    """An explicit yes or no ends at the reply; any other turn follows the Router's route."""
+    return "personality" if cancellation.decided(s) else _route(s)
+
+
+def _route(s: GraphState) -> str:
     route = s.decision.route
     if route in ("knowledge", "general_web"):
         return "knowledge"
@@ -167,11 +188,24 @@ def _after_replan(s: GraphState) -> str:
     return REPLAN_DESTINATIONS[s.plan.get("next", "finish")]
 
 
-def build_graph():
+def _after_knowledge_without_replan(s: GraphState) -> str:
+    """`REPLAN=off` (task 93): the Router's initial plan, as in v0.7.0."""
+    return "support" if s.decision and s.decision.route == "knowledge_and_support" else "personality"
+
+
+def _after_support_without_replan(s: GraphState) -> str:
+    return "escalation" if s.support and s.support.escalate else "personality"
+
+
+def build_graph(replan: bool = True):
+    """The attendance graph. `replan=False` (`REPLAN=off`, task 93) is the ablation: no `replan` and no `web` node;
+    `knowledge` goes to `support` on the `knowledge_and_support` route and to the Personality otherwise, and `support`
+    to `escalation` when it asks for a human and to the Personality otherwise (the graph of v0.7.0)."""
     g = StateGraph(GraphState)
-    for name, fn, mark in [
+    nodes = [
         ("input_guard", input_guard, None),
         ("router", router.run, None),
+        ("confirmation", cancellation.run, None),
         ("knowledge", knowledge.run, _knowledge_label),
         ("web", knowledge.run_web, lambda _s: "web"),
         ("support_prefix", support.run_prefix, None),
@@ -180,15 +214,22 @@ def build_graph():
         ("escalation", escalation.run, None),
         ("personality", personality.run, None),
         ("output_guard", personality.run_output_guard, None),
-    ]:
-        g.add_node(name, _traced(name, fn, mark))
+    ]
+    for name, fn, mark in nodes:
+        if replan or name not in ("web", "replan"):
+            g.add_node(name, _traced(name, fn, mark))
     g.add_edge(START, "input_guard")
     g.add_conditional_edges("input_guard", _after_guard, ["router", "personality"])
-    g.add_conditional_edges("router", _after_router, ["knowledge", "support_prefix", "personality"])
+    g.add_conditional_edges("router", _after_router, ["confirmation", "knowledge", "support_prefix", "personality"])
+    g.add_conditional_edges("confirmation", _after_confirmation, ["knowledge", "support_prefix", "personality"])
     g.add_conditional_edges("support_prefix", _after_prefix, ["knowledge", "support", "escalation"])
-    for specialist in ("knowledge", "web", "support"):
-        g.add_edge(specialist, "replan")
-    g.add_conditional_edges("replan", _after_replan, sorted(set(REPLAN_DESTINATIONS.values())))
+    if replan:
+        for specialist in ("knowledge", "web", "support"):
+            g.add_edge(specialist, "replan")
+        g.add_conditional_edges("replan", _after_replan, sorted(set(REPLAN_DESTINATIONS.values())))
+    else:
+        g.add_conditional_edges("knowledge", _after_knowledge_without_replan, ["support", "personality"])
+        g.add_conditional_edges("support", _after_support_without_replan, ["escalation", "personality"])
     g.add_edge("escalation", "personality")
     g.add_edge("personality", "output_guard")
     g.add_edge("output_guard", END)
@@ -259,6 +300,26 @@ def build_review_graph(checkpointer):
     return g.compile(checkpointer=checkpointer)
 
 
+def turn_facts(
+    state: GraphState, outcomes: list[ToolOutcome], *, with_case: bool = True
+) -> list[tuple[str, str, str]]:
+    """Facts of this turn for the register (task 92, D2): (kind, value, source) read from the successful tool results
+    (without the echoes of their arguments) and, with `with_case`, from the case the turn opened or found (its `HO-`
+    protocol). The model's text is never read."""
+    found = [
+        (kind, value, o.name)
+        for o in outcomes
+        if o.ok and isinstance(o.data, dict)
+        for kind, value in facts_from_tool(o.data, o.arguments)
+    ]
+    if with_case and state.escalation:
+        found.append(("protocol", state.escalation.protocol, "handoff"))
+    event = state.cancellation_event or {}
+    if with_case and event.get("request_id"):  # task 94: the request's state, also when an unanswered turn expired it
+        found += [(kind, value, "sale_cancellation") for kind, value in facts_from_tool(event)]
+    return found
+
+
 def _sources(state: GraphState, ctx: RunContext) -> list[Source]:
     out: list[Source] = []
     if state.knowledge:
@@ -292,7 +353,7 @@ class Orchestrator:
         self.budget, self.traces, self.faults = budget, traces, faults or {}
         self.mock_services = mock_services
         self.llm_factory = llm_factory
-        self.graph = build_graph()
+        self.graph = build_graph(replan=settings.replan == "on")
         self._review_graph = None  # opened on the first handoff: turns without one never touch checkpoints
         self._checkpoint_conn: sqlite3.Connection | None = None
         self._review_lock = threading.Lock()
@@ -311,6 +372,8 @@ class Orchestrator:
         """Saves the handed-off flow at `human_review` (interrupt) under thread = request id (D6). `thread_id` is the
         case's own thread when a later turn completes a flow that the escalating request did not get to save."""
         thread_id = thread_id or final.request_id
+        if (final.cancellation_event or {}).get("late"):  # the operator's reply never meets that line
+            final = final.model_copy(update={"cancellation_event": None})
         step, t0 = ctx.trace.start("human_review")
         try:
             self.review_graph().invoke(final, config={"configurable": {"thread_id": thread_id, "ctx": ctx}})
@@ -368,7 +431,11 @@ class Orchestrator:
             pending = None if conv.created else store.pending_operator_turn(conv.conversation_id)
             if pending is not None:  # D8: a human reply waiting for this conversation is delivered first
                 return self._deliver(store, conv, pending, request, request_id, principal, trace_tags)
-            history = [] if conv.created else store.history(conv.conversation_id)
+            memory = (
+                {"summary": None, "recent": [], "uncovered": [], "incomplete": False}
+                if conv.created
+                else store.history(conv.conversation_id)
+            )
             known = conn.execute("SELECT 1 FROM customers WHERE customer_id = ?", (request.user_id,)).fetchone()
             env = ToolEnv(
                 conn,
@@ -376,6 +443,7 @@ class Orchestrator:
                 CustomerContext.for_principal(principal, request.user_id, known is not None),
                 dict(self.faults),
                 self.mock_services,
+                conversation_id=conv.conversation_id,
             )
             ctx = RunContext(
                 request_id=request_id,
@@ -396,17 +464,34 @@ class Orchestrator:
                 router_override=router_decision,
                 channel=channel,
             )
+            if not conv.created and not check_input(request.message).blocked:  # a blocked message pays no summary
+                memory = self._summary(store, conv.conversation_id, ctx, memory)
+            waiting = None if conv.created else pending_sale_cancellation(conn, conv.conversation_id, request.user_id)
             initial = GraphState(
                 request_id=request_id,
                 conversation_id=conv.conversation_id,
                 user_id=request.user_id,
                 customer_known=known is not None,
                 message=request.message,
-                history=history,
+                history=memory["recent"],
+                summary=memory["summary"],
+                uncovered_history=memory["uncovered"],
+                history_incomplete=memory["incomplete"],
+                facts=[] if conv.created else store.facts(conv.conversation_id),
+                prompt_facts={}
+                if conv.created
+                else {agent: store.earlier_facts(conv.conversation_id, n) for agent, n in PROMPT_HISTORY.items()},
                 case=conv.case_view(),
                 prefix_cache={"topic": conv.prefix_topic, "at": conv.prefix_at, "data": conv.prefix}
                 if conv.prefix
                 else None,
+                cancellation=waiting,
+                # a yes or no to a request already closed without a yes is answered as closed
+                cancellation_event=None
+                if conv.created or waiting
+                else cancellation.closed_request(conn, conv.conversation_id, request.user_id, request.message),
+                cancellation_in_conversation=not conv.created
+                and cancellation.requested_in_conversation(conn, conv.conversation_id, request.user_id),
             )
             final = GraphState.model_validate(
                 self.graph.invoke(initial, config={"configurable": {"ctx": ctx}, "recursion_limit": 30})
@@ -421,7 +506,7 @@ class Orchestrator:
             if announce:
                 conn.execute("BEGIN IMMEDIATE")
                 try:
-                    self._persist(store, conv, final)
+                    self._persist(store, conv, final, ctx.outcomes)
                     case = conn.execute("SELECT * FROM handoff_cases WHERE case_id=?", (final.escalation.case_id,))\
                         .fetchone()
                     payload = json.loads(case["payload"] or "{}")
@@ -437,12 +522,25 @@ class Orchestrator:
                     conn.execute("ROLLBACK")
                     raise
             else:
-                self._persist(store, conv, final)
+                self._persist(store, conv, final, ctx.outcomes)
             response = self._response(final, ctx)
             self._record(final, ctx, response, trace_tags)
             return response
         finally:
             conn.close()
+
+    def _summary(self, store: ConversationStore, conversation_id: str, ctx: RunContext, memory: dict) -> dict:
+        """The conversation memory for this turn (task 92, D1): the rolling summary advanced, under its own allowance
+        of one call, when a block of 3 turns waits out of the window, and the recent turns it no longer needs to
+        carry. Runs only for a message the input guard lets through; never breaks a reply."""
+        try:
+            if store.summary_backlog(conversation_id) is None:
+                return memory
+            rolling_summary.refresh(store, conversation_id, ctx)
+            return store.history(conversation_id)
+        except Exception:
+            log.exception("summary failed", extra={"event": {"request_id": ctx.request_id}})
+            return memory
 
     def _complete_interrupted_handoff(self, conn, final: GraphState, ctx: RunContext, channel: str) -> bool:
         """The case found by this turn (`created=False`) may have been opened by a turn that stopped between writing the
@@ -590,10 +688,13 @@ class Orchestrator:
                         conv, state=case_state, topic=conv.topic, technical_cycles=conv.technical_cycles,
                         evidence=final.case_next.get("evidence"),
                     )
-                    store.append(
+                    message_id = store.append(
                         conv.conversation_id, request_id, "assistant", final.answer, "human_reply", "answered",
                         via="operator", meta=meta,
                     )
+                    # facts of the tools this resume ran, with the operator's reply as their origin; the case protocol
+                    # keeps the merchant message of the turn that opened the case
+                    store.add_facts(conv.conversation_id, message_id, turn_facts(final, ctx.outcomes, with_case=False))
                     enqueue(conn, "conversation.replied", {
                         "case_id": case["case_id"], "protocol": case["protocol"],
                         "conversation_id": case["conversation_id"], "action": action,
@@ -644,8 +745,11 @@ class Orchestrator:
             llm = OutputTokenLimitLLM(llm, parameters["max_output_tokens"])
         return llm
 
-    def _persist(self, store: ConversationStore, conv: Conversation, state: GraphState) -> None:
-        """Stores the turn: feedback on earlier attempts, new attempts, case state, cached prefix and messages."""
+    def _persist(
+        self, store: ConversationStore, conv: Conversation, state: GraphState, outcomes: list[ToolOutcome]
+    ) -> None:
+        """Stores the turn: feedback on earlier attempts, new attempts, case state, cached prefix, messages and the
+        facts of the turn, with the merchant's message as their origin (task 92)."""
         signal = state.decision.case_signal if state.decision else "none"
         if signal == "still_failing":
             store.record_feedback(conv.conversation_id, "failed", "customer_reported")
@@ -667,8 +771,9 @@ class Orchestrator:
             prefix_topic=state.prefix.get("topic") if fresh_prefix else None,
         )
         route = state.decision.route if state.decision else None
-        store.append(conv.conversation_id, state.request_id, "merchant", state.message, route, None)
+        message_id = store.append(conv.conversation_id, state.request_id, "merchant", state.message, route, None)
         store.append(conv.conversation_id, state.request_id, "assistant", state.answer or "", route, state.status)
+        store.add_facts(conv.conversation_id, message_id, turn_facts(state, outcomes))
 
     def _response(self, state: GraphState, ctx: RunContext) -> MessageResponse:
         language = state.decision.language if state.decision else guess_language(state.message)
