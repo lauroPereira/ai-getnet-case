@@ -16,7 +16,15 @@ from pydantic import BaseModel, Field
 
 from merchant_assistant.api.schemas import MessageRequest
 from merchant_assistant.evaluation import aggregate, evidence
-from merchant_assistant.evaluation.judge import CRITERIA, RUBRIC_VERSION, Judge, judge_usage, save_evaluation
+from merchant_assistant.evaluation.judge import (
+    CLAIM_VERDICTS,
+    CRITERIA,
+    RUBRIC_VERSION,
+    Judge,
+    claim_counts,
+    judge_usage,
+    save_evaluation,
+)
 from merchant_assistant.guardrails.output import amounts
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import CallSpec, Usage
@@ -38,6 +46,9 @@ class Case:
     must_not_include: list[str] = field(default_factory=list)
     user_id: str = "cliente1988"
     must_not_assert: list[str] = field(default_factory=list)
+    # v0.11.0 (task 90, D8): the phrases a journey's reply was required to contain, now claims for the judge to check.
+    # Informative under the combined ruler; the literal ruler still reads them as `must_include_any`.
+    expected_claims: list[list[str]] | None = None
 
 
 _CLAUSE_BOUNDARIES = re.compile(
@@ -124,10 +135,19 @@ def _assertion_is_present(answer: str, assertion: str) -> bool:
     return False
 
 
+def case_from_label(label: dict) -> Case:
+    """A labeled case. A journey label names its required phrases `expected_claims` (task 90, D8); the literal ruler
+    reads the same phrases as `must_include_any`."""
+    if "expected_claims" in label and "must_include_any" not in label:
+        label = {**label, "must_include_any": label["expected_claims"]}
+    return Case(**label)
+
+
 def load_cases(paths: list[Path]) -> list[Case]:
     cases = []
     for path in paths:
-        cases += [Case(**json.loads(line)) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        lines = path.read_text(encoding="utf-8").splitlines()
+        cases += [case_from_label(json.loads(line)) for line in lines if line.strip()]
     return cases
 
 
@@ -224,6 +244,53 @@ CHECK_KEYS = [
     "sources_ok",
     "grounded_ok",
 ]
+
+
+# v0.11.0 (task 90, spec D8): the combined ruler. `deterministic` is every check above except the required phrases
+# (`content_ok`); `content` is the judge's first judgement of the reply, with the floor written before the campaign:
+# at least CONTENT_FLOOR in factual correctness and relevance, and no unsupported claim. `passed` is both. The literal
+# ruler (`eval --rubric literal`, and every run without a judge) is `passed = all(CHECK_KEYS)`, as before.
+RULERS = ("combined", "literal")
+DETERMINISTIC_KEYS = [key for key in CHECK_KEYS if key != "content_ok"]
+CONTENT_FLOOR = 4
+CONTENT_CRITERIA = ("factual_correctness", "relevance")
+
+
+def content_verdict(record: dict | None) -> bool | None:
+    """The content half of the combined ruler from one judgement; None when there is no completed judgement."""
+    if not record or record.get("state") != "completed":
+        return None
+    scores = record["scores"]
+    return all(scores[c] >= CONTENT_FLOOR for c in CONTENT_CRITERIA) and not record["unsupported_claim"]
+
+
+def apply_ruler(rows: list[dict], ruler: str) -> None:
+    """Sets `passed` of each row by the ruler. `literal` leaves a row as the checks wrote it, without the journeys'
+    `expected_claims` (the report of before task 90; a row recorded under the combined ruler gets its literal verdict
+    back); `combined` adds `deterministic` and `content` and sets `passed` to both (an answer without a completed
+    judgement does not pass)."""
+    if ruler not in RULERS:
+        raise ValueError(f"Unknown ruler: {ruler!r}")
+    if ruler == "literal":
+        for row in rows:
+            row.pop("expected_claims", None)  # review P3-2: only the combined ruler lists the journeys
+            if "deterministic" in row:
+                del row["deterministic"], row["content"]
+                row["passed"] = all(row[key] for key in CHECK_KEYS)
+        return
+    for row in rows:
+        records = _records(row)
+        row["deterministic"] = all(row[key] for key in DETERMINISTIC_KEYS)
+        row["content"] = content_verdict(records[0] if records else None)
+        row["passed"] = bool(row["deterministic"] and row["content"])
+
+
+def mark_journeys(rows: list[dict], cases: list[Case]) -> None:
+    """Copies the `expected_claims` of the journey labels into rows recorded before task 90 (re-judged answers)."""
+    claims = {case.id: case.expected_claims for case in cases if case.expected_claims is not None}
+    for row in rows:
+        if row["id"] in claims and "expected_claims" not in row:
+            row["expected_claims"] = claims[row["id"]]
 
 
 CRITICAL_CHECKS = {
@@ -340,6 +407,8 @@ def _run_case(orchestrator, case: Case, repetition: int, judge: Judge | None, ne
         **checks,
     }
     row["passed"] = all(row[k] for k in CHECK_KEYS)
+    if case.expected_claims is not None:
+        row["expected_claims"] = case.expected_claims
     if needs_evidence:
         row["judge_input"], row["evidence_truncation"] = evidence.judge_input(
             case.message, body, row["sources"], outcomes, trace, texts
@@ -364,13 +433,21 @@ def load_recorded_answers(path: Path) -> tuple[list[dict], dict]:
     return rows, report["config"]
 
 
-def rejudge(rows: list[dict], judge: Judge, repeat: int) -> list[dict]:
-    """Variation of the judge (D12): the same recorded answers graded `repeat` times; the agent does not run."""
+def rejudge(
+    rows: list[dict], judge: Judge, repeat: int, claims: dict[str, tuple[list[dict], str]] | None = None
+) -> list[dict]:
+    """Variation of the judge (D12): the same recorded answers graded `repeat` times; the agent does not run. With
+    `claims` (request id -> the claims of a calibration sample and their origin, `eval --claims-from`, task 89 round
+    2) a judge.v5 judge judges those claims instead of listing its own."""
     if repeat < 1:
         raise ValueError("repeat must be at least 1")
     graded = []
     for row in rows:
-        runs = [judge.evaluate(row["judge_input"], repetition=k) for k in range(1, repeat + 1)]
+        given = {}
+        if claims is not None:
+            listed, origin = claims[row["request_id"]]
+            given = {"claims": listed, "claims_origin": origin}
+        runs = [judge.evaluate(row["judge_input"], repetition=k, **given) for k in range(1, repeat + 1)]
         kept = {key: value for key, value in row.items() if key != "judge"}
         replaced = {"source_cost_usd": row["cost_usd"], "cost_usd": 0.0, "judge": runs[0], "judge_runs": runs}
         graded.append(kept | replaced)
@@ -401,6 +478,8 @@ def summarize(rows: list[dict]) -> dict:
     def block(selected: list[dict]) -> dict:
         durations = sorted(r["duration_ms"] for r in selected)
         out = {"n": len(selected), "passed": _rate(selected, "passed")}
+        if selected and all("deterministic" in r for r in selected):  # combined ruler (task 90)
+            out |= {"deterministic": _rate(selected, "deterministic"), "content": _rate(selected, "content")}
         out |= {k: _rate(selected, k) for k in CHECK_KEYS}
         if durations:
             out["latency_p50_ms"] = int(statistics.median(durations))
@@ -421,6 +500,10 @@ def summarize(rows: list[dict]) -> dict:
             means = {c: statistics.mean(rec["scores"][c] for rec in done) for c in CRITERIA}
             out["judge_means"] = {c: round(float(value), 2) for c, value in means.items()}
             out["unsupported_claim_rate"] = round(sum(bool(rec["unsupported_claim"]) for rec in done) / len(done), 3)
+        listed = [claim_counts(rec["claims"]) for rec in done if rec.get("claims")]
+        if listed:  # judge.v5 (spec v0.11.0 D3): the claims of the completed judgements, by verdict
+            keys = ("claims", *CLAIM_VERDICTS, "standard")
+            out["claim_verdicts"] = {key: sum(counts[key] for counts in listed) for key in keys}
         return out
 
     paths: dict[str, dict[str, int]] = {}
@@ -463,6 +546,96 @@ CRITERIA_LABELS = {
 }
 
 
+def claims_section(rows: list[dict], summary: dict) -> list[str]:
+    """judge.v5 (spec v0.11.0 D3): per answer and judgement, how many claims got each verdict. Empty for v3 and v4."""
+    judged = [(r, rec) for r in rows for rec in _records(r) if rec.get("state") == "completed" and rec.get("claims")]
+    if not judged:
+        return []
+    total = summary["overall"].get("claim_verdicts", {})
+    lines = [
+        "",
+        "## Afirmações por veredito (judge.v5)",
+        "",
+        f"{total.get('claims', 0)} afirmações em {len(judged)} julgamentos concluídos: "
+        + ", ".join(f"{total.get(verdict, 0)} {verdict}" for verdict in CLAIM_VERDICTS)
+        + f". {total.get('standard', 0)} são frases padrão (`standard`), que nunca marcam a resposta. A afirmação sem "
+        "suporte é calculada em código: alguma afirmação que não é `standard` com `generic` ou `not_found`; `partial` "
+        "não marca.",
+        "",
+        "| Caso | Rep | Julgamento | Afirmações | supported | partial | generic | not_found | standard | Sem suporte |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for r, rec in judged:
+        counts = claim_counts(rec["claims"])
+        lines.append(
+            f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {rec.get('repetition', 1)} | "
+            f"{counts['claims']} | "
+            + " | ".join(str(counts[verdict]) for verdict in CLAIM_VERDICTS)
+            + f" | {counts['standard']} | {'sim' if rec['unsupported_claim'] else 'não'} |"
+        )
+    return lines
+
+
+def _yes_no(value: bool | None) -> str:
+    return "não julgado" if value is None else "sim" if value else "não"
+
+
+def ruled_failures(row: dict) -> list[str]:
+    """Under the combined ruler: the deterministic checks that failed, then the content half when it did not pass."""
+    failed = [key.removesuffix("_ok") for key in DETERMINISTIC_KEYS if not row[key]]
+    if row["content"] is None:
+        failed.append("conteúdo não julgado")
+    elif not row["content"]:
+        failed.append("conteúdo")
+    return failed
+
+
+def ruler_lines(rows: list[dict]) -> list[str]:
+    """The combined ruler, stated at the top of the report, with the literal verdict beside it for comparison."""
+    combined = sum(bool(r["passed"]) for r in rows)
+    literal = sum(all(r[k] for k in CHECK_KEYS) for r in rows)
+    return [
+        f"Régua combinada (spec v0.11.0 D8): uma resposta passa quando passa a parte determinística (rota, status, "
+        "idioma, ferramentas, valores, frases proibidas, fontes e sem violação da guarda) e o conteúdo julgado pelo "
+        f"juiz (nota ≥ {CONTENT_FLOOR} em correção factual e relevância e nenhuma afirmação sem suporte, no primeiro "
+        "julgamento). As frases obrigatórias dos rótulos não decidem: aparecem como informação. Aprovadas: "
+        f"{combined} de {len(rows)}; pela régua literal (`--rubric literal`), {literal} de {len(rows)}.",
+        "",
+    ]
+
+
+def journeys_section(rows: list[dict]) -> list[str]:
+    """The business journeys under the combined ruler: both halves, the judge's scores and the expected claims."""
+    journeys = [r for r in rows if "expected_claims" in r]
+    if not journeys:
+        return []
+    passed = sum(bool(r["passed"]) for r in journeys)
+    lines = [
+        "",
+        "## Jornadas (régua combinada)",
+        "",
+        f"{passed} de {len(journeys)} jornadas aprovadas. As afirmações esperadas são as frases obrigatórias dos "
+        "rótulos, listadas ao lado do veredito do juiz para conferência; não entram no critério.",
+        "",
+        "| Caso | Rep | Determinístico | Conteúdo | Aprovado | Falhas | Correção factual | Relevância | Sem suporte "
+        "| Afirmações esperadas |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for r in journeys:
+        records = _records(r)
+        record = records[0] if records and records[0].get("state") == "completed" else None
+        scores = record["scores"] if record else {}
+        unsupported = "-" if record is None else "sim" if record["unsupported_claim"] else "não"
+        claims = "; ".join(" ou ".join(group) for group in r["expected_claims"]) or "-"
+        lines.append(
+            f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {_yes_no(r['deterministic'])} | "
+            f"{_yes_no(r['content'])} | {'sim' if r['passed'] else 'não'} | {', '.join(ruled_failures(r)) or '-'} | "
+            f"{scores.get('factual_correctness', '-')} | {scores.get('relevance', '-')} | {unsupported} | "
+            f"{aggregate.cell(claims)} |"
+        )
+    return lines
+
+
 def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, config: dict) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     json_path = out_dir / f"{name}.json"
@@ -489,12 +662,18 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
             f"{filtered}{limited}.",
             "",
         ]
+    combined = config.get("ruler") == "combined"
+    if combined:
+        lines += ruler_lines(rows)
     lines += [
         "## Resumo",
         "",
-        "| Recorte | n | Aprovados | Rota | Status | Ferramentas | Valores | Conteúdo | Fontes | Sem violação | "
-        "p50 (ms) | p95 (ms) | Custo (US$) |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Recorte | n | Aprovados | "
+        + ("Determinístico | Conteúdo (juiz) | " if combined else "")
+        + "Rota | Status | Ferramentas | Valores | "
+        + ("Frases obrigatórias (informativo)" if combined else "Conteúdo")
+        + " | Fontes | Sem violação | p50 (ms) | p95 (ms) | Custo (US$) |",
+        "| --- | --- | --- | " + ("--- | --- | " if combined else "") + "--- | " * 9 + "--- |",
     ]
     blocks = {
         "geral": o,
@@ -502,8 +681,9 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         **{f"idioma {k}": v for k, v in summary["by_language"].items()},
     }
     for label, b in blocks.items():
+        halves = f"{b.get('deterministic', '-')} | {b.get('content', '-')} | " if combined else ""
         lines.append(
-            f"| {label} | {b['n']} | {b['passed']} | {b['route_ok']} | {b['status_ok']} | {b['tools_ok']} | "
+            f"| {label} | {b['n']} | {b['passed']} | {halves}{b['route_ok']} | {b['status_ok']} | {b['tools_ok']} | "
             f"{b['amounts_ok']} | {b['content_ok']} | {b['sources_ok']} | {b['grounded_ok']} | "
             f"{b.get('latency_p50_ms', '-')} | {b.get('latency_p95_ms', '-')} | {b['cost_usd']} |"
         )
@@ -519,15 +699,20 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         lines += ["", usage_line(summary["judge_usage"], summary.get("judge_cost_usd", 0))]
     if o.get("judge_failed"):
         lines += ["", f"{o['judge_failed']} julgamentos falharam e ficaram fora das médias."]
-    if "judge_web_note" in o:
+    # only the answers judged under the v0.10.0 note (a search step without a cited URL recorded, or
+    # WEB_EVIDENCE=off): a step whose cited pages were fetched has the page or the search summary as evidence (task 87
+    # review P2-4); an answer with both kinds of step counts here (review round 2 P3-9)
+    if o.get("judge_web_note", {}).get("answers"):
         web = o["judge_web_note"]
         rubric = (config.get("judge_config") or {}).get("rubric_version", RUBRIC_VERSION)  # the one used (v0.10.0 D1)
         lines += [
             "",
-            f"Respostas julgadas sob a nota de busca web: {web['answers']} de {web['judged_answers']}. O texto da "
-            f"busca não é gravado e o juiz só vê os títulos das fontes: o `judge.v{rubric}` não rebaixa o que não pode "
-            "conferir, mas mantém a afirmação sem suporte sobre dado da conta do lojista sem resultado de "
-            f"ferramenta. Dessas respostas, {web['unsupported']} foram marcadas como afirmação sem suporte.",
+            f"Respostas julgadas sob a nota de busca web: {web['answers']} de {web['judged_answers']}. São as "
+            "respostas com ao menos um passo de busca sem URL gravada no trace (ou avaliadas com `WEB_EVIDENCE=off`): "
+            "desse passo o juiz não recebe o texto das páginas nem o resumo da busca, só os títulos das fontes; o "
+            f"`judge.v{rubric}` não rebaixa o que não pode conferir, mas mantém a afirmação sem suporte sobre dado da "
+            f"conta do lojista sem resultado de ferramenta. Dessas respostas, {web['unsupported']} foram marcadas como "
+            "afirmação sem suporte.",
         ]
     recorded = [r["evidence_truncation"] for r in rows if "evidence_truncation" in r]
     if recorded:
@@ -554,6 +739,9 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
                     f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {aggregate.cell(r['route'])} | "
                     f"{len(marks)} de {len(_records(r))} | {aggregate.cell(marks[0]['reasons']['groundedness'])} |"
                 )
+    lines += claims_section(rows, summary)
+    if combined:
+        lines += journeys_section(rows)
     lines += [
         "",
         "## Rota planejada e caminho executado",
@@ -573,15 +761,19 @@ def write_report(rows: list[dict], summary: dict, out_dir: Path, name: str, conf
         "",
         "## Casos",
         "",
-        "| Caso | Rep | Split | Rota | Caminho executado | Status | Aprovado | Falhas | ms | US$ |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Caso | Rep | Split | Rota | Caminho executado | Status | "
+        + ("Determinístico | Conteúdo | " if combined else "")
+        + "Aprovado | Falhas | ms | US$ |",
+        "| --- | --- | --- | --- | --- | --- | " + ("--- | --- | " if combined else "") + "--- | --- | --- | --- |",
     ]
     for r in rows:
-        failed = [k.removesuffix("_ok") for k in CHECK_KEYS if not r[k]]
+        failed = ruled_failures(r) if combined else [k.removesuffix("_ok") for k in CHECK_KEYS if not r[k]]
+        halves = f"{_yes_no(r['deterministic'])} | {_yes_no(r['content'])} | " if combined else ""
         lines.append(
             f"| {aggregate.cell(r['id'])} | {r.get('repetition', 1)} | {aggregate.cell(r['split'])} | "
             f"{aggregate.cell(r['route'])} | {aggregate.cell(r.get('executed_path') or '-')} | {r['status']} | "
-            f"{'sim' if r['passed'] else 'não'} | {', '.join(failed) or '-'} | {r['duration_ms']} | {r['cost_usd']} |"
+            f"{halves}{'sim' if r['passed'] else 'não'} | {', '.join(failed) or '-'} | {r['duration_ms']} | "
+            f"{r['cost_usd']} |"
         )
     md_path = out_dir / f"{name}.md"
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

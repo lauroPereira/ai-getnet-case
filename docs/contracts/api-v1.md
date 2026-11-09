@@ -77,3 +77,13 @@ Comparação retomável ([especificação v0.10.0](../specs/rubrica-operacao-v01
 | `POST /v1/comparisons/{comparison_id}/resume?retry_failed=false` | Bearer/dono | retoma uma comparação `interrupted`, `partial` ou `failed` com a mesma configuração e o mesmo teto confirmado: células com resultado (`request_id`) não rodam de novo; células `failed` só rodam de novo com `retry_failed=true` (o `request_id` anterior vai para `previous_request_ids`); `cost_usd` acumula. Orçamento e limite demo verificados só para as células que faltam. `202 {comparison_id, state: running, resumed_cells}`; `404` ausente ou de outro dono; `409 comparison_running`, `409 comparison_completed`, `409 nothing_to_resume`, `409 fixed_factors_changed` (base de conhecimento, prompts ou modo de execução mudaram); `429 installation_budget_exceeded` ou `demo_message_limit_reached` |
 
 Dados: migração 0012 reversível (`comparisons.state` aceita `interrupted`; a tabela é recriada porque o SQLite não altera `CHECK`). O rollback converte `interrupted` em `failed` e restaura o `CHECK` anterior. Versão do esquema 12, reportada em `/ready`. A interface web não muda nesta versão: `interrupted` aparece como está.
+
+## Acréscimos da v0.11.0
+
+Resumo da busca no trace ([especificação v0.11.0](../specs/juiz-retrieval-v0110.md), D1; tarefa 87). Campos aditivos; nada muda nas rotas nem nos outros campos.
+
+| Rota | Acesso | Efeito |
+| --- | --- | --- |
+| `GET /v1/runs/{request_id}` | Bearer/dono | os passos de busca web (`knowledge` em modo `web` e `web`) passam a mostrar `web_summary` (texto da busca escrito pelo modelo, mascarado, até 4 000 caracteres; é o resumo do assistente, não a página), `web_summary_truncated` (booleano) e `web_urls` (lista de `{title, url}` citados, mascarados) |
+
+Dados: sem migração; os campos vivem no `detail` de cada passo do trace.

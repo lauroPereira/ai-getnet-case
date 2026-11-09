@@ -46,6 +46,7 @@ def offline_orchestrator(
             settings.qdrant_collection,
             HashEmbedder(),
             mode=settings.retrieval_mode,
+            bm25_min_score=settings.retrieval_bm25_min_score,
         )
         index.rebuild([c for d in load_all(settings.data_dir) for c in chunk_document(d)])
     from merchant_assistant.rag.kb import KnowledgeBase

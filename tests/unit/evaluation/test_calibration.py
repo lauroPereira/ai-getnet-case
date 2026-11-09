@@ -19,6 +19,7 @@ from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.migrations import RollbackRefused, migrate
 from merchant_assistant.evaluation import calibration as cal
+from merchant_assistant.evaluation import calibration_packets as packets
 from merchant_assistant.evaluation.judge import CRITERIA, save_evaluation
 from merchant_assistant.evaluation.scripted_judge import scripted_judge
 from merchant_assistant.llm.base import NullMeter
@@ -255,9 +256,47 @@ def test_the_csv_is_utf8_with_short_instructions_in_portuguese_and_the_seed(tmp_
         c.startswith("# amostra: campanha=avaliacao; semente=4242; origem=avaliacao.json; sorteadas=24")
         for c in comments
     )
-    assert "elegiveis=60" in instructions and "rubrica=judge.v3" in instructions
+    assert "elegiveis=60" in instructions and "rubrica=judge.v5" in instructions
     assert "Calibração" in text and "fundamentação" in text  # accents survive
 
+
+def test_a_new_sample_names_the_current_version_and_a_v080_sample_keeps_its_line(tmp_path):
+    title = "# Calibração humana do juiz ({}). Avalie cada resposta com a mesma rubrica do juiz; as notas dele não "
+    title += "estão neste arquivo."
+    report = write_source(tmp_path / "avaliacao.json", fake_rows())
+    rows, meta = cal.make_sample(report, 24, cal.DEFAULT_SEED)
+
+    def first_line(data: bytes) -> str:
+        return next(row[0] for row in csv.reader(io.StringIO(data.decode("utf-8-sig"), newline=""), delimiter=";"))
+
+    assert cal.SAMPLE_VERSION == "v0.11.0"
+    assert first_line(cal.csv_bytes(rows, meta)) == title.format("v0.8.0")  # written as in v0.8.0
+    assert cal.sample_instructions(meta) == cal.INSTRUCTIONS
+    for key in ("excluded", "enriched", "claims", "claims_sha256", "seal"):  # what task 89 added
+        assert first_line(cal.csv_bytes(rows, meta | {key: "x"})).startswith("# Calibração humana do juiz (v0.11.0). ")
+        assert cal.sample_instructions(meta | {key: "x"}) == cal.INSTRUCTIONS_NEW, key
+    # the v0.8.0 sample in docs/evidence is not written again: it keeps the line it was written with and still reads
+    golden = PROJECT_ROOT / "docs" / "evidence" / "v080-calibracao-amostra.csv"
+    assert first_line(golden.read_bytes()) == title.format("v0.8.0")
+    filled = cal.read_filled(golden.read_bytes().decode("utf-8"))
+    assert len(filled.ratings) + len(filled.blank) == 24
+
+
+
+def test_a_new_sample_points_to_the_labelling_instruction_and_repeats_none_of_its_rules():
+    # review P2-1 of judge.v5 iteration 3: the `#` lines of a new sample.csv, of its sample-claims.csv and the note of
+    # each packet are short, point to the instruction (which holds where they differ) and state no verdict rule
+    instruction = PROJECT_ROOT / "docs" / "templates" / packets.LABELLING_INSTRUCTION
+    assert instruction.exists() and cal.INSTRUCTIONS_NEW[0].startswith("Calibração humana do juiz (v0.11.0). ")
+    for lines in (cal.INSTRUCTIONS_NEW, packets.CLAIMS_INSTRUCTIONS):
+        text = " ".join(lines)
+        assert len(lines) <= 2 and all(len(line) < 420 for line in lines)
+        assert packets.LABELLING_INSTRUCTION in text and "vale a instrução" in text
+        for rule in ("apoiada", "parcial", "genérica", "não encontrada", "não conta contra", "standard", "sim só "):
+            assert rule not in text, rule
+    assert "unsupported_claim fica em branco" in cal.INSTRUCTIONS_NEW[1]
+    # the v0.8.0 lines did not move: an old sample is still written with them (the golden of task 89 pins its bytes)
+    assert cal.INSTRUCTIONS[0].startswith("Calibração humana do juiz (v0.8.0). ") and len(cal.INSTRUCTIONS) == 10
 
 def test_the_same_report_and_seed_write_the_same_file(tmp_path):
     first = make_csv(tmp_path).read_bytes()
@@ -464,7 +503,7 @@ def test_at_most_the_first_problems_are_listed_but_all_are_counted():
 def judged_database(tmp_path, rows):
     """A database where the campaign wrote the judgements of `rows` (repetition 1, principal cli:eval)."""
     conn = connect(tmp_path / "campaign.sqlite3")
-    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
     for row in rows:
         save_evaluation(conn, request_id=row["request_id"], judge=judge, record=row["judge"], data=row["judge_input"])
     return conn
@@ -559,7 +598,7 @@ def test_nothing_is_written_when_a_line_is_wrong_or_a_judgement_is_missing(tmp_p
 def test_only_the_first_completed_judgement_of_the_campaign_is_the_one_compared(tmp_path):
     rows = varied_rows()[:4]
     conn = judged_database(tmp_path, rows)
-    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
     target = rows[0]
     later = {**target["judge"], "evaluation_id": "eval_later", "repetition": 2, "scores": dict.fromkeys(CRITERIA, 5)}
     failed = {
@@ -601,11 +640,118 @@ def test_only_the_first_completed_judgement_of_the_campaign_is_the_one_compared(
     assert cal.judgement_for(conn, "req_unknown") is None
 
 
+SCRIPTED = "scripted/scripted-judge-v3"
+
+
+def vote(conn, row, evaluation_id: str, claim: bool, score: int, *, at: str, run: str = "r3", state="completed"):
+    """One more judgement of `row` by the scripted judge in the execution `run`, written at `at`."""
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
+    record = {**row["judge"], "evaluation_id": evaluation_id, "unsupported_claim": claim}
+    record |= {"scores": dict.fromkeys(CRITERIA, score), "repetition": int(evaluation_id[-1])}
+    if state != "completed":
+        record |= {"state": state, "scores": {}, "reasons": {}, "unsupported_claim": None}
+    save_evaluation(conn, request_id=row["request_id"], judge=judge, record=record, data=row["judge_input"], run=run)
+    conn.execute("UPDATE run_evaluations SET created_at=? WHERE evaluation_id=?", (at, evaluation_id))
+
+
+def test_with_majority_an_answer_brings_the_verdict_of_most_of_its_completed_judgements(tmp_path):
+    # eval-calibrate --judge-majority (a tool of v0.11.0 outside D6(a)): eval --judge-repeat 3 and the majority
+    rows = varied_rows()[:3]
+    conn = judged_database(tmp_path, rows)
+    target = rows[0]
+    vote(conn, target, "eval_r3_1", False, 2, at="2026-11-07T10:00:01+00:00")
+    vote(conn, target, "eval_r3_2", True, 5, at="2026-11-07T10:00:02+00:00")
+    vote(conn, target, "eval_r3_x2", True, 1, at="2026-11-07T10:00:03+00:00", state="failed")
+    vote(conn, target, "eval_r3_3", True, 4, at="2026-11-07T10:00:04+00:00")
+    first = cal.judgement_for(conn, target["request_id"], SCRIPTED, "r3")
+    assert first["evaluation_id"] == "eval_r3_1" and first["unsupported_claim"] is False and "votes" not in first
+    most = cal.judgement_for(conn, target["request_id"], SCRIPTED, "r3", majority=True)
+    assert most["unsupported_claim"] is True and most["votes"] == {"judgements": 3, "yes": 2}  # the failed one is out
+    assert most["scores"] == dict.fromkeys(CRITERIA, 4)  # the median of 2, 5 and 4, not the 5 of eval_r3_2
+    assert most["evaluation_id"] == "eval_r3_2"  # the first judgement with the majority's verdict, and its claims
+    # one judgement: the majority is that judgement, so one repetition compares as before
+    alone = cal.judgement_for(conn, rows[1]["request_id"], majority=True)
+    assert {k: v for k, v in alone.items() if k != "votes"} == cal.judgement_for(conn, rows[1]["request_id"])
+    assert alone["votes"] == {"judgements": 1, "yes": int(rows[1]["judge"]["unsupported_claim"])}
+    # a fourth completed judgement (the same answer judged again under the same name, repetition 1) makes a tie
+    vote(conn, target, "eval_again_1", False, 3, at="2026-11-07T11:00:00+00:00")
+    with pytest.raises(cal.CalibrationError, match="tem 4 julgamentos completos .* número ímpar"):
+        cal.judgement_for(conn, target["request_id"], SCRIPTED, "r3", majority=True)
+    assert cal.judgement_for(conn, target["request_id"], SCRIPTED, "r3")["evaluation_id"] == "eval_r3_1"
+
+
+def test_an_import_with_majority_compares_each_answer_by_the_majority_and_says_so(tmp_path):
+    rows = varied_rows()[:6]
+    conn = judged_database(tmp_path, rows)
+    path = human_like_judge(tmp_path, rows)
+    cal.import_filled(conn, path, rater="owner")  # the original campaign, linked to the first judge
+    for index, row in enumerate(rows):
+        said = bool(row["judge"]["unsupported_claim"])
+        # repetition 1 always disagrees with the human; repetitions 2 and 3 agree: only the majority agrees
+        for repetition, claim in ((1, not said), (2, said), (3, said)):
+            vote(conn, row, f"eval_m{index}_{repetition}", claim, 3, at=f"2026-11-07T10:0{index}:0{repetition}+00:00")
+    asked = {"rater": "owner", "judge": SCRIPTED, "judge_run": "r3", "rubric": "3"}
+    first = cal.import_filled(conn, path, campaign="primeira", **asked)
+    most = cal.import_filled(conn, path, campaign="maioria", majority=True, **asked)
+    assert first["analysis"]["verdict"]["exact"] == 0.0 and most["analysis"]["verdict"]["exact"] == 1.0
+    assert first["comparison"]["majority"] is False and most["comparison"]["majority"] is True
+    assert "o julgamento da repetição 1 de cada resposta" in first["report"]
+    assert "o veredito da maioria dos julgamentos completos (`unsupported_claim` sim quando mais da metade" in " ".join(
+        most["report"].split()
+    )
+    linked = dict(conn.execute("SELECT sample_id, evaluation_id FROM calibrations WHERE campaign='maioria'").fetchall())
+    assert linked["S01"].endswith("_2")  # the first judgement with the majority's verdict
+    with pytest.raises(cal.CalibrationError, match="--judge-majority só vale com --judge"):
+        cal.import_filled(conn, path, campaign="sem-juiz", majority=True)
+
+
+def test_majority_reaches_the_other_blocks_and_names_what_is_missing(tmp_path):
+    # review P3-1 and P3-2 of the adjustment for iteration 3: every block asked for (--judge more than once) is read by
+    # the majority, and a missing judgement is described without "repetition 1"
+    rows = varied_rows()[:4]
+    conn = judged_database(tmp_path, rows)
+    path = human_like_judge(tmp_path, rows)
+    cal.import_filled(conn, path, rater="owner")
+    for index, row in enumerate(rows):
+        said = bool(row["judge"]["unsupported_claim"])
+        for repetition, claim in ((1, said), (2, not said), (3, not said)):  # only the first judgement agrees
+            vote(conn, row, f"eval_b{index}_{repetition}", claim, 3, at=f"2026-11-07T12:0{index}:0{repetition}+00:00",
+                 run="r3b")
+            agrees = claim if repetition == 1 else said  # in r3 all three agree
+            vote(conn, row, f"eval_a{index}_{repetition}", agrees, 3, at=f"2026-11-07T13:0{index}:0{repetition}+00:00")
+    more = [(SCRIPTED, "r3b", "3")]
+    asked = {"rater": "owner", "judge": SCRIPTED, "judge_run": "r3", "rubric": "3", "more": more}
+    first = cal.import_filled(conn, path, campaign="blocos-primeira", **asked)
+    most = cal.import_filled(conn, path, campaign="blocos-maioria", majority=True, **asked)
+    exact = [[b["analysis"]["verdict"]["exact"] for b in r["comparison"]["blocks"]] for r in (first, most)]
+    assert exact[0][1:] == [1.0, 1.0] and exact[1][1:] == [1.0, 0.0]  # A in r3, B in r3b
+    for index in range(1, len(rows)):  # an execution with no judgement of the first answer
+        vote(conn, rows[index], f"eval_c{index}_1", False, 3, at=f"2026-11-07T14:0{index}:01+00:00", run="r3c")
+    with pytest.raises(cal.CalibrationError) as caught:
+        cal.import_filled(conn, path, campaign="sem-voto", majority=True, **(asked | {"judge_run": "r3c", "more": []}))
+    message = caught.value.messages[0]
+    assert rows[0]["request_id"] in message and "na execução 'r3c' (completo, de qualquer repetição)" in message
+    assert "repetição 1" not in message
+
+
+def test_judge_majority_is_refused_with_two_raters_and_with_the_panel_merge(tmp_path, monkeypatch):
+    # review P3-1: the two-rater import and --merge-panel do not take --judge-majority
+    from merchant_assistant import cli
+
+    monkeypatch.setattr(cli, "get_settings", lambda: None)
+    two = ["--rater", "lauro:human", str(tmp_path / "a.csv"), str(tmp_path / "a-claims.csv")]
+    with pytest.raises(SystemExit, match="--judge-majority compares one rater with the judge"):
+        cli.main(["eval-calibrate", "--import", *two, "--judge", SCRIPTED, "--judge-majority"])
+    merge = ["--merge-panel", "m1-claims.csv", "m2-claims.csv", "--sample-csv", "m1.csv", "m2.csv", "--out", "p.csv"]
+    with pytest.raises(SystemExit, match="--merge-panel only joins the files"):
+        cli.main(["eval-calibrate", *merge, "--judge-majority"])
+
+
 def test_the_rollback_of_the_schema_is_refused_once_a_human_rating_is_stored(tmp_path):
     rows = varied_rows()
     conn = judged_database(tmp_path, rows)
     cal.import_filled(conn, human_like_judge(tmp_path, rows))
-    with pytest.raises(RollbackRefused, match="calibrations still holds 24 human score"):
+    with pytest.raises(RollbackRefused, match="calibrations still holds 24 calibration label"):
         migrate(conn, 10)
 
 
@@ -865,11 +1011,12 @@ def test_the_split_option_narrows_the_sample_and_never_reaches_the_sealed_split(
     assert meta["left_out"] == {"holdout": 6, "holdout_v080": 5}
     only_holdout, meta = cal.make_sample(report, 24, 1, split="holdout")
     assert {r["split"] for r in only_holdout} == {"holdout"} and len(only_holdout) == 6
-    for name in ("holdout_v080", "all", "tudo"):
+    for name in ("holdout_v080", "tudo"):
         with pytest.raises(cal.CalibrationError, match="split inválido"):
             cal.make_sample(report, 24, 1, split=name)
-    assert set(cal.SPLIT_CHOICES) == {"development", "dev", "holdout"}
-    assert all("holdout_v080" not in splits for splits in cal.SPLIT_CHOICES.values())
+    # task 89 round 2 (decision of the Supervisor): only `all` reaches the holdout_v080, for the v0.11.0 sample
+    assert set(cal.SPLIT_CHOICES) == {"development", "dev", "holdout", "all"}
+    assert [name for name, splits in cal.SPLIT_CHOICES.items() if "holdout_v080" in splits] == ["all"]
 
 
 def test_a_report_with_only_the_sealed_split_gives_nothing_to_sample(tmp_path):

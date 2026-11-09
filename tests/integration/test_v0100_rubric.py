@@ -172,7 +172,7 @@ def stored(settings, run_name: str) -> list:
 def grade_all(experiment, judges, tmp_path) -> None:
     deepseek, opus, _ = judges
     assert cli.cmd_eval(deepseek, eval_args(experiment, tmp_path, "v0100-juiz-deepseek-v4", rubric="v4")) == 0
-    assert cli.cmd_eval(opus, eval_args(experiment, tmp_path, "v090-juiz-opus-r3")) == 0  # no --rubric: judge.v3
+    assert cli.cmd_eval(opus, eval_args(experiment, tmp_path, "v090-juiz-opus-r3", rubric="v3")) == 0
     assert cli.cmd_eval(opus, eval_args(experiment, tmp_path, "v0100-juiz-opus-v4", rubric="v4")) == 0
 
 
@@ -259,7 +259,9 @@ def test_moment_3_four_blocks_against_the_same_human_ratings_with_the_d2_line(
     ]
     assert " | sim | não | sim | não | sim |" in generic  # S01 (and S13): human, DeepSeek v4 and Opus v4
     # D2, computed and not decided: A against O fails (c), C against B holds all three
-    assert "## Regra D2 da v0.10.0 (informativa)" in text and "A decisão é registrada na tarefa 86." in text
+    assert "## Regra histórica D2 da v0.10.0 (informativa)" in text
+    assert "A decisão histórica é registrada na tarefa 86." in text
+    assert "não governa `judge.v5`" in text and "D6(g) da v0.11.0" in text
     assert (
         "- A `deepseek/deepseek-flash` judge.v4 contra O `deepseek/deepseek-flash` judge.v3: (a) veredito 0.917 "
         "contra 0.833, não cai: sim; (b) frases genéricas marcadas: 2 de 4, pelo menos 2: sim; (c) ±1 groundedness "
@@ -289,18 +291,23 @@ def test_moment_3_four_blocks_against_the_same_human_ratings_with_the_d2_line(
 def test_rubric_v3_by_name_is_the_v090_report_and_bad_blocks_are_refused(experiment, judges, tmp_path):
     deepseek, _, _ = judges
     grade_all(experiment, judges, tmp_path)
-    one = {"judge": OPUS, "judge_run": "v090-juiz-opus-r3"}
+    one = {"judge": OPUS, "judge_run": "v090-juiz-opus-r3", "rubric": "3"}
     plain, named = tmp_path / "plain.md", tmp_path / "named.md"
     conn = connect(deepseek.db_path)
     try:
         first = cal.import_filled(conn, experiment["csv"], campaign="v090-juiz-opus", now=NOW, **one)
-        again = cal.import_filled(conn, experiment["csv"], campaign="v090-juiz-opus", now=NOW, rubric="3", **one)
+        again = cal.import_filled(conn, experiment["csv"], campaign="v090-juiz-opus", now=NOW, **one)
     finally:
         conn.close()
-    assert first["report"] == again["report"]  # --rubric v3 is the default: the v0.9.0 report, byte for byte
+    assert first["report"] == again["report"]  # explicitly selects the v0.9 campaign's stored v3 rubric
     assert first["report"].startswith("# Calibração humana do juiz: dois juízes (v0.9.0)")
     assert "blocks" not in first["comparison"]
-    single = {"judge": [OPUS], "judge_run": ["v090-juiz-opus-r3"], "rubric": None, "campaign": "v090-juiz-opus"}
+    single = {
+        "judge": [OPUS],
+        "judge_run": ["v090-juiz-opus-r3"],
+        "rubric": ["v3"],
+        "campaign": "v090-juiz-opus",
+    }
     assert cli.cmd_eval_calibrate(deepseek, calibrate_args(experiment, plain, **single)) == 0
     assert cli.cmd_eval_calibrate(deepseek, calibrate_args(experiment, named, **single | {"rubric": ["v3"]})) == 0
     unstamped = [re.sub(r"Gerado em \S+\.", "", path.read_text(encoding="utf-8")) for path in (plain, named)]
@@ -317,7 +324,7 @@ def test_rubric_v3_by_name_is_the_v090_report_and_bad_blocks_are_refused(experim
             "foi pedido mais de uma vez",
         ),
         (
-            {"judge": [DEEPSEEK], "judge_run": ["v0100-juiz-deepseek-v4"], "rubric": None},
+            {"judge": [DEEPSEEK], "judge_run": ["v0100-juiz-deepseek-v4"], "rubric": ["v3"]},
             "a execução 'v0100-juiz-deepseek-v4' do juiz deepseek/deepseek-flash gravou julgamentos judge.v4, não "
             "judge.v3",
         ),
@@ -350,10 +357,10 @@ def test_through_the_parser_the_default_rubric_the_repeated_blocks_and_no_v4_wit
     given += [str(experiment["csv"]), "--out", out]
     monkeypatch.setattr(cli, "get_settings", lambda: deepseek)
     assert cli.main(["eval", "--judge-repeat", "1", "--rubric", "v4", "--name", "ds-v4", *given]) == 0
-    assert cli.main(["eval", "--judge-repeat", "1", "--name", "ds-v3", *given]) == 0  # no --rubric
+    assert cli.main(["eval", "--judge-repeat", "1", "--rubric", "v3", "--name", "ds-v3", *given]) == 0
     monkeypatch.setattr(cli, "get_settings", lambda: opus)
-    assert cli.main(["eval", "--judge-repeat", "1", "--name", "opus-v3", *given]) == 0
-    for run_name, version in (("ds-v4", "4"), ("ds-v3", judge_module.RUBRIC_VERSION), ("opus-v3", "3")):
+    assert cli.main(["eval", "--judge-repeat", "1", "--rubric", "v3", "--name", "opus-v3", *given]) == 0
+    for run_name, version in (("ds-v4", "4"), ("ds-v3", "3"), ("opus-v3", "3")):
         assert {r["rubric_version"] for r in stored(deepseek, run_name)} == {version}, run_name
 
     def calibrate(campaign: str, *blocks: str) -> list[str]:
@@ -393,7 +400,7 @@ def test_through_the_parser_the_default_rubric_the_repeated_blocks_and_no_v4_wit
     assert "  - Base: O (execução `legado`), o primeiro bloco `judge.v3` deste juiz; C fica fora desta linha." in text
     assert calibrations("parser-blocks") == 24
 
-    # one source for the default: if task 86 moves it, both commands follow without --rubric
+    # one source for the configured default: both commands resolve it without a CLI default of their own
     monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")
     monkeypatch.setattr(cli, "get_settings", lambda: deepseek)
     assert cli.main(calibrate("default-v4", "--judge", DEEPSEEK, "--judge-run", "ds-v4")) == 0
@@ -401,3 +408,51 @@ def test_through_the_parser_the_default_rubric_the_repeated_blocks_and_no_v4_wit
     assert cli.main(["eval", "--scripted", "--judge-repeat", "1", "--name", "scripted-default", *given]) == 0
     report = json.loads((tmp_path / "out" / "scripted-default.json").read_text(encoding="utf-8"))
     assert report["config"]["judge_config"]["prompt"] == "judge@4"
+
+
+def test_judge_majority_through_the_parser_compares_the_majority_of_three_repetitions(
+    experiment, judges, tmp_path, monkeypatch, capsys
+):
+    """A tool of v0.11.0 outside D6(a): `eval --judge-repeat 3` and `eval-calibrate --judge-majority`. The programmed
+    DeepSeek marks S02 in repetitions 2 and 3 and S03 in repetition 1 only: the first judgement says S03, the majority
+    says S02. Without the flag the comparison is the one of repetition 1, as before."""
+    deepseek, _, _ = judges
+    at = experiment["position"]
+    seen: dict = {}
+
+    def varying(call) -> dict:
+        data = json.loads(call.spec.input)
+        seen[key(data)] = repetition = seen.get(key(data), 0) + 1
+        marked = (key(data) == at["S02"] and repetition > 1) or (key(data) == at["S03"] and repetition == 1)
+        return dict(FIXED_JUDGEMENT, unsupported_claim=marked)
+
+    monkeypatch.setattr(main, "model_factory", lambda settings: lambda p, m: ScriptedLLM(varying, model=m))
+    monkeypatch.setattr(cli, "get_settings", lambda: deepseek)
+    given = ["--answers-from", str(experiment["report"]), "--only-sample", str(experiment["csv"])]
+    assert cli.main(
+        ["eval", "--judge-repeat", "3", "--rubric", "v3", "--name", "ds-r3", *given, "--out", str(tmp_path / "out")]
+    ) == 0
+    assert len(stored(deepseek, "ds-r3")) == 72
+
+    def calibrate(campaign: str, *extra: str) -> str:
+        report = tmp_path / f"{campaign}.md"
+        argv = ["eval-calibrate", "--import", str(experiment["csv"]), "--rater", "owner", "--campaign", campaign]
+        assert cli.main(
+            [*argv, "--judge", DEEPSEEK, "--judge-run", "ds-r3", "--rubric", "v3", *extra, "--out", str(report)]
+        ) == 0
+        return report.read_text(encoding="utf-8")
+
+    def marked(text: str) -> dict[str, str]:  # the A column of the table of the answers anyone marked
+        table = text.split("Respostas que o humano ou algum juiz marcou como afirmação sem suporte:", 1)[1]
+        rows = [line.split(" | ") for line in table.split("\n\n", 2)[1].splitlines()[2:]]
+        return {row[0].lstrip("| "): row[4] for row in rows}
+
+    first = calibrate("ds-r3-primeira")
+    capsys.readouterr()
+    most = calibrate("ds-r3-maioria", "--judge-majority")
+    assert "verdict of each compared block: the majority" in capsys.readouterr().out
+    assert (marked(first)["S03"], "S02" in marked(first)) == ("sim", False)
+    assert (marked(most)["S02"], "S03" in marked(most)) == ("sim", False)
+    assert "A entra com o veredito da maioria dos julgamentos completos" in " ".join(most.split())
+    with pytest.raises(SystemExit, match="--judge-majority is used with --judge"):
+        cli.main(["eval-calibrate", "--import", str(experiment["csv"]), "--campaign", "x", "--judge-majority"])

@@ -573,6 +573,7 @@ class KnowledgeBase:
                 self.index.embedder,
                 mode=self.index.mode,
                 bm25_dir=self.index.bm25_dir,
+                bm25_min_score=self.index.bm25_min_score,
             )
             return active, row["version_id"]
         finally:

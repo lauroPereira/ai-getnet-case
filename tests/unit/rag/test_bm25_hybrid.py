@@ -93,7 +93,8 @@ def test_mode_comes_from_the_index_and_unknown_modes_are_refused(index):
 
 def test_retrieval_mode_setting_defaults_to_hybrid():
     assert Settings(_env_file=None).retrieval_mode == "hybrid"  # task 82, D7
-    assert Settings(_env_file=None, retrieval_mode="dense").retrieval_mode == "dense"
+    assert Settings(_env_file=None).rerank == "on"  # v0.11.0, task 90, D7: positive versus hybrid@36 on both splits
+    assert Settings(_env_file=None, retrieval_mode="dense", rerank="off").retrieval_mode == "dense"
     with pytest.raises(ValueError):
         Settings(_env_file=None, retrieval_mode="sparse")
 

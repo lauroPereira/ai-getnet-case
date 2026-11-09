@@ -141,7 +141,7 @@ def test_the_factory_builds_the_adapter_only_with_the_key_and_calls_nothing(sett
 def test_the_claude_judge_has_room_for_thinking_and_a_refusal_is_a_failed_judgement(settings):
     provider = ScriptedAnthropic(lambda body: message("", stop_reason="refusal"))
     judge = judge_module.resolve_judge(
-        judge_settings(settings), agent=AGENT, factory=lambda p, m: AnthropicLLM(provider.client, m)
+        judge_settings(settings), agent=AGENT, factory=lambda p, m: AnthropicLLM(provider.client, m), rubric="3"
     )
     assert isinstance(judge, Judge) and judge.max_output_tokens == 2000
     assert judge.config()["parameters"] == {"max_output_tokens": 2000, "effort": "default", "thinking": "default"}
@@ -150,7 +150,7 @@ def test_the_claude_judge_has_room_for_thinking_and_a_refusal_is_a_failed_judgem
     assert record["state"] == "failed" and record["scores"] == {} and record["unsupported_claim"] is None
     assert "refusal" in record["error"]
     # the other judges keep the v0.8.0 parameters
-    assert judge_module.max_output_tokens_for("deepseek") == judge_module.MAX_OUTPUT_TOKENS == 400
+    assert judge_module.max_output_tokens_for("deepseek", "3") == judge_module.MAX_OUTPUT_TOKENS == 400
 
 
 # --- task 79 round 2 ------------------------------------------------------------------------------------------------

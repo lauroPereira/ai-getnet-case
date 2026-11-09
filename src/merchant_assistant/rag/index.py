@@ -27,6 +27,12 @@ _BM25_BUILD_LOCKS: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()  # on
 
 RETRIEVAL_MODES = ("dense", "hybrid")
 RRF_K = 60  # reciprocal rank fusion constant (plan, technical decision 17)
+# v0.11.0 (task 90, D7): the control of the reranker. The fusion the reranker reads (width 12, so depth 36: the dense
+# and BM25 top 36) cut to k by the fusion order alone, without a model. A measurement mode of `search()` and
+# `eval-retrieval`, not a RETRIEVAL_MODE of the service. The width equals `rerank.RERANK_CANDIDATES` (a test holds it).
+CONTROL_MODE = "hybrid@36"
+CONTROL_WIDTH = 12
+SEARCH_MODES = (*RETRIEVAL_MODES, CONTROL_MODE)
 
 
 @dataclass(frozen=True)
@@ -84,6 +90,28 @@ def rrf(dense: list[Hit], lexical: list[tuple[float, dict]], k: int) -> list[Hit
     ]
 
 
+def bm25_floor(
+    dense: list[Hit], lexical: list[tuple[float, dict]], floor: float
+) -> tuple[list[tuple[float, dict]], list[str]]:
+    """Task 90 (D7): the BM25 list without the hits that the dense list did not find and whose normalized score (the
+    BM25 score over the best BM25 score of this query, so the first hit is 1) is below `floor`; also the chunk ids
+    dropped. Applied before the fusion, so the ranks of the hits kept close up. `floor` 0 keeps the list as it is."""
+    if floor <= 0 or not lexical:
+        return lexical, []
+    best = max(score for score, _ in lexical)
+    in_dense = {hit.chunk_id for hit in dense}
+    kept: list[tuple[float, dict]] = []
+    dropped: list[str] = []
+    for score, payload in lexical:
+        chunk_id = str(payload["chunk_id"])
+        normalized = score / best if best > 0 else 0.0
+        if chunk_id not in in_dense and normalized < floor:
+            dropped.append(chunk_id)
+        else:
+            kept.append((score, payload))
+    return kept, dropped
+
+
 class KnowledgeIndex:
     def __init__(
         self,
@@ -93,11 +121,13 @@ class KnowledgeIndex:
         *,
         mode: str = "dense",
         bm25_dir: Path | None = None,
+        bm25_min_score: float = 0.0,
     ) -> None:
         if mode not in RETRIEVAL_MODES:
             raise ValueError(f"Unknown retrieval mode: {mode!r}")
         self.client, self.collection, self.embedder = client, collection, embedder
         self.mode, self.bm25_dir = mode, bm25_dir  # search() without `mode` uses this (RETRIEVAL_MODE)
+        self.bm25_min_score = bm25_min_score  # task 90: RETRIEVAL_BM25_MIN_SCORE, 0 = off
         # Captured and candidate indices can share one local Qdrant client.
         with _CLIENT_LOCKS_GUARD:
             self._lock = _CLIENT_LOCKS.setdefault(id(client), threading.Lock())
@@ -223,26 +253,41 @@ class KnowledgeIndex:
         reranker=None,
         meter=None,
         notes: dict | None = None,
+        bm25_min_score: float | None = None,
     ) -> list[Hit]:
         """Dense by default. `hybrid` fuses the dense and BM25 top 3k by RRF; `min_score` filters only the dense list
         and the returned score is the fused one. With a `reranker` (task 81, hybrid only) a second fusion of width
         `reranker.candidates` (12, so depth 36) gives the candidates, the model reorders them through `meter`, and
         the first k are returned. When the reranker fails or is skipped (written to `notes`), the result is the
-        hybrid one of width k, identical to searching without the reranker (review P2-1)."""
+        hybrid one of width k, identical to searching without the reranker (review P2-1).
+
+        `hybrid@36` (task 90) is that fusion of width 12 cut to k with no model: the control of the reranker at the
+        same depth. `bm25_min_score` (default: the index's, RETRIEVAL_BM25_MIN_SCORE) drops before each fusion the
+        BM25 hits the dense list did not find whose normalized score is below it (`bm25_floor`); when it is above 0,
+        the chunk ids dropped by the fusion that gave the result go to `notes["bm25_dropped"]`."""
         mode = mode or self.mode
+        floor = self.bm25_min_score if bm25_min_score is None else bm25_min_score
         if mode == "dense":
             if reranker is not None:
                 raise ValueError("The reranker runs after the hybrid fusion; use mode='hybrid'.")
             return self._dense(query, k=k, source_kinds=source_kinds, min_score=min_score)
-        if mode != "hybrid":
+        if mode not in ("hybrid", CONTROL_MODE):
             raise ValueError(f"Unknown retrieval mode: {mode!r}")
+        if mode == CONTROL_MODE and reranker is not None:
+            raise ValueError("hybrid@36 is the control of the reranker, without a model; use mode='hybrid'.")
         # with the reranker, one embedding serves both fusions; without it, the call is the one of task 80
         reuse = {} if reranker is None else {"vector": self.embedder.embed([query])[0]}
 
         def fusion(width: int) -> list[Hit]:
             dense = self._dense(query, k=3 * width, source_kinds=source_kinds, min_score=min_score, **reuse)
-            return rrf(dense, self.bm25_index().search(query, k=3 * width, source_kinds=source_kinds), width)
+            lexical = self.bm25_index().search(query, k=3 * width, source_kinds=source_kinds)
+            lexical, dropped = bm25_floor(dense, lexical, floor)
+            if floor > 0 and notes is not None:  # the last fusion run is the one the result comes from
+                notes["bm25_dropped"] = dropped
+            return rrf(dense, lexical, width)
 
+        if mode == CONTROL_MODE:
+            return fusion(max(k, CONTROL_WIDTH))[:k]
         if reranker is None:
             return fusion(k)
         wide = fusion(max(k, reranker.candidates))

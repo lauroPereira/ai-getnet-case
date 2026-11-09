@@ -1,3 +1,12 @@
 * text=auto
 *.sh text eol=lf
 Dockerfile text eol=lf
+prompts/*.md text eol=lf
+# committed with CRLF before this rule; the candidates record the SHA-256 of these bytes, so it keeps them
+prompts/knowledge_web.v2.md -text
+# the sealed calibration sample of v0.11.0 (task 91a): the two CSVs keep the sealed bytes (CRLF between records,
+# as written) and the seal keeps its own (LF); the seal records the SHA-256 of the CSVs, so Git keeps all three as
+# they are in every checkout
+docs/evidence/v0110-calibracao-amostra.csv -text
+docs/evidence/v0110-calibracao-amostra-claims.csv -text
+tests/scenarios/calibration_v0110.sha256 -text

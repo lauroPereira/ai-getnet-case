@@ -58,7 +58,11 @@ def test_a_configured_independent_judge_is_resolved_without_any_call():
     settings = configured(deepseek_api_key=SecretStr("synthetic-deepseek-key"))
     judge = resolve_judge(settings, agent=AGENT, meter=NullMeter(), factory=factory)
     assert (judge.provider, judge.model, judge.independence) == ("deepseek", "deepseek-flash", "different_provider")
-    assert judge.config()["rubric_version"] == "3" and judge.config()["prompt"] == "judge@3"
+    assert (judge.config()["rubric_version"], judge.config()["prompt"], judge.config()["claims_prompt"]) == (
+        "5",
+        "judge@5",
+        "judge_claims@1",
+    )
     assert factory.built == [("deepseek", "deepseek-flash")] and factory.llm.calls == []
 
 
@@ -176,8 +180,8 @@ def test_a_provider_error_is_recorded_as_its_class_and_a_short_masked_message():
 
 def test_a_judgement_is_stored_with_its_provider_model_and_the_queryable_columns(tmp_path):
     prompts = PROJECT_ROOT / "prompts"
-    judge = scripted_judge(prompts, NullMeter())
-    broken = scripted_judge(prompts, NullMeter(), ScriptedLLM(lambda call: ValueError("bad")))
+    judge = scripted_judge(prompts, NullMeter(), rubric="v3")
+    broken = scripted_judge(prompts, NullMeter(), ScriptedLLM(lambda call: ValueError("bad")), rubric="v3")
     reply = {"status": "answered", "route": "support", "answer": "Você recebe R$ 10,00."}
     data, _ = evidence.judge_input("Quanto vou receber?", reply, [], [], {}, {})
     done = judge.evaluate(data, repetition=2)

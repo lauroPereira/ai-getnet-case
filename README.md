@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.10.0. Every version goes through an independent review; QA uses real models under a fixed budget cap from v0.5.0 on; offline, the backend strict suite passes (**2,148 tests**, Ruff clean; [v0.10.0 candidate](docs/evidence/v0100-candidato-r1.json)). What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
+**Status:** v0.11.0. The campaign judge defaults to `judge.v5`; hybrid retrieval uses the measured `hybrid@36` control and reranks by default. What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
 
 ### Where each part of the challenge lives
 
@@ -117,7 +117,7 @@ merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.j
 merchant-assistant eval-retrieval --mode hybrid --split dev --out docs/evidence/retrieval.md   # Recall@6, MRR, nDCG@6 per mode; --split holdout_v090 once, last
 merchant-assistant eval --judge-repeat 3 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --rubric v4 --name my-run  # re-judge the calibration sample under another rubric or judge
 merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
-merchant-assistant eval-retrieval        # Recall@k of the RAG index (≈ US$0.001)
+merchant-assistant eval-retrieval        # Recall@k of the RAG index; the default reranker adds metered model calls
 merchant-assistant ingest                # re-collect the official pages into snapshots (network)
 ```
 
@@ -135,7 +135,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
 | `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers for the `eval` campaigns; keep it pointed at the project budget volume when `RUNTIME_DIR` is isolated for a QA run. The API and `bootstrap` write their ledger under `RUNTIME_DIR` |
 | `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
-| `BUDGET_LIMIT_USD` | `1.00` | Hard cap for all paid calls of this installation (persistent ledger). Accepted range 0–5.00 (absolute project ceiling); the first limit recorded beside a ledger (`budget.sqlite3.limit`, native 1.00 for a ledger that predates it) can never be raised by a later value |
+| `BUDGET_LIMIT_USD` | `1.00` | Limit for paid calls in this persistent ledger. Accepted range 0–5.00; US$5.00 is the implementation ceiling per ledger, separate from an operational campaign or cycle cap; the first limit recorded beside a ledger (`budget.sqlite3.limit`, native 1.00 for a ledger that predates it) can never be raised by a later value |
 | `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
 | `MAX_MODEL_CALLS`, `MAX_TOOL_CALLS`, `MAX_REQUEST_SECONDS` | `8`, `8`, `90` | Per-request limits |
 | `WEB_SEARCH_MAX_CALLS` | `1` | Searches per general question |
@@ -143,7 +143,8 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
 | `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
 | `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
-| `JUDGE_PROVIDER`, `JUDGE_MODEL` | `deepseek`, `deepseek-flash` | Independent judge for `eval --judge`; the default requires `DEEPSEEK_API_KEY` and must differ from the agent model |
+| `JUDGE_PROVIDER`, `JUDGE_MODEL` | `deepseek`, `deepseek-flash` | Independent judge for `eval --judge`; the default uses `judge.v5`, requires `DEEPSEEK_API_KEY` and must differ from the agent model |
+| `RERANK` | `on` | Reorders the first 12 hybrid retrieval candidates with one metered model call; set `off` to disable |
 | `DEMO_USER_PASSWORDS` | fictitious values in `.env.example` | `user:password` pairs of the synthetic users (`cliente1988`, `cliente_demo_002`, operators `op_ana`, `op_bruno`); stored as PBKDF2 hashes |
 | `API_DEMO_PASSWORD`, `API_ADMIN_PASSWORD` | empty (off) | Passwords of the `demo` and `admin` users of the `/v1` interface |
 | `JWT_ISSUER`, `JWT_PRIVATE_KEY_PATH`, `JWT_JWKS_URL` | own issuer, key generated in the runtime | Token issuer; `JWT_JWKS_URL` switches verification to an external OIDC issuer |
@@ -321,25 +322,25 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
    index manifest records model, corpus hash and size; bootstrap builds the index only when its collection does not exist and never rebuilds or replaces an existing one (a new knowledge base version is always a new collection, created through the admin API).
 7. **Retrieval.** Hybrid by default since v0.9.0: dense top-18 by cosine similarity (minimum score) and BM25 over the
    same chunks, fused by reciprocal rank fusion (`k=60`, dense tie-break) into the top-6; a source-kind filter (official
-   pages only for product questions; official + demo procedures for problems) applies to both lists. `RETRIEVAL_MODE=dense`
-   restores the v0.8.0 behavior; `RERANK=on` adds a model reordering of the first 12 hits (off by default, see ADR 0020).
+   pages only for product questions; official + demo procedures for problems) applies to both lists. The default
+   `RERANK=on` reorders the first 12 hybrid candidates with one metered model call. Set `RERANK=off` to use the RRF
+   order; set both `RETRIEVAL_MODE=dense` and `RERANK=off` to restore the v0.8.0 retrieval behavior (see ADR 0023).
 8. **Generation.** Numbered passages go to the Knowledge Agent, which must answer only from them, list the passages
    it used and set `evidence_sufficient = false` when they do not cover the question. Citations are built by code
    from the passage numbers.
 
-**Retrieval quality.** Measured with real embeddings on the 19-question development set and, once, on the sealed
-25-question holdout `retrieval_holdout_v090` (13 in Portuguese; graded relevance by chunk; written before any mode was
-measured; [report](docs/evidence/v090-retrieval.md)):
+**Retrieval quality.** Measured with real embeddings on the 19-question development set and the sealed 25-question
+holdout `retrieval_holdout_v090` (13 in Portuguese; relevance graded by chunk; [v0.11.0 results](docs/evidence/v0110-retrieval.md)):
 
-| Split | Metric | dense | hybrid | hybrid + reranker |
-| --- | --- | ---: | ---: | ---: |
-| dev (19) | Recall@6 / MRR / nDCG@6 | 0.895 / 0.860 / 0.868 | 1.000 / 0.965 / 0.974 | 1.000 / 0.974 / 0.981 |
-| holdout_v090 (25) | Recall@6 / MRR / nDCG@6 | 1.000 / 0.871 / 0.880 | 1.000 / 0.920 / 0.921 | 1.000 / 0.980 / 0.961 |
-| holdout_v090 | time per query | 584 ms | 534 ms | 2,392 ms |
+| Split | Metric | dense | hybrid | hybrid@36 | hybrid + reranker |
+| --- | --- | ---: | ---: | ---: | ---: |
+| dev (19) | Recall@6 / MRR / nDCG@6 | 0.895 / 0.860 / 0.868 | 1.000 / 0.965 / 0.974 | 1.000 / 0.965 / 0.974 | 1.000 / 0.974 / 0.981 |
+| holdout_v090 (25) | Recall@6 / MRR / nDCG@6 | 1.000 / 0.871 / 0.880 | 1.000 / 0.920 / 0.921 | 0.960 / 0.913 / 0.907 | 1.000 / 1.000 / 0.972 |
+| holdout_v090 | time per query | 420 ms | 501 ms | 391 ms | 1,752 ms |
 
-The decision rule was written before the measurement (spec D7): hybrid becomes the default if its nDCG@6 is strictly
-higher on both splits, which it is. The reranker also improves both splits, but its gain includes the effect of the
-deeper fusion and it quadruples latency, so it stays off this version ([ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md)).
+The reranker became the default only after `hybrid@36` separated its effect from the deeper fusion: nDCG@6 is higher
+than the control on both splits (0.981 vs 0.974 in dev; 0.972 vs 0.907 on the holdout). It adds one model call per
+Knowledge search and can be disabled with `RERANK=off` ([ADR 0023](docs/architecture/decisions/0023-juiz-por-afirmacao-evidencia-web.md)).
 English questions retrieve Portuguese content directly, so no query translation is used.
 
 ## Support tools and synthetic data
@@ -463,17 +464,17 @@ tests), with `store=false`:
 | Contract | API schemas and error body, agent output schemas, tool schemas without customer fields | 0 |
 | Integration (deterministic) | Full graph through HTTP with a **scripted model**, hashing embedder, in-memory Qdrant, seeded data and fixed clock: the 10 examples, Portuguese variants, refusal, injection, masking, handoff idempotency, tool and index failures, unknown user, limits, output guard, traces; multi-turn conversations, ownership, case states, two technical cycles; MCP through an in-process client | 0 |
 | Release validation (real) | The 44 labeled cases, 13 business journeys and 4 multi-turn conversations against real models on each release candidate, three runs each, judged by an independent model; sealed holdout run once, last; see the [v0.8.0 evidence](docs/evidence/v080-d12-pre-holdout-r6.md) | Paid, with a fixed cap per campaign |
-| Retrieval | Recall@6, MRR and nDCG@6 per mode on the development set and, once, on the sealed retrieval holdout | ≈ US$0.003 per configuration (US$0.016 for the six) |
+| Retrieval | Recall@6, MRR and nDCG@6 per mode on the development set and, once, on the sealed retrieval holdout | Embedding-only runs were ≈ US$0.003 per configuration; the default reranker added US$0.005025 across 19 development queries in the measured run. Total varies with split and reranker calls. |
 | Docker smoke | Clean build, startup, 10 examples over HTTP | ≈ US$0.03 |
 
 The scripted model follows simple rules for each agent, so the whole system (routing, tool execution, guards,
 persistence, tracing) runs without network. It checks the wiring, not answer quality; quality comes from the real
 evaluation.
 
-**Validated evidence (v0.8.0 to v0.10.0, real models).** The main table comes from the [campaign](docs/evidence/v080-all-r3.md), the
+**Historical assistant-run quality (v0.8.0, judged with `judge.v3`).** The main table comes from the [campaign](docs/evidence/v080-all-r3.md), the
 [holdout](docs/evidence/v080-holdout-r7.md), the [calibration](docs/evidence/v080-calibracao.md) and the
-[judge experiment](docs/evidence/v090-juiz-opus.md). The judge is `deepseek-flash` over an OpenAI agent (`judge.v3`,
-scores 1–5 against the masked evidence of each answer); "±1" is the share of repeated runs within one point.
+[judge experiment](docs/evidence/v090-juiz-opus.md). These runs used `deepseek-flash` over an OpenAI agent, with
+scores 1–5 against the masked evidence of each answer; "±1" is the share of repeated runs within one point.
 
 | Set (agent runs × judge) | groundedness | factual_correctness | relevance | usefulness | unsupported_claim rate |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -515,8 +516,24 @@ worsening by more than 0.05 ([report](docs/evidence/v0100-juiz-v4.md), [ADR 0022
 | Cost per judgement | US$0.0003 → US$0.0003 | US$0.0178 → US$0.0183 |
 
 The new line works when the model can apply it: Opus flags half of the generic claims under v4, DeepSeek still none.
-By the rule, `judge.v3` stays the default and v4 is available with `--rubric v4`; the gap is rubric and model
-together. Judging claim by claim is the next step in the [Roadmap](#roadmap).
+Under the v0.10.0 rule, `judge.v3` stayed the default and v4 remained available with `--rubric v4`.
+
+**Claim-level judge (v0.11.0).** The project owner rated 36 sealed answers. The declared second rater was a model panel
+(`claude-opus-5-5` and `gpt-6-luna`); disagreement adjudication proposals were generated by `gpt-6.1-sol` ultra and
+accepted by the owner as a batch. The 60-answer calibration set has 36 sealed answers; the decision rule uses the
+36 that were both owner-rated and gold-labeled.
+
+| Candidate | Unsupported-claim kappa (36 sealed) | ±1: groundedness / factual / relevance / usefulness | Cost per judgement |
+| --- | ---: | --- | ---: |
+| `judge.v3` (baseline) | 0.538 | 0.944 / 0.917 / 0.972 / 0.917 | US$0.000398 |
+| `judge.v5` | **0.647** (95% CI: 0.28–0.92) | **0.972 / 0.972 / 1.000 / 1.000** | US$0.000945 |
+
+`judge.v5` met the prewritten threshold (kappa ≥ 0.6) and no criterion fell by more than 0.05, so it is the default.
+It uses the frozen `judge_claims.v1` prompt to list claims, checks each against the evidence with the frozen
+`judge.v5` prompt, and derives `unsupported_claim` in code. Use `--rubric v3` to select the earlier single-call judge;
+`judge.v4` is also still available explicitly.
+
+The consolidated capability and measurement summary is in the [release results](docs/evidence/v0110-resultado.md).
 
 ## Design decisions
 
@@ -555,6 +572,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 | v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | Retrieval chosen by a rule written before measuring it on unseen questions, and the judge chosen by experiment rather than preference |
 | v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 measured with both judges; a comparison survives a restart without paying a cell twice; the operation gets metrics and alerts |
+| v0.11.0 | Web-page evidence for evaluation; `judge.v5` by claim; two-rater calibration; measured `hybrid@36` control and BM25 floor; combined deterministic and content ruler; reranker default enabled by the D7 rule | Answers are checked against cited web text and each individual claim; retrieval uses an independent depth control |
 
 ### Identity and human in the loop (v0.7.0)
 
@@ -676,16 +694,16 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 - Run the API with one worker (the compose does): the comparison registry lives in the API process. The compose publishes the API on `127.0.0.1:8000` and the ticketing service on `127.0.0.1:8002`.
 - The users, passwords and secrets in `.env.example` are fictitious demo values; replace them before exposing the API beyond the local machine.
 - Product answers come from snapshots of Getnet's official pages taken on 2026-10-26; refreshing a JavaScript-rendered page needs a browser capture.
-- Every paid call goes through the installation budget (`BUDGET_LIMIT_USD`, at most US$5.00); `/ready` shows what is left and `docker compose down -v` resets it.
+- Every paid call goes through the installation ledger (`BUDGET_LIMIT_USD`, up to US$5.00 per ledger under the implementation ceiling); an operational campaign or cycle cap is separate. `/ready` shows what is left and `docker compose down -v` resets the local ledger.
 - The seed dates the synthetic sales relative to the day it runs: run `merchant-assistant bootstrap` (or start the container) the same local day before a paid run.
 
 ## Roadmap
 
-Planned evolution, one version at a time, each with its own specification, review and QA ([specification](docs/specs/roadmap-v0110-v100.md)):
+Current release and planned evolution, one version at a time, each with its own specification, review and QA ([specification](docs/specs/roadmap-v0110-v100.md)):
 
 | Version | Planned |
 | --- | --- |
-| v0.11.0 — Judge and retrieval | The judge reads the web pages a `general_web` answer cites and judges each claim (`judge.v5`); a two-rater calibration on 60 answers; a no-model control for the reranker (`hybrid@36`) and a score floor for BM25-only hits; journeys measured by deterministic checks plus the judge |
+| v0.11.0 — Delivered: judge and retrieval | `judge.v5` is selected by its sealed calibration; `RERANK=on` follows its comparison with `hybrid@36`; web citations are checked as evidence |
 | v0.12.0 — Orchestration, memory and actions | Rolling summary of long conversations with a fact register; replanning measured with and without; sale cancellation with explicit confirmation |
 | v0.13.0 — Identity and operation | Authorization code with PKCE, refresh tokens and an external OIDC issuer; operator channel on the phone (Telegram); multiple API workers with a shared comparison lease; resend of exhausted webhook deliveries and recovery of cases opened while the API stopped; OTLP export and a dashboard |
 | v1.0.0 — Reading and access | Image published per tag and a lockfile; external access tested through a tunnel; a 10-minute walkthrough |

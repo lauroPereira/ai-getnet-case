@@ -4,22 +4,20 @@
 
 ## Especificação relacionada
 
-[roadmap-v0110-v100.md](roadmap-v0110-v100.md), versão 0.1 (2026-11-06). Base: `main` em `5fd59b2` (v0.10.0 mais correções de documentação). Cada versão segue o ciclo das anteriores: spec complementar curta → tarefas → Developer → Reviewer independente → candidato selado por hash → QA real com teto fixo → `docs/evidence/vXYZ-resultado.md` → merge local com a identidade do projeto → tag. A autorização por versão do AGENTS.md vale; o responsável entra no teto (Q21), na calibração (Q22), nas tags e no push.
-
-Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs **0023 a 0025**; prompts novos `judge.v5`, `summary.v1`, `support.v8` (cancelamento), `knowledge_web.v3` (se o resumo da busca precisar de marcação).
+[Roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md). Este plano detalha as capacidades e decisões técnicas das versões relacionadas.
 
 ## Decisões técnicas
 
 ### v0.11.0 — Juiz e retrieval
 
-1. **Resumo da busca no trace** (RF-109). `agents/knowledge.py` já guarda o texto da busca em `evidence_texts` para a guarda de saída; o passo `knowledge` (modo `web`) e o passo `web` passam a gravar em `detail` o texto mascarado (teto de 4 000 caracteres, truncamento anotado) e as URLs. Nome do campo: `web_summary`, para o leitor nunca confundir com página.
-2. **Páginas citadas como evidência** (RF-110). `evaluation/evidence.py` ganha um buscador de páginas: para cada URL de `web_summary`, `GET` com timeout curto, só `https`, sem seguir redirecionamento para outro domínio, extração de texto (HTML para texto com o mesmo extrator dos snapshots), máscara, teto igual ao das demais evidências, cache em `runtime/web_evidence/<sha256 da URL>.json` com data. A nota `WEB_NOTE` passa a ter três formas: página buscada, página indisponível (fallback no resumo), sem URL. O juiz recebe cada página como item de evidência com título e URL. Nos testes, um servidor HTTP em processo serve páginas fixas; nenhum teste sai para a rede.
-3. **`judge.v5` em duas etapas** (RF-111). Duas chamadas por julgamento: `judge_claims.v1` (lista de afirmações, saída estruturada: `claims[]` com `text`, `kind ∈ {fact, value, date, status, promise, guidance, standard}`) e `judge.v5` (recebe as afirmações numeradas e a evidência; devolve por afirmação `verdict ∈ {supported, partial, generic, not_found}` e `support` com o trecho; devolve os quatro critérios como na v3). `unsupported_claim` é calculado em código: verdadeiro se alguma afirmação de tipo diferente de `standard` tiver `generic` ou `not_found`. `--rubric v5` nas mesmas resoluções da v4; cada julgamento grava as duas saídas. O custo por julgamento dobra em chamadas; a sonda de 5 casos mede antes da campanha.
-4. **Calibração por afirmação** (RF-112). `eval-calibrate --sample` gera, além do CSV atual, um pacote por resposta em Markdown (`<id>.md`: pergunta, resposta, evidência completa por item, lista de afirmações numeradas com caixas para marcar) e um CSV de afirmações (`sample-claims.csv`: resposta, número, texto, marca em branco, campo para afirmação acrescentada). `--import` aceita `--rater <nome> <csv>` duas vezes; calcula o veredito humano por rotulador a partir das marcas; concordância humano × humano; `--adjudication <csv>` com o rótulo ouro e o motivo nas divergências; `--judge`/`--judge-run`/`--rubric` como hoje, agora contra o ouro. Kappa por afirmação (n = número de afirmações) ao lado do kappa por resposta.
-5. **Amostra selada** (RF-113). `eval-calibrate --sample 36 --from <campanha v0.11.0> --exclude <amostra v0.8.0> --enrich knowledge,knowledge_and_support --seed <registrado>`; hash do pacote em `tests/scenarios/calibration_v0110.sha256` antes de qualquer julgamento humano ou por `judge.v5`. As respostas `general_web` da amostra vêm da campanha nova (com `web_summary`), não da v0.8.0.
-6. **Candidatos e regra** (RF-113). Ordem fixa: (a) rejulgar as 24 da v0.8.0 sob `judge.v5` com DeepSeek para ajuste do prompt de afirmações (critério de parada escrito na tarefa: ≥ 3 das 4 genéricas marcadas, ≤ 1 falso positivo); (b) selar as 36; (c) rotulagem humana; (d) juiz 3× nas 60 com DeepSeek; (e) sonda Sonnet 5.5 em 5 casos; se couber no teto, Sonnet 3× nas 60; (f) ensemble calculado a partir de (d) e (e) sem chamada nova; (g) decisão pela regra da spec, registrada na ADR 0023. Nenhuma edição de prompt depois de (b).
-7. **Retrieval** (RF-114). `eval-retrieval --mode hybrid@36` devolve os 36 da fusão sem reordenação por modelo, cortados em 6, como controle; `RETRIEVAL_BM25_MIN_SCORE` (padrão desligado) descarta hits só de BM25 abaixo do piso antes da fusão; tabela nos dois splits; `RERANK` decidido pela regra da ADR 0020.
-8. **Régua combinada** (RF-115). `evaluation/scripted_policy.py` e o relatório de jornadas separam `deterministic` (como hoje) de `content` (juiz padrão: piso 4 em correção e relevância, `unsupported_claim` falso); `passed = deterministic and content`; o README mostra as duas colunas.
+1. **Resumo da busca no trace** (RF-109). O passo `knowledge` em modo `web` e o passo `web` gravam em `detail` o texto da busca mascarado, com limite de 4 000 caracteres e truncamento anotado, além das URLs. O campo `web_summary` identifica texto gerado pelo modelo.
+2. **Páginas citadas como evidência** (RF-110). Na avaliação, cada URL citada é buscada somente por HTTPS, com timeout, limite de bytes, proteção contra redirecionamento entre domínios, extração de texto, máscara e cache. Páginas indisponíveis usam o resumo da busca com nota explícita; nenhum acesso ocorre no turno do lojista.
+3. **Juiz por afirmação** (RF-111). `judge_claims.v1` lista as afirmações; `judge.v5` julga cada uma contra a evidência e os quatro critérios. O código calcula `unsupported_claim` a partir dos vereditos. `judge.v5` é o padrão após a regra D6; v3 e v4 continuam selecionáveis.
+4. **Calibração por afirmação** (RF-112). A ferramenta produz pacotes Markdown e CSVs de respostas e afirmações, permite mais de um rotulador, adjudicação divergente e medidas de concordância e kappa por resposta e por afirmação.
+5. **Amostra selada** (RF-113). A amostragem aceita exclusões, estratos, rotas enriquecidas e semente explícita. O selo SHA-256 é conferido antes da importação; respostas e rótulos da calibração são mantidos separados do julgamento do modelo.
+6. **Regra de promoção** (RF-113). A rubrica candidata precisa alcançar κ ≥ 0,6 contra o rótulo ouro no conjunto selado, sem queda superior a 0,05 no acordo ±1 de qualquer critério. `judge.v5` foi selecionado; a evidência da decisão está em [ADR 0023](../architecture/decisions/0023-juiz-por-afirmacao-evidencia-web.md) e na [síntese v0.11.0](../evidence/v0110-resultado.md).
+7. **Retrieval** (RF-114). `eval-retrieval --mode hybrid@36` expõe a fusão RRF de mesma profundidade do reranker, cortada em 6, sem chamada de modelo. `RETRIEVAL_BM25_MIN_SCORE` filtra hits exclusivos de BM25 antes da fusão. O padrão é `RETRIEVAL_MODE=hybrid`, `RERANK=on`; `RERANK=off` preserva a ordem da fusão. A decisão e as [métricas](../evidence/v0110-retrieval.md) ficam registradas.
+8. **Régua combinada** (RF-115). Os relatórios separam verificações determinísticas e conteúdo julgado; `passed = deterministic and content`. A opção `--rubric literal` mantém disponível a régua anterior.
 
 ### v0.12.0 — Orquestração, memória e escrita
 
@@ -41,8 +39,7 @@ Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs *
 ### v1.0.0 — Leitura e acesso
 
 20. **Imagem e lockfile** (RF-127). `validate.yml` ganha o job `image` em tag: build e push para `ghcr.io/<owner>/ai-getnet-case:<tag>`; `docker-compose.yml` com `image:` e `build:` (a imagem publicada vence quando existe); `uv.lock` versionado; README "Run the tests inside the image".
-21. **Registros de processo** (RF-128). Feito na tarefa 105: relatórios do Supervisor, passagens e rodadas intermediárias fora do versionamento (cópia local); `docs/evidence/` só com resultados e índice; verificador de links relativos (`tools/scripts/checar-links.py`) no `lint_and_tests.py`. AGENTS.md e CLAUDE.md citam caminhos antigos: a mudança desses dois arquivos vai por PR separado para aprovação do responsável.
-22. **README** (RF-129, RF-98). Tabela antes × depois por área; trilha de 10 minutos; capturas (aba Operador, ticketing, Telegram); túnel testado com evidência.
+21. **README** (RF-129, RF-98). Tabela antes × depois por área; trilha de 10 minutos; capturas (aba Operador, ticketing, Telegram); túnel testado com evidência.
 
 ## Componentes afetados
 
@@ -58,24 +55,26 @@ Numeração reservada: tarefas **87 a 104**; migrações **0013 a 0015**; ADRs *
 | `comparisons.py`, `handoffs.py` | — | — | lease; locks removidos | — |
 | `observability/` | — | — | `otel.py` novo, `grafana/assistant.json` | — |
 | `rag/` | `index.py` (piso BM25, `hybrid@36`) | — | — | — |
-| `data/migrations.py` | — | 0013 | 0014, 0015 | — |
+| `data/migrations.py` | 0013 | 0014 | 0015, 0016 | — |
 | `prompts/` | `judge_claims.v1`, `judge.v5` | `summary.v1`, `support.v8`, `router.v7` | — | — |
 | `cli.py` | `eval-calibrate` (pacotes, `--rater`, `--adjudication`), `eval-retrieval --mode hybrid@36`, `--rubric v5` | `eval --replan`, `eval-compare` | — | — |
 | `tests/` | páginas em processo, v5, calibração a dois, piso, régua combinada | resumo, fatos, ablação, cancelamento, jornada | PKCE, refresh rotativo, emissor externo, Telegram falso, dois processos, resend, órfãos, OTLP | links, imagem |
 | `docker-compose.yml`, `.env.example` | — | — | perfis `oidc`, `telegram`, `otel`; `--workers 2` | `image:` |
 | `.github/workflows/` | — | — | — | job `image` |
 | Projeto web | — | — | login por redirecionamento | capturas |
-| `docs/` | spec complementar, tarefas 87–91, ADR 0023 | tarefas 92–96, ADR 0024 | tarefas 97–101, ADR 0025 | tarefas 102–104 |
+| `docs/` | spec complementar, tarefas 87–91 e 91a, ADR 0023 | tarefas 92–96, ADR 0024 | tarefas 97–101, ADR 0025 | tarefas 102 e 104 |
 
 Não alterar: `judge.v3`, `judge.v4`, holdouts selados da v0.8.0 e v0.9.0, snapshots públicos, regras financeiras das ferramentas, ledger. AGENTS.md, CLAUDE.md e `.claude/` só por PR aprovado.
 
 ## Modelo de dados
 
-**Migração 0013 (v0.12.0), reversível.** `conversations.summary TEXT`, `conversations.summary_until_message_id INTEGER`; `conversation_facts(fact_id, conversation_id, kind, value, source_tool, source_message_id, created_at)`; `sale_cancellation_requests` (campos na decisão 13); `run_evaluations.claims` (JSON) para os julgamentos v5.
+**Migração 0013 (v0.11.0), reversível.** `run_evaluations.claims` (JSON) para os julgamentos v5.
 
-**Migração 0014 (v0.13.0), reversível.** `auth_codes(code_hash, principal_id, client_id, redirect_uri, code_challenge, expires_at, used_at)`; `refresh_tokens(token_hash, family_id, principal_id, issued_at, expires_at, used_at, revoked_at)`; `api_principals.issuer` (padrão: emissor próprio).
+**Migração 0014 (v0.12.0), reversível.** `conversations.summary TEXT`, `conversations.summary_until_message_id INTEGER`; `conversation_facts(fact_id, conversation_id, kind, value, source_tool, source_message_id, created_at)`; `sale_cancellation_requests` (campos na decisão 13).
 
-**Migração 0015 (v0.13.0), reversível.** `comparisons.worker_id`, `comparisons.heartbeat_at`; `webhook_outbox.state` aceita `exhausted`; `webhook_outbox.resend_count`.
+**Migração 0015 (v0.13.0), reversível.** `auth_codes(code_hash, principal_id, client_id, redirect_uri, code_challenge, expires_at, used_at)`; `refresh_tokens(token_hash, family_id, principal_id, issued_at, expires_at, used_at, revoked_at)`; `api_principals.issuer` (padrão: emissor próprio).
+
+**Migração 0016 (v0.13.0), reversível.** `comparisons.worker_id`, `comparisons.heartbeat_at`; `webhook_outbox.state` aceita `exhausted`; `webhook_outbox.resend_count`.
 
 Cache de páginas da web em `runtime/web_evidence/`, fora das migrações. Checkpoints e BM25 como hoje.
 
@@ -106,59 +105,42 @@ Contrato `/v1` aditivo em tudo. Nenhuma mudança incompatível.
 | Unidade | extração e máscara de página; truncamento; cálculo do veredito a partir das afirmações; kappa por afirmação e por resposta; adjudicação; piso BM25; `hybrid@36`; régua combinada | resumo cacheado por id; registro de fatos a partir de `outcomes`; guarda com fatos; estados do pedido de cancelamento; idempotência; `replan=off` | PKCE S256; código de uso único; refresh rotativo e família revogada; descoberta e JWKS de emissor externo (falso); lease e órfã; `exhausted`; `recover_orphans` | verificador de links |
 | Contrato | `judge_claims.v1`, `judge.v5` | ferramentas de cancelamento; `summary`, `facts` | authorize/token; resend; Telegram (Bot API falsa) | — |
 | Integração (programada) | avaliação com servidor de páginas em processo; calibração ponta a ponta com dois CSVs | conversa de 30 turnos com protocolo no turno 2; jornada de cancelamento (sim, não, repetição); ablação com modelo roteirizado | login por redirecionamento na interface (`AppTest`); dois processos reais e `taskkill`; webhook reenviado; caso órfão na subida; spans no coletor falso | suíte dentro da imagem |
-| Validação real | rejulgar `general_web` com páginas; sonda Sonnet 5 casos; juiz 3× nas 60 por candidato; retrieval nos dois splits; jornadas pela régua combinada | conversa longa real; ablação em dev + holdout + conversas (1 execução, juiz 1×); jornada de cancelamento | 10 exemplos com 2 workers e emissor externo; Telegram com o bot do responsável | smoke pela imagem e pelo túnel |
-| Docker | — | — | perfis `oidc`, `telegram`, `otel`; `checar-memoria.ps1` | imagem publicada |
+| Validação do produto | calibração contra rótulos ouro; retrieval em dev e holdout; jornadas com régua combinada | conversa longa; ablação do replan; confirmação de cancelamento | identidade, recuperação multi-worker, webhooks e Telegram | imagem e acesso externo |
+| Docker | — | — | perfis `oidc`, `telegram`, `otel` | imagem publicada |
 
 ## Riscos técnicos
 
 | Risco | Mitigação / retorno |
 | --- | --- |
-| Página citada bloqueia ou devolve HTML sem texto | Fallback no resumo da busca com nota; extrator dos snapshots já lida com as páginas da Getnet |
-| `judge_claims` lista afirmações demais ou de menos | Rotuladores podem acrescentar; kappa por afirmação mostra o efeito; ajuste só na fase (a), antes do selo |
-| Duas chamadas por julgamento estouram o teto | Sonda de 5 casos; DeepSeek primeiro; Sonnet só se couber |
-| `replan=off` reabrir laços antigos | O grafo sem `replan` é o da v0.7.0, coberto pela suíte; limites de chamadas e tempo valem |
-| Confirmação de cancelamento mal classificada | Rótulo do Router validado em código; sem `yes` explícito nada executa; teste com "sim, mas…" → `other` |
-| Refresh rotativo e clientes concorrentes | Família revogada em reuso; janela de tolerância de 10 s documentada |
-| Dex não disponível para Windows no notebook | Imagem oficial no compose; teste com emissor falso em processo quando o Docker estiver fora |
-| Dois workers e SQLite | WAL; `BEGIN IMMEDIATE`; teste real com dois processos; retorno: `--workers 1` no compose |
-| Telegram exige rede e o sandbox bloqueia | QA com Bot API falsa cobre o fluxo; teste real só pelo responsável |
-| Renomear arquivos de `docs/` quebra links do README e dos ADRs | Verificador de links; AGENTS.md e CLAUDE.md por PR separado |
-
-Retorno por versão: tag anterior + migração descendente.
+| Página citada indisponível ou sem texto útil | Fallback no resumo da busca, identificado como resumo, e cache. |
+| `judge_claims` lista afirmações demais ou de menos | Rotuladores podem acrescentar afirmações; métricas de calibração expõem divergências. |
+| A amostra selada muda sem ser percebida | Hash conferido na importação; regras de atributos preservam os bytes no checkout. |
+| Reranker falha ou a requisição alcança o limite de chamadas | A recuperação volta à ordem da fusão; `RERANK=off` segue disponível. |
+| O piso BM25 remove um resultado útil | Padrão zero; comparação com os modos de controle. |
+| `replan=off` reabre laços antigos | O grafo sem replan permanece coberto pela suíte; limites da requisição continuam ativos. |
+| Confirmação de cancelamento mal classificada | Só uma confirmação explícita permite executar a ação; demais respostas não alteram o estado. |
+| Refresh rotativo e clientes concorrentes | Reuso revoga a família de tokens; a tolerância está documentada. |
+| Lease multi-worker e SQLite | WAL e transações `BEGIN IMMEDIATE` coordenam a propriedade da comparação. |
+| Integração Telegram indisponível | O adaptador é opcional e os eventos continuam disponíveis no outbox assinado. |
 
 ## Orçamento
 
-Situação em 2026-11-06: os três ledgers somam **US$5,14** liquidados (OpenAI 1,44; campanha v080 0,84; Anthropic 2,86), acima do teto global de US$5,00. O ledger Anthropic tem teto próprio de US$4,00 (folga US$1,14). **Nenhuma chamada paga deste ciclo antes da decisão Q21.**
-
-Proposta ao responsável: novo teto global **US$6,25**; reserva de planejamento do ciclo **US$1,00**, mais a sonda e a eventual campanha do Sonnet decididas à parte depois da sonda.
-
-| Etapa | Reserva | Limite operacional |
-| --- | ---: | --- |
-| v0.11.0: rejulgar `general_web` com páginas; ajuste v5 nas 24; juiz 3× nas 60 (DeepSeek); retrieval; jornadas | US$0,30 | Campanha `v0110-qa`, montagem única |
-| v0.11.0: sonda Sonnet 5.5 (5 casos) | US$0,05 | Ledger Anthropic; decide a campanha Sonnet (fora desta reserva) |
-| v0.12.0: conversa longa; ablação com × sem (dev 44 + holdout 25 + 4 conversas, 1 execução, juiz 1×); jornada de cancelamento | US$0,35 | Campanha `v0120-qa` |
-| v0.13.0: 10 exemplos com 2 workers e emissor externo; Telegram | US$0,10 | Campanha `v0130-qa` |
-| v1.0.0: smoke pela imagem e pelo túnel | US$0,05 | — |
-| Contingência | US$0,15 | Só por decisão do responsável |
-| **Total** | **US$1,00** | Sujeito a Q21 |
-
-Regras como no ciclo anterior: estimativa antes de cada campanha; o limite efetivo no processo é o menor entre o teto da campanha e o saldo do ledger; falha da guarda é parada, nunca ampliação.
+Chamadas a modelos com custo passam pela guarda de orçamento persistente da aplicação, que limita cada instalação conforme sua configuração. A avaliação de rubricas e o reranker de retrieval consomem esse limite; uma requisição sem reserva disponível é recusada antes da chamada. Os testes usam provedores simulados e não fazem chamadas pagas.
 
 ## Plano de implementação
 
-Cada item vira um arquivo em `docs/tasks/` na abertura da versão.
-
 **v0.11.0 — Juiz e retrieval**
 
-87. Resumo da busca no trace (`web_summary`) e páginas citadas como evidência na avaliação, com cache, máscara, fallback e servidor de páginas em processo nos testes (RF-109, RF-110).
-88. `judge_claims.v1` e `judge.v5`; veredito calculado em código; `--rubric v5` em `eval`, `eval-rejudge` e `eval-calibrate`; gravação das afirmações (RF-111).
-89. Calibração por afirmação: pacotes, CSV de afirmações, dois rotuladores, adjudicação, kappa por afirmação e por resposta, amostra enriquecida e selada (RF-112, RF-113).
-90. Retrieval: `hybrid@36`, piso BM25, tabela nos dois splits; régua combinada das jornadas (RF-114, RF-115).
-91. Fechamento: regressão, candidato, revisão, QA real na ordem fixa da decisão 6 (a calibração humana entra quando o responsável e o segundo rotulador devolverem os CSVs), evidência, ADR 0023, README/CHANGELOG, tag.
+87. Resumo da busca no trace e páginas citadas como evidência na avaliação, com cache, máscara e fallback (RF-109, RF-110).
+88. `judge_claims.v1` e `judge.v5`, cálculo do veredito em código, seleção explícita de rubrica e persistência das afirmações (RF-111).
+89. Calibração com pacotes, CSVs de afirmações, múltiplos rotuladores, adjudicação, medidas por resposta e por afirmação e amostra selada (RF-112, RF-113).
+90. Controle `hybrid@36`, piso BM25 e régua combinada das jornadas (RF-114, RF-115).
+91. Coerência entre a decisão do juiz, os padrões de retrieval, as evidências da versão e a documentação.
+91a. Preservação dos bytes dos CSVs selados em qualquer checkout.
 
 **v0.12.0 — Orquestração, memória e escrita**
 
-92. Resumo rolante e registro de fatos; guarda de saída com fatos; migração 0013 (RF-116).
+92. Resumo rolante e registro de fatos; guarda de saída com fatos; migração 0014 (RF-116).
 93. `replan=off`, `eval --replan`, `eval-compare`, seção das decisões `model` (RF-117).
 94. Cancelamento com confirmação: tabela, ferramentas, rótulo de confirmação no Router, `support.v8`, jornada (RF-119).
 95. ADR 0024 supervisor × grafo (RF-118).
@@ -166,16 +148,13 @@ Cada item vira um arquivo em `docs/tasks/` na abertura da versão.
 
 **v0.13.0 — Segurança e operação**
 
-97. Authorization code com PKCE, refresh rotativo, página de login, interface por redirecionamento; migração 0014 (RF-120).
+97. Authorization code com PKCE, refresh rotativo, página de login, interface por redirecionamento; migração 0015 (RF-120).
 98. Emissor OIDC externo (Dex) no compose e `OIDC_ISSUERS` (RF-121).
-99. Lease multi-worker, locks removidos, WAL, `--workers 2`, teste com dois processos; `exhausted` e resend; `recover_orphans`; migração 0015 (RF-123, RF-124, RF-125).
+99. Lease multi-worker, locks removidos, WAL, `--workers 2`, teste com dois processos; `exhausted` e resend; `recover_orphans`; migração 0016 (RF-123, RF-124, RF-125).
 100. Adaptador Telegram (RF-122).
 101. OTLP e dashboard (RF-126); fechamento: regressão, candidato, revisão, QA real, evidência, ADR 0025, README/CHANGELOG, tag.
 
 **v1.0.0 — Leitura e acesso**
 
 102. Imagem no GHCR por tag, `uv.lock`, compose com `image:`, suíte dentro da imagem (RF-127).
-103. Registros de processo (RF-128): feito na tarefa 105; resta o PR separado de AGENTS.md e CLAUDE.md.
 104. README antes × depois por área, trilha de 10 minutos, capturas, túnel testado; CHANGELOG; fechamento e tag `v1.0.0` (RF-129, RF-98).
-
-**Paralelismo.** Dois escritores quando os arquivos não se tocam: 87 com 90; 92 com 94; 97 com 99; 102 com 103. A rotulagem humana (89) corre em paralelo com 92 a 94 se os CSVs atrasarem; a decisão do juiz (91) só fecha com eles.

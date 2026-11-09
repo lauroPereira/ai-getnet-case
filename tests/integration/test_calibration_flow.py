@@ -141,7 +141,7 @@ def test_sample_fill_import_and_report_end_to_end(settings, tmp_path, campaign, 
     assert len(stored) == 23 and skipped not in {r["sample_id"] for r in stored}
     assert {r["rater"] for r in stored} == {"lauro"}
     for row in stored:
-        assert row["evaluation_id"] == links[row["request_id"]]["evaluation_id"] and row["rubric_version"] == "3"
+        assert row["evaluation_id"] == links[row["request_id"]]["evaluation_id"] and row["rubric_version"] == "5"
     markdown = final.read_text(encoding="utf-8")
     assert "Ressalva de amostra pequena (D19): 23 respostas" in markdown
     assert "Campanha `avaliacao`, avaliador humano `lauro`" in markdown and f"semente {cal.DEFAULT_SEED}" in markdown

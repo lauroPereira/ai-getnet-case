@@ -12,7 +12,7 @@ from merchant_assistant.api.identity import Principal
 from merchant_assistant.config import PROJECT_ROOT
 from merchant_assistant.data.db import connect
 from merchant_assistant.evaluation import evidence
-from merchant_assistant.evaluation.judge import CRITERIA, RUBRIC_VERSION, JudgeScoreV3
+from merchant_assistant.evaluation.judge import CRITERIA, JudgeScoreV3
 from merchant_assistant.evaluation.scripted_judge import handler, scripted_judge
 from merchant_assistant.llm.base import NullMeter
 from merchant_assistant.llm.prompts import load_prompt
@@ -40,11 +40,10 @@ def data_for(outcomes, reply=None, trace=None, message="Quanto vou receber ontem
 # --- the rubric files -----------------------------------------------------------------------------------------------
 
 
-def test_v3_is_the_default_and_v2_stays_loadable():
-    # v0.10.0 D1: judge.v4 is the newest file, but the campaign pins judge.v3 (RUBRIC_VERSION) until task 86
-    v3, old = load_prompt(PROMPTS, "judge", RUBRIC_VERSION), load_prompt(PROMPTS, "judge", "2")
+def test_v3_is_explicitly_loadable_and_v2_stays_loadable():
+    v3, old = load_prompt(PROMPTS, "judge", "3"), load_prompt(PROMPTS, "judge", "2")
     assert (v3.id, v3.version) == ("judge", "3") and (old.id, old.version) == ("judge", "2")
-    assert load_prompt(PROMPTS, "judge").version == "4"
+    assert load_prompt(PROMPTS, "judge").version == "5"
     text = " ".join(v3.template.split())
     assert all(criterion in text for criterion in CRITERIA) and "unsupported_claim" in text
     assert "answers_question" in old.template and "answers_question" not in v3.template
@@ -56,7 +55,7 @@ def test_v3_is_the_default_and_v2_stays_loadable():
 
 
 def test_judge_v3_returns_four_scores_with_reasons_and_the_verdict():
-    judge = scripted_judge(PROMPTS, NullMeter())
+    judge = scripted_judge(PROMPTS, NullMeter(), rubric="v3")
     record = judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 120,00"}})]))
     assert record["state"] == "completed" and record["error"] is None
     assert set(record["scores"]) == set(CRITERIA) and set(record["reasons"]) == set(CRITERIA)
@@ -68,7 +67,7 @@ def test_judge_v3_returns_four_scores_with_reasons_and_the_verdict():
 
 
 def test_an_amount_the_evidence_does_not_contain_turns_the_verdict_on():
-    judge = scripted_judge(PROMPTS, NullMeter())
+    judge = scripted_judge(PROMPTS, NullMeter(), rubric="v3")
     supported = judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 120,00"}})]))
     invented = judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 90,00"}})]))
     assert supported["unsupported_claim"] is False and invented["unsupported_claim"] is True
@@ -78,7 +77,7 @@ def test_an_amount_the_evidence_does_not_contain_turns_the_verdict_on():
 
 def test_the_judge_receives_the_evidence_content_and_the_truncation_record():
     llm = ScriptedLLM(handler, model="scripted-judge-v3")
-    judge = scripted_judge(PROMPTS, NullMeter(), llm)
+    judge = scripted_judge(PROMPTS, NullMeter(), llm, rubric="v3")
     judge.evaluate(data_for([tool(data={"net_amount": {"display": "R$ 120,00"}})]))
     (call,) = llm.calls
     sent = json.loads(call.spec.input)
@@ -92,14 +91,14 @@ def test_a_score_outside_the_scale_is_a_failed_judgement_not_an_invented_one():
     def bad(call):
         return handler(call) | {"relevance": 6}
 
-    judge = scripted_judge(PROMPTS, NullMeter(), ScriptedLLM(bad, model="scripted-judge-v3"))
+    judge = scripted_judge(PROMPTS, NullMeter(), ScriptedLLM(bad, model="scripted-judge-v3"), rubric="v3")
     record = judge.evaluate(data_for([]))
     assert record["state"] == "failed" and record["scores"] == {} and record["unsupported_claim"] is None
     assert "between 1 and 5" in record["error"]
 
 
 def test_a_provider_error_is_recorded_and_does_not_stop_the_campaign():
-    judge = scripted_judge(PROMPTS, NullMeter(), ScriptedLLM(lambda call: RuntimeError("provider down")))
+    judge = scripted_judge(PROMPTS, NullMeter(), ScriptedLLM(lambda call: RuntimeError("provider down")), rubric="v3")
     record = judge.evaluate(data_for([]))
     assert record["state"] == "failed" and record["error"] == "RuntimeError: provider down"
 
@@ -281,7 +280,7 @@ def test_the_judge_prompt_reads_the_evidence_notes_and_the_scripted_judge_follow
     assert "only because no passage is there to confirm a statement" in prompt
     web_trace = {"steps": [{"step": "knowledge", "detail": {"mode": "web"}}]}
     reply = "A previsão para amanhã é de 25 graus e a taxa é de R$ 99,00."
-    judge = scripted_judge(PROMPTS, NullMeter())
+    judge = scripted_judge(PROMPTS, NullMeter(), rubric="v3")
     web = judge.evaluate(data_for([], reply=reply, trace=web_trace, message="Previsão do tempo amanhã?"))
     plain = judge.evaluate(data_for([], reply=reply, message="Previsão do tempo amanhã?"))
     assert web["unsupported_claim"] is False  # no passage to check a web answer against is not a reason to flag it
@@ -294,7 +293,7 @@ WEB_STEP_TRACE = {"steps": [{"step": "web", "detail": {"mode": "web"}}]}
 
 
 def test_data_of_the_merchant_account_without_a_tool_result_is_still_unsupported_under_the_web_note():
-    judge = scripted_judge(PROMPTS, NullMeter())
+    judge = scripted_judge(PROMPTS, NullMeter(), rubric="v3")
     message = "Quanto tenho de saldo hoje?"
     account = "Pelo que encontrei, seu saldo disponível hoje é de R$ 1.234,56."
     flagged = judge.evaluate(data_for([], reply=account, trace=WEB_STEP_TRACE, message=message))
@@ -314,7 +313,7 @@ def test_data_of_the_merchant_account_without_a_tool_result_is_still_unsupported
 
 
 def test_a_public_amount_in_a_web_reply_is_left_alone_and_the_same_words_without_the_note_are_flagged():
-    judge = scripted_judge(PROMPTS, NullMeter())
+    judge = scripted_judge(PROMPTS, NullMeter(), rubric="v3")
     public = "Segundo o site oficial, a tarifa de cancelamento é de R$ 45,00 por contrato."
     message = "Qual a tarifa de cancelamento?"
     under_note = judge.evaluate(data_for([], reply=public, trace=WEB_STEP_TRACE, message=message))

@@ -97,6 +97,7 @@ def build_orchestrator(
         embedder,
         mode=settings.retrieval_mode,
         bm25_dir=settings.runtime_path,
+        bm25_min_score=settings.retrieval_bm25_min_score,
     )
 
     from merchant_assistant.rag.kb import KnowledgeBase

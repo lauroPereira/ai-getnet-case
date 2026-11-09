@@ -96,3 +96,11 @@ O gasto com APIs pagas e as transições de teto estão em [orcamento.md](orcame
 | [v0100-qa-juiz-r1.md](v0100-qa-juiz-r1.md), [v0100-qa-ops-r1.md](v0100-qa-ops-r1.md) | QA final (rubrica; comparação interrompida e retomada, `/metrics`, alertas) |
 | [v0100-reviewer-t83.md](v0100-reviewer-t83.md), [v0100-reviewer-t84.md](v0100-reviewer-t84.md), [v0100-reviewer-t85.md](v0100-reviewer-t85.md) | Pareceres finais de revisão |
 | [v0100-candidato-r1.json](v0100-candidato-r1.json) | Manifesto |
+
+## v0.11.0 (juiz por afirmação e evidência web)
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| [v0110-resultado.md](v0110-resultado.md) | Resultado consolidado do juiz por afirmação e da configuração de retrieval |
+| [v0110-retrieval.md](v0110-retrieval.md) | Métricas de retrieval em dev e no holdout, incluindo o controle `hybrid@36` |
+| [v0110-calibracao-amostra.csv](v0110-calibracao-amostra.csv), [v0110-calibracao-amostra-claims.csv](v0110-calibracao-amostra-claims.csv), [selo](../../tests/scenarios/calibration_v0110.sha256) | Amostra selada de calibração e afirmações |

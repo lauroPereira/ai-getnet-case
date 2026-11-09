@@ -62,7 +62,7 @@ def cycling_judge(prompts_dir=PROJECT_ROOT / "prompts") -> Judge:
     def noisy(call):
         return judge_handler(call) | {"groundedness": scale[next(counter) % 3]}
 
-    return scripted_judge(prompts_dir, NullMeter(), ScriptedLLM(noisy, model="scripted-judge-v3"))
+    return scripted_judge(prompts_dir, NullMeter(), ScriptedLLM(noisy, model="scripted-judge-v3"), rubric="v3")
 
 
 def agent_calls(llm, agent="router") -> int:
@@ -109,7 +109,7 @@ def test_each_row_reports_the_path_derived_from_its_agents_and_the_report_lists_
 
 def test_each_answer_is_judged_once_over_the_evidence_it_was_built_from(settings):
     orchestrator, _ = offline_orchestrator(settings)
-    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
     rows = run(orchestrator, selected_cases(), judge=judge)
     assert len(judge.llm.calls) == len(rows) == 4
     by_id = {row["id"]: row for row in rows}
@@ -136,7 +136,7 @@ def test_unsupported_claims_are_listed_one_by_one_and_never_only_averaged(settin
         return judge_handler(call) | {"unsupported_claim": data["merchant_message"] == flagged_message}
 
     judge = scripted_judge(
-        PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(flags_one_case, model="scripted-judge-v3")
+        PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(flags_one_case, model="scripted-judge-v3"), rubric="v3"
     )
     rows = run(orchestrator, cases, judge=judge, repeat=2)
     md, _ = write_report(rows, summarize(rows), tmp_path, "flagged", {"mode": "scripted"})
@@ -148,7 +148,10 @@ def test_unsupported_claims_are_listed_one_by_one_and_never_only_averaged(settin
         line.startswith(f"| {case.id} | ") and "de 1" in line for case in cases[:2] for line in text.splitlines()
     )
     clean = scripted_judge(
-        PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(lambda c: judge_handler(c) | {"unsupported_claim": False})
+        PROJECT_ROOT / "prompts",
+        NullMeter(),
+        ScriptedLLM(lambda c: judge_handler(c) | {"unsupported_claim": False}),
+        rubric="v3",
     )
     quiet = run(orchestrator, cases[:1], judge=clean)
     md, _ = write_report(quiet, summarize(quiet), tmp_path, "quiet", {"mode": "scripted"})
@@ -160,7 +163,7 @@ def test_unsupported_claims_are_listed_one_by_one_and_never_only_averaged(settin
 
 def test_repeat_runs_the_agent_n_times_and_the_judge_once_per_answer(settings):
     orchestrator, llm = offline_orchestrator(settings)
-    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter())
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
     rows = run(orchestrator, selected_cases(), judge=judge, repeat=3)
     assert [row["repetition"] for row in rows] == [1] * 4 + [2] * 4 + [3] * 4
     assert len({row["request_id"] for row in rows}) == 12
@@ -175,7 +178,9 @@ def test_repeat_runs_the_agent_n_times_and_the_judge_once_per_answer(settings):
 
 def test_judge_repeat_grades_the_recorded_answers_again_without_running_the_agent(settings):
     orchestrator, llm = offline_orchestrator(settings)
-    first = run(orchestrator, selected_cases(), judge=scripted_judge(PROJECT_ROOT / "prompts", NullMeter()))
+    first = run(
+        orchestrator, selected_cases(), judge=scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
+    )
     agent_calls_before = len(llm.calls)
     noisy = cycling_judge()
     graded = rejudge(first, noisy, 3)
@@ -203,10 +208,12 @@ def test_judge_repeat_grades_the_recorded_answers_again_without_running_the_agen
 
 def test_the_judge_report_does_not_carry_the_cost_of_the_agent_run(settings):
     orchestrator, _ = offline_orchestrator(settings)
-    first = run(orchestrator, selected_cases()[:2], judge=scripted_judge(PROJECT_ROOT / "prompts", NullMeter()))
+    first = run(
+        orchestrator, selected_cases()[:2], judge=scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3")
+    )
     for row in first:
         row["cost_usd"] = 0.0123  # the agent run was paid
-    graded = rejudge(first, scripted_judge(PROJECT_ROOT / "prompts", NullMeter()), 2)
+    graded = rejudge(first, scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), rubric="v3"), 2)
     assert all(g["cost_usd"] == 0.0 and g["source_cost_usd"] == 0.0123 for g in graded)
     assert summarize(graded)["overall"]["cost_usd"] == 0 and summarize(first)["overall"]["cost_usd"] == 0.0246
 
@@ -221,7 +228,7 @@ def test_every_judgement_is_stored_with_its_repetition_provider_and_model(settin
     assert [tuple(r) for r in by_repetition] == [(1, 4), (2, 4)]
     row = conn.execute("SELECT * FROM run_evaluations WHERE request_id=? AND repetition=2", (graded[0]["request_id"],))
     stored = row.fetchone()
-    assert json.loads(stored["evaluator"])["provider"] == "scripted" and stored["rubric_version"] == "3"
+    assert json.loads(stored["evaluator"])["provider"] == "scripted" and stored["rubric_version"] == "5"
     assert stored["evaluation_id"] == graded[0]["judge_runs"][1]["evaluation_id"]
     conn.close()
 
@@ -262,6 +269,7 @@ def eval_args(tmp_path, **overrides) -> argparse.Namespace:
         "repeat": 1,
         "judge_repeat": None,
         "answers_from": None,
+        "rubric": "v3",
     }
     return argparse.Namespace(**(values | overrides))
 
@@ -354,7 +362,7 @@ def test_the_markdown_escapes_pipes_and_line_breaks_and_summarises_the_truncatio
     def flags_with_a_pipe(call):
         return judge_handler(call) | {"unsupported_claim": True, "groundedness_reason": "taxa | prazo\nsegunda linha"}
 
-    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(flags_with_a_pipe))
+    judge = scripted_judge(PROJECT_ROOT / "prompts", NullMeter(), ScriptedLLM(flags_with_a_pipe), rubric="v3")
     rows = run(orchestrator, cases, judge=judge)
     rows[0]["evidence_truncation"] = rows[0]["evidence_truncation"] | {"truncated": True}
     rows[1]["id"] = "EX|02"
@@ -528,7 +536,7 @@ def test_the_report_counts_the_answers_judged_under_the_web_note(settings, tmp_p
     text = md.read_text(encoding="utf-8")
     assert "Respostas julgadas sob a nota de busca web: 1 de 4." in text
     assert "0 foram marcadas como afirmação sem suporte" in text
-    assert "o `judge.v3` não rebaixa" in text  # no judge_config: the default rubric
+    assert "o `judge.v5` não rebaixa" in text  # no judge_config: the default rubric
     # v0.10.0 review P3-2: the line names the rubric the judge used
     under_v4 = {"mode": "scripted", "judge_config": {"rubric_version": "4"}}
     md, _ = write_report(rows, summary, tmp_path, "web-v4", under_v4)

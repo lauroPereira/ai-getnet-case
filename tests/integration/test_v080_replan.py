@@ -80,8 +80,8 @@ def test_simple_question_is_closed_by_rule_without_an_extra_call(offline):
     [step] = replan_steps(trace)
     assert (step["next"], step["origin"], step["review"], step["hops"]) == ("finish", "rule:complete", "complete", 0)
     assert step["reason"] and step["observed"]["just_ran"] == "knowledge" and step["observed"]["evidence_sufficient"]
-    assert replan_calls(llm) == [] and trace["model_calls"] == 3
-    assert ledger_agents(orchestrator, trace) == ["router", "knowledge", "personality"]  # ledger: nothing extra
+    assert replan_calls(llm) == [] and trace["model_calls"] == 4  # router, knowledge, personality and default reranker
+    assert ledger_agents(orchestrator, trace) == ["router", "rerank", "knowledge", "personality"]
     assert trace["detail"]["plan_hops"] == 0
 
 

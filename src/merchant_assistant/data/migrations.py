@@ -597,8 +597,9 @@ def _outbox_down_guard(conn: sqlite3.Connection) -> None:
 # the four 1-5 scores, the `unsupported_claim` verdict and the repetition number of the judgement. The judgement
 # writes all three into `result` as well, so a rollback drops the columns without losing them and the next upgrade
 # rebuilds them from `result` (rows of `judge.v3`, `rubric_version` 3; older rows keep the defaults).
-# `calibrations` keeps the human scores of the sample the owner rates (task 71): the only data in this schema that
-# nobody can recreate, so its rollback is guarded.
+# `calibrations` keeps the calibration labels (task 71: the human scores of the sample the owner rates; since v0.11.0
+# also those of a declared panel of models): the only data in this schema that nobody can recreate, so its rollback
+# is guarded.
 EVAL_RUBRIC_UP = """
 ALTER TABLE run_evaluations ADD COLUMN scores TEXT;
 ALTER TABLE run_evaluations ADD COLUMN repetition INTEGER NOT NULL DEFAULT 1;
@@ -645,14 +646,15 @@ ALTER TABLE run_evaluations DROP COLUMN scores;
 
 
 def _calibrations_down_guard(conn: sqlite3.Connection) -> None:
-    """The human scores cannot be rebuilt from anything else. Dropping the table is safe only while it is empty.
+    """The calibration labels cannot be rebuilt from anything else. Dropping the table is safe only while it is empty.
     Judgements keep their complete `result`, so their three derived columns can go without loss."""
     count = conn.execute("SELECT COUNT(*) FROM calibrations").fetchone()[0]
     if count:
         raise RollbackRefused(
-            f"cannot roll back 0011_evaluation_rubric: calibrations still holds {count} human score(s) that no other "
-            "table can rebuild. Export them (the CSV the owner filled in is the source) and empty the table, then "
-            "roll back again. Nothing was changed."
+            f"cannot roll back 0011_evaluation_rubric: calibrations still holds {count} calibration label(s) "
+            "(ratings of a human rater or of a declared panel of models) that no other table can rebuild. Export "
+            "them (the CSVs the raters filled in are the source) and empty the table, then roll back again. Nothing "
+            "was changed."
         )
 
 
@@ -697,6 +699,21 @@ COMPARISON_INTERRUPTED_DOWN = _comparisons_rebuild(
 )
 
 
+# v0.11.0 (spec D3, task 88). A `judge.v5` judgement lists the claims of the reply and gives a verdict per claim; both
+# lists go into `run_evaluations.claims` (JSON: {"claims": [{n, text, kind}], "claim_verdicts": [{n, verdict,
+# support}]}). As in 0011, the judgement writes them into `result` as well, so the rollback drops the column without
+# losing them and the next upgrade rebuilds it from `result`.
+EVAL_CLAIMS_UP = """
+ALTER TABLE run_evaluations ADD COLUMN claims TEXT CHECK (claims IS NULL OR json_valid(claims));
+UPDATE run_evaluations SET claims = json_extract(result, '$.claims')
+WHERE json_valid(result) AND json_type(result, '$.claims') = 'object';
+"""
+
+EVAL_CLAIMS_DOWN = """
+ALTER TABLE run_evaluations DROP COLUMN claims;
+"""
+
+
 MIGRATIONS: list[Migration] = [
     Migration(1, "core", CORE_UP, CORE_DOWN),
     Migration(2, "conversations", CONVERSATIONS_UP, CONVERSATIONS_DOWN),
@@ -710,6 +727,7 @@ MIGRATIONS: list[Migration] = [
     Migration(10, "webhook_outbox", OUTBOX_UP, OUTBOX_DOWN, _outbox_down_guard),
     Migration(11, "evaluation_rubric", EVAL_RUBRIC_UP, EVAL_RUBRIC_DOWN, _calibrations_down_guard),
     Migration(12, "comparison_interrupted", COMPARISON_INTERRUPTED_UP, COMPARISON_INTERRUPTED_DOWN),
+    Migration(13, "evaluation_claims", EVAL_CLAIMS_UP, EVAL_CLAIMS_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

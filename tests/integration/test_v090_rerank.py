@@ -20,7 +20,7 @@ from merchant_assistant.rag.chunk import chunk_document
 from merchant_assistant.rag.documents import load_all
 from merchant_assistant.testing import merchant_headers, offline_orchestrator
 
-CONFIGS = [("dense", "off"), ("hybrid", "off"), ("hybrid", "on")]
+CONFIGS = [("dense", "off"), ("hybrid", "off"), ("hybrid@36", "off"), ("hybrid", "on")]  # task 90: the control
 
 
 def offline_settings(tmp_path, **extra) -> Settings:
@@ -55,7 +55,7 @@ def synthetic_splits(tmp_path, monkeypatch):
     return holdout
 
 
-def test_three_configurations_and_two_splits_offline_with_the_d7_line(tmp_path, capsys, synthetic_splits):
+def test_four_configurations_and_two_splits_offline_with_the_d7_line(tmp_path, capsys, synthetic_splits):
     settings, out = offline_settings(tmp_path), tmp_path / "report" / "retrieval.md"
     reports = {}
     for split in ("dev", "holdout_v090"):
@@ -81,7 +81,7 @@ def test_three_configurations_and_two_splits_offline_with_the_d7_line(tmp_path, 
     assert [r["rank"] for r in dev_dense["cases"]] != [r["rank"] for r in dev_hybrid["cases"]]
     text = out.read_text(encoding="utf-8")
     for split in ("dev", "holdout_v090"):
-        for config in ("dense", "hybrid", "hybrid+rerank"):
+        for config in ("dense", "hybrid", "hybrid@36", "hybrid+rerank"):
             assert f"| {split} | {config} |" in text
     assert "Holdout de retrieval: usado, lacre" in text and "Embeddings de hash" in text
     line = next(x for x in text.splitlines() if x.startswith("Modo padrão sugerido"))
@@ -93,9 +93,11 @@ def test_three_configurations_and_two_splits_offline_with_the_d7_line(tmp_path, 
 def test_holdout_measured_again_is_marked_already_seen(tmp_path, capsys, synthetic_splits):
     settings, out = offline_settings(tmp_path), tmp_path / "retrieval.md"
     for _ in range(2):
-        assert cli.cmd_eval_retrieval(settings, eval_args(mode="hybrid", split="holdout_v090", out=str(out))) == 0
+        assert cli.cmd_eval_retrieval(
+            settings, eval_args(mode="hybrid", rerank="off", split="holdout_v090", out=str(out))
+        ) == 0
     capsys.readouterr()
-    assert "| holdout_v090 | hybrid | 2 |" in out.read_text(encoding="utf-8")
+    assert "| holdout_v090 | hybrid | 0 | 2 |" in out.read_text(encoding="utf-8")  # task 90: BM25 floor column
     assert "2 (holdout já visto)" in out.read_text(encoding="utf-8")
 
 
@@ -157,7 +159,8 @@ def test_rerank_needs_hybrid_in_the_cli_and_in_settings(tmp_path):
         cli.cmd_eval_retrieval(offline_settings(tmp_path), eval_args(mode="dense", rerank="on"))
     with pytest.raises(ValidationError, match="RERANK=on requires RETRIEVAL_MODE=hybrid"):
         offline_settings(tmp_path, rerank="on", retrieval_mode="dense")
-    assert offline_settings(tmp_path).rerank == "off"
+    assert offline_settings(tmp_path).rerank == "on"
+    assert offline_settings(tmp_path, rerank="off").rerank == "off"
     assert offline_settings(tmp_path, rerank="on").rerank == "on"  # task 82: the default mode is hybrid
     assert offline_settings(tmp_path, rerank="on", retrieval_mode="hybrid").rerank == "on"
 
@@ -206,6 +209,28 @@ def test_knowledge_reranks_when_rerank_is_on(settings):
     assert len(detail["hits"]) == configured.retrieval_top_k
 
 
+@pytest.mark.parametrize(
+    ("limit", "rerank_status", "expected_agents"),
+    [
+        (1, "failed", ["router"]),  # router uses the only slot; rerank degrades to fusion order
+        (2, "ok", ["router", "rerank"]),  # rerank uses the next slot, leaving no call for generation
+    ],
+)
+def test_low_model_call_limit_keeps_retrieval_controlled(settings, limit, rerank_status, expected_agents):
+    configured = settings.model_copy(
+        update={"retrieval_mode": "hybrid", "rerank": "on", "max_model_calls": limit}
+    )
+    body, detail, llm, trace = ask(configured, with_trace=True)
+
+    assert body["answer"].strip()
+    assert detail["rerank"]["status"] == rerank_status
+    assert detail["hits"]  # failed or unavailable reranking falls back to the hybrid retrieval results
+    assert [call.spec.agent for call in llm.calls] == expected_agents
+    assert trace["model_calls"] == len(llm.calls) <= limit
+    if limit == 1:
+        assert "LimitExceeded" in detail["rerank"]["error"]
+
+
 def test_knowledge_keeps_the_fusion_order_when_the_reranker_fails(settings):
     from merchant_assistant.evaluation.scripted_policy import handler as default
 
@@ -214,7 +239,7 @@ def test_knowledge_keeps_the_fusion_order_when_the_reranker_fails(settings):
 
     configured = settings.model_copy(update={"retrieval_mode": "hybrid", "rerank": "on"})
     body, detail, _ = ask(configured, failing)
-    _, plain, _ = ask(settings.model_copy(update={"retrieval_mode": "hybrid"}))
+    _, plain, _ = ask(settings.model_copy(update={"retrieval_mode": "hybrid", "rerank": "off"}))
     assert body["status"] == "answered" and detail["rerank"]["status"] == "failed"
     assert "rerank provider down" in detail["rerank"]["error"]
     assert detail["hits"] == plain["hits"]  # review P2-1: the whole top k of RERANK=off, scores included
@@ -227,7 +252,7 @@ def test_the_knowledge_reranker_is_metered_by_the_request(settings):
 
     on, plain = (
         ask(settings.model_copy(update={"retrieval_mode": "hybrid", **extra}), with_trace=True)
-        for extra in ({"rerank": "on"}, {})
+        for extra in ({"rerank": "on"}, {"rerank": "off"})
     )
     (body, _, llm, trace), (_, _, plain_llm, plain_trace) = on, plain
     assert trace["model_calls"] == len(llm.calls) == len(plain_llm.calls) + 1 == plain_trace["model_calls"] + 1
@@ -237,6 +262,6 @@ def test_the_knowledge_reranker_is_metered_by_the_request(settings):
     assert agents.count("rerank") == 1
 
 
-def test_rerank_off_by_default_makes_no_call(settings):
-    _, detail, llm = ask(settings.model_copy(update={"retrieval_mode": "hybrid"}))
+def test_rerank_can_be_disabled_explicitly(settings):
+    _, detail, llm = ask(settings.model_copy(update={"retrieval_mode": "hybrid", "rerank": "off"}))
     assert "rerank" not in detail and "rerank" not in [c.spec.agent for c in llm.calls]

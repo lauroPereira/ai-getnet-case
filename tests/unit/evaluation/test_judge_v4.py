@@ -1,5 +1,6 @@
 """`judge.v4` (spec v0.10.0 D1, task 83): the rubric of `judge.v3` plus one sentence, the general claim stated as fact
-with no source; the schema, the default (`judge.v3`) and the v3 file do not change. Offline."""
+with no source; the schema and the v3 file do not change. The default rubric follows the D6(g) calibration rule.
+Offline."""
 
 from __future__ import annotations
 
@@ -47,11 +48,11 @@ def test_v4_is_v3_plus_the_one_sentence_and_v3_is_untouched():
     assert hashlib.sha256(raw).hexdigest() == V3_SHA256
 
 
-def test_the_rubric_is_named_v3_or_v4_and_v3_stays_the_default():
-    assert RUBRIC_VERSION == "3" and rubric_version(None) == "3"
-    assert [rubric_version(name) for name in ("v3", "v4", "3", "4")] == ["3", "4", "3", "4"]
-    with pytest.raises(JudgeRefused, match="Unknown rubric 'v5'"):
-        rubric_version("v5")
+def test_the_rubric_is_named_v3_v4_or_v5_and_v5_is_the_default():
+    assert RUBRIC_VERSION == "5" and rubric_version(None) == "5"
+    assert [rubric_version(name) for name in ("v3", "v4", "v5", "3", "4", "5")] == ["3", "4", "5", "3", "4", "5"]
+    with pytest.raises(JudgeRefused, match="Unknown rubric 'v6'"):
+        rubric_version("v6")
     with pytest.raises(cal.CalibrationError, match="rubrica desconhecida"):
         cal._rubric("v9")
 
@@ -63,15 +64,20 @@ def test_a_v4_judge_sends_the_v4_prompt_and_records_rubric_version_4():
     assert record["state"] == "completed" and record["rubric_version"] == "4"
     assert judge.config()["rubric_version"] == "4" and judge.config()["prompt"] == "judge@4"
     assert ADDED.strip(", ") in flat(judge.llm.calls[0].spec.instructions)
+    legacy = scripted_judge(PROMPTS, NullMeter(), rubric="v3")
+    assert legacy.config()["prompt"] == "judge@3" and legacy.evaluate(data)["rubric_version"] == "3"
+    assert ADDED.strip(", ") not in flat(legacy.llm.calls[0].spec.instructions)
     default = scripted_judge(PROMPTS, NullMeter())
-    assert default.config()["prompt"] == "judge@3" and default.evaluate(data)["rubric_version"] == "3"
-    assert ADDED.strip(", ") not in flat(default.llm.calls[0].spec.instructions)
+    assert default.config()["prompt"] == "judge@5" and default.config()["claims_prompt"] == "judge_claims@1"
+    assert default.evaluate(data)["rubric_version"] == "5"
 
 
 def test_the_paid_judge_is_validated_and_built_under_the_rubric_asked_for_without_any_call():
     settings = Settings(_env_file=None, openai_api_key=None, deepseek_api_key=SecretStr("synthetic-deepseek-key"))
     setup = validate_judge(settings, agent=AGENT, rubric="4")
-    assert setup.prompt.ref == "judge@4" and validate_judge(settings, agent=AGENT).prompt.ref == "judge@3"
+    default = validate_judge(settings, agent=AGENT)
+    assert setup.prompt.ref == "judge@4" and default.prompt.ref == "judge@5"
+    assert default.claims_prompt and default.claims_prompt.ref == "judge_claims@1"
     llm = ScriptedLLM(handler, model="deepseek-flash")
     judge = resolve_judge(settings, agent=AGENT, factory=lambda provider, model: llm, rubric="v4")
     assert judge.config()["rubric_version"] == "4" and llm.calls == []
@@ -104,17 +110,19 @@ def test_the_d2_line_computes_the_three_conditions_without_deciding():
 def test_the_default_rubric_has_one_source_for_both_commands(monkeypatch):
     # review P2-1: `eval --rubric` and `eval-calibrate --rubric` left out resolve through judge.rubric_version
     assert cal._rubric(None) == rubric_version(None) == RUBRIC_VERSION
-    monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")  # what task 86 would change, if D2 says so
+    monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")  # both commands resolve through the configured default
     assert cal._rubric(None) == rubric_version(None) == "4" and cal._rubric("v3") == "3"
 
 
 def test_prompt_versions_reports_the_configured_rubric_not_the_newest_file(monkeypatch, tmp_path):
     # review P3-1: /ready and the run snapshots name the judge in use, not the newest file
     versions = prompt_versions(PROMPTS)
-    assert versions["judge"] == RUBRIC_VERSION == "3" and load_prompt(PROMPTS, "judge").version == "4"
+    assert versions["judge"] == RUBRIC_VERSION == "5" and versions["judge_claims"] == "1"
+    assert load_prompt(PROMPTS, "judge").version == "5"
     assert versions["router"] == load_prompt(PROMPTS, "router").version  # the others stay the latest
     monkeypatch.setattr(judge_module, "RUBRIC_VERSION", "4")
-    assert prompt_versions(PROMPTS)["judge"] == "4"
+    four = prompt_versions(PROMPTS)
+    assert four["judge"] == "4" and "judge_claims" not in four
     (tmp_path / "judge.v2.md").write_text("---\nid: judge\nversion: 2\n---\nold\n", encoding="utf-8")
     assert prompt_versions(tmp_path) == {"judge": "2"}  # without the configured file, the latest there
 

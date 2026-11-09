@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from merchant_assistant.agents.common import LANGUAGE_NAME, policy, prompt
 from merchant_assistant.agents.replanner import HOW_TO
 from merchant_assistant.data.clock import today
+from merchant_assistant.guardrails.input import mask_sensitive
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.orchestration.budget import BudgetExceeded
 from merchant_assistant.orchestration.run import LimitExceeded, RunContext
@@ -17,6 +18,7 @@ from merchant_assistant.rag.index import Hit
 from merchant_assistant.rag.rerank import Reranker
 
 RECOVERABLE = (LLMError, ValidationError, LimitExceeded, BudgetExceeded)
+WEB_SUMMARY_LIMIT_CHARS = 4000
 
 
 def _mode(route: str) -> str:
@@ -53,6 +55,17 @@ def _citations(hits: list[Hit], used: list[int]) -> list[Citation]:
     return out
 
 
+def _note_web_search(ctx: RunContext, text: str, citations: list[Citation]) -> None:
+    """What the search returned, kept in the step's trace for the evaluation (spec v0.11.0 D1): the text the model
+    wrote from the search, masked and capped, and the pages it cited. It is the assistant's summary, never a page."""
+    summary = mask_sensitive(text)[0]
+    ctx.step_notes["web_summary"] = summary[:WEB_SUMMARY_LIMIT_CHARS]
+    ctx.step_notes["web_summary_truncated"] = len(summary) > WEB_SUMMARY_LIMIT_CHARS
+    ctx.step_notes["web_urls"] = [
+        {"title": mask_sensitive(c.title)[0], "url": mask_sensitive(c.url)[0]} for c in citations if c.url
+    ]
+
+
 def _web(state: GraphState, ctx: RunContext, language: str, *, verify_gap: bool = False) -> KnowledgeResult:
     p = prompt(ctx, "knowledge_web")
     ctx.step_notes["prompt"] = p.ref
@@ -83,6 +96,7 @@ def _web(state: GraphState, ctx: RunContext, language: str, *, verify_gap: bool 
         Citation(title=c.get("title") or c.get("url") or "web", url=c.get("url"), source_kind="web")
         for c in answer.citations
     ]
+    _note_web_search(ctx, answer.text, citations)
     if verify_gap:
         lines = answer.text.strip().splitlines()
         markers = [line for line in lines if re.match(r"\s*EVIDENCE\s*:", line, re.IGNORECASE)]
@@ -147,10 +161,10 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     try:
         if ctx.index is None:
             raise LLMError("knowledge index not available")
-        rerank = {}
-        if ctx.settings.rerank == "on":  # task 81: metered by this request; a failure keeps the fusion order
-            rerank = {"reranker": Reranker(ctx.llm_for("rerank"), prompt(ctx, "rerank")), "meter": ctx,
-                      "notes": ctx.step_notes}
+        rerank: dict = {"notes": ctx.step_notes}  # task 90: what the BM25 floor dropped, with the reranker or not
+        if ctx.settings.rerank == "on" and ctx.settings.retrieval_mode == "hybrid":
+            # task 81: metered by this request; the reranker follows hybrid fusion only and failure keeps its order
+            rerank |= {"reranker": Reranker(ctx.llm_for("rerank"), prompt(ctx, "rerank")), "meter": ctx}
         hits = ctx.index.search(
             state.message,
             k=ctx.settings.retrieval_top_k,
