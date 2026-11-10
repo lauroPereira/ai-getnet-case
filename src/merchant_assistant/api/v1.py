@@ -11,10 +11,10 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import parse_qs, unquote_plus
+from urllib.parse import parse_qs, unquote_plus, urlencode, urlsplit
 
-from fastapi import APIRouter, Depends, Header, Request, Security
-from fastapi.responses import JSONResponse, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Security
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,13 +25,21 @@ from merchant_assistant.agents.router import enforce
 from merchant_assistant.api.identity import (
     DEFAULT_PUBLIC_CLIENT,
     HANDOFF_OPERATE,
+    PKCE_METHOD,
     PUBLIC_CLIENTS,
     SERVICE_CLIENTS,
+    GrantRefused,
     InvalidToken,
+    NoRole,
     Principal,
+    UnknownIssuer,
     hit_rate_limit,
+    redirect_allowed,
+    registered_redirects,
     remember_principal,
+    valid_code_challenge,
 )
+from merchant_assistant.api.login_page import AUTHORIZE_FIELDS, error_page, login_page
 from merchant_assistant.api.schemas import ErrorBody, MessageRequest
 from merchant_assistant.config import Settings
 from merchant_assistant.conversations import ConversationNotFound, ConversationStore
@@ -40,7 +48,7 @@ from merchant_assistant.data.db import connect
 from merchant_assistant.guardrails.input import check_input
 from merchant_assistant.llm.base import CallSpec, LLMError
 from merchant_assistant.observability.traces import TraceRecorder
-from merchant_assistant.orchestration.budget import BudgetExceeded
+from merchant_assistant.orchestration.budget import BudgetExceeded, ReservationFence
 from merchant_assistant.orchestration.run import RunContext
 from merchant_assistant.orchestration.state import RouterDecision
 from merchant_assistant.profiles import (
@@ -237,7 +245,8 @@ def _unauthorized(request: Request, code: str, message: str) -> JSONResponse:
 
 def _principal(request: Request, authorization: str | None = Header(default=None)) -> dict | JSONResponse:
     """Verifies the bearer token (the single verifier of `api.identity`) and returns the principal as the dict the
-    routes use. `session_id` is the token's `jti` (per-token counters such as the demo action limit)."""
+    routes use. `session_id` is the token's `jti`, prefixed with the issuer for an external one (per-token counters
+    such as the demo action limit)."""
     if not authorization or not authorization.startswith("Bearer "):
         return _unauthorized(
             request,
@@ -251,7 +260,13 @@ def _principal(request: Request, authorization: str | None = Header(default=None
     conn = _db(request)
     try:
         principal, claims = request.app.state.identity.verify(token, conn)
-        remember_principal(conn, principal)
+        remember_principal(conn, principal, claims.get("iss"))
+    except UnknownIssuer:
+        return _unauthorized(
+            request, "invalid_issuer", "The access token comes from an issuer this API does not accept."
+        )
+    except NoRole:
+        return insufficient_scope(request, "The groups of this token grant no role in this assistant.")
     except InvalidToken:
         return _unauthorized(request, "invalid_token", "The access token is invalid, expired or revoked.")
     finally:
@@ -261,7 +276,7 @@ def _principal(request: Request, authorization: str | None = Header(default=None
         "role": principal.role,
         "customer_id": principal.customer_id,
         "scopes": principal.scopes,
-        "session_id": claims["jti"],
+        "session_id": request.app.state.identity.token_id(claims),  # the issuer-prefixed `jti` of an external token
         "expires_at": datetime.fromtimestamp(claims["exp"], UTC).isoformat(),
         "client_id": claims.get("client_id"),
         "_claims": claims,
@@ -389,9 +404,25 @@ TOKEN_FORM = {
                     "type": "object",
                     "required": ["grant_type"],
                     "properties": {
-                        "grant_type": {"type": "string", "enum": ["password", "client_credentials"]},
-                        "username": {"type": "string"},
-                        "password": {"type": "string", "format": "password"},
+                        "grant_type": {
+                            "type": "string",
+                            "enum": ["authorization_code", "refresh_token", "password", "client_credentials"],
+                            "description": (
+                                "`authorization_code` (with `code_verifier`, PKCE S256) and `refresh_token` are the "
+                                "login of the web interface. `password` is for the demonstration only (smoke test "
+                                "and CLI). `client_credentials` is for services."
+                            ),
+                        },
+                        "code": {"type": "string", "description": "authorization_code: the code from the redirect."},
+                        "redirect_uri": {"type": "string", "description": "authorization_code: the same exact URI."},
+                        "code_verifier": {"type": "string", "format": "password"},
+                        "refresh_token": {"type": "string", "format": "password"},
+                        "username": {"type": "string", "description": "password grant (demonstration only)."},
+                        "password": {
+                            "type": "string",
+                            "format": "password",
+                            "description": "password grant (demonstration only).",
+                        },
                         "client_id": {"type": "string"},
                         "client_secret": {"type": "string", "format": "password"},
                         "scope": {"type": "string"},
@@ -441,12 +472,16 @@ def _basic_client(request: Request) -> tuple[str, str] | None:
     tags=["auth"],
 )
 async def auth_token(request: Request):
-    """OAuth 2.0 token endpoint (RFC 6749, form encoded). `password` for the synthetic demo users and
-    `client_credentials` for services. The response is `{access_token, token_type, expires_in, scope}`; a failure
-    never says which field was wrong."""
+    """OAuth 2.0 token endpoint (RFC 6749, form encoded). `authorization_code` (PKCE S256) and the rotating
+    `refresh_token` are the login of the web interface (v0.13.0): both answer
+    `{access_token, token_type, expires_in, scope, refresh_token}`. `password` (**demonstration only**: smoke test and
+    CLI, synthetic users) and `client_credentials` (services) answer `{access_token, token_type, expires_in, scope}`.
+    A failure never says which field was wrong; a refresh token used twice revokes its whole login."""
     body = (await request.body()).decode("utf-8", errors="replace")
     form = {key: values[0] for key, values in parse_qs(body, keep_blank_values=True).items()}
     grant = form.get("grant_type", "")
+    if grant in ("authorization_code", "refresh_token"):
+        return _code_or_refresh_grant(request, grant, form)
     if grant == "password":
         client_id = form.get("client_id") or DEFAULT_PUBLIC_CLIENT
         subject, secret = form.get("username", ""), form.get("password", "")
@@ -457,7 +492,9 @@ async def auth_token(request: Request):
     elif not grant:
         return _token_error(400, "invalid_request", "The request is missing a required parameter.")
     else:
-        return _token_error(400, "unsupported_grant_type", "Use password or client_credentials.")
+        return _token_error(
+            400, "unsupported_grant_type", "Use authorization_code, refresh_token, password or client_credentials."
+        )
     if not subject or not secret:
         return _token_error(400, "invalid_request", "The request is missing a required parameter.")
     if grant == "password" and client_id not in PUBLIC_CLIENTS:
@@ -485,20 +522,196 @@ async def auth_token(request: Request):
             principal = identity.authenticate(conn, account, secret) if client_id in SERVICE_CLIENTS else None
             if principal is None:
                 return _token_error(401, "invalid_client", "Client authentication failed.")
-        remember_principal(conn, principal)
+        remember_principal(conn, principal, identity.issuer)
     finally:
         conn.close()
     return JSONResponse(identity.issue(principal, client_id), headers=NO_STORE)
 
 
-@router.post("/auth/revoke", tags=["auth"], responses={401: {"model": ErrorBody}})
-def auth_revoke(request: Request, principal=AUTH):
-    """Revokes the presented token (its `jti`) until it expires (RFC 7009 style: `200` with an empty body)."""
-    if _ensure_not_error(principal):
-        return principal
+GRANT_REFUSED = "The authorization code or refresh token is invalid, expired or revoked."
+
+
+def _code_or_refresh_grant(request: Request, grant: str, form: dict[str, str]) -> JSONResponse:
+    """Public clients only (no secret): the code is bound to its client, `redirect_uri` and PKCE challenge, and the
+    refresh token to its client. They are 256-bit random values, so no attempt counter is needed here."""
+    client_id = form.get("client_id", "")
+    if grant == "authorization_code":
+        required = ("code", "redirect_uri", "code_verifier", "client_id")
+        allowed = client_id in registered_redirects(request.app.state.settings)
+    else:
+        required = ("refresh_token", "client_id")
+        allowed = client_id in PUBLIC_CLIENTS
+    if not all(form.get(name) for name in required):
+        return _token_error(400, "invalid_request", "The request is missing a required parameter.")
+    if not allowed:
+        return _token_error(401, "invalid_client", "Client authentication failed.")
+    identity = request.app.state.identity
     conn = _db(request)
     try:
-        request.app.state.identity.revoke(conn, principal["_claims"])
+        if grant == "authorization_code":
+            principal, response = identity.redeem_code(
+                conn, form["code"], client_id, form["redirect_uri"], form["code_verifier"]
+            )
+        else:
+            principal, response = identity.refresh(conn, form["refresh_token"], client_id)
+        remember_principal(conn, principal, identity.issuer)
+    except GrantRefused:
+        return _token_error(400, "invalid_grant", GRANT_REFUSED)
+    finally:
+        conn.close()
+    return JSONResponse(response, headers=NO_STORE)
+
+
+# --- authorization endpoint and login page (v0.13.0, spec D1, task 97) ---------------------------------------------
+
+AUTHORIZE_REDIRECT_RESPONSES = {
+    200: {"content": {"text/html": {}}, "description": "Login page of the issuer."},
+    302: {"description": "Back to the registered `redirect_uri` with `error`, `state` and `iss`."},
+    400: {"content": {"text/html": {}}, "description": "Unknown client or `redirect_uri` not registered: no redirect."},
+}
+STATE_MAX_LENGTH = 512
+
+
+def _redirect_with(uri: str, params: dict[str, str], status: int) -> RedirectResponse:
+    separator = "&" if urlsplit(uri).query else "?"
+    headers = {"Cache-Control": "no-store", "Pragma": "no-cache", "Referrer-Policy": "no-referrer"}
+    return RedirectResponse(uri + separator + urlencode(params), status_code=status, headers=headers)
+
+
+def _authorize_check(request: Request, params: dict[str, str], status: int) -> Response | None:
+    """Validates an authorization request. An unknown client or a `redirect_uri` that is not exactly a registered
+    one gets an error page and never a redirect; any other error goes back to the client with `error`, `state` and
+    `iss`.
+    Returns None when the request is valid."""
+    settings: Settings = request.app.state.settings
+    client_id, redirect_uri = params.get("client_id", ""), params.get("redirect_uri", "")
+    if not client_id or not redirect_uri or not redirect_allowed(settings, client_id, redirect_uri):
+        return error_page("Cliente ou endereço de retorno não registrado.")
+    state = params.get("state", "")
+    if params.get("response_type") != "code":
+        error, description = "unsupported_response_type", "Only response_type=code is supported."
+    elif params.get("code_challenge_method") != PKCE_METHOD or not valid_code_challenge(
+        params.get("code_challenge", "")
+    ):
+        error, description = "invalid_request", "PKCE is required: code_challenge with code_challenge_method=S256."
+    elif not state or len(state) > STATE_MAX_LENGTH or not state.isprintable():
+        error, description = "invalid_request", "A state parameter is required."
+    else:
+        return None
+    back = {"error": error, "error_description": description, "iss": request.app.state.identity.issuer}
+    if state and len(state) <= STATE_MAX_LENGTH:
+        back["state"] = state
+    return _redirect_with(redirect_uri, back, status)
+
+
+@router.get(
+    "/auth/authorize",
+    tags=["auth"],
+    response_class=HTMLResponse,
+    responses=AUTHORIZE_REDIRECT_RESPONSES,
+)
+def auth_authorize(
+    request: Request,
+    response_type: str = Query(default="", description="Always `code`."),
+    client_id: str = Query(default="", description="A registered public client (`merchant-assistant-web`)."),
+    redirect_uri: str = Query(default="", description="Exactly one of the client's registered URIs."),
+    code_challenge: str = Query(default="", description="base64url(SHA-256(code_verifier)), 43 characters."),
+    code_challenge_method: str = Query(default="", description="Always `S256` (PKCE is required)."),
+    state: str = Query(default="", description="Opaque value returned unchanged in the redirect (required)."),
+):
+    """Authorization endpoint (RFC 6749 section 4.1, RFC 7636): shows the issuer's login page. After the login the
+    browser goes back to `redirect_uri` with a one-use `code` (valid for 60 s), the same `state` and `iss`; the client
+    exchanges the code at `POST /v1/auth/token` with its `code_verifier`."""
+    params = {
+        "response_type": response_type,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "code_challenge": code_challenge,
+        "code_challenge_method": code_challenge_method,
+        "state": state,
+    }
+    refused = _authorize_check(request, params, 302)
+    return refused or login_page(params)
+
+
+@router.post("/auth/authorize", tags=["auth"], response_class=HTMLResponse, include_in_schema=False)
+async def auth_authorize_login(request: Request):
+    """The login form of the page. Same checks as the GET, then the user's password (counted per account and address,
+    as at the token endpoint); a wrong one shows the page again without saying which field failed."""
+    body = (await request.body()).decode("utf-8", errors="replace")
+    form = {key: values[0] for key, values in parse_qs(body, keep_blank_values=True).items()}
+    params = {name: form.get(name, "") for name in AUTHORIZE_FIELDS}
+    refused = _authorize_check(request, params, 303)
+    if refused is not None:
+        return refused
+    username, password = form.get("username", ""), form.get("password", "")
+    if not username or not password:
+        return login_page(params, error="Informe usuário e senha.", username=username, status=400)
+    settings: Settings = request.app.state.settings
+    identity = request.app.state.identity
+    account = f"user:{username}"
+    address = request.client.host if request.client else "unknown"
+    conn = _db(request)
+    try:
+        waits = [
+            hit_rate_limit(conn, f"auth:{account}@{address}", settings.auth_attempts_per_minute),
+            hit_rate_limit(conn, f"auth-ip:{address}", settings.auth_attempts_per_ip_per_minute),
+        ]
+        retry_after = max((w for w in waits if w is not None), default=None)
+        if retry_after is not None:
+            page = login_page(params, error="Muitas tentativas. Tente de novo em instantes.", status=429)
+            page.headers["Retry-After"] = str(retry_after)
+            return page
+        principal = identity.authenticate(conn, account, password)
+        if principal is None:
+            return login_page(params, error="Usuário ou senha inválidos.", username=username, status=400)
+        remember_principal(conn, principal, identity.issuer)
+        code = identity.create_code(
+            conn, principal, account, params["client_id"], params["redirect_uri"], params["code_challenge"]
+        )
+    finally:
+        conn.close()
+    back = {"code": code, "state": params["state"], "iss": identity.issuer}
+    return _redirect_with(params["redirect_uri"], back, 303)
+
+
+REVOKE_FORM = {
+    "requestBody": {
+        "required": False,
+        "content": {
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "token": {
+                            "type": "string",
+                            "format": "password",
+                            "description": "Optional refresh token of the same principal: its whole login is revoked.",
+                        },
+                        "token_type_hint": {"type": "string", "enum": ["refresh_token", "access_token"]},
+                    },
+                }
+            }
+        },
+    }
+}
+
+
+@router.post("/auth/revoke", tags=["auth"], openapi_extra=REVOKE_FORM, responses={401: {"model": ErrorBody}})
+async def auth_revoke(request: Request, principal=AUTH):
+    """Revokes the presented token (its `jti`) until it expires (RFC 7009 style: `200` with an empty body). With a
+    `token` form field holding a refresh token of the same principal, its family (every refresh token of that login
+    and the access tokens issued with them) is revoked too; any other value is ignored."""
+    if _ensure_not_error(principal):
+        return principal
+    body = (await request.body()).decode("utf-8", errors="replace")
+    form = {key: values[0] for key, values in parse_qs(body, keep_blank_values=True).items()}
+    identity = request.app.state.identity
+    conn = _db(request)
+    try:
+        if form.get("token") and len(form["token"]) <= 512:
+            identity.revoke_refresh(conn, form["token"], principal["principal_id"])
+        identity.revoke(conn, principal["_claims"])
     finally:
         conn.close()
     return Response(status_code=200)
@@ -1090,6 +1303,7 @@ def execute_run(
     domain_db_path=None,
     knowledge=None,
     history_turns: int = 0,
+    reservation_fence: ReservationFence | None = None,
 ) -> dict:
     """Run one attendance with a published profile and store its snapshot (shared by messages and comparisons)."""
     from merchant_assistant.llm.prompts import prompt_versions
@@ -1156,6 +1370,7 @@ def execute_run(
         trace_tags=tags,
         principal=Principal.from_session(principal),
         channel="web",
+        **({"reservation_fence": reservation_fence} if reservation_fence is not None else {}),
     )
     webhooks = getattr(app_state, "webhooks", None)
     if response.status == "handoff" and domain_db_path is None and webhooks is not None:
@@ -1307,8 +1522,19 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
 
 
 STEP_DETAIL_FIELDS = (
-    "prompt", "mode", "hits", "citations", "agent", "arguments", "topic", "tools", "failed", "reused",
-    "web_summary", "web_summary_truncated", "web_urls",  # task 87 (D1): masked in the step, the search summary
+    "prompt",
+    "mode",
+    "hits",
+    "citations",
+    "agent",
+    "arguments",
+    "topic",
+    "tools",
+    "failed",
+    "reused",
+    "web_summary",
+    "web_summary_truncated",
+    "web_urls",  # task 87 (D1): masked in the step, the search summary
 )
 REPLAN_STEP_FIELDS = ("next", "reason", "review", "hops", "origin", "observed")  # only the `replan` step (task 69, D7)
 
@@ -1485,8 +1711,11 @@ def comparison_create(payload: ComparisonCreateRequest, request: Request, princi
 )
 def comparison_resume(comparison_id: str, request: Request, retry_failed: bool = False, principal=READER):
     """Continues an `interrupted`, `partial` or `failed` comparison (task 84): cells with a recorded result are not
-    run again; failed cells run again only with `retry_failed=true`. `409 comparison_running`,
-    `409 comparison_completed`, `409 nothing_to_resume`, `409 fixed_factors_changed`; `429` budget or demo limit."""
+    run again; failed cells, including those with a paid attempt, run again only with `retry_failed=true`. A durable
+    result of an interrupted cell is restored without a new model call. When every cell already has a result, `202`
+    with `resumed_cells: 0` closes the comparison. `409 execution_cost_unknown` while the ledger cost of an earlier
+    execution cannot be read; `409 comparison_running`, `409 comparison_completed`, `409 nothing_to_resume`,
+    `409 fixed_factors_changed`; `429` budget or demo limit."""
     if _ensure_not_error(principal):
         return principal
     if limited := rate_limited(request, principal):
@@ -1664,3 +1893,46 @@ def handoffs_act(case_id: str, payload: HandoffActionRequest, request: Request, 
         return _handoff_error(request, exc)
     finally:
         conn.close()
+
+
+# --- webhook resend (task 99) -------------------------------------------------------------------------------------
+
+
+@router.post(
+    "/webhooks/deliveries/{delivery_id}/resend",
+    tags=["handoffs"],
+    status_code=202,
+    responses={status: {"model": ErrorBody} for status in (403, 404, 409, 429)},
+)
+def webhook_resend(delivery_id: str, request: Request, principal=AUTH):
+    """Sends an exhausted webhook delivery again (spec v0.13.0, D5): the intention behind the attempt `delivery_id`
+    (listed in `GET /v1/handoffs/{case_id}`, `deliveries`) goes back to `pending` with another round of attempts.
+    Operator token with `handoff:operate`; audited. `202 {delivery_id, event_id, target, case_id, status: pending,
+    resend_count}`; `404 delivery_not_found`; `409 delivery_not_exhausted` (pending, delivered or rejected);
+    `409 delivery_target_not_configured` (the destination has no URL or secret now)."""
+    from merchant_assistant.api.webhooks import ResendError
+
+    operator = _operator_id(request, principal, "webhook.resend")
+    if isinstance(operator, JSONResponse):
+        return operator
+    if limited := rate_limited(request, principal):
+        return limited
+    refused, body = None, None
+    try:
+        body = request.app.state.webhooks.resend(delivery_id)
+    except ResendError as exc:
+        refused = exc
+    conn = _db(request)
+    try:
+        handoffs.audit_access(
+            conn,
+            "webhook.resend",
+            refused.code if refused else "ok",
+            principal["principal_id"],
+            None if refused else body["case_id"],
+        )
+    finally:
+        conn.close()
+    if refused:
+        return _error(refused.status, refused.code, refused.message, request)
+    return JSONResponse(status_code=202, content=body)

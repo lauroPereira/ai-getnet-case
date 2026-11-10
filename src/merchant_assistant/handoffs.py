@@ -16,14 +16,13 @@ import json
 import logging
 import re
 import sqlite3
-import threading
 import uuid
 from collections.abc import Callable
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-from merchant_assistant.data.webhook_outbox import enqueue
+from merchant_assistant.data.webhook_outbox import TARGETS, enqueue
 from merchant_assistant.guardrails.input import check_input
 
 QueueState = Literal["open", "claimed", "answered", "rejected", "closed"]
@@ -34,7 +33,10 @@ SCOPE = "handoff:operate"
 IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9_-]{8,80}$")
 STATE_AFTER: dict[str, str] = {"approve": "answered", "reply": "answered", "reject": "rejected"}  # D14
 TRANSCRIPT_TURNS = 10
-_CASE_LOCKS = tuple(threading.Lock() for _ in range(64))
+CASE_LOCK_STRIPES = 64
+# A case younger than this may belong to a turn still running in another worker (task 99): its own commit queues the
+# intention, so the startup recovery leaves it alone.
+ORPHAN_GRACE_SECONDS = 120
 
 Resume = Callable[[dict, dict], object]
 log = logging.getLogger("merchant_assistant.handoffs")
@@ -195,10 +197,11 @@ def get_case(
         "WHERE case_id=? ORDER BY created_at, rowid",
         (case_id,),
     ).fetchall()
-    deliveries = conn.execute(
-        "SELECT delivery_id, event_id, event, target, attempt, status, response_code, error, created_at "
-        "FROM webhook_deliveries "
-        "WHERE case_id=? ORDER BY created_at, rowid",
+    deliveries = conn.execute(  # each attempt with the state of its intention (v0.13.0): what can be resent
+        "SELECT d.delivery_id, d.event_id, d.event, d.target, d.attempt, d.status, d.response_code, d.error, "
+        "d.created_at, o.status AS intent_status, o.resend_count "
+        "FROM webhook_deliveries d LEFT JOIN webhook_outbox o ON o.event_id=d.event_id AND o.target=d.target "
+        "WHERE d.case_id=? ORDER BY d.created_at, d.rowid",
         (case_id,),
     ).fetchall()
     return _summary(row) | {
@@ -219,7 +222,7 @@ def get_case(
             }
             for e in events
         ],
-        "deliveries": [dict(d) for d in deliveries],  # one row per webhook attempt (task 66)
+        "deliveries": [dict(d) for d in deliveries],  # one row per webhook attempt (task 66), with its intention
     }
 
 
@@ -263,11 +266,10 @@ def claim(
 
 @contextmanager
 def _case_lock(conn: sqlite3.Connection, case_id: str):
-    """Serialize actions on a case across workers; the OS releases the lock on process exit."""
-    stripe = int.from_bytes(hashlib.sha256(case_id.encode()).digest()[:8], "big") % len(_CASE_LOCKS)
-    local = _CASE_LOCKS[stripe]
-    if not local.acquire(timeout=5):
-        raise HandoffError(503, "resume_failed", "The case is still being processed; retry the action.")
+    """Serialize actions on a case across workers and threads: a write lock on one of a bounded set of SQLite lock
+    files, held for the action and the resume that follows it. SQLite excludes every other connection, in this
+    process or another, and the OS releases the lock on process exit (no lock in memory since task 99)."""
+    stripe = int.from_bytes(hashlib.sha256(case_id.encode()).digest()[:8], "big") % CASE_LOCK_STRIPES
     lock = None
     try:
         db_path = next(row[2] for row in conn.execute("PRAGMA database_list") if row[1] == "main")
@@ -283,7 +285,6 @@ def _case_lock(conn: sqlite3.Connection, case_id: str):
     finally:
         if lock is not None:
             lock.close()
-        local.release()
 
 
 def act(
@@ -438,6 +439,72 @@ def _resume(
         "UPDATE handoff_cases SET resume_status='done', resume_error=NULL, resume_request_id=? WHERE case_id=?",
         (result.get("request_id") if isinstance(result, dict) else None, case_id),
     )
+
+
+def created_data(conn: sqlite3.Connection, case: sqlite3.Row | dict) -> dict:
+    """Body of `handoff.created` for a case: the one its turn queues and the one the startup recreates (task 99)."""
+    payload = json.loads(case["payload"] or "{}")
+    return {
+        "case_id": case["case_id"],
+        "protocol": case["protocol"],
+        "conversation_id": case["conversation_id"],
+        "customer_id": case["customer_id"],
+        "language": payload.get("language"),
+        "reason": case["reason"],
+        "summary": payload.get("summary"),
+        "pending_question": payload.get("pending_question"),
+        "draft_reply": payload.get("draft_reply"),
+        "transcript": transcript(conn, case["conversation_id"]),
+    }
+
+
+def recover_orphans(
+    conn: sqlite3.Connection,
+    targets: set[str],
+    flow_saved: Callable[[str], bool],
+    *,
+    now: datetime | None = None,
+) -> list[str]:
+    """Startup of a worker (RF-125, spec v0.13.0 D5): a turn that stopped after saving the flow of a case and before
+    queueing `handoff.created` left an `open` case no ticketing knows. Every such case (merchant channel, no ticket, no
+    event received from the ticketing, no intention in the outbox, older than ORPHAN_GRACE_SECONDS) whose flow
+    `flow_saved(thread_id)` confirms waiting at `human_review` gets the intention now, for the configured
+    destinations, in one write transaction; the dispatch delivers it. The case id and thread are written before the
+    flow is saved, so a case whose turn stopped earlier has nothing an operator could resume: it is left for the
+    merchant's resend of the same message, which saves the flow and queues the intention (ADR 0018). Returns the case
+    ids. A second worker starting at the same time finds the intentions and queues nothing more."""
+    wanted = set(targets) & set(TARGETS["handoff.created"])
+    if not wanted:
+        return []
+    cutoff = (now or datetime.now(UTC)) - timedelta(seconds=ORPHAN_GRACE_SECONDS)
+    recovered = []
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        cases = conn.execute(
+            "SELECT c.* FROM handoff_cases c WHERE c.queue_state='open' AND c.ticket_id IS NULL "
+            "AND c.thread_id IS NOT NULL AND c.channel IN ('api','web') "
+            "AND NOT EXISTS (SELECT 1 FROM webhook_inbox i WHERE i.case_id=c.case_id) "
+            "AND NOT EXISTS (SELECT 1 FROM webhook_outbox o WHERE o.case_id=c.case_id AND o.event='handoff.created') "
+            "ORDER BY c.created_at, c.rowid"
+        ).fetchall()
+        for case in cases:
+            try:
+                opened = datetime.fromisoformat(case["created_at"])
+            except (TypeError, ValueError):
+                continue
+            if (opened if opened.tzinfo else opened.replace(tzinfo=UTC)) > cutoff:
+                continue
+            if not flow_saved(case["thread_id"]):
+                continue
+            enqueue(conn, "handoff.created", created_data(conn, case), case["case_id"], wanted)
+            recovered.append(case["case_id"])
+        conn.execute("COMMIT")
+    except BaseException:
+        _rollback(conn)
+        raise
+    for case_id in recovered:
+        log.info("orphan case recovered", extra={"event": {"case_id": case_id}})
+    return recovered
 
 
 def close(

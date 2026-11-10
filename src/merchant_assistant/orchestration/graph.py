@@ -46,10 +46,10 @@ from merchant_assistant.data.clock import Clock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.webhook_outbox import TARGETS, enqueue, webhook_targets
 from merchant_assistant.guardrails.input import check_input
-from merchant_assistant.handoffs import transcript
+from merchant_assistant.handoffs import created_data
 from merchant_assistant.llm.base import LLM, OutputTokenLimitLLM
 from merchant_assistant.observability.traces import TraceRecorder, TraceStore
-from merchant_assistant.orchestration.budget import BudgetGuard, CombinedBudgetGuard
+from merchant_assistant.orchestration.budget import BudgetGuard, CombinedBudgetGuard, ReservationFence
 from merchant_assistant.orchestration.run import RunContext
 from merchant_assistant.orchestration.state import (
     Citation,
@@ -410,9 +410,11 @@ class Orchestrator:
         trace_tags: dict | None = None,
         principal: Principal | None = None,
         channel: str = "in_process",
+        reservation_fence: ReservationFence | None = None,
     ) -> MessageResponse:
         """`db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
         `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace.
+        `reservation_fence` verifies ownership before a comparison cell commits any paid reservation.
         `principal` is the authenticated caller (HTTP routes always pass it); in-process callers (CLI `ask`, offline
         evaluation) run as the merchant of `request.user_id`."""
         if request.user_id is None:
@@ -463,6 +465,7 @@ class Orchestrator:
                 },
                 router_override=router_decision,
                 channel=channel,
+                reservation_fence=reservation_fence,
             )
             if not conv.created and not check_input(request.message).blocked:  # a blocked message pays no summary
                 memory = self._summary(store, conv.conversation_id, ctx, memory)
@@ -509,14 +512,8 @@ class Orchestrator:
                     self._persist(store, conv, final, ctx.outcomes)
                     case = conn.execute("SELECT * FROM handoff_cases WHERE case_id=?", (final.escalation.case_id,))\
                         .fetchone()
-                    payload = json.loads(case["payload"] or "{}")
-                    enqueue(conn, "handoff.created", {
-                        "case_id": case["case_id"], "protocol": case["protocol"],
-                        "conversation_id": case["conversation_id"], "customer_id": case["customer_id"],
-                        "language": payload.get("language"), "reason": case["reason"],
-                        "summary": payload.get("summary"), "pending_question": payload.get("pending_question"),
-                        "draft_reply": payload.get("draft_reply"), "transcript": transcript(conn, conv.conversation_id),
-                    }, case["case_id"], webhook_targets(self.settings))
+                    enqueue(conn, "handoff.created", created_data(conn, case), case["case_id"],
+                            webhook_targets(self.settings))
                     conn.execute("COMMIT")
                 except BaseException:
                     conn.execute("ROLLBACK")
@@ -568,6 +565,17 @@ class Orchestrator:
         except Exception:  # unknown is not missing: only a checkpoint known to be absent is rebuilt
             log.exception("checkpoint lookup failed", extra={"event": {"thread_id": thread_id}})
             return True
+
+    def flow_saved(self, thread_id: str) -> bool:
+        """The flow of a case is saved and waiting at `human_review` (startup recovery of orphan cases, task 99): only
+        then can an operator's action resume it. A lookup that fails says no; the case is then completed when the
+        merchant sends the message again (ADR 0018)."""
+        try:
+            state = self.review_graph().get_state({"configurable": {"thread_id": thread_id}})
+            return bool(state.values) and any(task.interrupts for task in state.tasks)
+        except Exception:
+            log.exception("checkpoint lookup failed", extra={"event": {"thread_id": thread_id}})
+            return False
 
     def _deliver(self, store, conv, pending: dict, request, request_id: str, principal, trace_tags) -> MessageResponse:
         """D8: records the merchant's message and returns the operator's reply (route human_reply), no model call."""

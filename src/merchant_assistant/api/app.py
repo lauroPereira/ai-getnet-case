@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 
-from merchant_assistant import __version__, comparisons
+from merchant_assistant import __version__, comparisons, handoffs
 from merchant_assistant.api.identity import Identity, Principal, check_configuration
 from merchant_assistant.api.integrations import router as integrations_router
 from merchant_assistant.api.schemas import ErrorBody, ErrorDetail, MessageRequest, MessageResponse
@@ -22,7 +22,7 @@ from merchant_assistant.api.webhooks import Webhooks
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.conversations import ConversationNotFound
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.webhook_outbox import configuration_warnings
+from merchant_assistant.data.webhook_outbox import configuration_warnings, webhook_targets
 from merchant_assistant.observability import metrics
 
 log = logging.getLogger("merchant_assistant.api")
@@ -132,11 +132,21 @@ def create_app(orchestrator: Orchestrator | None = None, settings: Settings | No
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        try:  # cases whose flow was saved by a turn that stopped before queueing `handoff.created` get it (task 99)
+            flow_saved = getattr(app.state.orchestrator, "flow_saved", None)
+            if flow_saved is not None:
+                conn = connect(app.state.settings.db_path)
+                try:
+                    handoffs.recover_orphans(conn, webhook_targets(app.state.settings), flow_saved)
+                finally:
+                    conn.close()
+        except Exception:
+            log.exception("could not recover the orphan handoff cases")
         try:  # a broken outbox never keeps the API from starting: the intentions stay pending
             app.state.webhooks.recover_pending_intents()
         except Exception:
             log.exception("could not recover the pending webhook intentions")
-        try:  # no comparison thread survives the process: `running` comparisons become `interrupted` (task 84)
+        try:  # comparisons whose lease expired (their worker stopped) become `interrupted` (tasks 84 and 99)
             comparisons.interrupt_orphans(app.state)
         except Exception:
             log.exception("could not mark the interrupted comparisons")

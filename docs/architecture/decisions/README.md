@@ -28,3 +28,4 @@
 | [0022](0022-rubrica-v4-operacao-retomavel.md) | Rubrica `judge.v4` medida e não promovida; comparação retomável; métricas e alertas versionados |
 | 0023 | Reservada para a decisão do juiz da v0.11.0 |
 | [0024](0024-desenho-da-orquestracao.md) | Desenho da orquestração: grafo com replanejamento por regras, não supervisor com especialistas como ferramentas |
+| [0025](0025-identidade-e-operacao.md) | Identidade e operação: login por redirecionamento com refresh rotativo, emissor OIDC externo, lease entre workers, reenvio de webhook, operador no Telegram e spans OTLP |

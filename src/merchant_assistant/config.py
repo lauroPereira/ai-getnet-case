@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     demo_mode: bool = False
     timezone: str = "America/Sao_Paulo"
     log_level: str = "INFO"
+    # v0.13.0 (spec D6, task 101): base URL of an OTLP/HTTP collector (e.g. http://otel-collector:4318). Empty: no span
+    # is exported and nothing from `opentelemetry` is imported; set, it needs the `[otel]` extra.
+    otel_exporter_otlp_endpoint: str = ""
 
     openai_api_key: SecretStr | None = None
     typesafe_api_key: SecretStr | None = None
@@ -40,6 +43,15 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = Field(default=30, ge=1, le=10000)
     auth_attempts_per_minute: int = Field(default=10, ge=1, le=1000)  # D19: per account and address on /v1/auth/token
     auth_attempts_per_ip_per_minute: int = Field(default=30, ge=1, le=10000)  # D19: per address, across accounts
+    # v0.13.0 (spec D1, task 97): redirect URIs of the public clients for the authorization code flow, as
+    # `<client_id>=<uri>` entries separated by commas; the match is exact. Default: the web interface on this host.
+    oauth_redirect_uris: str = (
+        "merchant-assistant-web=http://localhost:8501/,merchant-assistant-web=http://127.0.0.1:8501/"
+    )
+    # v0.13.0 (spec D2, task 98): external OIDC issuers whose tokens are also accepted, as a JSON list of
+    # {"issuer", "audience", "groups": {group: role}, "algorithms"?, "groups_claim"?, "customer_id_claim"?}. Empty:
+    # only the assistant's own issuer.
+    oidc_issuers: str = ""
     # v0.7.0 webhooks (task 66; spec "Contrato entre os times / Webhooks", D11): one secret per direction. An empty
     # URL sends nothing; an empty ASSISTANT_WEBHOOK_SECRET refuses every ticketing event (503).
     ticketing_webhook_url: str | None = None  # assistant -> ticketing: handoff.created, conversation.replied, closed
@@ -47,6 +59,11 @@ class Settings(BaseSettings):
     conversation_webhook_url: str | None = None  # assistant -> merchant: conversation.replied
     conversation_webhook_secret: SecretStr | None = None
     assistant_webhook_secret: SecretStr | None = None  # ticketing -> assistant: ticket.assigned, action, solved
+    # v0.13.0 (spec D3, task 100): the Telegram adapter receives `handoff.created` (case id, protocol and the masked
+    # summary only) at this URL, signed with this secret, the same one the adapter verifies. Empty: nothing is sent.
+    telegram_webhook_url: str | None = None
+    telegram_webhook_secret: SecretStr | None = None
+    telegram_client_secret: SecretStr | None = None  # client `telegram-operator` (client credentials, operator)
     webhook_max_attempts: int = Field(default=3, ge=1, le=10)
     webhook_retry_waits_s: str = "1,2"  # waits between attempts, in seconds
     webhook_timeout_s: float = Field(default=3.0, gt=0, le=60)
@@ -114,6 +131,7 @@ class Settings(BaseSettings):
         "jwt_jwks_url",
         "ticketing_webhook_url",
         "conversation_webhook_url",
+        "telegram_webhook_url",
         mode="before",
     )
     @classmethod

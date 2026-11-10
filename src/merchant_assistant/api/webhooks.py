@@ -6,7 +6,15 @@ Outgoing events (`handoff.created`, `conversation.replied`, `handoff.closed`) ar
 text and sent by a short thread outside it: up to `WEBHOOK_MAX_ATTEMPTS` attempts (network error, timeout, 5xx or
 429 are retried; another 4xx is final), each attempt recorded in `webhook_deliveries`. The merchant's copy of
 `conversation.replied` omits `operator_id` (D29): one event id, a body per receiver, each signed with its secret.
-An empty URL sends nothing; a receiver that is down never raises in the merchant's or the operator's request."""
+An empty URL sends nothing; a receiver that is down never raises in the merchant's or the operator's request.
+
+v0.13.0 (task 99): an intention whose attempts ran out is `exhausted`; an operator resends it
+(`POST /v1/webhooks/deliveries/{id}/resend`), and the startup of a worker resends once those exhausted for more than an
+hour. Each resend allows another round of attempts. The order stays per case and destination: the later events of
+that case and destination wait for an earlier one still pending or exhausted (a reply never overtakes the creation of
+its ticket) and are delivered after its resend; one refused by its receiver no longer holds them, and other cases never
+wait. Two workers deliver from the same outbox: the lock file of each event and the attempt count read in a write
+transaction keep one delivery at a time per event and destination."""
 
 from __future__ import annotations
 
@@ -25,7 +33,7 @@ import httpx
 
 from merchant_assistant.config import Settings
 from merchant_assistant.data.db import connect
-from merchant_assistant.data.webhook_outbox import enqueue, target_config, webhook_targets
+from merchant_assistant.data.webhook_outbox import enqueue, resend, resend_exhausted, target_config, webhook_targets
 
 SIGNATURE_TOLERANCE_S = 300
 log = logging.getLogger("merchant_assistant.webhooks")
@@ -57,6 +65,14 @@ def verify_signature(
         return False
     expected = signature(secret, body, timestamp).split("v1=", 1)[1]
     return any(hmac.compare_digest(expected, candidate) for candidate in candidates)
+
+
+class ResendError(Exception):
+    """A refused resend, with its HTTP status and error code."""
+
+    def __init__(self, status: int, code: str, message: str) -> None:
+        super().__init__(message)
+        self.status, self.code, self.message = status, code, message
 
 
 class Webhooks:
@@ -95,7 +111,8 @@ class Webhooks:
 
     def recover_pending_intents(self) -> None:
         """Start of the API: delivers every intention still `pending` in the outbox (`handoff.created`,
-        `conversation.replied`, `handoff.closed`) and queues the closing events of cases closed before 0010."""
+        `conversation.replied`, `handoff.closed`), queues the closing events of cases closed before 0010 and queues
+        again, once, the intentions exhausted for more than an hour (task 99)."""
         conn = connect(self.settings.db_path)
         try:
             cases = conn.execute(
@@ -111,9 +128,65 @@ class Webhooks:
                     "case_id": case["case_id"], "protocol": case["protocol"], "closed_at": case["closed_at"],
                     "closed_by": case["closed_by"],
                 }, case["case_id"], webhook_targets(self.settings))
+            conn.execute("BEGIN IMMEDIATE")  # two workers starting together queue each one again only once
+            try:
+                again = resend_exhausted(conn)
+                conn.execute("COMMIT")
+            except BaseException:
+                if conn.in_transaction:
+                    conn.execute("ROLLBACK")
+                raise
         finally:
             conn.close()
+        for event_id, target in again:
+            log.info("exhausted webhook queued again", extra={"event": {"id": event_id, "target": target}})
         self.dispatch_pending()
+
+    def resend(self, delivery_id: str) -> dict:
+        """Operator's resend of the intention behind one recorded attempt (`delivery_id`): an `exhausted` intention
+        goes back to `pending` with another round of attempts and the dispatch starts. `404 delivery_not_found`;
+        `409 delivery_not_exhausted` for an intention pending, delivered or rejected by its receiver;
+        `409 delivery_target_not_configured` when its destination has no URL or secret now (nothing could send it)."""
+        conn = connect(self.settings.db_path)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                row = conn.execute(
+                    "SELECT d.event_id, d.target, d.case_id, o.status FROM webhook_deliveries d "
+                    "JOIN webhook_outbox o ON o.event_id=d.event_id AND o.target=d.target WHERE d.delivery_id=?",
+                    (delivery_id,),
+                ).fetchone()
+                if row is None:
+                    raise ResendError(404, "delivery_not_found", "Webhook delivery not found.")
+                if row["status"] == "exhausted" and not all(self._target(row["target"])):
+                    raise ResendError(
+                        409,
+                        "delivery_target_not_configured",
+                        f"The {row['target']} destination has no webhook URL or secret configured now.",
+                    )
+                count = resend(conn, row["event_id"], row["target"])
+                if count is None:
+                    raise ResendError(
+                        409,
+                        "delivery_not_exhausted",
+                        f"Only an exhausted delivery can be resent; this one is {row['status']}.",
+                    )
+                conn.execute("COMMIT")
+            except BaseException:
+                if conn.in_transaction:
+                    conn.execute("ROLLBACK")
+                raise
+        finally:
+            conn.close()
+        self._wake()
+        return {
+            "delivery_id": delivery_id,
+            "event_id": row["event_id"],
+            "target": row["target"],
+            "case_id": row["case_id"],
+            "status": "pending",
+            "resend_count": count,
+        }
 
     def resume_point(self, resume: Callable[[dict, dict], dict] | None) -> Callable[[dict, dict], dict] | None:
         """Wraps the single resume point: a successful resume emits `conversation.replied` (a failed one does not)."""
@@ -138,10 +211,13 @@ class Webhooks:
     def dispatch_pending(self) -> None:
         conn = connect(self.settings.db_path)
         try:
+            # Order per case and destination: an event waits for the earlier ones still pending or exhausted, so a
+            # reply never overtakes the creation of its ticket; the resend of the exhausted one lets it through. One
+            # refused by its receiver is final and no longer holds the next ones back; other cases never wait.
             pending = conn.execute(
                 "SELECT o.event_id, o.target, o.body FROM webhook_outbox o WHERE o.status='pending' "
                 "AND NOT EXISTS (SELECT 1 FROM webhook_outbox prior WHERE prior.case_id=o.case_id "
-                "AND prior.target=o.target AND prior.rowid<o.rowid AND prior.status!='delivered') "
+                "AND prior.target=o.target AND prior.rowid<o.rowid AND prior.status IN ('pending','exhausted')) "
                 "ORDER BY o.rowid"
             ).fetchall()
         finally:
@@ -188,14 +264,20 @@ class Webhooks:
                     try:
                         conn.execute("BEGIN IMMEDIATE")
                         row = conn.execute(
-                            "SELECT attempts,status FROM webhook_outbox WHERE event_id=? AND target=?", key
+                            "SELECT attempts,status,resend_count FROM webhook_outbox WHERE event_id=? AND target=?",
+                            key,
                         ).fetchone()
                         if row is None or row["status"] != "pending":
                             conn.execute("COMMIT")
                             return
                         attempt = row["attempts"] + 1
-                        if attempt > self.settings.webhook_max_attempts:
-                            conn.execute("UPDATE webhook_outbox SET status='failed' WHERE event_id=? AND target=?", key)
+                        # Each resend allows another round; attempt numbers keep growing, so every row of
+                        # `webhook_deliveries` stays one attempt.
+                        limit = self.settings.webhook_max_attempts * (1 + row["resend_count"])
+                        if attempt > limit:
+                            conn.execute(
+                                "UPDATE webhook_outbox SET status='exhausted' WHERE event_id=? AND target=?", key
+                            )
                             conn.execute("COMMIT")
                             return
                         conn.execute(
@@ -229,11 +311,12 @@ class Webhooks:
                         status = "rejected"  # the receiver refused this event: repeating it changes nothing
                     else:
                         status = "error"
-                    self._record(event, name, attempt, status, code, error)
+                    self._record(event, name, attempt, status, code, error, limit)
                     if status != "error":
                         return
-                    if attempt < self.settings.webhook_max_attempts:
-                        self.sleep(waits[min(attempt - 1, len(waits) - 1)])
+                    if attempt < limit:
+                        round_attempt = (attempt - 1) % self.settings.webhook_max_attempts
+                        self.sleep(waits[min(round_attempt, len(waits) - 1)])
         except Exception:  # a delivery thread never takes anything down with it
             schedule_more = False
             log.exception("webhook delivery failed", extra={"event": {"id": event.get("id"), "target": name}})
@@ -248,7 +331,9 @@ class Webhooks:
             with self._lock:
                 self._threads.discard(threading.current_thread())
 
-    def _record(self, event: dict, target: str, attempt: int, status: str, code: int | None, error: str | None):
+    def _record(
+        self, event: dict, target: str, attempt: int, status: str, code: int | None, error: str | None, limit: int
+    ):
         conn = connect(self.settings.db_path)
         try:
             conn.execute("BEGIN IMMEDIATE")
@@ -257,9 +342,7 @@ class Webhooks:
                 "WHERE event_id=? AND target=? AND attempt=?",
                 (status, code, error, event["id"], target, attempt),
             )
-            final = status if status != "error" else (
-                "failed" if attempt >= self.settings.webhook_max_attempts else "pending"
-            )
+            final = status if status != "error" else ("exhausted" if attempt >= limit else "pending")
             conn.execute(
                 "UPDATE webhook_outbox SET status=? WHERE event_id=? AND target=?", (final, event["id"], target)
             )

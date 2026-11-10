@@ -41,10 +41,13 @@ services:
       MOCKS_URL: http://mocks:8001
       DEMO_MODE: ${DEMO_MODE:-true}
       BUDGET_LIMIT_USD: ${BUDGET_LIMIT_USD:-1.00}
+      API_WORKERS: ${API_WORKERS:-2}  # uvicorn --workers (v0.13.0); 1 returns to a single worker
       # v0.7.0 identity: issuer seen by the other containers; fictitious example credentials (same as .env.example).
       JWT_ISSUER: ${JWT_ISSUER:-http://api:8000}
       DEMO_USER_PASSWORDS: ${DEMO_USER_PASSWORDS:-cliente1988:cliente1988-fictitious,cliente_demo_002:cliente-demo-002-fictitious,op_ana:op-ana-fictitious,op_bruno:op-bruno-fictitious}
       TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
+      # v0.13.0 (task 98): external OIDC issuers, empty by default; .env.example has the value for the `oidc` profile.
+      OIDC_ISSUERS: ${OIDC_ISSUERS:-}
       # v0.7.0 webhooks (task 66): container addresses, fixed here like MOCKS_URL; one fictitious secret per direction,
       # the same values as the ticketing and mocks blocks and .env.example.
       TICKETING_WEBHOOK_URL: http://ticketing:8002/webhooks/assistant
@@ -52,6 +55,13 @@ services:
       TICKETING_WEBHOOK_SECRET: ${TICKETING_WEBHOOK_SECRET:-ticketing-webhook-secret-fictitious}
       ASSISTANT_WEBHOOK_SECRET: ${ASSISTANT_WEBHOOK_SECRET:-assistant-webhook-secret-fictitious}
       CONVERSATION_WEBHOOK_SECRET: ${CONVERSATION_WEBHOOK_SECRET:-conversation-webhook-secret-fictitious}
+      # v0.13.0 (task 100): the Telegram adapter of the `telegram` profile; empty URL = no case goes to Telegram.
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      TELEGRAM_CLIENT_SECRET: ${TELEGRAM_CLIENT_SECRET:-}
+      TELEGRAM_BOT_TOKEN: ""  # the bot token belongs to the adapter only; this blanks the one the .env would pass
+      # v0.13.0 (task 101): OTLP span export, empty = off; http://otel-collector:4318 with `--profile otel`.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     volumes:
       - runtime:/app/runtime
     restart: unless-stopped
@@ -79,7 +89,105 @@ services:
       retries: 6
     restart: unless-stopped
 
+  dex:  # v0.13.0 (task 98): external OIDC issuer of the demonstration, only with `--profile oidc`
+    image: ghcr.io/dexidp/dex:v2.41.1
+    profiles: ["oidc"]
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    volumes:
+      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro  # synthetic users and fictitious secrets
+    ports:
+      - "127.0.0.1:5556:5556"  # token endpoint for the smoke test on this host; `iss` stays http://dex:5556/dex
+    healthcheck:  # busybox wget of the Alpine-based image
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5556/dex/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  telegram:  # v0.13.0 (task 100): operator on Telegram, only with `--profile telegram` and a bot token
+    build: .
+    profiles: ["telegram"]
+    entrypoint: ["python", "-m", "merchant_assistant.integrations.telegram"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:  # no env_file: the adapter never receives the provider keys
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_OPERATOR_CHAT_ID: ${TELEGRAM_OPERATOR_CHAT_ID:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      TELEGRAM_CLIENT_SECRET: ${TELEGRAM_CLIENT_SECRET:-}
+      TELEGRAM_DB_PATH: /app/runtime/telegram.sqlite3
+      TELEGRAM_HOST: 0.0.0.0
+      ASSISTANT_URL: http://api:8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose:
+      - "8003"  # reached only by the api, at http://telegram:8003/webhooks/assistant
+    volumes:
+      - telegram_runtime:/app/runtime  # own database: cases shown, updates applied, polling offset
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+    restart: on-failure:3
+
+  # v0.13.0 (task 101): telemetry, only with `--profile otel`. The collector receives the OTLP spans and prints them
+  # (`docker compose logs otel-collector`); Prometheus scrapes /metrics and loads alerts/rules.yml; Grafana opens the
+  # versioned dashboard observability/grafana/assistant.json over Prometheus.
+  otel-collector:
+    image: otel/opentelemetry-collector:0.115.0
+    profiles: ["otel"]
+    command: ["--config=/etc/otelcol/collector.yaml"]
+    volumes:
+      - ./docker/otel/collector.yaml:/etc/otelcol/collector.yaml:ro
+    ports:
+      - "127.0.0.1:4318:4318"  # OTLP/HTTP for an API run on this host; the api container uses otel-collector:4318
+    # no healthcheck: the image has no shell nor HTTP client; `docker compose ps` shows it running and its log says
+    # "Everything is ready"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    profiles: ["otel"]
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./docker/otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts/rules.yml:/etc/prometheus/rules.yml:ro
+    ports:
+      - "127.0.0.1:9090:9090"
+    healthcheck:  # busybox wget of the image
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9090/-/healthy"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    profiles: ["otel"]
+    depends_on:
+      - prometheus
+    environment:
+      # demonstration credentials (fictitious, same as .env.example): replace them before exposing Grafana
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-admin-fictitious}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./docker/otel/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/otel/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./observability/grafana:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:  # busybox wget of the Alpine-based image
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
 volumes:
   qdrant_storage:
   runtime:
   ticketing_runtime:
+  telegram_runtime:

@@ -22,7 +22,7 @@ from merchant_assistant.config import PROJECT_ROOT, Settings
 from merchant_assistant.data.clock import FixedClock
 from merchant_assistant.data.db import connect
 from merchant_assistant.data.seed import seed
-from merchant_assistant.testing import merchant_headers, token_headers
+from merchant_assistant.testing import join_comparison, merchant_headers, token_headers
 from merchant_assistant.tools import registry
 from merchant_assistant.tools.base import CustomerContext, ToolEnv
 
@@ -161,8 +161,6 @@ def test_paid_routes_pass_the_rate_limit(offline, settings, monkeypatch):
 def test_admin_acts_on_the_demo_merchant_in_v1_but_not_in_post_messages(offline, settings):
     """D20 revised: no merchant in the admin token; on /v1 (messages, conversations, Router comparison, comparisons,
     evaluations) the admin acts on the demo's synthetic merchant, as in v0.6.0; POST /messages refuses it."""
-    from merchant_assistant import comparisons
-
     client, _, _ = offline()
     admin = token_headers(client, ADMIN)
     claims = client.app.state.identity.decode(admin["Authorization"][7:])
@@ -212,8 +210,7 @@ def test_admin_acts_on_the_demo_merchant_in_v1_but_not_in_post_messages(offline,
     )
     assert created.status_code == 202, created.text
     comparison_id = created.json()["comparison_id"]
-    if thread := comparisons._ACTIVE.get(comparison_id):
-        thread.join(timeout=60)
+    join_comparison(comparison_id)
     assert client.get(f"/v1/comparisons/{comparison_id}", headers=admin).status_code == 200
     principal = db.execute("SELECT customer_id FROM api_principals WHERE principal_id='admin:default'").fetchone()
     assert principal[0] is None  # the principal itself keeps no merchant

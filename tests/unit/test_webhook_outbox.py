@@ -18,8 +18,8 @@ def test_outbox_delivers_in_case_order_with_stable_ids(tmp_path):
         ticketing_webhook_secret=SecretStr("synthetic-secret"),
     )
     conn = connect(settings.db_path)
-    first = enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1")
-    second = enqueue(conn, "handoff.closed", {"case_id": "hc_1"}, "hc_1")
+    first = enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
+    second = enqueue(conn, "handoff.closed", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
     conn.close()
     received = []
 
@@ -40,14 +40,16 @@ def test_outbox_delivers_in_case_order_with_stable_ids(tmp_path):
     conn.close()
 
 
-def test_failed_first_event_blocks_later_event_and_stays_failed_after_restart(tmp_path):
+def test_exhausted_first_event_blocks_the_later_one_and_a_restart_sends_neither_again(tmp_path):
+    """An exhausted intention holds back the later events of its case and destination until it is resent (task 99);
+    within an hour of its last attempt a restart does not send it again (an operator can)."""
     settings = Settings(
         _env_file=None, runtime_dir=tmp_path, ticketing_webhook_url="http://ticketing.test/events",
         ticketing_webhook_secret=SecretStr("synthetic-secret"),
     )
     conn = connect(settings.db_path)
-    enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1")
-    enqueue(conn, "handoff.closed", {"case_id": "hc_1"}, "hc_1")
+    enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
+    enqueue(conn, "handoff.closed", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
     conn.close()
     requests = []
 
@@ -65,7 +67,34 @@ def test_failed_first_event_blocks_later_event_and_stays_failed_after_restart(tm
     assert len(requests) == 3
     conn = connect(settings.db_path)
     assert [tuple(row) for row in conn.execute("SELECT status,attempts FROM webhook_outbox ORDER BY rowid")] == [
-        ("failed", 3), ("pending", 0)
+        ("exhausted", 3), ("pending", 0)
+    ]
+    conn.close()
+
+
+def test_a_first_event_refused_by_its_receiver_no_longer_blocks_the_later_one(tmp_path):
+    """Task 99: a refusal (4xx) is final, nothing would let the later events through: they are delivered."""
+    settings = Settings(
+        _env_file=None, runtime_dir=tmp_path, ticketing_webhook_url="http://ticketing.test/events",
+        ticketing_webhook_secret=SecretStr("synthetic-secret"),
+    )
+    conn = connect(settings.db_path)
+    enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
+    enqueue(conn, "handoff.closed", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
+    conn.close()
+    requests = []
+
+    def refuse_the_creation(request):
+        requests.append(json.loads(request.content)["type"])
+        return httpx.Response(422 if requests[-1] == "handoff.created" else 200)
+
+    hooks = Webhooks(settings, transport=httpx.MockTransport(refuse_the_creation), sleep=lambda _: None)
+    hooks.dispatch_pending()
+    assert hooks.wait()
+    assert requests == ["handoff.created", "handoff.closed"]
+    conn = connect(settings.db_path)
+    assert [tuple(row) for row in conn.execute("SELECT status,attempts FROM webhook_outbox ORDER BY rowid")] == [
+        ("rejected", 1), ("delivered", 1)
     ]
     conn.close()
 
@@ -77,7 +106,7 @@ def test_pending_row_with_every_attempt_used_fails_without_a_request(tmp_path):
     )
     assert settings.webhook_max_attempts == 3
     conn = connect(settings.db_path)
-    enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1")
+    enqueue(conn, "handoff.created", {"case_id": "hc_1"}, "hc_1", webhook_targets(settings))
     conn.execute("UPDATE webhook_outbox SET attempts=3")  # the third attempt was made before a restart
     conn.close()
     requests = []
@@ -91,7 +120,7 @@ def test_pending_row_with_every_attempt_used_fails_without_a_request(tmp_path):
     assert hooks.wait()
     assert requests == []
     conn = connect(settings.db_path)
-    assert [tuple(row) for row in conn.execute("SELECT status,attempts FROM webhook_outbox")] == [("failed", 3)]
+    assert [tuple(row) for row in conn.execute("SELECT status,attempts FROM webhook_outbox")] == [("exhausted", 3)]
     conn.close()
 
 
@@ -102,7 +131,7 @@ def test_enqueue_never_replaces_an_existing_intention(tmp_path):
     before = [tuple(row) for row in conn.execute("SELECT * FROM webhook_outbox")]
     enqueue(conn, "handoff.created", {"case_id": "hc_1", "summary": "a different body"}, "hc_1")
     assert [tuple(row) for row in conn.execute("SELECT * FROM webhook_outbox")] == before
-    assert "first body" in before[0][5] and before[0][6:] == (2, "delivered")
+    assert "first body" in before[0][5] and before[0][6:] == (2, "delivered", 0)  # resend_count since 0016
 
 
 def test_destination_without_a_url_gets_no_intention(tmp_path):

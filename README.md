@@ -17,7 +17,7 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
 
 Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
 
-**Status:** v0.12.0 (not released). The campaign judge defaults to `judge.v5`; hybrid retrieval uses the measured `hybrid@36` control and reranks by default. What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
+**Status:** v0.13.0 (not released). It adds sign-in by redirect, external OIDC issuers, two API workers, webhook resend, the operator on Telegram and OTLP spans. The campaign judge defaults to `judge.v5`; hybrid retrieval uses the measured `hybrid@36` control and reranks by default. What each version added is in [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation), and what comes next in the [Roadmap](#roadmap).
 
 ### Where each part of the challenge lives
 
@@ -75,7 +75,8 @@ Useful endpoints:
 
 | Endpoint | Purpose |
 | --- | --- |
-| `POST /v1/auth/token` | OAuth 2.0 token (form encoded): `grant_type=password` for the demo users, `client_credentials` for the ticketing service; returns a JWT (RS256) |
+| `GET /v1/auth/authorize` | Sign-in by redirect (authorization code with PKCE S256) for web clients: a login page served by the API, then back to the registered `redirect_uri` with a one-time code |
+| `POST /v1/auth/token` | OAuth 2.0 token (form encoded): `authorization_code` and `refresh_token` (rotating) for web clients, `password` for the demo users (smoke test and CLI), `client_credentials` for the ticketing and Telegram services; returns a JWT (RS256) |
 | `POST /messages` | The assistant. Header `Authorization: Bearer <token>`. Body: `{"message": "...", "conversation_id": "conv_..." (optional), "user_id": "..." (optional; must match the token, otherwise `403 identity_mismatch`)}` |
 | `GET /health`, `GET /ready` | Liveness; readiness reports index size, database and remaining budget |
 | `GET /traces/{request_id}` | Step-by-step trace with a token: merchants see only their own (demo mode, on with the shipped `.env.example` and in compose) |
@@ -151,9 +152,14 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `DEMO_USER_PASSWORDS` | fictitious values in `.env.example` | `user:password` pairs of the synthetic users (`cliente1988`, `cliente_demo_002`, operators `op_ana`, `op_bruno`); stored as PBKDF2 hashes |
 | `API_DEMO_PASSWORD`, `API_ADMIN_PASSWORD` | empty (off) | Passwords of the `demo` and `admin` users of the `/v1` interface |
 | `JWT_ISSUER`, `JWT_PRIVATE_KEY_PATH`, `JWT_JWKS_URL` | own issuer, key generated in the runtime | Token issuer; `JWT_JWKS_URL` switches verification to an external OIDC issuer |
+| `OAUTH_REDIRECT_URIS` | the interface on this host (`http://localhost:8501/`, `http://127.0.0.1:8501/`) | Registered redirect URIs of the public clients for the sign-in by redirect (`<client_id>=<uri>`, exact match, https or http on the loopback); empty turns it off |
+| `OIDC_ISSUERS` | empty (own issuer only) | External OIDC issuers also accepted, with their `groups` (or another claim named by `groups_claim`) mapped to a role; `docker compose --profile oidc up` starts Dex with synthetic users, whose static accounts emit no `groups`, so the matching value in `.env.example` maps their e-mail by exact address; the e-mail must come with `email_verified: true`. Use `OIDC_ISSUERS` for a standard OIDC provider next to the own issuer; use `JWT_JWKS_URL` only to replace the own issuer by one that signs tokens in the assistant's format (`role`, `scope`, `customer_id`) |
 | `RATE_LIMIT_PER_MINUTE` | `30` | Requests per principal |
+| `API_WORKERS` | `2` (compose) | API worker processes; see [Operating notes](#operating-notes) |
 | `TICKETING_WEBHOOK_URL`, `CONVERSATION_WEBHOOK_URL` and their secrets | Compose values | Signed webhooks to the ticketing service and to the merchant receiver; an empty URL turns a destination off; a URL without a secret is warned at startup |
 | `WEBHOOK_MAX_ATTEMPTS`, `WEBHOOK_RETRY_WAITS_S`, `WEBHOOK_TIMEOUT_S` | `3`, `1,2`, `3` | Delivery attempts (total per event and destination, also across restarts) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OPERATOR_CHAT_ID`, `TELEGRAM_WEBHOOK_URL`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_CLIENT_SECRET` | empty (off) | Operator on Telegram with `docker compose --profile telegram up`; see [Operator on Telegram](#operator-on-telegram) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | empty (off) | Base URL of an OTLP/HTTP collector for the request spans; see [Observability](#observability) |
 
 `DEEPSEEK_API_KEY` is required for the default `eval --judge` evaluator and optional for the DeepSeek model profiles (Hybrid: Router; Adjusted: Router and Support). `TYPESAFE_API_KEY` enables the alternative Router engine; neither key is needed for `POST /messages`. Every secret in `.env.example` is a fictitious demo value named as such; the API warns at startup when one of them is in use. The web app signs in with a user and password and never receives a provider key.
 
@@ -450,7 +456,7 @@ tests), with `store=false`:
 ## Observability
 
 - **Structured JSON logs** on stdout: one line per step and per request (`request_id`, route, agents, tools,
-  duration, tokens, cost, model, errors). Message text is not logged.
+  duration, tokens, cost, model, errors, and the `pid` of the worker). Message text is not logged.
 - **Traces** in SQLite (`runtime/traces.sqlite3`): every node and tool call with duration, status, prompt version,
   retrieval hits and guard results. `GET /traces/{request_id}` in demo mode.
 - **Budget ledger** (`runtime/budget.sqlite3`): every paid call with reserved and actual cost; `/ready` shows what
@@ -485,6 +491,25 @@ tests), with `store=false`:
   - job_name: merchant-assistant
     static_configs: [{targets: ["localhost:8000"]}]
   ```
+
+- **OpenTelemetry spans** (optional): with `OTEL_EXPORTER_OTLP_ENDPOINT` set, every saved trace is also sent over
+  OTLP/HTTP as one `turn` span with one child span per step (node, tool call, operator reply), each with its own
+  duration and status. Attributes come from the same closed sets as the metric labels (route, status, step, agent,
+  replan origin, provider), so no message text, identifier, token or error text leaves in a span. The export runs in
+  a background batch with a 2 s timeout on a provider of its own: a collector that is down never delays or fails a
+  reply. It needs the `[otel]` extra (`pip install -e ".[otel]"`; the Docker image has it); without the extra or the
+  variable, nothing is exported.
+- **Dashboard** in [`observability/grafana/assistant.json`](observability/grafana/assistant.json): route mix, p95
+  duration, spend by provider, budget, handoffs and replan origins, all over `/metrics` (a test checks every query
+  against the real exposition). The `otel` profile runs the whole stack on this host:
+
+  ```bash
+  OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318 docker compose --profile otel up -d
+  docker compose logs otel-collector   # the spans of each request
+  ```
+
+  Prometheus (`127.0.0.1:9090`) scrapes `/metrics` and loads `alerts/rules.yml`; Grafana (`127.0.0.1:3000`, user
+  `admin`, password `GRAFANA_ADMIN_PASSWORD`, a fictitious demo value in `.env.example`) opens the dashboard.
 
 ## Testing and evaluation
 
@@ -587,6 +612,10 @@ Recorded as ADRs (in Portuguese) in [`docs/architecture/decisions/`](docs/archit
 - **A graph with a Router plan and rule-based replanning**, not a supervisor with specialists as tools: every
   decision has a named origin, hop and scope limits live in code, and the whole flow is testable with a scripted
   model ([ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md)).
+- **Standard identity and stateless workers** (v0.13.0): authorization code with PKCE and rotating refresh on the own
+  issuer, external OIDC issuers by configuration with roles and scopes kept in code, and coordination between API
+  workers through SQLite (comparison lease, `BEGIN IMMEDIATE`) instead of a new service
+  ([ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md)).
 
 Other choices: a deterministic case prefix (history + healthcheck) instead of letting the model decide; Personality
 as a separate, guarded step (from the challenge diagram) so tone changes cannot alter facts; answers in the
@@ -608,8 +637,9 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured semantically, not only by literal labels |
 | v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | Retrieval chosen by a rule written before measuring it on unseen questions, and the judge chosen by experiment rather than preference |
 | v0.10.0 | `judge.v4` measured against the human calibration with both judges (not promoted by the pre-registered rule); comparison that survives a process kill and resumes; `GET /metrics` and versioned alert rules | The rubric finding of v0.9.0 measured with both judges; a comparison survives a restart without paying a cell twice; the operation gets metrics and alerts |
-| v0.12.0 | Bounded rolling summary and fact register; `REPLAN=off` and `eval-compare`; sale cancellation with explicit confirmation, idempotency, and audit; [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md) | Long conversations keep a bounded context and disclose when older details are missing; replanning can be compared across cases; cancellation executes only after explicit confirmation |
 | v0.11.0 | Web-page evidence for evaluation; `judge.v5` by claim; two-rater calibration; measured `hybrid@36` control and BM25 floor; combined deterministic and content ruler; reranker default enabled by the D7 rule | Answers are checked against cited web text and each individual claim; retrieval uses an independent depth control |
+| v0.12.0 | Bounded rolling summary and fact register; `REPLAN=off` and `eval-compare`; sale cancellation with explicit confirmation, idempotency, and audit; [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md) | Long conversations keep a bounded context and disclose when older details are missing; replanning can be compared across cases; cancellation executes only after explicit confirmation |
+| v0.13.0 | Sign-in by redirect (authorization code with PKCE) and rotating refresh tokens; external OIDC issuers with roles mapped by groups or exact verified email (Dex in the compose); two API workers sharing a comparison lease in SQLite; recovery and resend for webhook deliveries and unannounced cases; [operator on Telegram](#operator-on-telegram); optional OTLP spans and a Grafana dashboard; [ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md) | Redirect login and configured identity providers; resumable comparisons across workers; recoverable webhook and handoff state; the same operator actions from Telegram; optional telemetry in an OTLP collector |
 
 ### Identity and human in the loop (v0.7.0)
 
@@ -648,12 +678,15 @@ second resume of the same case gets `409 already_resumed`. The v0.7.0 story QA w
 and the ticketing screen ([story QA](docs/evidence/v070-qa.md), moments 6 to 14).
 
 - **Identity** ([ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md)). The assistant issues RS256 JWTs (own issuer, JWKS and discovery). Roles `merchant`, `operator`, `service`, `demo` and `admin` carry scopes; every tool call checks scope and merchant and writes an audit row with principal, scope and result. Tokens can be revoked; requests are rate-limited per principal and login attempts are limited.
+- **Sign-in by redirect (v0.13.0)** ([ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md)). A web client sends the user to `GET /v1/auth/authorize` with its registered `redirect_uri`, a PKCE S256 challenge and a `state`; the API's login page (no script, no framing) returns a one-time code valid for 60 s, exchanged at `POST /v1/auth/token` with the `code_verifier`. The response adds a rotating refresh token: each use returns a new one of the same family, valid 8 h unused and 24 h per family; presenting a used one revokes the whole family. The password grant stays for the smoke test and the CLI, marked as demonstration in `/docs`.
+- **External OIDC issuers (v0.13.0).** Tokens of the issuers in `OIDC_ISSUERS` are accepted next to the own issuer, which stays the default: exact `iss`, asymmetric algorithms only, `aud`, `exp`, `iat`, at most 24 h of lifetime, keys from the issuer's discovery and JWKS (cached, renewed on a key rotation at a limited rate, 4 s per fetch). The groups claim (or the e-mail, by exact address, with `groups_claim` `email`; the e-mail must come with `email_verified: true`) maps to exactly one role and the scopes are the role's; a token from an unknown issuer gets `401 invalid_issuer`, and an issuer that is down refuses only its own tokens. `docker compose --profile oidc up` starts Dex with synthetic users, mapped by e-mail because its static accounts emit no `groups`.
 
 **The identity chain, with where each step lives.** Since v0.7.0 every request follows
 `credential → authenticated principal → authorization → merchant`, with every tool call authorized:
 
 ```text
-credential               POST /v1/auth/token (password grant for demo users, client_credentials for the ticketing service)
+credential               POST /v1/auth/token (authorization code with PKCE and refresh for web clients, password grant for demo
+                         users, client_credentials for services) or a token of an external OIDC issuer (OIDC_ISSUERS)
     ↓
 authenticated principal  RS256 JWT from the assistant's own issuer; verified on every request (api/identity.py: Identity.verify,
                          principal_from_claims); roles merchant | operator | service | demo | admin with scopes; revocation; rate limit
@@ -675,6 +708,14 @@ empty: the key is generated at startup).
 - **Queue.** States `open → claimed → answered | rejected → closed`; claim and actions are idempotent (`idempotency_key`), a second resume gets `409 already_resumed`, another operator's claim `409 claimed_by_other`. API (`GET /v1/handoffs`, `POST /v1/handoffs/{id}/claim`, `POST /v1/handoffs/{id}/actions`), CLI (`merchant-assistant operator list|show|act`) and the ticketing service go through the same service.
 - **Ticketing service.** A separate service in Compose with a Zendesk/Freshdesk-style contract (own database, published on `127.0.0.1:8002`), with the ticket cycle `new → open → pending → solved` and an operator screen in the web project. It talks to the assistant only through signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction) and a `client_credentials` token. Incoming events are idempotent by id and a repeated refused event gets the original `409`/`422` back.
 - **Durable delivery.** Each outgoing event and destination is written to an outbox (migration 0010) in the same transaction as the change it reports; a dispatcher delivers it with up to three attempts in total, recorded and visible in the case, and recovers pending deliveries when the API starts.
+
+#### Operator on Telegram
+
+An operator can work the queue from a Telegram chat (v0.13.0). A small adapter service receives each new case as a signed `handoff.created` webhook and posts the protocol and the masked summary to the operator chat; the operator answers there and the reply reaches the merchant in the same conversation, marked `via=operator`.
+
+- **Setup.** Create a bot with @BotFather, add it to the operator chat and set in `.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OPERATOR_CHAT_ID` (numeric id of that chat), `TELEGRAM_WEBHOOK_URL=http://telegram:8003/webhooks/assistant`, `TELEGRAM_WEBHOOK_SECRET` and `TELEGRAM_CLIENT_SECRET` (any long random values). Then `docker compose --profile telegram up`. Without a bot token the adapter does not start and the API sends nothing to Telegram.
+- **Commands.** Reply to the case message with `/claim`, `/approve`, `/reply <text>` or `/reject <instruction>`, or put the protocol after the command (`/reply HO-20261107-A1B2C3 <text>`); the case message also has Claim and Approve buttons. A command addressed to another bot of the chat (`/approve@other_bot`) is ignored. Each command becomes a call to `/v1/handoffs/{id}/claim` or `/actions` with the token of the service operator `telegram-operator` (`client_credentials`).
+- **Guarantees.** Only the configured chat is served. Each Telegram update is applied once, also across restarts (the idempotency key comes from the update id, and the polling offset advances only after the update is processed). Conflicts, rate limits and outages come back as short messages; an outage offers a Retry button that repeats the same action. The bot token never reaches a log.
 
 ### Demonstration API (v0.6.0)
 
@@ -728,7 +769,8 @@ another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example clie
 
 ## Operating notes
 
-- Run the API with one worker (the compose does): the comparison registry lives in the API process. The compose publishes the API on `127.0.0.1:8000` and the ticketing service on `127.0.0.1:8002`.
+- The compose runs the API with two workers (`API_WORKERS`, default 2; `1` returns to a single worker). Nothing is kept per process: a running comparison holds a lease in SQLite (renewed every 5 s, expired after 20 s); when its worker stops, any worker marks it `interrupted`, and its owner resumes it with `POST /v1/comparisons/{id}/resume`, served by whichever worker answers. Two or more workers need Qdrant as a service (the compose sets `QDRANT_URL`): the embedded store under `data/runtime/qdrant` (empty `QDRANT_URL`) can be opened by one process only, so outside the compose run a single worker with it, or point `QDRANT_URL` to a Qdrant server. The compose publishes the API on `127.0.0.1:8000` and the ticketing service on `127.0.0.1:8002`.
+- An outgoing webhook whose attempts ran out is `exhausted`: an operator resends it with `POST /v1/webhooks/deliveries/{delivery_id}/resend`, and a worker's startup resends once those exhausted for more than an hour. The later events of the same case and destination wait for it and follow its resend in order, so a reply never reaches the ticketing before its ticket exists; other cases never wait. A case whose flow was saved by a turn that stopped before telling the ticketing is announced at the next startup; one whose flow was not saved yet is completed when the merchant sends the message again.
 - The users, passwords and secrets in `.env.example` are fictitious demo values; replace them before exposing the API beyond the local machine.
 - Product answers come from snapshots of Getnet's official pages taken on 2026-10-26; refreshing a JavaScript-rendered page needs a browser capture.
 - Every paid call goes through the installation ledger (`BUDGET_LIMIT_USD`, up to US$5.00 per ledger under the implementation ceiling); an operational campaign or cycle cap is separate. `/ready` shows what is left and `docker compose down -v` resets the local ledger.
@@ -758,7 +800,8 @@ src/merchant_assistant/
   data/           clock, SQLite schema, seed, status glossary
   llm/            provider interface, OpenAI client, scripted model, prompts, prices
   evaluation/     retrieval and end-to-end evaluation, scripted policy
-  observability/  JSON logging, traces
+  observability/  JSON logging, traces, metrics, OTLP spans
+observability/    Grafana dashboard (grafana/assistant.json); alert rules in alerts/
 prompts/          versioned prompts (router, knowledge_*, support, escalation, personality, judge)
 data/             sources, snapshots, demo corpus (runtime/ is generated and ignored)
 tests/            unit, integration, labeled scenarios

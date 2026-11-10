@@ -10,11 +10,10 @@ import sqlite3
 import pytest
 from pydantic import SecretStr
 
-from merchant_assistant import comparisons
 from merchant_assistant.api import v1
 from merchant_assistant.llm.jev import JEV_MODEL, JevRouter
 from merchant_assistant.orchestration.budget import BudgetExceeded
-from merchant_assistant.testing import key_token
+from merchant_assistant.testing import join_comparison, key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v060-r4"
 
@@ -119,7 +118,7 @@ def test_profile_comparison_with_jev_runs_the_adapter_in_every_new_cell(system):
             "expected_estimate_digest": estimate["estimate_digest"],
         },
     ).json()
-    comparisons._ACTIVE[created["comparison_id"]].join(timeout=60)
+    join_comparison(created["comparison_id"])
     comparison = client.get(f"/v1/comparisons/{created['comparison_id']}", headers=headers).json()
     assert comparison["state"] == "completed", comparison["failures"]
     assert len(jev_payloads) == 2 and not [call for call in llm.calls if call.spec.agent == "router"]
@@ -225,7 +224,7 @@ def _run_two_cells(client, headers):
             "expected_estimate_digest": estimate["estimate_digest"],
         },
     ).json()
-    comparisons._ACTIVE[created["comparison_id"]].join(timeout=60)
+    join_comparison(created["comparison_id"])
     return client.get(f"/v1/comparisons/{created['comparison_id']}", headers=headers).json()
 
 

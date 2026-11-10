@@ -10,9 +10,8 @@ import sqlite3
 import pytest
 from pydantic import SecretStr
 
-from merchant_assistant import comparisons
 from merchant_assistant.data.migrations import current_version, migrate
-from merchant_assistant.testing import key_token
+from merchant_assistant.testing import join_comparison, key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v060"
 ADMIN_KEY = "synthetic-admin-access-key-v060"
@@ -293,9 +292,7 @@ def _run_comparison(client, headers, selection):
     )
     assert created.status_code == 202, created.json()
     comparison_id = created.json()["comparison_id"]
-    thread = comparisons._ACTIVE.get(comparison_id)
-    if thread:
-        thread.join(timeout=60)
+    join_comparison(comparison_id)
     return body, client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
 
 
@@ -421,7 +418,8 @@ def test_comparison_requires_confirmation_and_fresh_estimate_and_lost_threads_ar
     assert llm.calls == []
     conn = sqlite3.connect(settings.db_path)
     conn.execute(
-        "INSERT INTO comparisons VALUES ('pcmp_lost000000000000','demo:default','running','{\"profiles\": []}',"
+        "INSERT INTO comparisons (comparison_id,principal_id,state,config,cells,failures,estimate,cost_usd,created_at,"
+        "updated_at) VALUES ('pcmp_lost000000000000','demo:default','running','{\"profiles\": []}',"
         "'[{\"status\": \"pending\", \"profile_id\": \"reference\", \"profile_version\": 1}]','[]','{}',0,'t','t')"
     )
     conn.commit()
@@ -458,8 +456,10 @@ def test_migration_0008_round_trip_on_a_synthetic_database(settings, api):
     conn.row_factory = sqlite3.Row
     snapshots = conn.execute("SELECT * FROM run_snapshots").fetchall()
     sessions = conn.execute("SELECT session_id, principal_id FROM api_sessions").fetchall()
-    assert current_version(conn) == 14
+    assert current_version(conn) == 16
     assert migrate(conn, 7) == [
+        "down 0016_workers_and_resend",
+        "down 0015_authorization_code",
         "down 0014_memory_and_writes",
         "down 0013_evaluation_claims",
         "down 0012_comparison_interrupted",

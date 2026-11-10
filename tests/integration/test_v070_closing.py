@@ -101,7 +101,7 @@ def test_a_request_runs_through_the_campaign_guard_and_both_ledgers_record_it(of
 
 def test_package_version_is_0_12_0():
     project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert project["version"] == __version__ == "0.12.0"
+    assert project["version"] == __version__ == "0.13.0"
 
 
 def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contract():

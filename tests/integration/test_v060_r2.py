@@ -13,7 +13,7 @@ from pydantic import SecretStr
 
 from merchant_assistant import comparisons
 from merchant_assistant.orchestration.budget import BudgetExceeded
-from merchant_assistant.testing import key_token
+from merchant_assistant.testing import join_comparison, key_token
 
 DEMO_KEY = "synthetic-demo-access-key-v060-r2"
 ADMIN_KEY = "synthetic-admin-access-key-v060-r2"
@@ -64,7 +64,7 @@ def run_comparison(client, headers, selection):
     )
     assert created.status_code == 202, created.json()
     comparison_id = created.json()["comparison_id"]
-    comparisons._ACTIVE[comparison_id].join(timeout=60)
+    join_comparison(comparison_id)
     return client.get(f"/v1/comparisons/{comparison_id}", headers=headers).json()
 
 
@@ -84,23 +84,27 @@ def test_reading_a_comparison_never_overwrites_a_final_state_written_concurrentl
     headers = login(client)
     conn = sqlite3.connect(settings.db_path)
     conn.execute(
-        "INSERT INTO comparisons VALUES ('pcmp_race00000000000000','demo:default','running','{\"profiles\": []}',"
+        "INSERT INTO comparisons (comparison_id,principal_id,state,config,cells,failures,estimate,cost_usd,created_at,"
+        "updated_at) VALUES ('pcmp_race00000000000000','demo:default','running','{\"profiles\": []}',"
         "'[{\"status\": \"pending\", \"profile_id\": \"reference\", \"profile_version\": 1}]','[]','{}',0,'t','t')"
     )
     conn.commit()
     conn.close()
 
-    def thread_finishes_now(comparison_id):  # the thread records its final state between the read and the check
+    def thread_finishes_now(row):  # the holder records its final state between the read and the check
         writer = sqlite3.connect(settings.db_path)
         writer.execute(
             "UPDATE comparisons SET state='completed',cells=? WHERE comparison_id=?",
-            (json.dumps([{"status": "completed", "profile_id": "reference", "profile_version": 1}]), comparison_id),
+            (
+                json.dumps([{"status": "completed", "profile_id": "reference", "profile_version": 1}]),
+                row["comparison_id"],
+            ),
         )
         writer.commit()
         writer.close()
         return False
 
-    monkeypatch.setattr(comparisons, "_alive", thread_finishes_now)
+    monkeypatch.setattr(comparisons, "_lease_alive", thread_finishes_now)
     body = client.get("/v1/comparisons/pcmp_race00000000000000", headers=headers).json()
     assert body["state"] == "completed" and body["failures"] == []
     assert body["cells"][0]["status"] == "completed"

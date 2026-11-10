@@ -3,6 +3,7 @@ scripted model. Used by the test suite and by the zero-cost evaluation mode."""
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
 
 import httpx
@@ -120,6 +121,15 @@ def key_token(client, password: str) -> str:
     settings = client.app.state.settings
     admin = settings.api_admin_password.get_secret_value() if settings.api_admin_password else None
     return password_token(client, "admin" if password == admin else "demo", password)
+
+
+def join_comparison(comparison_id: str, timeout: float = 60.0) -> None:
+    """Waits for the thread that runs `comparison_id` in this process, if any (named `comparison-<id>`; since task 99
+    no registry of threads exists). Its lease thread ends with it."""
+    for thread in threading.enumerate():
+        if thread.name == f"comparison-{comparison_id}":
+            thread.join(timeout=timeout)
+            assert not thread.is_alive(), f"comparison {comparison_id} still running after {timeout} s"
 
 
 class AppTransport(httpx.BaseTransport):

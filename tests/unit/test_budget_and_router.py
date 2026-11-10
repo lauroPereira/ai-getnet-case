@@ -1,5 +1,8 @@
 import contextlib
 import threading
+import time
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -12,6 +15,7 @@ from merchant_assistant.orchestration.budget import (
     CombinedBudgetGuard,
     FixedBudgetGuard,
 )
+from merchant_assistant.orchestration.run import RunContext
 from merchant_assistant.orchestration.state import RouterDecision
 
 
@@ -38,6 +42,36 @@ def test_budget_unknown_usage_keeps_reservation(tmp_path):
     rid = guard.reserve(request_id="r", agent="a", model="m", amount=0.2)
     guard.settle(rid, None)
     assert guard.spent() == pytest.approx(0.2)
+
+
+def test_comparison_embedding_counts_toward_request_cap_without_a_model_call():
+    ctx = object.__new__(RunContext)
+    ctx.request_id = "synthetic-request"
+    ctx.settings = SimpleNamespace(max_request_cost_usd=0.01, max_request_seconds=60, max_model_calls=5)
+    ctx.started = time.perf_counter()
+    ctx.cost_usd = 0.006
+    ctx.model_calls = 0
+    ctx.allowance_calls = {}
+    ctx.reservation_fence = lambda _: contextlib.nullcontext()
+    ctx.budget = Mock()
+    ctx.budget.reserve.return_value = 7
+
+    with pytest.raises(BudgetExceeded):
+        ctx.reserve_embedding("text-embedding-3-small", 0.005)
+    ctx.budget.reserve.assert_not_called()
+    reservation = ctx.reserve_embedding("text-embedding-3-small", 0.004)
+    ctx.settle_embedding(reservation, 0.003)
+    assert ctx.cost_usd == pytest.approx(0.009)
+    ctx.budget.reserve.assert_called_once_with(
+        request_id="synthetic-request", agent="embeddings", model="text-embedding-3-small", amount=0.004
+    )
+    ctx.budget.settle.assert_called_once_with(7, 0.003)
+    assert ctx.model_calls == 0
+    with pytest.raises(BudgetExceeded):
+        ctx.reserve_embedding("text-embedding-3-small", 0.002)
+    with pytest.raises(BudgetExceeded):
+        ctx.reserve(agent="router", model="gpt-6-luna", est_input_tokens=20000, max_output_tokens=1)
+    assert ctx.budget.reserve.call_count == 1
 
 
 def test_budget_is_atomic_under_concurrency(tmp_path):

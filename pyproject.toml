@@ -1,6 +1,6 @@
 [project]
 name = "merchant-assistant"
-version = "0.12.0"
+version = "0.13.0"
 description = "Multi-agent support system for Getnet merchants (AI Hardcore Engineer challenge)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -25,6 +25,12 @@ dependencies = [
 ingest = [
     "trafilatura>=2.3",
     "beautifulsoup4>=4.15",
+]
+# v0.13.0 (task 101): OTLP export of the request spans, used only when OTEL_EXPORTER_OTLP_ENDPOINT is set
+# (`opentelemetry-api` already comes with FastAPI; these pins follow its version)
+otel = [
+    "opentelemetry-sdk==1.45.1",
+    "opentelemetry-exporter-otlp-proto-http==1.45.1",
 ]
 dev = [
     "pytest>=9.1",

@@ -16,7 +16,7 @@ from qdrant_client import QdrantClient, models
 
 from merchant_assistant.rag import bm25
 from merchant_assistant.rag.chunk import Chunk
-from merchant_assistant.rag.embed import Embedder
+from merchant_assistant.rag.embed import Embedder, EmbeddingReservation, OpenAIEmbedder
 
 _CLIENT_LOCKS: dict[int, threading.Lock] = {}
 _CLIENT_LOCKS_GUARD = threading.Lock()
@@ -254,6 +254,7 @@ class KnowledgeIndex:
         meter=None,
         notes: dict | None = None,
         bm25_min_score: float | None = None,
+        embedding_reservation: EmbeddingReservation | None = None,
     ) -> list[Hit]:
         """Dense by default. `hybrid` fuses the dense and BM25 top 3k by RRF; `min_score` filters only the dense list
         and the returned score is the fused one. With a `reranker` (task 81, hybrid only) a second fusion of width
@@ -270,16 +271,16 @@ class KnowledgeIndex:
         if mode == "dense":
             if reranker is not None:
                 raise ValueError("The reranker runs after the hybrid fusion; use mode='hybrid'.")
-            return self._dense(query, k=k, source_kinds=source_kinds, min_score=min_score)
+            vector = self._query_vector(query, embedding_reservation)
+            return self._dense(vector, k=k, source_kinds=source_kinds, min_score=min_score)
         if mode not in ("hybrid", CONTROL_MODE):
             raise ValueError(f"Unknown retrieval mode: {mode!r}")
         if mode == CONTROL_MODE and reranker is not None:
             raise ValueError("hybrid@36 is the control of the reranker, without a model; use mode='hybrid'.")
-        # with the reranker, one embedding serves both fusions; without it, the call is the one of task 80
-        reuse = {} if reranker is None else {"vector": self.embedder.embed([query])[0]}
+        vector = self._query_vector(query, embedding_reservation)  # one embedding serves both fusions
 
         def fusion(width: int) -> list[Hit]:
-            dense = self._dense(query, k=3 * width, source_kinds=source_kinds, min_score=min_score, **reuse)
+            dense = self._dense(vector, k=3 * width, source_kinds=source_kinds, min_score=min_score)
             lexical = self.bm25_index().search(query, k=3 * width, source_kinds=source_kinds)
             lexical, dropped = bm25_floor(dense, lexical, floor)
             if floor > 0 and notes is not None:  # the last fusion run is the one the result comes from
@@ -296,10 +297,12 @@ class KnowledgeIndex:
             return fusion(k)
         return (head + wide[reranker.candidates :])[:k]
 
-    def _dense(
-        self, query: str, *, k: int, source_kinds: list[str] | None, min_score: float, vector: list[float] | None = None
-    ) -> list[Hit]:
-        vector = self.embedder.embed([query])[0] if vector is None else vector
+    def _query_vector(self, query: str, reservation: EmbeddingReservation | None) -> list[float]:
+        if reservation is not None and isinstance(self.embedder, OpenAIEmbedder):
+            return self.embedder.embed([query], reservation_context=reservation)[0]
+        return self.embedder.embed([query])[0]
+
+    def _dense(self, vector: list[float], *, k: int, source_kinds: list[str] | None, min_score: float) -> list[Hit]:
         query_filter = None
         if source_kinds:
             query_filter = models.Filter(
