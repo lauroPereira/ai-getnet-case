@@ -583,5 +583,8 @@ def test_otel_extra_pins_the_sdk_and_the_exporter_and_the_image_installs_it():
     assert sorted(d.split("==")[0] for d in extra) == ["opentelemetry-exporter-otlp-proto-http", "opentelemetry-sdk"]
     assert all(re.fullmatch(r"[a-z-]+==\d+\.\d+\.\d+", d) for d in extra)
     assert re.search(
-        r'^RUN /venv/bin/pip install "\.\[otel\]"$', (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8"), re.M
+        # v1.0.0 (task 106): from uv.lock (`uv sync --frozen`), no longer from `pip install ".[otel]"`
+        r"^RUN uv sync --frozen --no-editable .*--extra otel\b",
+        (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8"),
+        re.M,
     )

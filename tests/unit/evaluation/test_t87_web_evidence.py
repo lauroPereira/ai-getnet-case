@@ -433,7 +433,8 @@ def test_the_image_installs_the_extractor_the_web_evidence_uses():
     """Task 91: inside the container `eval` reads the cited pages with `rag.collect.extract_text`, whose libraries
     come with the `ingest` extra; without it every HTML page would be `extractor_unavailable`."""
     dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
-    assert re.search(r'/venv/bin/pip install "\.\[ingest\]"', dockerfile), "the image does not install the extra"
+    # v1.0.0 (task 106): the extra comes from uv.lock (`uv sync --frozen`), no longer from `pip install ".[ingest]"`
+    assert re.search(r"^RUN uv sync --frozen --no-editable .*--extra ingest\b", dockerfile, re.M), "extra missing"
     pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     requirements = pyproject["project"]["optional-dependencies"]["ingest"]
     extra = {re.split(r"[<>=!~;\[ ]", requirement, maxsplit=1)[0].lower() for requirement in requirements}

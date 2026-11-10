@@ -581,15 +581,44 @@ class ExternalKeys:
         self._fetched_at = now
 
 
+CREDENTIAL_VARIABLES = {  # where each configured account's secret comes from, for the startup messages
+    "user:demo": "API_DEMO_PASSWORD",
+    "user:admin": "API_ADMIN_PASSWORD",
+    "client:ticketing-demo": "TICKETING_CLIENT_SECRET",
+    "client:telegram-operator": "TELEGRAM_CLIENT_SECRET",
+}
+
+
+def published_secret(secret: str) -> bool:
+    """A value anyone can read in this repository: the examples of .env.example (`-fictitious`) and the test suite's
+    credentials (merchant_assistant.testing)."""
+    from merchant_assistant.testing import TEST_TICKETING_SECRET, TEST_USER_PASSWORDS  # lazy: it imports the graph
+
+    return secret.endswith(EXAMPLE_SUFFIX) or secret in {*TEST_USER_PASSWORDS.values(), TEST_TICKETING_SECRET}
+
+
 def check_configuration(settings: Settings) -> list[str]:
-    """Validates the credential configuration at startup and returns warnings (fictitious example values)."""
-    registered_redirects(settings)  # an invalid redirect URI stops the startup
+    """Validates the credential configuration at startup and returns warnings (published example values). With a
+    redirect URI outside the loopback (the login page is public, e.g. behind the demonstration tunnel) a published
+    example value stops the startup instead (v1.0.0 task 108, ADR 0026)."""
+    redirects = registered_redirects(settings)  # an invalid redirect URI stops the startup
     configured_issuers(settings)  # and so does an invalid external issuer
-    example = sorted(a.account_id for a in configured_accounts(settings) if a.secret.endswith(EXAMPLE_SUFFIX))
+    example = sorted(a.account_id for a in configured_accounts(settings) if published_secret(a.secret))
     if not example:
         return []
+    public = any(urlsplit(uri).hostname not in LOOPBACK_HOSTS for uris in redirects.values() for uri in uris)
+    if public:
+        variables = sorted({CREDENTIAL_VARIABLES.get(account, "DEMO_USER_PASSWORDS") for account in example})
+        raise CredentialConfigError(
+            "OAUTH_REDIRECT_URIS registers a public address, so the login page is reachable from outside this host, "
+            "and example credentials published in this repository (.env.example, test suite) are in use for "
+            + ", ".join(example)
+            + ". Set new one-off values in "
+            + ", ".join(variables)
+            + " (an empty DEMO_USER_PASSWORDS or TICKETING_CLIENT_SECRET brings the compose defaults back)"
+        )
     return [
-        "example credentials from .env.example are in use for "
+        "example credentials published in this repository (.env.example, test suite) are in use for "
         + ", ".join(example)
         + "; they are public and must be replaced before any exposure outside this host"
     ]

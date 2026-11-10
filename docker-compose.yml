@@ -6,7 +6,9 @@ services:
     restart: unless-stopped
 
   mocks:
+    image: ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}
     build: .
+    pull_policy: missing
     entrypoint: ["uvicorn", "merchant_assistant.mocks.service:app", "--host", "0.0.0.0", "--port", "8001"]
     environment:
       MOCK_SERVICES_DIR: /app/data/mock-services
@@ -22,7 +24,11 @@ services:
     restart: unless-stopped
 
   api:
+    # v1.0.0 (task 106): the image the CI publishes on each tag (APP_VERSION, default latest); built from this
+    # Dockerfile when it is not on this host nor in the registry. `docker compose up --build` rebuilds from source.
+    image: ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}
     build: .
+    pull_policy: missing
     depends_on:
       qdrant:
         condition: service_started
@@ -67,7 +73,9 @@ services:
     restart: unless-stopped
 
   ticketing:
+    image: ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}
     build: .
+    pull_policy: missing
     entrypoint: ["uvicorn", "merchant_assistant.ticketing.service:app", "--host", "0.0.0.0", "--port", "8002"]
     ports:
       - "127.0.0.1:8002:8002"  # the web ticketing screen runs on the host
@@ -80,6 +88,8 @@ services:
       ASSISTANT_WEBHOOK_SECRET: ${ASSISTANT_WEBHOOK_SECRET:-assistant-webhook-secret-fictitious}
       TICKETING_CLIENT_ID: ${TICKETING_CLIENT_ID:-ticketing-demo}
       TICKETING_CLIENT_SECRET: ${TICKETING_CLIENT_SECRET:-ticketing-demo-secret-fictitious}
+      # v1.0.0: an operator action waits for the assistant's reply, which includes a model call; the web screen waits 20 s
+      TICKETING_WEBHOOK_TIMEOUT_S: ${TICKETING_WEBHOOK_TIMEOUT_S:-15}
     volumes:
       - ticketing_runtime:/app/runtime  # own database, separate from the assistant's runtime volume
     healthcheck:
@@ -105,7 +115,9 @@ services:
     restart: unless-stopped
 
   telegram:  # v0.13.0 (task 100): operator on Telegram, only with `--profile telegram` and a bot token
+    image: ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}
     build: .
+    pull_policy: missing
     profiles: ["telegram"]
     entrypoint: ["python", "-m", "merchant_assistant.integrations.telegram"]
     depends_on:
@@ -130,6 +142,22 @@ services:
       timeout: 3s
       retries: 6
     restart: on-failure:3
+
+  tunnel:  # v1.0.0 (task 108, ADR 0026): single origin for the demonstration tunnel, only with `--profile tunnel`
+    image: caddy:2.10.0-alpine
+    profiles: ["tunnel"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      STREAMLIT_UPSTREAM: ${STREAMLIT_UPSTREAM:-host.docker.internal:8501}  # the interface, run on this host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Docker Engine on Linux; Docker Desktop already resolves it
+    volumes:
+      - ./docker/tunnel/Caddyfile:/etc/caddy/Caddyfile:ro  # only GET/POST /v1/auth/authorize reach the api
+    ports:
+      - "127.0.0.1:8080:8080"  # `cloudflared tunnel --url http://localhost:8080` publishes this port
+    restart: unless-stopped
 
   # v0.13.0 (task 101): telemetry, only with `--profile otel`. The collector receives the OTLP spans and prints them
   # (`docker compose logs otel-collector`); Prometheus scrapes /metrics and loads alerts/rules.yml; Grafana opens the

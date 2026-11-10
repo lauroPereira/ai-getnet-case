@@ -278,8 +278,17 @@ def test_reflected_values_are_escaped_on_the_page(offline):
     assert "&quot;&gt;&lt;script&gt;" in page.text
 
 
+def one_off_credentials(settings) -> dict[str, str]:
+    """New credentials for a public redirect URI: the API refuses the published ones there (v1.0.0 task 108)."""
+    passwords = {user: secrets.token_urlsafe(16) for user in TEST_USER_PASSWORDS}
+    settings.demo_user_passwords = SecretStr(passwords_setting(passwords))
+    settings.ticketing_client_secret = SecretStr(secrets.token_urlsafe(16))
+    return passwords
+
+
 def test_login_page_forms_post_only_to_the_page_and_the_registered_redirect_origin(offline, settings):
     settings.oauth_redirect_uris = f"{WEB}={URI},{WEB}=https://web.example:8443/callback?tenant=demo"
+    one_off_credentials(settings)
     client, _, _ = offline()
     page = client.get("/v1/auth/authorize", params=authorize_params(pkce()[1]), follow_redirects=False)
     assert page.headers["content-security-policy"].endswith("; form-action 'self' http://localhost:8501")
@@ -584,8 +593,11 @@ def test_redirect_configuration_accepts_https_and_loopback(settings):
 
 def test_redirect_keeps_the_query_of_a_registered_uri(offline, settings):
     settings.oauth_redirect_uris = "merchant-assistant-web=https://web.example/callback?tenant=demo"
+    passwords = one_off_credentials(settings)
     client, _, _ = offline()
-    response, verifier = login(client, redirect_uri="https://web.example/callback?tenant=demo")
+    response, verifier = login(
+        client, password=passwords[MERCHANT], redirect_uri="https://web.example/callback?tenant=demo"
+    )
     assert response.status_code == 303
     location = urlsplit(response.headers["location"])
     returned = parse_qs(location.query)

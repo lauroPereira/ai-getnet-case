@@ -625,8 +625,8 @@ def test_paid_sample_refuses_isolated_runtime_without_a_persistent_budget_dir(se
         cli.cmd_eval(isolated, args)
 
 
-def test_package_version_and_compose_services_are_ready_for_v0120():
+def test_package_version_and_compose_services():
     project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert project["version"] == __version__ == "0.13.0"
+    assert project["version"] == __version__ == "1.0.0"
     compose = yaml.safe_load((PROJECT_ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
     assert {"api", "ticketing", "mocks", "qdrant"} <= set(compose["services"])

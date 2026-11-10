@@ -26,6 +26,7 @@
 | [0020](0020-retrieval-hibrido-holdout.md) | Retrieval híbrido (BM25 + denso com RRF), reranker opcional e holdout de retrieval lacrado |
 | [0021](0021-juiz-modelo-e-regua.md) | Juiz da avaliação: modelo padrão por experimento pré-registrado, régua literal como piso |
 | [0022](0022-rubrica-v4-operacao-retomavel.md) | Rubrica `judge.v4` medida e não promovida; comparação retomável; métricas e alertas versionados |
-| 0023 | Reservada para a decisão do juiz da v0.11.0 |
+| [0023](0023-juiz-por-afirmacao-evidencia-web.md) | Promover `judge.v5` e `RERANK` após medir o controle de profundidade |
 | [0024](0024-desenho-da-orquestracao.md) | Desenho da orquestração: grafo com replanejamento por regras, não supervisor com especialistas como ferramentas |
 | [0025](0025-identidade-e-operacao.md) | Identidade e operação: login por redirecionamento com refresh rotativo, emissor OIDC externo, lease entre workers, reenvio de webhook, operador no Telegram e spans OTLP |
+| [0026](0026-tunel-com-login-por-redirecionamento.md) | Túnel de demonstração numa única origem com a interface e só a rota de autorização da API (emenda à 0012) |

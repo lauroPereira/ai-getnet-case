@@ -2,6 +2,8 @@
 
 Resultados de validação do projeto, por versão: resultado consolidado, QA final, pareceres finais de revisão, manifestos de candidato (`*-candidato-r*.json`), relatórios das execuções reais, calibração humana do juiz, holdouts e retrieval. Cada relatório diz versão, método, comandos, resultados observados e o nível da verificação (automatizada ou manual). Os dados são sintéticos e não contêm segredos. Novas evidências seguem os modelos em [docs/templates](../templates/candidato.md).
 
+Um relatório `.md` pode vir com um `.json` de mesmo nome, com os dados da execução. A tabela antes × depois por área, com o número da v0.10.0 e o atual, está no [README](../../README.md#what-changed-since-v0100).
+
 O gasto com APIs pagas e as transições de teto estão em [orcamento.md](orcamento.md). Na tarefa 105 os registros mantidos receberam ajuste de links e de vocabulário, e os registros de processo saíram do repositório; os originais estão nas tags de cada versão.
 
 ## v0.1.0 e v0.2.0 (núcleo, conversas e acompanhamento)
@@ -70,10 +72,10 @@ O gasto com APIs pagas e as transições de teto estão em [orcamento.md](orcame
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v080-all-r3.md](v080-all-r3.md) ([JSON](v080-all-r3.json)) | Campanha: 44 casos, jornadas e conversas, três execuções |
-| [v080-d12-pre-holdout-r6.md](v080-d12-pre-holdout-r6.md) | QA final pré-holdout; dados em [v080-healthy-r6.md](v080-healthy-r6.md), [v080-healthy-r5.md](v080-healthy-r5.md), [v080-healthy-r4.md](v080-healthy-r4.md), [v080-conversations-r4.md](v080-conversations-r4.md), [v080-tool-down-r5.md](v080-tool-down-r5.md) e [v080-smoke-r6.json](v080-smoke-r6.json) |
+| [v080-d12-pre-holdout-r6.md](v080-d12-pre-holdout-r6.md) | QA final pré-holdout; dados em [v080-healthy-r6.md](v080-healthy-r6.md) (traces em [v080-healthy-traces-r6.json](v080-healthy-traces-r6.json)), [v080-healthy-r5.md](v080-healthy-r5.md), [v080-healthy-r4.md](v080-healthy-r4.md), [v080-conversations-r4.md](v080-conversations-r4.md), [v080-tool-down-r5.md](v080-tool-down-r5.md) e [v080-smoke-r6.json](v080-smoke-r6.json) |
 | [v080-judge-repeat-r6.md](v080-judge-repeat-r6.md) | Variação do juiz |
 | [v080-custo-estimativa-r3.json](v080-custo-estimativa-r3.json) | Estimativa revalidada que sustentou o cap da campanha `v080-qa` |
-| [v080-holdout-r7.md](v080-holdout-r7.md), [v080-avaliacao-holdout-r7.md](v080-avaliacao-holdout-r7.md), [v080-avaliacao-holdout-judge-repeat-r7.md](v080-avaliacao-holdout-judge-repeat-r7.md), [v080-holdout-derivacao.md](v080-holdout-derivacao.md) | Holdout `holdout_v080`, executado uma vez, e sua derivação |
+| [v080-holdout-r7.md](v080-holdout-r7.md) (traces em [v080-holdout-traces-r7.json](v080-holdout-traces-r7.json)), [v080-avaliacao-holdout-r7.md](v080-avaliacao-holdout-r7.md), [v080-avaliacao-holdout-judge-repeat-r7.md](v080-avaliacao-holdout-judge-repeat-r7.md), [v080-holdout-derivacao.md](v080-holdout-derivacao.md) | Holdout `holdout_v080`, executado uma vez, e sua derivação |
 | [v080-calibracao.md](v080-calibracao.md), [v080-calibracao-amostra.csv](v080-calibracao-amostra.csv), [v080-calibracao-evidencia.md](v080-calibracao-evidencia.md), [v080-calibracao-modelo.md](v080-calibracao-modelo.md) | Calibração humana do juiz (24 respostas) |
 | [v080-reviewer.md](v080-reviewer.md), `v080-reviewer-t*.md`, [v080-reviewer-cap-r2.md](v080-reviewer-cap-r2.md) | Pareceres finais de revisão |
 | `v080-candidato-r*.json` | Manifestos |
@@ -102,5 +104,17 @@ O gasto com APIs pagas e as transições de teto estão em [orcamento.md](orcame
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v0110-resultado.md](v0110-resultado.md) | Resultado consolidado do juiz por afirmação e da configuração de retrieval |
-| [v0110-retrieval.md](v0110-retrieval.md) | Métricas de retrieval em dev e no holdout, incluindo o controle `hybrid@36` |
+| [v0110-retrieval.md](v0110-retrieval.md) ([JSON](v0110-retrieval.json)) | Métricas de retrieval em dev e no holdout, incluindo o controle `hybrid@36` |
 | [v0110-calibracao-amostra.csv](v0110-calibracao-amostra.csv), [v0110-calibracao-amostra-claims.csv](v0110-calibracao-amostra-claims.csv), [selo](../../tests/scenarios/calibration_v0110.sha256) | Amostra selada de calibração e afirmações |
+
+## v0.12.0 (memória, replanejamento medido e cancelamento com confirmação)
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| [v0120-resultado.md](v0120-resultado.md) | Resultado consolidado: resumo rolante e registro de fatos, conversa longa, replanejamento com e sem, cancelamento com confirmação explícita, suíte estrita e gasto da campanha |
+
+## v0.13.0 (identidade e operação)
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| [v0130-resultado.md](v0130-resultado.md) | Resultado consolidado: login por redirecionamento, emissores OIDC, dois workers, reenvio de webhooks, operador no Telegram, OTLP e painel, migrações, suíte estrita e gasto da campanha |
