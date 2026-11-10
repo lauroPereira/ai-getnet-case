@@ -80,13 +80,14 @@ def test_support_first_knowledge_assesses_the_procedure_only():
 
     ctx = SimpleNamespace(
         settings=Settings(_env_file=None, prompts_dir=Path("prompts")), index=Index(), step_notes={},
-        llm_for=lambda _: Model(),
+        llm_for=lambda _: Model(), reservation_fence=None,  # RunContext default outside comparison workers
     )
     original = state(plan={"last": "support", "ran": ["support"]})
     result = knowledge.run(original, ctx)["knowledge"]
     assert result.mode == "rag" and result.evidence_sufficient
     assert "app" in result.points[0]
     assert calls[0][1]["source_kinds"] == ["public_official"]
+    assert "embedding_reservation" not in calls[0][1]
     assert "Assess sufficiency only" in calls[1].instructions
     assert "individual account dates or amounts" in calls[1].instructions
     assert calls[1].input.endswith(f"<<<\n{original.message}\n>>>")

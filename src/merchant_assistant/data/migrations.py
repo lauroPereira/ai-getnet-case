@@ -775,6 +775,58 @@ ALTER TABLE conversations DROP COLUMN summary;
 """
 
 
+# v0.13.0 (spec D1, task 97). Login by redirection: `auth_codes` holds the authorization codes (one use, a minute of
+# life, bound to the client, the exact `redirect_uri` and the PKCE S256 challenge) and `refresh_tokens` the rotating
+# refresh tokens, one row per token of a family (the login that started it). Codes and refresh tokens are stored only
+# as SHA-256 digests of high-entropy random values; each refresh row also keeps the `jti` of the access token issued
+# with it, so revoking the family revokes those access tokens too. `api_principals.issuer` records the issuer of the
+# principal's last verified token (the external issuer of task 98 uses it). The rollback drops both tables and the
+# column: every refresh token stops working (the user logs in again) and no other record references them.
+AUTH_CODE_UP = """
+CREATE TABLE IF NOT EXISTS auth_codes (
+    code_hash TEXT PRIMARY KEY,
+    client_id TEXT NOT NULL,
+    redirect_uri TEXT NOT NULL,
+    code_challenge TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    scope TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    family_id TEXT
+);
+CREATE INDEX IF NOT EXISTS auth_codes_expiration ON auth_codes(expires_at);
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    token_hash TEXT PRIMARY KEY,
+    family_id TEXT NOT NULL,
+    client_id TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    scope TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    family_expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    revoked_at INTEGER,
+    access_jti TEXT NOT NULL,
+    access_expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS refresh_tokens_family ON refresh_tokens(family_id);
+CREATE INDEX IF NOT EXISTS refresh_tokens_expiration ON refresh_tokens(family_expires_at);
+ALTER TABLE api_principals ADD COLUMN issuer TEXT;
+"""
+
+AUTH_CODE_DOWN = """
+ALTER TABLE api_principals DROP COLUMN issuer;
+DROP INDEX IF EXISTS refresh_tokens_expiration;
+DROP INDEX IF EXISTS refresh_tokens_family;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP INDEX IF EXISTS auth_codes_expiration;
+DROP TABLE IF EXISTS auth_codes;
+"""
+
+
 
 def _cancellations_down_guard(conn: sqlite3.Connection) -> None:
     """A confirmed cancellation request holds the protocol the merchant received; no other table keeps it."""
@@ -785,6 +837,60 @@ def _cancellations_down_guard(conn: sqlite3.Connection) -> None:
             "cancellation request(s) whose protocol was given to the merchant. Reseed the synthetic data (which "
             "clears them) or export them first, then roll back again. Nothing was changed."
         )
+
+
+# v0.13.0 (spec D4, D5, task 99). Two API workers: a running comparison carries its lease, `worker_id` (host, process
+# and claim of the holder) and `heartbeat_at` (renewed every 5 s; older than 20 s means the holder stopped). An
+# outgoing webhook intention whose attempts ran out is `exhausted` (was `failed`) and can be sent again: by an operator,
+# or once at startup an hour after its last attempt; `resend_count` counts the resends, each one allowing another
+# round of attempts. SQLite cannot change a CHECK in place, so the outbox is rebuilt (new table, copy, drop, rename);
+# nothing references it. The rollback turns `exhausted` back into `failed`, drops `resend_count` and the two lease
+# columns (a comparison still `running` is then judged by the earlier rule); run it with the API stopped.
+_OUTBOX_COLUMNS = "event_id, target, event, case_id, conversation_id, body, attempts, status"
+
+
+def _outbox_rebuild(states: str, status_expr: str, resend: bool) -> str:
+    resend_column = ",\n    resend_count INTEGER NOT NULL DEFAULT 0" if resend else ""
+    return f"""
+CREATE TABLE webhook_outbox_rebuild (
+    event_id TEXT NOT NULL,
+    target TEXT NOT NULL,
+    event TEXT NOT NULL,
+    case_id TEXT,
+    conversation_id TEXT,
+    body TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ({states})){resend_column},
+    PRIMARY KEY (event_id, target)
+);
+INSERT INTO webhook_outbox_rebuild ({_OUTBOX_COLUMNS})
+SELECT event_id, target, event, case_id, conversation_id, body, attempts, {status_expr}
+FROM webhook_outbox ORDER BY rowid;
+DROP INDEX IF EXISTS webhook_outbox_pending;
+DROP TABLE webhook_outbox;
+ALTER TABLE webhook_outbox_rebuild RENAME TO webhook_outbox;
+CREATE INDEX IF NOT EXISTS webhook_outbox_pending ON webhook_outbox(status);
+"""
+
+
+WORKERS_UP = (
+    "BEGIN;\nALTER TABLE comparisons ADD COLUMN worker_id TEXT;\nALTER TABLE comparisons ADD COLUMN heartbeat_at TEXT;"
+    + _outbox_rebuild(
+        "'pending', 'delivered', 'rejected', 'exhausted'",
+        "CASE status WHEN 'failed' THEN 'exhausted' ELSE status END",
+        resend=True,
+    )
+    + "COMMIT;\n"
+)
+WORKERS_DOWN = (
+    "BEGIN;\nALTER TABLE comparisons DROP COLUMN heartbeat_at;\nALTER TABLE comparisons DROP COLUMN worker_id;"
+    + _outbox_rebuild(
+        "'pending', 'delivered', 'rejected', 'failed'",
+        "CASE status WHEN 'exhausted' THEN 'failed' ELSE status END",
+        resend=False,
+    )
+    + "COMMIT;\n"
+)
 
 
 MIGRATIONS: list[Migration] = [
@@ -802,6 +908,8 @@ MIGRATIONS: list[Migration] = [
     Migration(12, "comparison_interrupted", COMPARISON_INTERRUPTED_UP, COMPARISON_INTERRUPTED_DOWN),
     Migration(13, "evaluation_claims", EVAL_CLAIMS_UP, EVAL_CLAIMS_DOWN),
     Migration(14, "memory_and_writes", MEMORY_UP, MEMORY_DOWN, _cancellations_down_guard),
+    Migration(15, "authorization_code", AUTH_CODE_UP, AUTH_CODE_DOWN),
+    Migration(16, "workers_and_resend", WORKERS_UP, WORKERS_DOWN),
 ]
 LATEST = MIGRATIONS[-1].version
 

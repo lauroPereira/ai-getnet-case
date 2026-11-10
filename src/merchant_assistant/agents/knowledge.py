@@ -161,16 +161,18 @@ def run(state: GraphState, ctx: RunContext) -> dict:
     try:
         if ctx.index is None:
             raise LLMError("knowledge index not available")
-        rerank: dict = {"notes": ctx.step_notes}  # task 90: what the BM25 floor dropped, with the reranker or not
+        search_options: dict = {"notes": ctx.step_notes}  # includes what the BM25 floor dropped
+        if ctx.reservation_fence is not None:
+            search_options["embedding_reservation"] = ctx
         if ctx.settings.rerank == "on" and ctx.settings.retrieval_mode == "hybrid":
             # task 81: metered by this request; the reranker follows hybrid fusion only and failure keeps its order
-            rerank |= {"reranker": Reranker(ctx.llm_for("rerank"), prompt(ctx, "rerank")), "meter": ctx}
+            search_options |= {"reranker": Reranker(ctx.llm_for("rerank"), prompt(ctx, "rerank")), "meter": ctx}
         hits = ctx.index.search(
             state.message,
             k=ctx.settings.retrieval_top_k,
             source_kinds=kinds,
             min_score=ctx.settings.retrieval_min_score,
-            **rerank,
+            **search_options,
         )
     except Exception as exc:  # vector store or embedding failure
         ctx.step_notes["error"] = f"retrieval: {exc}"

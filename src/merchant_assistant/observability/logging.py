@@ -14,6 +14,7 @@ class JsonFormatter(logging.Formatter):
             "ts": datetime.now(UTC).isoformat(timespec="milliseconds"),
             "level": record.levelname,
             "logger": record.name,
+            "pid": record.process,  # which API worker wrote the line (v0.13.0: several workers)
             "msg": record.getMessage(),
         }
         event = getattr(record, "event", None)

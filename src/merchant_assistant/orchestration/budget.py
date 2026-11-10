@@ -11,6 +11,8 @@ import math
 import os
 import sqlite3
 import tempfile
+from collections.abc import Callable
+from contextlib import AbstractContextManager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -19,6 +21,8 @@ CAMPAIGN_CAP_LIMIT_USD = 0.50  # default ceiling for fixed QA campaigns; v0.8.0 
 V080_CAMPAIGN_CAP_LIMIT_USD = 1.10  # approved one-time ceiling when the measured v080-qa estimate exceeds USD 1.00
 # Contingency approved on 2026-11-05 (task 77): continues the v080-qa campaign already mounted; never mounts a new one.
 V080_CAMPAIGN_CONTINGENCY_LIMIT_USD = 1.40
+
+ReservationFence = Callable[[str], AbstractContextManager[None]]
 
 LEDGER_SCHEMA = """
 CREATE TABLE IF NOT EXISTS ledger (

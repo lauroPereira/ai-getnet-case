@@ -47,6 +47,8 @@ flowchart LR
 
 Dependência `pyjwt[crypto]`. Duas quebras documentadas no CHANGELOG: `POST /messages` exige token e `/v1/sessions` dá lugar a `/v1/auth/token`. A demo continua subindo sem edição (senhas fictícias no `.env.example`), e a API avisa quando valores de exemplo estão em uso; exposição externa exige trocá-los. A auditoria cresce uma linha por tool call. Retorno: tag v0.6.0 e migração 0009 descendente.
 
+**Atualização da v0.13.0** ([ADR 0025](0025-identidade-e-operacao.md)): a interface entra por authorization code com PKCE e renova o acesso por refresh rotativo; o `password` fica para o smoke e a CLI. Emissores OIDC externos entram por `OIDC_ISSUERS`, ao lado do emissor próprio, com grupos mapeados para papéis e os escopos do papel; `JWT_JWKS_URL` continua trocando o emissor próprio por um que assine no formato do assistente.
+
 ## Data
 
 2026-11-03

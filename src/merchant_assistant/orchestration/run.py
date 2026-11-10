@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -11,7 +12,7 @@ from merchant_assistant.data.clock import Clock
 from merchant_assistant.llm import pricing
 from merchant_assistant.llm.base import LLM, Usage
 from merchant_assistant.observability.traces import TraceRecorder
-from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard, CombinedBudgetGuard
+from merchant_assistant.orchestration.budget import BudgetExceeded, BudgetGuard, CombinedBudgetGuard, ReservationFence
 from merchant_assistant.orchestration.state import RouterDecision
 from merchant_assistant.rag.index import KnowledgeIndex
 from merchant_assistant.tools.base import ToolEnv
@@ -58,6 +59,7 @@ class RunContext:
     effective_parameters_by_agent: dict[str, dict[str, int]] = field(default_factory=dict)
     step_notes: dict[str, Any] = field(default_factory=dict)
     started: float = field(default_factory=time.perf_counter)
+    reservation_fence: ReservationFence | None = None
 
     def llm_for(self, agent: str) -> LLM:
         return self.agent_llms.get(agent, self.llm)
@@ -98,7 +100,8 @@ class RunContext:
         amount = pricing.estimate(model, est_input_tokens, max_output_tokens, web_search_calls)
         if self.cost_usd + amount > self.settings.max_request_cost_usd:
             raise BudgetExceeded("request", amount, self.settings.max_request_cost_usd - self.cost_usd)
-        ledger_id = self.budget.reserve(request_id=self.request_id, agent=agent, model=model, amount=amount)
+        with self.reservation_fence(self.request_id) if self.reservation_fence else nullcontext():
+            ledger_id = self.budget.reserve(request_id=self.request_id, agent=agent, model=model, amount=amount)
         self.model_calls += 1
         if allowance is not None:
             self.allowance_calls[agent] = self.allowance_calls.get(agent, 0) + 1
@@ -128,6 +131,19 @@ class RunContext:
             agg["input_tokens"] += usage.input_tokens
             agg["output_tokens"] += usage.output_tokens
             agg["web_search_calls"] += usage.web_search_calls
+
+    def reserve_embedding(self, model: str, amount: float) -> Reservation:
+        """Charge query embeddings to the request cap without counting them as model calls."""
+        self.check_time()
+        if self.cost_usd + amount > self.settings.max_request_cost_usd:
+            raise BudgetExceeded("request", amount, self.settings.max_request_cost_usd - self.cost_usd)
+        with self.reservation_fence(self.request_id) if self.reservation_fence else nullcontext():
+            ledger_id = self.budget.reserve(request_id=self.request_id, agent="embeddings", model=model, amount=amount)
+        return Reservation(ledger_id, "embeddings", model, amount)
+
+    def settle_embedding(self, reservation: Reservation, actual: float | None) -> None:
+        self.budget.settle(reservation.ledger_id, actual)
+        self.cost_usd += reservation.amount if actual is None else actual
 
     # --- tools ----------------------------------------------------------------------------------------------------
 

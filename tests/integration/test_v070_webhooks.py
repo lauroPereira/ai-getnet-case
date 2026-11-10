@@ -823,10 +823,14 @@ def test_receiver_down_gets_three_recorded_attempts_without_breaking_the_request
         client,
         "SELECT target, attempt, status, response_code FROM webhook_deliveries WHERE event='conversation.replied'",
     )
+    # The reply to the ticketing waits for the exhausted creation (its resend lets it through, task 99).
     assert [(r["target"], r["attempt"], r["status"]) for r in replied] == [("merchant", 1, "rejected")]
-    pending = rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='conversation.replied' "
-                           "AND target='ticketing'")
-    assert pending == [{"status": "pending", "attempts": 0}]  # the failed creation must be resolved first
+    statuses = rows(client, "SELECT event,target,status,attempts FROM webhook_outbox ORDER BY rowid")
+    assert statuses == [
+        {"event": "handoff.created", "target": "ticketing", "status": "exhausted", "attempts": 3},
+        {"event": "conversation.replied", "target": "ticketing", "status": "pending", "attempts": 0},
+        {"event": "conversation.replied", "target": "merchant", "status": "rejected", "attempts": 1},
+    ]
 
 
 def test_reply_gets_three_attempts_after_ticket_creation(wired):
@@ -840,8 +844,8 @@ def test_reply_gets_three_attempts_after_ticket_creation(wired):
                             "WHERE event='conversation.replied' AND target='ticketing' ORDER BY attempt")
     assert attempts == [{"attempt": n, "status": "error"} for n in (1, 2, 3)]
     assert rows(client, "SELECT status,attempts FROM webhook_outbox WHERE event='conversation.replied' "
-                        "AND target='ticketing'") == [{"status": "failed", "attempts": 3}]
-    client.app.state.webhooks.recover_pending_intents()
+                        "AND target='ticketing'") == [{"status": "exhausted", "attempts": 3}]
+    client.app.state.webhooks.recover_pending_intents()  # exhausted less than an hour ago: not sent again
     assert client.app.state.webhooks.wait()
     assert len(rows(client, "SELECT * FROM webhook_deliveries WHERE event='conversation.replied' "
                             "AND target='ticketing'")) == 3

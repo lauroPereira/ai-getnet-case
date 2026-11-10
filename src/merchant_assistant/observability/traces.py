@@ -6,6 +6,7 @@ import json
 import logging
 import sqlite3
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -54,7 +55,9 @@ class TraceRecorder:
     def __init__(self, request_id: str) -> None:
         self.request_id = request_id
         self.steps: list[Step] = []
+        self.started_ns = time.time_ns()  # wall clock of the request start (start of the OTLP turn span)
         self._t0 = time.perf_counter()
+        self.duration_ms: int | None = None  # read once by TraceStore.save: the stored duration and the turn span's
 
     def start(self, step: str) -> tuple[Step, float]:
         s = Step(len(self.steps) + 1, step, datetime.now(UTC).isoformat(timespec="milliseconds"))
@@ -77,8 +80,12 @@ class TraceRecorder:
 
 
 class TraceStore:
-    def __init__(self, path: Path | str) -> None:
+    """`exporter` (task 101) receives every saved trace too, after the write: the optional OTLP export
+    (`observability.otel`). It must not raise; a failing one is logged and the save stands."""
+
+    def __init__(self, path: Path | str, *, exporter: Callable[[TraceRecorder, dict], None] | None = None) -> None:
         self.path = str(path)
+        self.exporter = exporter
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         conn = self._conn()
@@ -91,6 +98,17 @@ class TraceStore:
         return conn
 
     def save(self, recorder: TraceRecorder, summary: dict) -> None:
+        recorder.duration_ms = recorder.elapsed_ms  # one reading for the row and the exporter, before any wait
+        try:
+            self._write(recorder, summary)
+        finally:
+            if self.exporter is not None:
+                try:
+                    self.exporter(recorder, summary)
+                except Exception:  # telemetry must never break a reply
+                    log.warning("trace export failed", exc_info=True)
+
+    def _write(self, recorder: TraceRecorder, summary: dict) -> None:
         conn = self._conn()
         try:
             conn.execute("BEGIN")
@@ -103,7 +121,7 @@ class TraceStore:
                     summary.get("route"),
                     summary.get("status"),
                     summary.get("language"),
-                    recorder.elapsed_ms,
+                    recorder.duration_ms,
                     summary.get("cost_usd"),
                     summary.get("model_calls"),
                     summary.get("tool_calls"),

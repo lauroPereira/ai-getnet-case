@@ -1,0 +1,22 @@
+# OpenTelemetry Collector of the `otel` compose profile (v0.13.0, task 101): receives the assistant's spans over
+# OTLP/HTTP and prints them, one block per span (`docker compose logs otel-collector`). To keep them, add an exporter
+# (Tempo, Jaeger, a vendor) to the traces pipeline.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

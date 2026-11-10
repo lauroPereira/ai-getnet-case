@@ -18,9 +18,13 @@ DOWN_13 = "down 0013_evaluation_claims"
 UP_13 = "up 0013_evaluation_claims"
 DOWN_14 = "down 0014_memory_and_writes"
 UP_14 = "up 0014_memory_and_writes"
-DOWN_TO_9 = [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric", "down 0010_webhook_outbox"]
+DOWN_15 = "down 0015_authorization_code"
+UP_15 = "up 0015_authorization_code"
+DOWN_16 = "down 0016_workers_and_resend"
+UP_16 = "up 0016_workers_and_resend"
+DOWN_TO_9 = [DOWN_16, DOWN_15, DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric", "down 0010_webhook_outbox"]
 DOWN_TO_8 = [*DOWN_TO_9, "down 0009_identity_hitl"]
-UP_FROM_9 = ["up 0010_webhook_outbox", "up 0011_evaluation_rubric", UP_12, UP_13, UP_14]
+UP_FROM_9 = ["up 0010_webhook_outbox", "up 0011_evaluation_rubric", UP_12, UP_13, UP_14, UP_15, UP_16]
 UP_FROM_8 = ["up 0009_identity_hitl", *UP_FROM_9]
 
 
@@ -85,6 +89,8 @@ def test_down_and_up_keep_core_data(tmp_path):
     conn = connect(tmp_path / "db.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     assert migrate(conn, 1) == [
+        DOWN_16,
+        DOWN_15,
         DOWN_14,
         DOWN_13,
         DOWN_12,
@@ -115,6 +121,8 @@ def test_down_and_up_keep_core_data(tmp_path):
         UP_12,
         UP_13,
         UP_14,
+        UP_15,
+        UP_16,
     ]
     assert current_version(conn) == LATEST
 
@@ -149,6 +157,8 @@ def test_journeys_migration_round_trip_preserves_core_data(tmp_path):
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     before = conn.execute("SELECT sale_id, gross_minor FROM sales ORDER BY sale_id").fetchall()
     assert migrate(conn, 4) == [
+        DOWN_16,
+        DOWN_15,
         DOWN_14,
         DOWN_13,
         DOWN_12,
@@ -185,8 +195,14 @@ def test_identity_migration_0009_round_trip(tmp_path):
     assert {"rate_limit_hits", "auth_accounts", "revoked_tokens"} <= tables(conn)
     assert "on_behalf_of" in {r[1] for r in conn.execute("PRAGMA table_info(audit_events)")}
     conn.execute("INSERT INTO api_principals(principal_id,role,scopes) VALUES ('service:t','service','[]')")
-    conn.execute("INSERT INTO api_principals VALUES ('merchant:c1','merchant','c1','d2',1,'[]')")
-    conn.execute("INSERT INTO api_principals VALUES ('operator:op','operator',NULL,'d3',1,'[]')")
+    conn.execute(
+        "INSERT INTO api_principals(principal_id,role,customer_id,access_key_digest,active,scopes) "
+        "VALUES ('merchant:c1','merchant','c1','d2',1,'[]')"
+    )
+    conn.execute(
+        "INSERT INTO api_principals(principal_id,role,customer_id,access_key_digest,active,scopes) "
+        "VALUES ('operator:op','operator',NULL,'d3',1,'[]')"
+    )
     conn.execute(
         "INSERT INTO api_sessions(session_id,token_digest,principal_id,created_at,expires_at) "
         "VALUES ('s2','t2','merchant:c1','a','b')"
@@ -284,24 +300,24 @@ def test_rollback_of_0010_is_refused_while_an_event_is_pending(tmp_path):
 
 def test_rollback_of_0010_is_refused_while_an_event_has_failed(tmp_path):
     conn = connect(tmp_path / "failed.sqlite3")
-    add_outbox_row(conn, "evt_exhausted", "failed", attempts=3)
+    add_outbox_row(conn, "evt_exhausted", "exhausted", attempts=3)  # `failed` before 0016
     with pytest.raises(RollbackRefused) as refused:
         migrate(conn, 9)
-    assert "1 event(s) not delivered (failed: 1)" in str(refused.value)
+    assert "1 event(s) not delivered (exhausted: 1)" in str(refused.value)
 
 
 def test_refused_rollback_reports_each_state_and_leaves_the_database_as_it_was(tmp_path):
     conn = connect(tmp_path / "intact.sqlite3")
     seed(conn, FixedClock("2026-10-26T10:00:00"))
     add_outbox_row(conn, "evt_a", "pending", attempts=1)
-    add_outbox_row(conn, "evt_b", "failed", attempts=3, target="merchant")
+    add_outbox_row(conn, "evt_b", "exhausted", attempts=3, target="merchant")
     add_outbox_row(conn, "evt_c", "rejected", attempts=1)
     add_outbox_row(conn, "evt_d", "delivered", attempts=1)
     before = outbox_rows(conn)
     for target in (9, 8, 0):  # a deeper rollback is refused at the same point, before any step is applied
         with pytest.raises(RollbackRefused) as refused:
             migrate(conn, target)
-        assert "3 event(s) not delivered (failed: 1, pending: 1, rejected: 1)" in str(refused.value)
+        assert "3 event(s) not delivered (exhausted: 1, pending: 1, rejected: 1)" in str(refused.value)
         assert current_version(conn) == LATEST
         assert outbox_rows(conn) == before
     assert {"webhook_outbox", "webhook_inbox", "conversations", "customers"} <= tables(conn)
@@ -349,11 +365,11 @@ def test_rollback_goes_through_once_the_blocking_events_are_resolved(tmp_path):
 def test_cli_migrate_refuses_the_rollback_with_a_clear_message(tmp_path, capsys):
     settings = Settings(_env_file=None, runtime_dir=tmp_path)
     conn = connect(settings.db_path)
-    add_outbox_row(conn, "evt_a", "failed", attempts=3)
+    add_outbox_row(conn, "evt_a", "exhausted", attempts=3)
     conn.close()
     with pytest.raises(SystemExit) as refused:
         cli.cmd_migrate(settings, SimpleNamespace(to=9))
-    assert "cannot roll back 0010_webhook_outbox" in str(refused.value) and "failed: 1" in str(refused.value)
+    assert "cannot roll back 0010_webhook_outbox" in str(refused.value) and "exhausted: 1" in str(refused.value)
     assert capsys.readouterr().out == ""
     conn = connect(settings.db_path)
     assert current_version(conn) == LATEST and len(outbox_rows(conn)) == 1
@@ -446,7 +462,7 @@ def v3_result(repetition, claim):
 
 def test_0011_round_trip_keeps_every_evaluation_and_rebuilds_the_columns_from_result(tmp_path):
     conn = connect(tmp_path / "evaluations.sqlite3")
-    assert migrate(conn, 10) == [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
+    assert migrate(conn, 10) == [DOWN_16, DOWN_15, DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
     assert not {"scores", "repetition", "unsupported_claim"} & set(columns(conn, "run_evaluations"))
     add_evaluation(conn, "eval_v2", result='{"answers_question":4,"clarity_and_tone":4,"honesty":5,"comment":"ok"}')
     add_evaluation(conn, "eval_v3_a", rubric_version="3", result=v3_result(2, False))
@@ -467,19 +483,20 @@ def test_0011_round_trip_keeps_every_evaluation_and_rebuilds_the_columns_from_re
         "eval_v3_failed": (4, None, None),  # a failed judgement has no scores or verdict, only its repetition
     }
     # the upgrade rebuilds the columns from `result`
-    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13, UP_14]
+    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13, UP_14, UP_15, UP_16]
     assert state() == expected
 
     before = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     # nothing is lost: result keeps the whole judgement
-    assert migrate(conn, 10) == [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
+    assert migrate(conn, 10) == [DOWN_16, DOWN_15, DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
     assert not {"scores", "repetition", "unsupported_claim"} & set(columns(conn, "run_evaluations"))
     rows = {r["evaluation_id"]: r for r in conn.execute("SELECT * FROM run_evaluations")}
     assert set(rows) == set(expected) and rows["eval_v3_b"]["result"] == v3_result(3, True)
     assert rows["eval_v3_b"]["rubric_version"] == "3" and rows["eval_v3_b"]["evaluator"].count("deepseek") == 2
     assert "calibrations" not in tables(conn)
 
-    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13, UP_14] and current_version(conn) == LATEST
+    assert migrate(conn) == ["up 0011_evaluation_rubric", UP_12, UP_13, UP_14, UP_15, UP_16]
+    assert current_version(conn) == LATEST
     assert state() == expected  # the repetition and the verdict came back with the second upgrade
     after = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     assert {k: v | {"scores": None} for k, v in after.items()} == {k: v | {"scores": None} for k, v in before.items()}
@@ -513,7 +530,7 @@ def test_rollback_of_0011_is_refused_while_human_scores_exist_and_changes_nothin
     assert conn.execute("SELECT repetition, unsupported_claim FROM run_evaluations").fetchone()[:] == (3, 1)
 
     conn.execute("DELETE FROM calibrations")
-    assert migrate(conn, 10) == [DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
+    assert migrate(conn, 10) == [DOWN_16, DOWN_15, DOWN_14, DOWN_13, DOWN_12, "down 0011_evaluation_rubric"]
     assert current_version(conn) == 10
 
 
@@ -534,7 +551,8 @@ def test_cli_migrate_refuses_the_0011_rollback_with_a_clear_message(tmp_path, ca
 
 def add_comparison(conn, comparison_id, state):
     conn.execute(
-        "INSERT INTO comparisons VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO comparisons (comparison_id,principal_id,state,config,cells,failures,estimate,cost_usd,created_at,"
+        "updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
         (
             comparison_id,
             "demo:default",
@@ -551,7 +569,12 @@ def add_comparison(conn, comparison_id, state):
 
 
 def comparison_rows(conn):
-    return {r["comparison_id"]: dict(r) for r in conn.execute("SELECT * FROM comparisons")}
+    """Every comparison without the lease columns of 0016 (empty here), so the rows compare across 0012."""
+    lease = ("worker_id", "heartbeat_at")
+    return {
+        r["comparison_id"]: {k: v for k, v in dict(r).items() if k not in lease}
+        for r in conn.execute("SELECT * FROM comparisons")
+    }
 
 
 def test_0012_accepts_interrupted_and_still_refuses_unknown_states(tmp_path):
@@ -569,7 +592,7 @@ def test_0012_round_trip_turns_interrupted_into_failed_and_keeps_every_row(tmp_p
         add_comparison(conn, f"pcmp_{state}", state)
     before = comparison_rows(conn)
 
-    assert migrate(conn, 11) == [DOWN_14, DOWN_13, DOWN_12]
+    assert migrate(conn, 11) == [DOWN_16, DOWN_15, DOWN_14, DOWN_13, DOWN_12]
     after = comparison_rows(conn)
     assert after["pcmp_interrupted"]["state"] == "failed"  # the 0011 schema has no `interrupted`
     assert {k: v | {"state": None} for k, v in after.items()} == {k: v | {"state": None} for k, v in before.items()}
@@ -580,7 +603,7 @@ def test_0012_round_trip_turns_interrupted_into_failed_and_keeps_every_row(tmp_p
         add_comparison(conn, "pcmp_again", "interrupted")
     assert conn.execute("PRAGMA index_list(comparisons)").fetchall()
 
-    assert migrate(conn) == [UP_12, UP_13, UP_14] and current_version(conn) == LATEST == 14
+    assert migrate(conn) == [UP_12, UP_13, UP_14, UP_15, UP_16] and current_version(conn) == LATEST == 16
     assert comparison_rows(conn) == after
     add_comparison(conn, "pcmp_again", "interrupted")
     assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
@@ -604,7 +627,7 @@ V5_CLAIMS = {
 
 def test_0013_round_trip_keeps_the_claims_in_result_and_rebuilds_the_column(tmp_path):
     conn = connect(tmp_path / "claims.sqlite3")
-    assert migrate(conn, 12) == [DOWN_14, DOWN_13]
+    assert migrate(conn, 12) == [DOWN_16, DOWN_15, DOWN_14, DOWN_13]
     assert "claims" not in columns(conn, "run_evaluations")
     v5_result = json.dumps({"repetition": 1, "groundedness": 2, "unsupported_claim": True, "claims": V5_CLAIMS})
     add_evaluation(conn, "eval_v5", rubric_version="5", result=v5_result)
@@ -617,17 +640,17 @@ def test_0013_round_trip_keeps_the_claims_in_result_and_rebuilds_the_column(tmp_
         return {r["evaluation_id"]: r["claims"] and json.loads(r["claims"]) for r in rows}
 
     expected = {"eval_odd": None, "eval_v3": None, "eval_v5": V5_CLAIMS, "eval_v5_failed": None}
-    assert migrate(conn) == [UP_13, UP_14] and current_version(conn) == LATEST == 14
+    assert migrate(conn) == [UP_13, UP_14, UP_15, UP_16] and current_version(conn) == LATEST == 16
     assert claims() == expected  # the upgrade fills the column from `result`
 
     before = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
-    assert migrate(conn, 12) == [DOWN_14, DOWN_13]
+    assert migrate(conn, 12) == [DOWN_16, DOWN_15, DOWN_14, DOWN_13]
     assert "claims" not in columns(conn, "run_evaluations")
     after_down = {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")}
     assert after_down == {k: {c: v for c, v in row.items() if c != "claims"} for k, row in before.items()}
     assert json.loads(after_down["eval_v5"]["result"])["claims"] == V5_CLAIMS  # nothing is lost
 
-    assert migrate(conn) == [UP_13, UP_14] and claims() == expected
+    assert migrate(conn) == [UP_13, UP_14, UP_15, UP_16] and claims() == expected
     assert {r["evaluation_id"]: dict(r) for r in conn.execute("SELECT * FROM run_evaluations")} == before
     with pytest.raises(sqlite3.IntegrityError):  # the column holds JSON only
         conn.execute("UPDATE run_evaluations SET claims='not json' WHERE evaluation_id='eval_v3'")
@@ -668,7 +691,7 @@ def test_0014_round_trip_keeps_conversations_and_messages_and_drops_the_memory(t
     conversation = [tuple(r) for r in conn.execute("SELECT conversation_id, state, created_at FROM conversations")]
     messages = [tuple(r) for r in conn.execute("SELECT * FROM messages")]
 
-    assert migrate(conn, 13) == [DOWN_14]
+    assert migrate(conn, 13) == [DOWN_16, DOWN_15, DOWN_14]
     assert "conversation_facts" not in tables(conn)
     assert not {"summary", "summary_until_message_id"} & set(columns(conn, "conversations"))
     assert [tuple(r) for r in conn.execute("SELECT conversation_id, state, created_at FROM conversations")] == (
@@ -676,7 +699,7 @@ def test_0014_round_trip_keeps_conversations_and_messages_and_drops_the_memory(t
     )
     assert [tuple(r) for r in conn.execute("SELECT * FROM messages")] == messages
 
-    assert migrate(conn) == [UP_14] and current_version(conn) == LATEST == 14
+    assert migrate(conn) == [UP_14, UP_15, UP_16] and current_version(conn) == LATEST == 16
     assert {"summary", "summary_until_message_id"} <= set(columns(conn, "conversations"))
     assert conn.execute("SELECT summary, summary_until_message_id FROM conversations").fetchone()[:] == (None, None)
     assert conn.execute("SELECT COUNT(*) FROM conversation_facts").fetchone()[0] == 0
@@ -738,12 +761,12 @@ def test_0014_cancellation_requests_round_trip_and_constraints(tmp_path):
     sales = [tuple(r) for r in conn.execute("SELECT * FROM sales ORDER BY sale_id")]
     cancellations = [tuple(r) for r in conn.execute("SELECT * FROM sale_cancellations ORDER BY transaction_id")]
 
-    assert migrate(conn, 13) == [DOWN_14]  # nothing confirmed: the rollback goes through
+    assert migrate(conn, 13) == [DOWN_16, DOWN_15, DOWN_14]  # nothing confirmed: the rollback goes through
     assert not {"sale_cancellation_requests", "conversation_facts"} & tables(conn)
     assert [tuple(r) for r in conn.execute("SELECT * FROM sales ORDER BY sale_id")] == sales
     assert [tuple(r) for r in conn.execute("SELECT * FROM sale_cancellations ORDER BY transaction_id")] == cancellations
 
-    assert migrate(conn) == [UP_14] and current_version(conn) == LATEST == 14
+    assert migrate(conn) == [UP_14, UP_15, UP_16] and current_version(conn) == LATEST == 16
     assert conn.execute("SELECT COUNT(*) FROM sale_cancellation_requests").fetchone()[0] == 0
     add_request(conn, "scr_7", "pending_confirmation")
     assert_request_checks(conn)  # the same constraints after down and up
@@ -757,7 +780,49 @@ def test_rollback_of_0014_is_refused_while_a_confirmed_request_exists_and_the_se
     add_request(conn, "scr_ok", "confirmed", protocol="CAN-20261026-AAAAAA", confirmed_at="2026-10-26")
     with pytest.raises(RollbackRefused, match="confirmed cancellation request"):
         migrate(conn, 13)
-    assert current_version(conn) == 14 and "sale_cancellation_requests" in tables(conn)
+    assert current_version(conn) == 16 and "sale_cancellation_requests" in tables(conn)
     seed(conn, FixedClock("2026-10-26T10:00:00"))  # synthetic data: reseeding starts the requests over
     assert conn.execute("SELECT COUNT(*) FROM sale_cancellation_requests").fetchone()[0] == 0
-    assert migrate(conn, 13) == [DOWN_14]
+    assert migrate(conn, 13) == [DOWN_16, DOWN_15, DOWN_14]
+
+
+# --- 0015: authorization codes, refresh tokens and the issuer of a principal (task 97) --------------------------
+
+
+def test_0015_round_trip_drops_codes_and_refresh_tokens_and_keeps_the_principals(tmp_path):
+    conn = connect(tmp_path / "auth_code.sqlite3")
+    conn.execute(
+        "INSERT INTO api_principals(principal_id,role,customer_id,active,scopes,issuer) "
+        "VALUES ('merchant:cliente1988','merchant','cliente1988',1,'[\"support:read\"]','http://127.0.0.1:8000')"
+    )
+    conn.execute(
+        "INSERT INTO auth_codes(code_hash,client_id,redirect_uri,code_challenge,account_id,principal_id,scope,"
+        "created_at,expires_at) VALUES ('h1','merchant-assistant-web','http://localhost:8501/','c',"
+        "'user:cliente1988','merchant:cliente1988','support:read',1,61)"
+    )
+    conn.execute(
+        "INSERT INTO refresh_tokens(token_hash,family_id,client_id,account_id,principal_id,scope,created_at,"
+        "expires_at,family_expires_at,access_jti,access_expires_at) VALUES ('r1','f1','merchant-assistant-web',"
+        "'user:cliente1988','merchant:cliente1988','support:read',1,2,3,'j1',4)"
+    )
+    with pytest.raises(sqlite3.IntegrityError):  # one row per digest
+        conn.execute(
+            "INSERT INTO auth_codes(code_hash,client_id,redirect_uri,code_challenge,account_id,principal_id,scope,"
+            "created_at,expires_at) VALUES ('h1','w','u','c','a','p','s',1,2)"
+        )
+    principals = [tuple(r) for r in conn.execute("SELECT principal_id,role,customer_id,scopes FROM api_principals")]
+
+    assert migrate(conn, 14) == [DOWN_16, DOWN_15]
+    assert not {"auth_codes", "refresh_tokens"} & tables(conn)
+    assert "issuer" not in columns(conn, "api_principals")
+    assert [tuple(r) for r in conn.execute("SELECT principal_id,role,customer_id,scopes FROM api_principals")] == (
+        principals
+    )
+
+    assert migrate(conn) == [UP_15, UP_16] and current_version(conn) == LATEST == 16
+    assert {"auth_codes", "refresh_tokens"} <= tables(conn) and "issuer" in columns(conn, "api_principals")
+    assert conn.execute("SELECT COUNT(*) FROM auth_codes").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM refresh_tokens").fetchone()[0] == 0
+    assert conn.execute("SELECT issuer FROM api_principals").fetchone()[0] is None
+    assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    assert conn.execute("PRAGMA foreign_key_check").fetchall() == []

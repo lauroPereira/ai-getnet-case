@@ -62,6 +62,8 @@ Dependências `langgraph-checkpoint-sqlite` e `pyjwt[crypto]`; um arquivo de che
 
 Comportamento na v0.7.0: intenção esgotada (`failed`) ou recusada (`rejected`) prende os eventos seguintes do mesmo caso e destinatário (reenvio previsto no [roadmap](../../specs/roadmap-v0110-v100.md), RF-124); depois de uma queda no meio do turno do encaminhamento, o caso se completa quando o lojista reenvia a mesma mensagem (recuperação na subida prevista, RF-125). Uma colisão de faixa de bloqueio com uma retomada longa devolve `503`, repetível depois de 5 s; os bloqueios entre processos foram exercitados no Windows.
 
+**Atualização da v0.13.0** ([tarefa 99](../../tasks/99-workers-webhooks-orfaos.md)): a intenção esgotada passa a `exhausted` e tem reenvio, pelo operador (`POST /v1/webhooks/deliveries/{delivery_id}/resend`) e uma vez na subida para as esgotadas há mais de 1 h. A ordem por caso e destinatário continua: os eventos seguintes esperam a anterior `pending` ou `exhausted` e saem, na ordem, depois do reenvio, de modo que uma resposta ou um fechamento nunca ultrapassa a criação do ticket. Uma intenção recusada pelo receptor é final e não segura as seguintes; outros casos nunca esperam. Na subida, caso `open` sem ticket cujo fluxo está salvo em `human_review` e cuja intenção de `handoff.created` não foi gravada recebe a intenção; o caso cujo fluxo ainda não foi salvo segue o caminho acima, completado quando o lojista reenvia a mesma mensagem.
+
 Retorno: tag v0.6.0, migrações 0010 e 0009 descendentes (a 0010 só desce com a outbox vazia ou só com entregues) e remoção de `checkpoints.sqlite3`, dos arquivos de bloqueio e do banco do ticketing.
 
 ## Data

@@ -11,6 +11,7 @@ from merchant_assistant.api.app import create_app
 from merchant_assistant.config import Settings, get_settings
 from merchant_assistant.data.clock import Clock, SystemClock
 from merchant_assistant.llm.base import LLM
+from merchant_assistant.observability import otel
 from merchant_assistant.observability.logging import configure_logging
 from merchant_assistant.observability.traces import TraceStore
 from merchant_assistant.orchestration.budget import BudgetGuard, CombinedBudgetGuard
@@ -110,7 +111,7 @@ def build_orchestrator(
         knowledge_base=kb,
         clock=clock or SystemClock(settings.timezone),
         budget=budget,
-        traces=TraceStore(settings.runtime_path / "traces.sqlite3"),
+        traces=TraceStore(settings.runtime_path / "traces.sqlite3", exporter=otel.exporter_from_settings(settings)),
         faults=faults,
         mock_services=MockServiceClient(settings.mocks_url, timeout=2.0),
         llm_factory=model_factory(settings),

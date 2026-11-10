@@ -4,10 +4,13 @@ The schema is owned by `migrations.py`; `connect` brings any database to the lat
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 from pathlib import Path
 
 from merchant_assistant.data.migrations import migrate
+
+log = logging.getLogger("merchant_assistant.db")
 
 # Tables `seed` recreates on every start (bootstrap). `audit_events` is not one of them (spec v0.7.0, D27): the audit
 # trail is security evidence and survives restarts.
@@ -34,5 +37,11 @@ def connect(path: Path | str) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA busy_timeout = 5000")
+    if str(path) != ":memory:":
+        # Two API workers share the file (task 99): WAL lets readers go on while one of them writes. The mode is kept
+        # in the file; the answer confirms it, and a file system without WAL support keeps the rollback journal.
+        mode = conn.execute("PRAGMA journal_mode = WAL").fetchone()[0]
+        if str(mode).lower() != "wal":
+            log.warning("SQLite journal mode is %s, not wal, for %s", mode, Path(path).name)
     migrate(conn)
     return conn

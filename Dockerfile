@@ -6,6 +6,8 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 # the `ingest` extra brings the HTML extractor (`rag.collect.extract_text`) the web evidence of `eval` uses (task 91)
 RUN python -m venv /venv && /venv/bin/pip install ".[ingest]"
+# the `otel` extra brings the OTLP span exporter, idle until OTEL_EXPORTER_OTLP_ENDPOINT is set (task 101)
+RUN /venv/bin/pip install ".[otel]"
 
 FROM python:3.13.13-slim
 ENV PATH="/venv/bin:$PATH" \

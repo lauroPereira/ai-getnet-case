@@ -101,7 +101,7 @@ def test_token_endpoint_errors_follow_rfc6749_and_do_not_say_which_field_failed(
     )
     assert unknown_client.status_code == 401 and unknown_client.json()["error"] == "invalid_client"
     assert unknown_client.headers["www-authenticate"].startswith("Basic")
-    grant = token_request(client, grant_type="authorization_code", code="x")
+    grant = token_request(client, grant_type="urn:ietf:params:oauth:grant-type:device_code", device_code="x")
     assert grant.status_code == 400 and grant.json()["error"] == "unsupported_grant_type"
     for incomplete in ({}, {"grant_type": "password", "username": "cliente1988"}):
         response = token_request(client, **incomplete)
@@ -162,7 +162,7 @@ def test_published_jwks_validates_the_issued_token_independently(offline):
     assert discovery["issuer"] == "http://127.0.0.1:8000"
     assert discovery["jwks_uri"] == "http://127.0.0.1:8000/.well-known/jwks.json"
     assert discovery["token_endpoint"].endswith("/v1/auth/token")
-    assert set(discovery["grant_types_supported"]) == {"password", "client_credentials"}
+    assert {"password", "client_credentials"} <= set(discovery["grant_types_supported"])  # v0.13.0 adds the code
     assert "handoff:integrate" in discovery["scopes_supported"]
     jwks = client.get("/.well-known/jwks.json").json()
     assert all("d" not in key and "p" not in key for key in jwks["keys"])  # public parts only
