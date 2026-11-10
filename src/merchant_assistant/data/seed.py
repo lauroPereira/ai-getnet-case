@@ -61,7 +61,9 @@ def seed(conn: sqlite3.Connection, clock: Clock) -> dict[str, int]:
     def at(day_offset: int, hh: int, mm: int) -> datetime:
         return datetime.combine(d0 + timedelta(days=day_offset), time(hh, mm), tzinfo=tz)
 
-    conn.execute("BEGIN")
+    # IMMEDIATE: the write lock comes before the first read, so a commit by another worker in between (a lease
+    # heartbeat) cannot turn the first DELETE into an instant "database is locked" (task 106)
+    conn.execute("BEGIN IMMEDIATE")
     try:
         # Task 94: the cancellation requests reference the seeded sales, and the account state they changed
         # (`sale_cancellations`) is reseeded, so they start over with it (the table exists from schema 14 on).

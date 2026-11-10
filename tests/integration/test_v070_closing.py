@@ -99,9 +99,9 @@ def test_a_request_runs_through_the_campaign_guard_and_both_ledgers_record_it(of
     assert primary.spent() == campaign.guard.spent() == 0  # the scripted model is free
 
 
-def test_package_version_is_0_12_0():
+def test_package_version_is_1_0_0():
     project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert project["version"] == __version__ == "0.13.0"
+    assert project["version"] == __version__ == "1.0.0"
 
 
 def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contract():
@@ -118,6 +118,8 @@ def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contra
     depends = services["api"]["depends_on"]  # the first handoff.created after `up` finds the receivers listening
     assert depends["ticketing"]["condition"] == depends["mocks"]["condition"] == "service_healthy"
     assert "depends_on" not in services["ticketing"]  # no cycle: the ticketing never waits for the api
+    # v1.0.0: an operator action waits for a reply with a model call, under the 20 s of the web ticketing screen
+    assert ticketing["TICKETING_WEBHOOK_TIMEOUT_S"] == "${TICKETING_WEBHOOK_TIMEOUT_S:-15}"
     assert services["api"]["ports"] == ["127.0.0.1:8000:8000"] and services["ticketing"]["ports"] == [
         "127.0.0.1:8002:8002"
     ]

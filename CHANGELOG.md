@@ -2,6 +2,37 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Entries summarize product behavior, contract and data changes.
 
+## [1.0.0] — not released
+
+Published image, pinned dependencies, the demonstration through a tunnel and a README for a quick reading ([spec](docs/specs/leitura-acesso-v100.md), [ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), tasks 106–108). Builds on v0.13.0 and schema 16; no new migration.
+
+### Added
+- **Image on GHCR per tag** (spec D1; task 106). A `v*` tag runs the `image` job after the strict validation: it fails when the tag is not `v` plus the version in `pyproject.toml`, builds the `runtime` target and pushes `ghcr.io/<owner>/ai-getnet-case:<tag>`, plus `:latest` only for a final version (`X.Y.Z`, no pre-release suffix), with the OCI source and version labels, using `GITHUB_TOKEN` with `contents: read` and `packages: write` only.
+- **`uv.lock`** (spec D2; task 106). The application dependencies are pinned in a versioned lockfile; the image installs them with `uv sync --frozen` (extras `ingest` and `otel`), and the CI fails when `uv lock --check` finds the lockfile out of date.
+- **Strict suite inside the image** (spec D4; task 106). The `test` target of the `Dockerfile` adds the `dev` extra of the same lockfile and the repository files; `docker run --rm --network none` runs the strict suite with no access to PyPI or a model provider ([README](README.md#run-the-tests-inside-the-image)).
+- **Demonstration tunnel** (spec D6; task 108; [ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), amending 0012). The compose profile `tunnel` runs a pinned Caddy proxy (`docker/tunnel/Caddyfile`) on `127.0.0.1:8080` that sends only `GET` and `POST /v1/auth/authorize` to the API and everything else, the Streamlit websocket included, to the interface on the host (`STREAMLIT_UPSTREAM`, default `host.docker.internal:8501`); no other API route is reachable through it. A Cloudflare quick tunnel (`cloudflared tunnel --url http://localhost:8080`) publishes that port; the README guide opens and closes an announced window with one-off credentials ([Open the demonstration through a tunnel](README.md#open-the-demonstration-through-a-tunnel)). The interface (sibling project `ai-getnet-case-web`) adds `AUTH_AUTHORIZE_URL`: the browser opens the login at the public address, and the interface's server exchanges, renews and revokes tokens only at `BACKEND_API_URL`.
+- **README for a quick reading** (spec D5; task 107). What the assistant is and for whom, the status and two ways to run it at the top; a [before and after table](README.md#what-changed-since-v0100) per area (attendance, judge, retrieval, memory, identity, operation, tests) with the v0.10.0 figure, the current one and the evidence of each; a [10-minute walkthrough](README.md#10-minute-walkthrough) in the interface (start, ask as the merchant, hand off, answer from the ticketing screen as the operator, evaluate one answer); [docs/evidence](docs/evidence/README.md) indexes the v0.12.0 and v0.13.0 results.
+
+### Changed
+- The compose services that run the application (`api`, `mocks`, `ticketing`, `telegram`) use `ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}` with `pull_policy: missing`, and build from the `Dockerfile` when the image is neither local nor pullable (spec D3; task 106). The README starts the stack with `docker compose up -d --wait`; `docker compose up --build` still builds from the checkout.
+- The CI strict validation installs the dependencies from `uv.lock` (`uv sync --frozen --extra ingest --extra otel --extra dev`, uv 0.13.7, the version of the image builder), so it tests what the image runs.
+- Local development installs with `uv sync --frozen --extra ingest --extra dev`.
+- The Docker build context carries only the project inputs the image and its `test` target read.
+- The seed takes the SQLite write lock before its first read (`BEGIN IMMEDIATE`), so a lease heartbeat of another worker cannot make it fail with `database is locked`.
+- The API process runs with `--no-proxy-headers`: `X-Forwarded-*` are never trusted, so behind the tunnel proxy every visitor counts as the proxy's address and the per-address login limit gets stricter, never looser.
+- While `OAUTH_REDIRECT_URIS` registers an address outside the loopback, the API refuses to start if any credential (`DEMO_USER_PASSWORDS`, `API_DEMO_PASSWORD`, `API_ADMIN_PASSWORD`, `TICKETING_CLIENT_SECRET`, `TELEGRAM_CLIENT_SECRET`) keeps a value published in this repository (`.env.example` or the test suite); the log names the accounts and the variables to replace, without echoing a value. With loopback addresses only, the startup warning stays as before.
+- In the compose, the ticketing service waits up to 15 s (`TICKETING_WEBHOOK_TIMEOUT_S`; 3 s outside the compose) for the assistant to accept an operator action, whose reply includes a model call.
+- README: the Streamlit command sets `AUTH_ISSUER` for the compose API; the roadmap and the version table include v0.12.0, v0.13.0 and v1.0.0; the walkthrough has screenshots (`docs/images/`).
+
+### Contract and data
+- No route, schema or migration change; `/health` and `/ready` report version `1.0.0`.
+- New compose profile `tunnel` and setting `STREAMLIT_UPSTREAM`; `.env.example` documents `APP_VERSION` and the tunnel block.
+
+### Notes
+- The compose runs the API with two workers (`API_WORKERS`, default 2), which need Qdrant as a service; outside the compose, with the embedded store, run one worker.
+- Without a published image the compose builds it locally; with a fixed `APP_VERSION`, run `docker compose pull --policy always` after publication to replace that build. A private package needs a GHCR login.
+- A quick tunnel has no uptime guarantee and serves an announced window: register its address and one-off credentials for that opening only, never share `admin`, and close it with the guide's last step.
+
 ## [0.13.0] — not released
 
 Identity and operation: sign-in by redirect with rotating refresh tokens, external OIDC issuers, two API workers, webhook resend and recovery of unannounced cases, the operator on Telegram, OTLP spans and a dashboard ([spec](docs/specs/identidade-operacao-v0130.md), [ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md)). Adds migrations 0015 and 0016 after v0.12.0's conversation-memory migration 0014.
@@ -72,7 +103,7 @@ Conversation memory, replanning controls, and sale cancellation with explicit co
 - `tests/scenarios/business_journeys.jsonl`: the required phrases of the 13 journeys are named `expected_claims` (was `must_include_any`; same content). The loader gives them to the literal ruler as before; other label files are unchanged.
 - **Migration 0013** (reversible, `0013_evaluation_claims`): `run_evaluations.claims` (JSON, `{"claims": [...], "claim_verdicts": [...]}`) for `judge.v5` judgements; the same lists are kept in `result`, so the downgrade drops the column without loss and the upgrade rebuilds it. Schema version 13.
 
-## [0.10.0] — 2026-11-06 (validated: review and real QA)
+## [0.10.0] — 2026-11-06
 
 Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rules ([spec](docs/specs/rubrica-operacao-v0100.md), [story](docs/historias/rubrica-operacao-v0100.md), [ADR 0022](docs/architecture/decisions/0022-rubrica-v4-operacao-retomavel.md), tasks 83–86).
 
@@ -102,7 +133,7 @@ Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rule
 ### Return to 0.9.0
 - Stop the stack, run `merchant-assistant migrate --to 11` against the runtime (any `interrupted` comparison becomes `failed`) and check out the 0.9.0 release. `judge.v4` and `/metrics` leave no data behind that 0.9.0 cannot read.
 
-## [0.9.0] — 2026-11-06 (validated: review and real QA)
+## [0.9.0] — 2026-11-06
 
 Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v090.md), [story](docs/historias/juiz-retrieval-v090.md), [ADR 0020](docs/architecture/decisions/0020-retrieval-hibrido-holdout.md), [ADR 0021](docs/architecture/decisions/0021-juiz-modelo-e-regua.md), tasks 79–82).
 
@@ -145,7 +176,7 @@ Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v0
 ### Return to 0.8.0
 - Set `RETRIEVAL_MODE=dense` (and keep `RERANK=off`) for the v0.8.0 behavior without checking out anything; the BM25 file is ignored. No migration to undo; judgements with `run` and `usage` are read by the 0.8.0 code as before.
 
-## [0.8.0] — 2026-11-05 (validated: review, real QA and human calibration)
+## [0.8.0] — 2026-11-05
 
 Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-avaliacao-v080.md), [story](docs/historias/orquestracao-avaliacao-v080.md), [ADR 0019](docs/architecture/decisions/0019-replanejamento.md), tasks 69–78).
 
@@ -190,7 +221,7 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 ### Return to 0.7.0
 - Stop the stack, make sure `calibrations` holds no human scores (or recreate the runtime), run `merchant-assistant migrate --to 10` against the runtime and check out the 0.7.0 release. The prompt loader takes the latest file of each prompt, so 0.7.0 uses `router.v5`, `personality.v4` and `judge.v2` again; `MAX_PLAN_HOPS` and the judge settings are ignored. The budget ledgers stay as they are.
 
-## [0.7.0] — 2026-11-04 (validated: review and real QA apt)
+## [0.7.0] — 2026-11-04
 
 Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md), [story](docs/historias/identidade-hitl-v070.md), [ADR 0017](docs/architecture/decisions/0017-identidade-principal-escopos.md), [ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md), tasks 63–68 and 66b).
 
@@ -226,7 +257,7 @@ Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md),
 ### Return to 0.6.0
 - Stop the stack, make sure the outbox has no undelivered events (or recreate the runtime), run `merchant-assistant migrate --to 8` against the runtime and check out `v0.6.0`; remove `checkpoints.sqlite3`, the lock files and the ticketing database.
 
-## [0.6.0] — 2026-10-28 (validated: review and real QA apt)
+## [0.6.0] — 2026-10-28
 
 Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md), [plan](docs/specs/fechamento-v060-plano.md), [ADR 0015](docs/architecture/decisions/0015-recorte-final-v060.md), tasks 54–58). After acceptance, functional expansion ends (reopened in v0.7.0, ADR 0016).
 
@@ -262,7 +293,7 @@ Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md)
 ### Return to 0.5.0
 - Stop the stack and run `merchant-assistant migrate --to 7` against the synthetic runtime before checking out `v0.5.0`; evaluations, comparisons and the session message counter are dropped, all earlier data is kept. Compose of 0.5.0 publishes the API on all interfaces again.
 
-## [0.5.0] — 2026-10-27 (validated candidate r7; approved for Git integration)
+## [0.5.0] — 2026-10-27
 
 Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), tasks 39–53).
 
@@ -288,7 +319,7 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 ### Return to 0.4.0
 - Stop the stack and run `merchant-assistant migrate --to 6` against the synthetic runtime before checking out `v0.4.0`. Knowledge base tables are dropped; Qdrant collections are kept and the reference collection keeps working.
 
-## [0.4.0] — 2026-10-27 (approved for Git integration)
+## [0.4.0] — 2026-10-27
 
 ### Added
 - Reversible migration 0006 for model profiles, immutable published versions, API principals and sessions, router comparisons and run snapshots.
@@ -313,7 +344,7 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 ### Notes
 - Validated with scripted models; real-model QA starts in 0.5.0.
 
-## [0.3.0] — 2026-10-27 (validated; approved for release)
+## [0.3.0] — 2026-10-27
 
 ### Added
 - Internal `mocks` HTTP service with separate synthetic pricing rules and recorded charge fixtures; no public port.

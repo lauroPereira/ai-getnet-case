@@ -5,6 +5,7 @@ merchant checks with one audit row per tool call. Keys are generated in the test
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
 import time
 
@@ -146,7 +147,16 @@ def test_env_example_credentials_are_fictitious_valid_and_match_compose():
 
 
 def test_no_warning_without_example_values(settings):
+    passwords = {user: secrets.token_urlsafe(16) for user in TEST_USER_PASSWORDS}
+    settings.demo_user_passwords = SecretStr(passwords_setting(passwords))
+    settings.ticketing_client_secret = SecretStr(secrets.token_urlsafe(16))
     assert check_configuration(settings) == []
+
+
+def test_the_test_suite_credentials_are_published_values_too(settings):
+    """merchant_assistant.testing is in the repository: its passwords warn like those of .env.example."""
+    warnings = check_configuration(settings)  # the fixture uses TEST_USER_PASSWORDS and TEST_TICKETING_SECRET
+    assert len(warnings) == 1 and "user:op_ana" in warnings[0] and "client:ticketing-demo" in warnings[0]
 
 
 def test_accounts_are_stored_as_hashes_and_rehashed_only_when_changed(settings, identity, db):

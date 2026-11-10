@@ -1,3 +1,5 @@
+import sqlite3
+from contextlib import closing
 from datetime import timedelta
 
 from merchant_assistant.data.clock import FixedClock, SystemClock, today
@@ -70,3 +72,43 @@ def test_second_seed_keeps_the_audit(tmp_path):
     assert "audit_events" not in counts
     assert conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0] == 1
     assert conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0] > 0  # domain data is recreated
+
+
+class _OtherWriterAfterTheFirstRead:
+    """The seed's connection, with another connection writing right after the seed's first read, as the lease heartbeat
+    of a live comparison can do when a second worker starts."""
+
+    def __init__(self, conn, path):
+        self._conn, self._path, self.other_writer_blocked = conn, path, None
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def execute(self, sql, *args):
+        cursor = self._conn.execute(sql, *args)
+        if self.other_writer_blocked is None and "sqlite_master" in sql:
+            other = sqlite3.connect(self._path, timeout=0.1, isolation_level=None)
+            try:
+                other.execute("INSERT INTO probe VALUES (1)")
+                self.other_writer_blocked = False
+            except sqlite3.OperationalError as exc:
+                if exc.sqlite_errorcode != sqlite3.SQLITE_BUSY:
+                    raise
+                self.other_writer_blocked = True
+            finally:
+                other.close()
+        return cursor
+
+
+def test_seed_takes_the_write_lock_before_its_first_read(tmp_path):
+    """A deferred BEGIN read the schema and then wrote: a commit by another connection in between made the upgrade
+    fail at once with "database is locked" (SQLITE_BUSY_SNAPSHOT ignores busy_timeout). BEGIN IMMEDIATE holds the
+    write lock from the start, so the other writer waits for the seed instead."""
+    path = tmp_path / "db.sqlite3"
+    with closing(connect(path)) as conn:
+        conn.execute("CREATE TABLE probe (x INTEGER)")
+        seed(conn, FixedClock("2026-10-26T10:00:00"))  # schema complete, as in a later start
+        racing = _OtherWriterAfterTheFirstRead(conn, path)
+        seed(racing, FixedClock("2026-10-26T10:00:00"))
+        assert racing.other_writer_blocked is True
+        assert conn.execute("SELECT COUNT(*) FROM receivables").fetchone()[0] > 0

@@ -1,0 +1,22 @@
+# v1.0.0 (task 108, ADR 0026): the single origin of the demonstration tunnel, only with `--profile tunnel`.
+# GET and POST /v1/auth/authorize (the issuer's login page and its form) go to the api; everything else, the
+# Streamlit websocket included, goes to the interface run on the host. No other route of the api is reachable here.
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	@authorize {
+		path /v1/auth/authorize
+		method GET POST
+	}
+	handle @authorize {
+		# the api always receives this exact path (the query is kept), whatever spelling the matcher accepted
+		rewrite * /v1/auth/authorize
+		reverse_proxy api:8000
+	}
+	handle {
+		reverse_proxy {$STREAMLIT_UPSTREAM:host.docker.internal:8501}
+	}
+}

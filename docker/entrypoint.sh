@@ -5,4 +5,7 @@ merchant-assistant bootstrap
 # Two workers by default (API_WORKERS): nothing is kept per process; comparisons hold a lease in SQLite, any worker
 # marks one whose worker stopped `interrupted`, and its owner resumes it with POST .../resume on whichever worker
 # answers (README, Operating notes). API_WORKERS=1 returns to a single worker.
-exec uvicorn --factory merchant_assistant.main:create_application --host 0.0.0.0 --port 8000 --workers "${API_WORKERS:-2}"
+# --no-proxy-headers: X-Forwarded-* are never trusted, whatever FORWARDED_ALLOW_IPS says; behind the tunnel proxy every
+# visitor is the proxy's address, so the per-address login limit gets stricter, never looser (task 108, ADR 0026).
+exec uvicorn --factory merchant_assistant.main:create_application --host 0.0.0.0 --port 8000 \
+  --workers "${API_WORKERS:-2}" --no-proxy-headers
