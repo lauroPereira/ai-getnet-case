@@ -89,6 +89,12 @@ at the repository root.
 15. [Beyond the challenge](#beyond-the-challenge) · 16. [Operations](#operations) · 17. [Next steps](#next-steps) ·
 18. [Repository layout](#repository-layout)
 
+Reference guides: [configuration](docs/wiki/guides/configuration.md) ·
+[local development](docs/wiki/guides/local-development.md) ·
+[evaluation commands](docs/wiki/guides/evaluation-commands.md) ·
+[demonstration API](docs/wiki/guides/demonstration-api.md) ·
+[interface and tunnel](docs/wiki/guides/interface-and-tunnel.md) · [MCP server](docs/wiki/guides/mcp.md)
+
 ---
 
 ## Run it
@@ -148,18 +154,11 @@ The optional interface, the `/v1` API and the MCP server are described in [Beyon
 
 ### Locally (development)
 
-Use uv 0.13.7, the version used by the Dockerfile, for the commands below and for maintaining `uv.lock`.
-
-```bash
-uv sync --frozen --extra ingest --extra dev
-source .venv/bin/activate                                    # PowerShell: .\.venv\Scripts\Activate.ps1
-merchant-assistant bootstrap                                  # seed data + build the index (embedded Qdrant)
-uvicorn --factory merchant_assistant.main:create_application --reload
-merchant-assistant ask "Qual a cotação do euro hoje?" --trace  # one message, in process, with its trace
-```
-
-After changing the dependencies or the version in `pyproject.toml`, regenerate `uv.lock` with `uv lock` and include
-it with the change. `uv lock --check` verifies that the lockfile is current.
+Outside Docker, `uv sync --frozen --extra ingest --extra dev` installs the environment from `uv.lock`,
+`merchant-assistant bootstrap` seeds the data and builds the index in an embedded Qdrant, and
+`merchant-assistant ask "<message>" --trace` runs one message in process with its trace. The commands, the uv
+version and the lockfile upkeep (`uv lock`, then `uv lock --check`) are in the
+[local development guide](docs/wiki/guides/local-development.md).
 
 ### Tests and evaluation
 
@@ -173,7 +172,7 @@ merchant-assistant ingest                # re-collect the official pages into sn
 
 `eval --judge` uses the independent judge (`JUDGE_PROVIDER`, `JUDGE_MODEL`). Capped campaigns, repeated runs, judge
 calibration, the retrieval holdout and the replanning comparison are in the
-[evaluation command reference](docs/wiki/comandos-de-avaliacao.md) (in Portuguese); the method and the results are in
+[evaluation command reference](docs/wiki/guides/evaluation-commands.md); the method and the results are in
 [Testing and evaluation](#testing-and-evaluation).
 
 ### Run the tests inside the image
@@ -194,7 +193,7 @@ Arguments after the image name go to pytest, replacing the default `--basetemp=/
 
 One merchant asks, asks for a person, an operator answers from the ticketing screen and the merchant reads the reply;
 then one answer is evaluated. You need Docker with Compose v2, an OpenAI key in `.env`, and Python for the
-`ai-getnet-case-web` interface (a sibling repository; see [Streamlit interface](#streamlit-interface)). The users and
+`ai-getnet-case-web` interface (a sibling repository; see the [interface guide](docs/wiki/guides/interface-and-tunnel.md)). The users and
 passwords below are the demonstration values of `.env.example`. The paid calls are the index on the first start,
 each message and the one evaluation, all under the budget guard (`BUDGET_LIMIT_USD`).
 
@@ -207,7 +206,7 @@ each message and the one evaluation, all under the budget guard (`BUDGET_LIMIT_U
 
    # in the ai-getnet-case-web checkout, with its own Python environment
    python -m pip install -e ".[test]"
-   export BACKEND_API_URL=http://localhost:8000 AUTH_ISSUER=http://api:8000   # PowerShell: see Streamlit interface
+   export BACKEND_API_URL=http://localhost:8000 AUTH_ISSUER=http://api:8000   # PowerShell: see the interface guide
    streamlit run app.py
    ```
 
@@ -267,44 +266,9 @@ To end: **Encerrar sessão** in both windows (it revokes the login), stop Stream
 Every setting is an environment variable (or a line in `.env`). The defaults run the full system with a single
 OpenAI key and cap spending at US$1.00 per installation and US$0.05 per request.
 
-| Variable | Default | Meaning |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | — | Required for real calls (agents, embeddings, web search) |
-| `AGENT_MODEL` | `gpt-6-luna` | Default model for every agent; the `/v1` model profiles can set another model per agent |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | RAG embeddings |
-| `QDRANT_URL` | empty (embedded store) | Compose sets `http://qdrant:6333` |
-| `BUDGET_RUNTIME_DIR` | `data/runtime` locally, `/app/runtime` in Docker | Persistent budget ledgers for the `eval` campaigns; keep it pointed at the project budget volume when `RUNTIME_DIR` is isolated for an evaluation run. The API and `bootstrap` write their ledger under `RUNTIME_DIR` |
-| `MOCKS_URL` | `http://mocks:8001` | Internal synthetic pricing and charge service; Compose only |
-| `BUDGET_LIMIT_USD` | `1.00` | Spending limit for paid calls in this installation's ledger: default US$1.00, maximum US$5.00 per ledger. The first limit recorded with a ledger stays its ceiling; an evaluation campaign carries its own cap |
-| `MAX_REQUEST_COST_USD` | `0.05` | Cap per request |
-| `MAX_MODEL_CALLS`, `MAX_TOOL_CALLS`, `MAX_REQUEST_SECONDS` | `8`, `8`, `90` | Per-request limits |
-| `WEB_SEARCH_MAX_CALLS` | `1` | Searches per general question |
-| `REPLAN` | `on` | `off` runs the fixed edges of v0.7.0, without the `replan` and web-search steps (the ablation measured by `eval --replan off` and `eval-compare`) |
-| `DEMO_MODE` | `false` in code; `true` in `.env.example` and in compose | Enables `GET /traces/{id}` (token required; merchants see only their own) |
-| `TIMEZONE` | `America/Sao_Paulo` | Used to resolve "yesterday", "today" |
-| `DEMO_SESSION_MESSAGE_LIMIT` | `20` | Paid actions one demo session may start: messages, new comparison executions, Router comparisons and AI evaluations; refusals and skipped comparison cells without a model call do not count (they are given back); enforced by the backend |
-| `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL` | `openai`, `gpt-6-luna` | Fixed on-demand evaluator, independent of the evaluated profile and recorded with every evaluation |
-| `JUDGE_PROVIDER`, `JUDGE_MODEL` | `deepseek`, `deepseek-flash` | Independent judge for `eval --judge`; the default uses `judge.v5`, requires `DEEPSEEK_API_KEY` and must differ from the agent model |
-| `RERANK` | `on` | Reorders the first 12 hybrid retrieval candidates with one metered model call; set `off` to disable |
-| `DEMO_USER_PASSWORDS` | demonstration values in `.env.example` | `user:password` pairs of the synthetic users (`cliente1988`, `cliente_demo_002`, operators `op_ana`, `op_bruno`); stored as PBKDF2 hashes |
-| `API_DEMO_PASSWORD`, `API_ADMIN_PASSWORD` | empty (off) | Passwords of the `demo` and `admin` users of the `/v1` interface |
-| `JWT_ISSUER`, `JWT_PRIVATE_KEY_PATH`, `JWT_JWKS_URL` | own issuer, key generated in the runtime | Token issuer; `JWT_JWKS_URL` switches verification to an external OIDC issuer |
-| `OAUTH_REDIRECT_URIS` | the interface on this host (`http://localhost:8501/`, `http://127.0.0.1:8501/`) | Registered redirect URIs of the public clients for the sign-in by redirect (`<client_id>=<uri>`, exact match, https or http on the loopback); empty turns it off |
-| `STREAMLIT_UPSTREAM` | `host.docker.internal:8501` | Where the proxy of `docker compose --profile tunnel up` finds the interface; see [Open the demonstration through a tunnel](#open-the-demonstration-through-a-tunnel) |
-| `OIDC_ISSUERS` | empty (own issuer only) | External OIDC issuers accepted next to the own issuer, with their `groups` (or another claim named by `groups_claim`) mapped to a role; `docker compose --profile oidc up` starts Dex with synthetic users ([Identity and authorization](#identity-and-authorization)). Use `OIDC_ISSUERS` for a standard OIDC provider; use `JWT_JWKS_URL` to replace the own issuer by one that signs tokens in the assistant's format (`role`, `scope`, `customer_id`) |
-| `RATE_LIMIT_PER_MINUTE` | `30` | Requests per principal |
-| `API_WORKERS` | `2` (compose) | API worker processes; see [Operations](#operations) |
-| `TICKETING_WEBHOOK_URL`, `CONVERSATION_WEBHOOK_URL` and their secrets | Compose values | Signed webhooks to the ticketing service and to the merchant receiver; an empty URL turns a destination off; a URL without a secret is warned at startup |
-| `WEBHOOK_MAX_ATTEMPTS`, `WEBHOOK_RETRY_WAITS_S`, `WEBHOOK_TIMEOUT_S` | `3`, `1,2`, `3` | Delivery attempts (total per event and destination, also across restarts) |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OPERATOR_CHAT_ID`, `TELEGRAM_WEBHOOK_URL`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_CLIENT_SECRET` | empty (off) | Operator on Telegram with `docker compose --profile telegram up`; see [Operator on Telegram](#operator-on-telegram) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | empty (off) | Base URL of an OTLP/HTTP collector for the request spans; see [Observability](#observability) |
-
-- **Provider keys.** `DEEPSEEK_API_KEY` is required for the default `eval --judge` judge and optional for the
-  DeepSeek model profiles (Hybrid: Router; Adjusted: Router and Support). `TYPESAFE_API_KEY` enables the alternative
-  Router engine. `POST /messages` needs neither.
-- **What the interface sees.** `GET /v1/profiles` reports which profiles and Router engines the configured keys
-  allow, never a key value; the web app marks the others as unavailable and names the missing key. It signs in on
-  the API's login page (authorization code with PKCE) and never receives a provider key.
+The [configuration guide](docs/wiki/guides/configuration.md) lists every variable with its default and meaning:
+models and provider keys, budget and per-request limits, retrieval and replanning switches, identity and sign-in,
+webhooks, the Telegram operator, the tunnel and telemetry.
 
 ## Architecture
 
@@ -913,14 +877,14 @@ Each figure comes from the versioned evidence linked in its row; all data is syn
 | Area | Now | v0.10.0 baseline | Evidence |
 | --- | --- | --- | --- |
 | Attendance | A sale cancellation executes after the merchant's explicit yes, idempotent and audited; the merchant follows human-support tickets from any conversation; replanning can be switched off and compared case by case (`REPLAN`, `eval-compare`), exercised on 4 paired cases. Last full campaign: v0.8.0, 44 cases × 3 runs | Read-only journeys. v0.8.0 campaign (`judge.v3`): groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13 by the judge (literal check 13/13, 12/13, 12/13) | [v0.12.0](docs/evidence/v0120-resultado.md), [v1.1.0](docs/evidence/v110-resultado.md); [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md) |
-| Evaluation (judge) | Default `judge.v5`, claim by claim, against adjudicated gold labels on 36 sealed answers: kappa 0.647 (95% CI 0.28–0.92), against 0.538 for `judge.v3` on the same answers and labels; ±1 agreement 0.972 / 0.972 / 1.000 / 1.000; US$0.000945 per judgement (`judge.v3`: US$0.000398); web answers are judged against the cited page text | Default `judge.v3` against one human rater (24 answers): unsupported-claim agreement 0.667, kappa −0.200 | [v0.11.0](docs/evidence/v0110-resultado.md); [v0.10.0 calibration](docs/evidence/v0100-juiz-v4.md) |
+| Evaluation (judge) | Default `judge.v5`, claim by claim, against reference labels (the owner's ratings and a two-model panel, with the adjudication approved by the owner) on 36 sealed answers: kappa 0.647 (95% CI 0.28–0.92), against 0.538 for `judge.v3` on the same answers and labels; ±1 agreement 0.972 / 0.972 / 1.000 / 1.000; US$0.000945 per judgement (`judge.v3`: US$0.000398); web answers are judged against the cited page text | Default `judge.v3` against one human rater (24 answers): unsupported-claim agreement 0.667, kappa −0.200 | [v0.11.0](docs/evidence/v0110-resultado.md); [v0.10.0 calibration](docs/evidence/v0100-juiz-v4.md) |
 | Retrieval | Hybrid with the reranker by default; same holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 (same-depth control `hybrid@36`: 0.907); 1,752 ms per query, against 501 ms for `hybrid` in the same run | Hybrid (BM25 + dense), no reranker; sealed holdout of 25 questions: Recall@6 1.000, MRR 0.920, nDCG@6 0.921 | [v0.11.0 retrieval](docs/evidence/v0110-retrieval.md); [v0.9.0 retrieval](docs/evidence/v090-retrieval.md) |
 | Memory | Rolling summary and a register of facts taken from tool results; a 27-turn conversation kept the exact amounts, dates and protocols | Recent turns only; multi-turn conversations 4/4 (2 to 3 turns each) | [v0.12.0](docs/evidence/v0120-resultado.md); [v0.8.0 conversations](docs/evidence/v080-conversations-r4.md) |
 | Identity | Sign-in by redirect on the issuer's page (authorization code with PKCE, rotating refresh) and external OIDC issuers; 10 logins in a real browser opened 10 sessions, with a code issued on one worker exchanged on the other | Own issuer, every tool call audited (4 tool calls, 4 audit rows); password grant from the web client | [v0.13.0](docs/evidence/v0130-resultado.md); [v0.7.0](docs/evidence/v070-resultado.md) |
 | Operation | Two API workers sharing a comparison lease: owner suspended before and after a paid reservation, no cell paid twice; exhausted webhooks resent; operator on Telegram; OTLP spans and a dashboard; one image per release tag from `uv.lock`, and the tunnel profile used from a phone on a mobile network | One API worker; a comparison stopped after 1 of 6 cells resumed the other 5 to `completed`, each cell paid once; `/metrics` and 4 alert rules | [v0.13.0](docs/evidence/v0130-resultado.md), [v1.0.0](docs/evidence/v100-resultado.md); [v0.10.0 operation](docs/evidence/v0100-qa-ops-r1.md) |
 | Automated tests | Strict suite: 3,060 test cases from 1,447 test functions, 93.8% statement coverage; the v1.0.0 suite (2,982 cases) also ran inside the image with no network | Strict suite: 2,148 passed | [coverage](docs/evidence/v110-cobertura.md), [v1.1.0](docs/evidence/v110-resultado.md), [v1.0.0](docs/evidence/v100-resultado.md); [v0.10.0 build](docs/evidence/v0100-candidato-r1.json) |
 
-The judge row compares against different references: one human rater on 24 answers at v0.10.0, gold labels on 36
+The judge row compares against different references: one human rater on 24 answers at v0.10.0, the reference labels on 36
 sealed answers now. The like-for-like comparison is `judge.v3` 0.538 against `judge.v5` 0.647 on the same answers
 and labels. The consolidated results of each version are indexed in [docs/evidence](docs/evidence/README.md).
 
@@ -971,7 +935,7 @@ version added and why:
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured by meaning as well as by literal labels |
 | v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | Retrieval chosen by a rule written before measuring it on unseen questions, and the judge chosen by experiment rather than preference |
 | v0.10.0 | `judge.v4` measured against the human calibration with both judges under a pre-registered rule; a comparison that resumes after its process stops; `GET /metrics` and versioned alert rules | A rubric change is decided by measurement; a comparison resumes after a restart and pays each cell once; the operation gets metrics and alerts |
-| v0.11.0 | Web-page evidence for evaluation; `judge.v5` by claim; two-rater calibration; measured `hybrid@36` control and BM25 floor; combined deterministic and content ruler; reranker on by default under a pre-registered rule | Answers are checked against cited web text and each individual claim; retrieval uses an independent depth control |
+| v0.11.0 | Web-page evidence for evaluation; `judge.v5` by claim; calibration against reference labels (the owner's ratings and a two-model panel, with the adjudication approved by the owner); measured `hybrid@36` control and a configurable BM25 floor (default off); combined deterministic and content ruler; reranker on by default under a pre-registered rule | Answers are checked against cited web text and each individual claim; retrieval uses an independent depth control |
 | v0.12.0 | Bounded rolling summary and fact register; `REPLAN=off` and `eval-compare`; sale cancellation with explicit confirmation, idempotency, and audit; [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md) | Long conversations keep the exact amounts, dates and protocols within a bounded context; replanning is compared case by case; a cancellation executes after the merchant's explicit yes |
 | v0.13.0 | Sign-in by redirect (authorization code with PKCE) and rotating refresh tokens; external OIDC issuers with roles mapped by groups or exact verified email (Dex in the compose); two API workers sharing a comparison lease in SQLite; recovery and resend for webhook deliveries and unannounced cases; [operator on Telegram](#operator-on-telegram); optional OTLP spans and a Grafana dashboard; [ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md) | Redirect login and configured identity providers; resumable comparisons across workers; recoverable webhook and handoff state; the same operator actions from Telegram; optional telemetry in an OTLP collector |
 | v1.0.0 | Image on GHCR per release tag, dependencies pinned in `uv.lock` and the strict suite inside the image with no network; `tunnel` profile with a single-origin proxy for the sign-in by redirect ([ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)); the [10-minute walkthrough](#10-minute-walkthrough) | Each release runs from one published image; a visitor on another network signs in to the demonstration without reaching the rest of the API |
@@ -979,110 +943,33 @@ version added and why:
 
 ### Demonstration API
 
-These `/v1` routes back the Streamlit interface: labeled scenarios, on-demand evaluation of a stored reply and a
-small profile comparison, with every paid action behind a confirmed estimate. The full contract is in
+These `/v1` routes back the Streamlit interface: labeled scenarios, on-demand evaluation of a stored reply and
+a small profile comparison, with every paid action behind a confirmed estimate. Routes, roles and behaviour are in
+the [demonstration API guide](docs/wiki/guides/demonstration-api.md); the full contract is in
 [docs/contracts/api-v1.md](docs/contracts/api-v1.md).
-
-| Route | Role | Behaviour |
-| --- | --- | --- |
-| `GET /v1/scenarios` | demo, admin | Short catalog of labeled synthetic scenarios (`data/scenarios/catalog.json`) |
-| `POST /v1/messages` + `scenario_id` | demo, admin | Optional; validated against the catalog (message must match) and stored in the run; demo sessions limited by `DEMO_SESSION_MESSAGE_LIMIT` (`429 demo_message_limit_reached`) |
-| `GET /v1/runs/{id}` | owner | Adds `steps` (with retrieved passages), `route`, `prompts_used`, deterministic `checks` (scenario labels or label-independent, critical failures listed one by one) and `evaluations` |
-| `POST /v1/runs/{id}/evaluations/estimate` | owner | Price of one `judge` call over the persisted reply; no paid call |
-| `POST /v1/runs/{id}/evaluations` | owner | Confirmed estimate required; reserves, grades the stored reply with the fixed evaluator and records method, rubric, evaluator, evidence and a separate cost; same configuration returns the existing record unless `repeat=true` |
-| `POST /v1/comparisons/estimate` | demo, admin | 2–3 published profiles × up to 3 scenarios × up to 2 repetitions: cells, reused recorded runs, new executions, fixed factors, exploratory flag and an upper-bound estimate |
-| `POST /v1/comparisons` | demo, admin | Confirmed estimate required; `202` and execution in a thread of the API process with one knowledge-base version, domain effects in a temporary copy of the synthetic database and traces/snapshots marked `purpose=comparison` |
-| `GET /v1/comparisons/{id}` | owner | State, configuration, cells, failures and aggregates for the cost × quality and cost-by-agent/model charts |
-| `POST /v1/comparisons/{id}/resume` | owner | A comparison whose process stopped is `interrupted`, with its finished cells kept; resume runs the missing cells ([operation test](docs/evidence/v0100-qa-ops-r1.md): stopped after 1 of 6 cells, resumed 5, `completed`, one ledger line per cell) |
-
-Migration 0008 (reversible) adds `run_evaluations`, `comparisons` and `api_sessions.message_count`. `POST /messages`,
-MCP and the existing `/v1` routes keep their behaviour.
 
 ### Streamlit interface
 
 The `ai-getnet-case-web` sibling project (see its README) is the Streamlit client of the versioned `/v1` API and,
-for operators, of the ticketing service. It never reads backend files or receives provider keys.
-
-- **Modes.** **Simulado** and **Gravado** run on fixtures; **Real (API)** signs in on the backend's login page
-  (`/v1/auth/authorize`, opened by **Entrar**).
-- **Areas by role.** Merchants and demo see Attendance and Results, operators see Ticketing, admin also sees
-  Administration.
-- **Session.** The client reuses one HTTP client per Streamlit session, revokes the token and clears the previous
-  user's state at logout, and sends requests only after explicit actions.
-
-```powershell
-# In the web project, with its own Python environment:
-python -m pip install -e ".[test]"                # the web project's own test extra
-$env:BACKEND_API_URL = "http://localhost:8000"
-$env:AUTH_ISSUER = "http://api:8000"              # the compose JWT_ISSUER; leave it unset for a local uvicorn
-streamlit run app.py
-```
-
-Open the interface at `http://localhost:8501/`, the redirect registered in `OAUTH_REDIRECT_URIS`.
-
-For a local HTTP exercise without a model key, use the synthetic backend harness with a new runtime directory under
-`.pytest_cache`, then point `BACKEND_API_URL` to that loopback server. The harness has programmed providers, a fresh
-isolated SQLite/Qdrant runtime and no provider credentials. The Results area lists the runs of the current browser
-session.
+for operators, of the ticketing service: merchants and demo users see Attendance and Results, operators see
+Ticketing, and admin also sees Administration. It signs in on the backend's login page and never reads backend
+files or receives provider keys. The modes, the start commands and the run without a model key are in the
+[interface guide](docs/wiki/guides/interface-and-tunnel.md#streamlit-interface).
 
 #### Open the demonstration through a tunnel
 
-A visitor on another network reaches the demonstration through one public address: a [Cloudflare Quick Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) (no account, ephemeral address) in front of a small proxy, `docker compose --profile tunnel up`. The proxy listens on `127.0.0.1:8080` and sends only `GET` and `POST /v1/auth/authorize` (the login page and its form) to the API; everything else, the Streamlit websocket included, goes to the interface on this host. No other API route is reachable through the tunnel. The API ignores forwarded headers, so every visitor counts as the proxy's address for the login attempt limit: stricter behind the tunnel, never looser. Without `--profile tunnel` nothing changes.
-
-This guide was followed from a phone on a mobile network: sign-in by redirect, attendance, handoff and the operator's reply through the public address ([v1.0.0](docs/evidence/v100-resultado.md)).
-
-1. **Replace every example credential, then start the stack with the proxy.** The passwords in `.env.example` are public, and the login page will be too. In `.env`:
-   - `API_DEMO_PASSWORD`: a new one-off password for the user `demo`; leave `API_ADMIN_PASSWORD` empty.
-   - `DEMO_USER_PASSWORDS`: only the synthetic users you keep, each with a new random one-off password, for example `op_ana:<random>` if you will show the operator area. List at least one: an empty value does not turn the users off, it brings back the compose defaults, the published example passwords.
-   - `TICKETING_CLIENT_SECRET`: a new random value (the API and the ticketing service read the same one); the same rule applies to an empty value.
-   - Keep `BUDGET_LIMIT_USD` at the demonstration sublimit (US$1.00 by default) and `DEMO_SESSION_MESSAGE_LIMIT` at the paid actions one session may start.
-
-   While a public address is registered (step 3), the API refuses to start if any credential still has a value published in this repository (`.env.example` or the test suite): `up --wait` fails, the API container stays unhealthy and its log names the accounts and variables to replace. Then:
-
-   ```bash
-   docker compose --profile tunnel up -d --wait
-   ```
-
-2. **Open the tunnel** and keep it running; it prints the public address, `https://<name>.trycloudflare.com`:
-
-   ```bash
-   cloudflared tunnel --url http://localhost:8080
-   ```
-
-3. **Register that address**, for this opening only. Append it to `OAUTH_REDIRECT_URIS` in `.env` (`...,merchant-assistant-web=https://<name>.trycloudflare.com/`) and run `docker compose --profile tunnel up -d --wait` again to recreate the API (it does not start while an example credential remains). Never commit the address.
-4. **Start the interface** (web project) with the public address for the browser and the internal one for the server:
-
-   ```bash
-   export BACKEND_API_URL=http://localhost:8000 LOCK_BACKEND_URL=true AUTH_ISSUER=http://api:8000
-   export AUTH_REDIRECT_URI=https://<name>.trycloudflare.com/
-   export AUTH_AUTHORIZE_URL=https://<name>.trycloudflare.com/v1/auth/authorize
-   streamlit run app.py
-   ```
-
-   Streamlit listens on every interface by default, which lets the proxy reach it at `host.docker.internal:8501` (set `STREAMLIT_UPSTREAM` for another address); keep port 8501 closed to other machines in the host firewall, so the tunnel is the only way in. The browser opens the login at `AUTH_AUTHORIZE_URL`; the interface's server exchanges, renews and revokes tokens only at `BACKEND_API_URL`.
-5. **Share** `https://<name>.trycloudflare.com/` for an announced window, with the `demo` user and its one-off password; add an operator (`op_ana` and its one-off password) only to show the operator area. Never share `admin`. The visitor chooses **Real (API)**, clicks **Entrar** and signs in on the login page. The `demo` role has no administration; each session stops at `DEMO_SESSION_MESSAGE_LIMIT`, and every paid call stops at the budget limit.
-6. **Close at the end of the window:** stop `cloudflared` (Ctrl+C) and the interface, run `docker compose stop tunnel`, remove the address from `OAUTH_REDIRECT_URIS`, clear `API_DEMO_PASSWORD`, restore the previous `DEMO_USER_PASSWORDS` and `TICKETING_CLIENT_SECRET` (the one-off passwords stop working) and run `docker compose up -d --wait`.
-
-The quick tunnel serves an announced demonstration window; the same proxy runs behind another tunnel or a forwarded port for continuous use ([ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)).
+`docker compose --profile tunnel up` adds a proxy that sends the login page to the API and everything else to the
+interface, so a visitor on another network reaches the demonstration through one public address and no other API
+route. The [tunnel guide](docs/wiki/guides/interface-and-tunnel.md#open-the-demonstration-through-a-tunnel) opens
+and closes an announced window with one-off credentials; it was followed from a phone on a mobile network
+([v1.0.0](docs/evidence/v100-resultado.md)).
 
 ### MCP server
 
 The Customer Support tools are also available over [MCP](https://modelcontextprotocol.io) (stdio), on top of the
-same domain functions, validation, customer isolation, audit log and structured errors. The merchant comes from the
-token in `MERCHANT_ASSISTANT_TOKEN`, checked again on every call, never from a tool argument.
-
-```bash
-export MERCHANT_ASSISTANT_TOKEN=$(merchant-assistant auth token)   # cliente1988 against a running API
-merchant-assistant mcp                            # stdio server (for an MCP client such as Claude Desktop)
-merchant-assistant mcp-demo                       # starts the server as a subprocess and calls it as a client
-```
-
-The demo lists the support tools, reads yesterday's receivables and recent declines, and shows that a receivable of
-another merchant returns `is_error=true` with `FORBIDDEN_RESOURCE`. Example client configuration:
-
-```json
-{"mcpServers": {"getnet-merchant-support": {"command": "merchant-assistant", "args": ["mcp"], "env": {"MERCHANT_ASSISTANT_TOKEN": "<token>"}}}}
-```
+same domain functions, validation, customer isolation, audit log and structured errors. The merchant comes from a
+token, checked again on every call, never from a tool argument. The commands, the demo and a client configuration
+are in the [MCP guide](docs/wiki/guides/mcp.md).
 
 ## Operations
 
@@ -1112,7 +999,7 @@ What it takes to run the stack, by topic. Compose applies the defaults named her
   `APP_VERSION` selects the tag compose runs ([Run it](#with-docker-recommended)).
 - **External access.** `docker compose --profile tunnel up` adds a proxy on `127.0.0.1:8080` that exposes the
   interface and the API's login page, with one-off credentials for each opening
-  ([guide](#open-the-demonstration-through-a-tunnel)).
+  ([guide](docs/wiki/guides/interface-and-tunnel.md#open-the-demonstration-through-a-tunnel)).
 - **Knowledge base.** Product answers are grounded in versioned snapshots of Getnet's official pages (2026-10-26), so
   every build and evaluation is reproducible; `merchant-assistant ingest` re-collects them, and a new knowledge base
   version enters through draft, test, activation and rollback.
@@ -1152,6 +1039,8 @@ prompts/          versioned prompts (router, knowledge_*, support, escalation, p
 data/             sources, snapshots, demo corpus (runtime/ is generated and ignored)
 tests/            unit, integration, labeled scenarios
 docs/             specification, plan, tasks, ADRs, evidence (Portuguese, spec-driven workflow)
+docs/wiki/guides/ reference guides in English: configuration, local development, evaluation commands,
+                  demonstration API, interface and tunnel, MCP
 ```
 
 The project follows a spec-driven workflow: specifications, tasks and ADRs in `docs/`, validation scripts in

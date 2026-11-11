@@ -344,8 +344,13 @@ def test_a_public_redirect_with_new_values_starts(offline, settings):
 
 
 def test_the_tunnel_guide_asks_for_new_credentials_and_retires_them():
-    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
-    section = readme.split("#### Open the demonstration through a tunnel", 1)[1].split("\n### ", 1)[0]
+    guide_path = "docs/wiki/guides/interface-and-tunnel.md"
+    guide = (PROJECT_ROOT / guide_path).read_text(encoding="utf-8")
+    section = guide.split("## Open the demonstration through a tunnel", 1)[1].split("\n## ", 1)[0]
+    # the README keeps a summary that leads to the guide
+    assert f"{guide_path}#open-the-demonstration-through-a-tunnel" in (PROJECT_ROOT / "README.md").read_text(
+        encoding="utf-8"
+    )
     for text in (
         "`API_DEMO_PASSWORD`: a new one-off password",
         "`DEMO_USER_PASSWORDS`: only the synthetic users you keep, each with a new random one-off password",
