@@ -28,3 +28,14 @@ A calibração usa as afirmações estruturadas por `judge_claims.v1`.
 - Pacotes, CSVs e selo gerados; importação de dois rotuladores, adjudicação divergente e rótulo ouro disponíveis; medidas por afirmação e por resposta.
 - Relatório da v0.8.0 inalterado com as entradas antigas.
 - As amostras e formatos anteriores continuam aceitos quando não incluem o CSV de afirmações.
+
+## Resultado
+
+Amostra de 36 respostas selada por SHA-256; rótulos de referência formados pelas notas do responsável e por um painel de dois modelos, com as divergências adjudicadas.
+Evidência: [resultado da v0.11.0](../evidence/v0110-resultado.md), [CSV de respostas](../evidence/v0110-calibracao-amostra.csv) e [CSV de afirmações](../evidence/v0110-calibracao-amostra-claims.csv).
+
+## Status
+
+```text
+concluída (v0.11.0)
+```

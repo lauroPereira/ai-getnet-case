@@ -27,3 +27,14 @@ Tarefa 97 concluída; migração 0015 e configuração do emissor próprio dispo
 ## Critérios de conclusão
 
 - CA-68 (parte do emissor externo) coberto por testes; suíte estrita verde; Dex só por perfil.
+
+## Resultado
+
+Tokens de emissores OIDC configurados aceitos e emissor desconhecido recusado; Dex validado no sistema com Docker.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```

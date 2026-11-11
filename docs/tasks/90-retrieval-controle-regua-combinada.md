@@ -28,3 +28,14 @@ O conjunto de holdout é selado; `eval-retrieval --fake` deve recusá-lo.
 - Modo `hybrid@36` e piso medíveis nos dois splits; tabela com a coluna do ganho próprio.
 - Jornadas com as duas colunas e `passed` combinado; régua literal disponível por flag.
 - A configuração padrão é `RETRIEVAL_MODE=hybrid`, `RERANK=on`; `RERANK=off` continua disponível para usar a ordem da fusão.
+
+## Resultado
+
+No holdout, `hybrid@36` teve nDCG@6 0,907 e `hybrid+rerank` 0,972 (+0,065, o ganho próprio do reranker); `RERANK=on` passou a padrão. Jornadas com a régua combinada e a literal disponível por flag.
+Evidência: [retrieval da v0.11.0](../evidence/v0110-retrieval.md) e [resultado da v0.11.0](../evidence/v0110-resultado.md).
+
+## Status
+
+```text
+concluída (v0.11.0)
+```

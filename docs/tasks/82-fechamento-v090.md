@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Fixar o candidato, revisar, rodar o QA real (experimento do juiz e medição de retrieval), registrar as decisões e fechar README, CHANGELOG e ADRs para a entrega de 2026-11-06 às 08h.
+Fixar o candidato, submetê-lo a revisão independente e à validação com modelos reais (experimento do juiz e medição de retrieval), registrar as decisões e fechar README, CHANGELOG e ADRs para a entrega de 2026-11-06 às 08h.
 
 ## Especificação relacionada
 
@@ -10,17 +10,17 @@ Fixar o candidato, revisar, rodar o QA real (experimento do juiz e medição de 
 
 ## Pré-condições
 
-Tarefas 79 a 81 com parecer apto do Reviewer (79 pode ir ao QA antes de 80 e 81, momentos 1 a 3 da história). Cap Anthropic confirmado pelo responsável. Runtime `.pytest_cache/qa-v080-r1/runtime` intacto.
+Tarefas 79 a 81 implementadas e revisadas (a 79 pode ser validada antes da 80 e da 81, momentos 1 a 3 da história). Teto da campanha Anthropic registrado antes da execução. Respostas da campanha da v0.8.0 preservadas para o rejulgamento.
 
 ## Passos
 
 1. Suíte estrita no candidato; manifesto `docs/evidence/v090-candidato-rN.json` (SHA, árvore, sha256 por arquivo, lacre do holdout de retrieval).
-2. Revisão independente em contexto frio; correções como rodadas das tarefas.
-3. QA, momentos 1 a 3: ledger Anthropic em `data/runtime/anthropic`, campanha `v090-juiz-opus` com o cap; sonda de 3; 72 ou 24 julgamentos; `eval-calibrate --import --judge`; relatório `docs/evidence/v090-juiz-opus.md`; decisão por D2 registrada pelo Supervisor.
-4. QA, momentos 4 a 7: `eval-retrieval` real em `dev` nos três modos; holdout por último, uma vez por modo; decisão D7 registrada; ledger OpenAI dentro do plano.
+2. Revisão independente do candidato; correções nas próprias tarefas.
+3. Validação com modelo real, momentos 1 a 3: ledger Anthropic em `data/runtime/anthropic`, campanha `v090-juiz-opus` com o teto; sonda de 3; 72 ou 24 julgamentos; `eval-calibrate --import --judge`; relatório `docs/evidence/v090-juiz-opus.md`; decisão por D2 registrada.
+4. Validação com modelo real, momentos 4 a 7: `eval-retrieval` real em `dev` nos três modos; holdout por último, uma vez por modo; decisão D7 registrada; ledger OpenAI dentro do plano.
 5. ADR 0020 (retrieval híbrido e holdout de retrieval) e ADR 0021 (juiz: modelo padrão e régua do CA-51 como piso determinístico + juiz).
 6. README: linhas da tabela por área para RAG e Evaluation atualizadas; "Próximos passos" sem os itens entregues; CHANGELOG 0.9.0 com validação, limitações e como voltar à v0.8.0 (`RETRIEVAL_MODE=dense`, `JUDGE_*` padrão).
-7. Relatório do Supervisor em `docs/relatorios/`; merge local na `main`; tag `v0.9.0` e push pelo responsável.
+7. Integração na `main` e tag `v0.9.0`.
 
 ## Critérios de conclusão
 
@@ -28,10 +28,14 @@ Tarefas 79 a 81 com parecer apto do Reviewer (79 pode ir ao QA antes de 80 e 81,
 - README e CHANGELOG coerentes com o que foi medido; nenhum caminho pessoal.
 - Ledgers batem; o Anthropic separado do projeto.
 
-## Validação
+## Resultado
 
-Supervisor, 2026-11-06: candidato r2 ([manifesto](../evidence/v090-candidato-r2.json)); QA do juiz r2 e QA do retrieval r1 aptos; D2 e D7 decididos pelas regras escritas antes; ADR 0020 aceita com os números e ADR 0021 aceita; CHANGELOG 0.9.0, README (status, tabela por área, retrieval, próximos passos) e história preenchidos; relatório do Supervisor em `docs/relatorios/`.
+Candidato r2 fixado ([manifesto](../evidence/v090-candidato-r2.json)); juiz e retrieval validados com modelos reais; D2 e D7 decididos pelas regras escritas antes da medição.
+ADR 0020 e ADR 0021 aceitas; CHANGELOG 0.9.0, README e história atualizados.
+Evidência: [juiz Opus](../evidence/v090-juiz-opus-r3.md) e [retrieval](../evidence/v090-retrieval.md).
 
 ## Status
 
-Concluída em 2026-11-06 (merge local, push e tag `v0.9.0` pelo responsável).
+```text
+concluída (v0.9.0)
+```

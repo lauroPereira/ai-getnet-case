@@ -21,3 +21,14 @@ Permitir que os usuários estáticos do Dex no perfil OIDC recebam os papéis co
 - O visitante sem papel recebe `403 insufficient_scope`.
 - E-mail ausente, não verificado, não textual, em lista ou sem correspondência exata não recebe papel; o mapeamento por `groups` permanece inalterado.
 - `.env.example`, documentação da API e README usam a mesma configuração e claims.
+
+## Resultado
+
+Usuários estáticos do Dex mapeados por e-mail verificado; emissor externo validado no sistema com Docker.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```

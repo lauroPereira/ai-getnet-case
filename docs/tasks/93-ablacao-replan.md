@@ -23,3 +23,14 @@ Medir o ganho do replanejamento no conjunto de casos, com e sem o nó `replan`, 
 
 - CA-66 coberto por teste roteirizado e `REPLAN=on` permanece o padrão.
 - O modo `off` não executa `replan` nem busca web e mantém os limites da requisição.
+
+## Resultado
+
+`REPLAN=on|off` e `eval-compare` pareado. Em 4 casos pareados: 0 decisões de origem `model` com `REPLAN=off` e 8 com `REPLAN=on`.
+Evidência: [resultado da v0.12.0](../evidence/v0120-resultado.md).
+
+## Status
+
+```text
+concluída (v0.12.0)
+```

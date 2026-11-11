@@ -25,3 +25,14 @@ O assistente pode solicitar o cancelamento de uma venda, mas só conclui a escri
 - CA-67 coberto por testes roteirizados; nenhuma escrita ocorre sem confirmação explícita.
 - Repetições retornam o mesmo pedido e protocolo; recusa ou expiração deixa a conta intacta.
 - Restrições da migração e adições da API preservam o comportamento de leitura existente.
+
+## Resultado
+
+Cancelamento só com confirmação explícita; confirmação, idempotência, recusa, expiração e isolamento entre lojistas verificados.
+Evidência: [resultado da v0.12.0](../evidence/v0120-resultado.md).
+
+## Status
+
+```text
+concluída (v0.12.0)
+```

@@ -15,3 +15,14 @@ Consolidar as decisões funcionais da v0.11.0 e manter o produto, as evidências
 - Retrieval usa `RETRIEVAL_MODE=hybrid`, `RERANK=on` por padrão e permite `RERANK=off`; `hybrid@36` e o piso BM25 seguem disponíveis como controles.
 - [Síntese da v0.11.0](../evidence/v0110-resultado.md), [métricas de retrieval](../evidence/v0110-retrieval.md), [CSV de calibração](../evidence/v0110-calibracao-amostra.csv) e [CSV de afirmações](../evidence/v0110-calibracao-amostra-claims.csv) estão preservados, junto ao [selo](../../tests/scenarios/calibration_v0110.sha256).
 - ADR 0023, README, CHANGELOG e versão do produto descrevem os mesmos padrões e capacidades.
+
+## Resultado
+
+Padrões, evidências e documentação da v0.11.0 coerentes: `judge.v5` e `RERANK=on` por padrão, arquivos selados preservados.
+Evidência: [resultado da v0.11.0](../evidence/v0110-resultado.md).
+
+## Status
+
+```text
+concluída (v0.11.0)
+```

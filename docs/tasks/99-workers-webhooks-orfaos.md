@@ -29,3 +29,14 @@ Migração 0015 aplicada; a migração **0016** acrescenta os leases e a recuper
 ## Critérios de conclusão
 
 - CA-70 e CA-71 cobertos por testes; suíte estrita verde.
+
+## Resultado
+
+Dono de uma comparação suspenso antes e depois da reserva paga: nenhuma célula paga duas vezes. Reenvio de webhook e caso órfão validados no sistema com Docker.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```
