@@ -68,6 +68,7 @@ docker compose exec api merchant-assistant smoke --url http://localhost:8000
 ```bash
 merchant-assistant eval-calibrate --sample 24 --from docs/evidence/v080-all-r3.json   # CSV for the human rating, without the judge's scores; no model call
 merchant-assistant eval --judge-repeat 3 --answers-from docs/evidence/v080-all-r3.json --only-sample docs/evidence/v080-calibracao-amostra.csv --rubric v4 --name my-run  # judges the calibration sample again with another rubric or another judge
+# v0.11.0 calibration against reference labels: script and command in docs/evidence/v0110-calibracao.md
 merchant-assistant eval-calibrate --import docs/evidence/v080-calibracao-amostra.csv  # human × judge agreement and kappa; no model call
 ```
 

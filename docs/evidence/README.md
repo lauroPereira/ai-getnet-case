@@ -4,7 +4,7 @@ Registros de validação do projeto, da v0.1.0 à v1.1.0. Da v0.3.0 em diante, c
 
 Um relatório `.md` pode vir com um `.json` de mesmo nome, com os dados da execução. A tabela antes × depois por área, com o número da v0.10.0 e o atual, está no [README](../../README.md#what-changed-since-v0100). O gasto com APIs pagas, por versão, está em [orcamento.md](orcamento.md).
 
-Cada parecer de revisão ou de validação abre com o parecer final e o candidato, seguido do registro completo da verificação. Os links apontam para os caminhos atuais do repositório; o texto de cada registro como foi gravado está na tag da sua versão (`v0.3.0` a `v0.10.0`).
+Cada parecer de revisão ou de validação abre com o parecer final e o candidato, seguido do registro completo da verificação. Os links apontam para os caminhos atuais do repositório; o corpo de cada registro está como foi gravado, e a versão integral anterior fica na tag da sua versão.
 
 ## v0.1.0 e v0.2.0 (núcleo, conversas e acompanhamento)
 

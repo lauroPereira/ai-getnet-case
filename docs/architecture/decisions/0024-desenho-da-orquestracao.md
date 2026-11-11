@@ -113,27 +113,27 @@ Na ordem:
 
 ## Revisão pela ablação (v0.12.0)
 
-A ablação rodou com modelo real, uma execução por lado, pareada por caso: [desenvolvimento](../../evidence/v0120-comparacao.md), 44 pares com os cenários de replanejamento, e [holdout](../../evidence/v0120-comparacao-holdout.md), 25 pares.
+**Resultado:** sem efeito detectável do replanejamento nos dois conjuntos, com modelo real e uma execução por lado, pareada por caso: [desenvolvimento](../../evidence/v0120-comparacao.md), 44 pares com os cenários de replanejamento, e [holdout](../../evidence/v0120-comparacao-holdout.md), 25 pares.
 
 | Medida | Desenvolvimento (44 pares) | Holdout (25 pares) |
 | --- | --- | --- |
 | Aprovados, com − sem (IC 95%) | +0,045 (−0,045 a +0,136) | −0,080 (−0,240 a +0,080) |
-| Notas do juiz, com − sem, nos quatro critérios | +0,05 a +0,11 | −0,12 a +0,08 |
+| Notas do juiz, com − sem, nos quatro critérios | +0,045 a +0,114 | −0,120 a +0,080 |
 | Pares em que o plano muda | 7: aprovados 7 de 7 com e 6 de 7 sem | 2: aprovados 0 de 2 com e 1 de 2 sem |
 | Decisões do `replan` por origem | 49: 47 por regra e 2 pelo modelo | 27: 25 por regra e 2 pelo modelo |
 
-Leitura pela condição:
-
-- Nenhum intervalo exclui o zero e os dois conjuntos têm sinais opostos: com uma execução por lado, a medida não distingue ganho de perda. A condição pede a revisão no sentido de desligar.
+- Nenhum intervalo exclui o zero, e os dois conjuntos têm sinais opostos.
 - As decisões `model` são 4 de 76, abaixo do limiar de um quarto: não há caso para mais modelo nem para o supervisor.
 
-Decisão do responsável (2026-11-11): manter `REPLAN=on` como padrão e repetir a medição. Motivos:
+**A condição e esta revisão.** A condição lê "sem ganho" como caso de revisão no sentido de desligar. Ela não previa um resultado inconclusivo; esta revisão não a aplica a esta medição e registra por quê.
 
-1. O resultado é inconclusivo nos dois sentidos, e desligar com base nele seria decidir pelo ruído de uma execução.
-2. O replanejamento quase não custa: 72 das 76 decisões são regras nomeadas, sem chamada de modelo.
-3. Os cenários que pedem um segundo salto (pergunta que depende da conta respondida por conhecimento e depois por suporte, busca web quando a base não cobre, ferramenta indisponível) só se completam com ele; as arestas fixas mantêm o plano inicial.
+Decisão do responsável (2026-11-11): manter `REPLAN=on` como padrão até a repetição. Motivos:
 
-`REPLAN=off` continua disponível por configuração. A ablação é repetida com três execuções por lado, e a decisão volta a esta condição com esse resultado.
+1. A medição não separa efeito de variação entre execuções. No holdout, a diferença é de 2 respostas em 25. Uma está nos 2 pares em que o plano mudou, e ali quem reprova é `route_ok`, a rota inicial do Router, que roda antes do replanejador e que ele não altera, enquanto ferramentas, conteúdo esperado e três notas do juiz sobem com o replanejamento. A outra está nos 23 pares em que o plano não mudou. O próprio `route_ok` difere entre os lados (0,960 e 0,920) sem que o replanejamento atue sobre ele.
+2. Onde o plano mudou no desenvolvimento, em 7 pares, foram aprovados 7 de 7 com replanejamento e 6 de 7 sem.
+3. As decisões quase não custam: 72 de 76 são regras nomeadas, sem chamada de modelo. O custo e a latência dos saltos extras não entraram na comparação.
+
+**Repetição.** A ablação roda de novo com três execuções por lado, nos mesmos conjuntos, e a condição acima é aplicada a esse resultado. `REPLAN=off` já está disponível por configuração.
 
 ## Data
 

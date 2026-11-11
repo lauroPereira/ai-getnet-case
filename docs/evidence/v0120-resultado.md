@@ -12,7 +12,7 @@
 | Verificação | Resultado |
 | --- | --- |
 | Suíte estrita | 2.698 testes aprovados, sem falhas nem testes pulados; Ruff, links e caminhos pessoais limpos |
-| Conversa longa | 27 turnos com fatos exatos, aviso e recuperação do contexto incompleto |
+| Conversa longa | 27 turnos com modelo roteirizado, com fatos exatos, aviso e recuperação do contexto incompleto; 29 turnos com modelo real, com o protocolo e os valores do início devolvidos |
 | Cancelamento | Confirmação, idempotência, recusa, expiração e isolamento entre lojistas |
 | Replanejamento | Ablação com modelo real, uma execução por lado. Desenvolvimento, 44 pares: aprovados +0,045 com replanejamento (IC 95% −0,045 a +0,136). Holdout, 25 pares: −0,080 (−0,240 a +0,080). Decisões pelo modelo: 4 de 76. Relatórios: [desenvolvimento](v0120-comparacao.md), [holdout](v0120-comparacao-holdout.md); revisão na [ADR 0024](../architecture/decisions/0024-desenho-da-orquestracao.md) |
 | Arquivos selados | CSVs e prompts da v0.11.0 idênticos byte a byte; holdouts conferidos pelo hash |
