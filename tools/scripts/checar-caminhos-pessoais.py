@@ -1,4 +1,4 @@
-r"""Refuses tracked files that mention a personal or machine-specific path (AGENTS.md, "Caminhos pessoais").
+r"""Refuses tracked files that mention a personal or machine-specific path.
 
 A personal path identifies the user or the machine: a home directory (`C:\Users\<name>`, `/home/<name>`,
 `/Users/<name>`), `AppData`, a session scratchpad. The project path (`C:\workspace\...`) is not personal.

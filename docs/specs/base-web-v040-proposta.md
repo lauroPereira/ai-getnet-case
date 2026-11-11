@@ -92,7 +92,7 @@ confirmação específica. Backend continua executável pela tag v0.3.0.
 
 Criar somente arquivos novos nesse destino, incluindo o AGENTS/CLAUDE com as
 adaptações acima e as cópias de skills geradas. Nenhuma alteração de governança
-no backend. A skill [project-create](../../skills/project-create/SKILL.md)
+no backend. A skill project-create
 determina: “Destino fora do workspace exige a autorização operacional
 correspondente.” Essa escrita e os arquivos protegidos novos compõem a
 aprovação da v0.4.0; publicação/Git remoto ficam para decisão posterior.

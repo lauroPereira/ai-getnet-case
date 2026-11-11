@@ -11,6 +11,29 @@
 .claude/settings.local.json
 .codex/
 
+# Ferramental local de desenvolvimento (fica no disco, fora do controle de versão)
+/AGENTS.md
+/CLAUDE.md
+/.agent-template.json
+/skills/
+/.claude/
+/.agents/
+/evals/
+/docs/wiki/agents/
+/docs/wiki/origem-template.md
+/docs/templates/passagem-de-papel.md
+/docs/templates/relatorio-do-supervisor.md
+/docs/templates/modelo-skill.md
+/docs/templates/modelo-workflow.md
+/docs/templates/modelo-analise-tarefa.md
+/docs/tasks/62-preparacao-do-fluxo.md
+/tools/scripts/validate-agent-flow.ps1
+/tools/scripts/sync-skills.ps1
+/tools/scripts/medir-agentes.py
+/tools/scripts/checar-memoria.ps1
+/tools/scripts/limpar-ambiente.ps1
+/tools/scripts/validate-project.ps1
+
 # Cache e temporários
 *.log
 *.tmp

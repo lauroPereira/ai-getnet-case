@@ -14,7 +14,7 @@ The commands use the [local development](local-development.md) environment
 ```bash
 pytest                                   # backend tests
 ruff check .
-python tools/scripts/lint_and_tests.py --strict   # strict validation: pytest, Ruff, links, personal paths and skills metadata
+python tools/scripts/lint_and_tests.py --strict   # strict validation: pytest, Ruff, links and personal paths
 uv lock --check                          # checks that uv.lock is current
 ```
 
@@ -22,7 +22,7 @@ The same suite runs inside the image, with no network:
 
 ```bash
 docker build --target test -t ai-getnet-case:test .   # network only here, to build
-docker run --rm --network none ai-getnet-case:test    # strict suite (pytest, Ruff, links, skills); basetemp in /tmp
+docker run --rm --network none ai-getnet-case:test    # strict suite (pytest, Ruff, links); basetemp in /tmp
 docker image rm ai-getnet-case:test
 ```
 

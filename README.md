@@ -1057,7 +1057,6 @@ prompts/          versioned prompts (router, knowledge_*, support, escalation, p
 data/             sources, snapshots, demo corpus (runtime/ is generated and ignored)
 tests/            unit, integration, labeled scenarios
 docs/             specification, plan, tasks, ADRs, evidence (Portuguese, spec-driven workflow)
-skills/, evals/, AGENTS.md, CLAUDE.md   development workflow tooling, not part of the product
 docs/wiki/guides/ reference guides in English: configuration, local development, evaluation commands,
                   demonstration API, interface and tunnel, MCP
 ```
