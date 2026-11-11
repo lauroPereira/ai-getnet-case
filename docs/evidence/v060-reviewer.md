@@ -1,4 +1,6 @@
-# Passagem de papel: revisão independente da v0.6.0 (candidato r1)
+# Revisão independente da v0.6.0
+
+**Parecer final: apto**, no candidato r5 ([v060-candidato-r5.json](v060-candidato-r5.json), fingerprint `3b6b697e53623ac08c54a521cc0aa094e2e5cc7e247b83a4c11e3ca9075a2639`), sem achado novo. As cinco revisões, do candidato r1 ao r5, ficam abaixo, todas aptas.
 
 ## Rodada 1 — 2026-10-28
 

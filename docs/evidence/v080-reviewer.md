@@ -1,6 +1,6 @@
-# Reviewer v0.8.0 (Time B)
+# Revisão independente da tarefa 72a (holdout `holdout_v080`), v0.8.0
 
-Pareceres do Reviewer independente do Time B sobre as tarefas da v0.8.0 adiantadas durante a v0.7.0. Gravado pelo Supervisor a partir do relatório do Reviewer (que não tem escrita).
+**Parecer final: apto**, no HEAD `9425fead9320e7f127570bad23e0cc8c4386eecb` (sexta revisão, no fim), com o lacre definitivo do holdout: `91aa51588afdf4afccb1ea8f230a47d3d61686004ec599f4c547e7881b4f1bac`. As revisões anteriores pediram ajustes nos rótulos.
 
 ## Tarefa 72a, rodada 1 — correções necessárias
 

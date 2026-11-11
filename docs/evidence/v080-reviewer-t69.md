@@ -1,8 +1,10 @@
-# Revisão independente das tarefas 69 e 68b — rodada 1
+# Revisão independente das tarefas 69 e 68b (replanejamento e `ticket_id` no caso), v0.8.0
 
-- **Candidato:** `e1cbffbe0a96e9dcd29120af7e9aca4ad4be9ea2`, branch `codex/v0.8.0-replan`, base `5134eff`; worktree destacado `review-a2`, HEAD e status iguais antes e depois. Diff de 21 arquivos.
-- **Independência:** subagente `reviewer` (sonnet/xhigh) em contexto frio; leu as tarefas até "Validação"; leu a ADR 0019 só depois de formar opinião; não leu a passagem do Developer. Gravado pelo Supervisor a partir do relatório do Reviewer.
-- **Parecer:** **correções necessárias** — 1 P2.
+**Parecer final: apto**, no candidato `5da3de54ea0f0c41a65b27c578cc6848f2fa30d1` (segunda revisão, no fim). A primeira revisão, registrada logo abaixo, examinou o candidato `e1cbffb` e pediu uma correção na guarda de repetição da rota `general_web`.
+
+- **Candidato da primeira revisão:** `e1cbffbe0a96e9dcd29120af7e9aca4ad4be9ea2`, base `5134eff`; HEAD e status iguais antes e depois. Diff de 21 arquivos.
+- **Independência:** contexto novo (sonnet/xhigh); leu as tarefas até "Validação" e a ADR 0019 só depois de formar opinião, sem o relato da implementação.
+- **Parecer da primeira revisão:** correções necessárias (um ponto).
 
 ## Achado
 

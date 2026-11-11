@@ -1,6 +1,31 @@
 # Registro de gasto com APIs pagas
 
-Teto do projeto: US$5,00. Este registro é manual até a guarda de orçamento da aplicação existir (tarefa 08); depois, o registro da aplicação em `data/runtime/` passa a ser a fonte e este arquivo recebe os totais por rodada.
+## Limite em vigor
+
+Desde 2026-11-07, o limite de gasto é definido pelo responsável por provedor, e cada campanha paga tem um teto próprio, registrado antes de começar. Na aplicação, cada instalação tem o seu ledger (`BUDGET_LIMIT_USD`, padrão US$1,00, máximo US$5,00 por ledger) e cada request tem teto de US$0,05.
+
+## Gasto por versão
+
+| Versão | Gasto | Teto da campanha | Registro |
+| --- | --- | --- | --- |
+| v0.1.0 e v0.2.0 | Por atividade, na tabela seguinte | — | Este arquivo |
+| v0.3.0 | US$0,14123583 | US$0,15 | [Resultado](v030-resultado.md) |
+| v0.4.0 | Nenhuma chamada paga | — | [Resultado](v040-resultado.md) |
+| v0.5.0 | US$0,00553883 | US$0,25 | [Resultado](v050-resultado.md) |
+| v0.6.0 | US$0,08800487 (campanha `v060-qa` e ledger do volume Docker) | US$0,50 | [Resultado](v060-resultado.md) |
+| v0.7.0 | US$0,10140195 (campanha `v070-qa` e ledger do volume Docker) | US$0,20 | [Resultado](v070-resultado.md) |
+| v0.8.0 | US$0,84 na campanha `v080-qa` e US$0,03 no ledger do volume Docker | US$1,40 | [CHANGELOG](../../CHANGELOG.md), 0.8.0; transições de teto abaixo |
+| v0.9.0 | Juiz `claude-opus-5-5` US$1,34 (ledger Anthropic separado); seis medições de retrieval US$0,016 | US$4,00 (juiz) | [CHANGELOG](../../CHANGELOG.md), 0.9.0 |
+| v0.10.0 | `judge.v4`: DeepSeek US$0,025 e `claude-opus-5-5` US$1,37 (ledger Anthropic separado); comparação interrompida e retomada US$0,006 (ledger isolado) | — | [CHANGELOG](../../CHANGELOG.md), 0.10.0 |
+| v0.11.0 | Custo por julgamento: `judge.v5` US$0,000945; `judge.v3` US$0,000398 | — | [Resultado](v0110-resultado.md) |
+| v0.12.0 | US$0,471 | — | [Resultado](v0120-resultado.md) |
+| v0.13.0 | US$0,064 | US$0,15 | [Resultado](v0130-resultado.md) |
+| v1.0.0 | US$0,0038 na campanha `v100-qa` e US$0,0033 na janela do túnel | US$0,10 cada | [Resultado](v100-resultado.md) |
+| v1.1.0 | US$0,018 em três campanhas | US$0,10, US$0,05 e US$0,03 | [Resultado](v110-resultado.md) |
+
+## Registro por atividade (2026-10-26 e 2026-10-27)
+
+Nesses dois dias, o teto do projeto era US$5,00. A partir da guarda de orçamento da aplicação (tarefa 08), o ledger da aplicação em `data/runtime/` é a fonte, e esta tabela traz o total de cada atividade.
 
 | Data | Atividade | Reserva | Gasto estimado | Acumulado |
 | --- | --- | --- | --- | --- |

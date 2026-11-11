@@ -1,9 +1,9 @@
-# Revisão independente da T66 — rodada 5
+# Revisão independente da tarefa 66 (webhooks), v0.7.0
 
-- **Candidato:** `0592641d9dc99a23b17ba6f3eed05a8c2d4c9885`, branch `codex/v0.7.0-identidade-hitl`, worktree destacado `C:\workspace\ai-getnet-case-wt\review-a2`; HEAD e `git status` iguais antes e depois. Escopo: diff `386025a..0592641` em `src/`, `tests/` e `docker-compose.yml` (9 arquivos), com regressão rápida do que a rodada 4 comprovou.
-- **Independência:** subagente `reviewer` (sonnet/xhigh) em contexto frio; leu a tarefa até "Validação", a spec, o parecer da rodada 4 e o diff; não leu as passagens do Developer. Gravado pelo Supervisor a partir do relatório do Reviewer.
-- **Parecer do Reviewer:** correções necessárias, com um P2 só de teste e nenhum defeito de produto; "se o Supervisor tratar como P3, o resto está apto para QA".
-- **Decisão do Supervisor:** o P2 de teste é reclassificado como P3 e a T66 fica **apta para QA** neste candidato. Os testes das guardas (abaixo) e o P3-2 entram na rodada da T68, que gera candidato novo com suíte estrita e revisão própria.
+**Parecer final: apto**, no candidato `0592641d9dc99a23b17ba6f3eed05a8c2d4c9885`, sem defeito de produto. A lacuna de teste nas guardas de `_complete_interrupted_handoff`, descrita abaixo, foi classificada como não bloqueante, e os testes foram acrescentados na tarefa 68, revisada à parte ([v070-reviewer-t68.md](v070-reviewer-t68.md)).
+
+- **Escopo:** diff `386025a..0592641` em `src/`, `tests/` e `docker-compose.yml` (9 arquivos), com regressão rápida do que a revisão anterior comprovou; HEAD e `git status` iguais antes e depois.
+- **Independência:** contexto novo (sonnet/xhigh); leu a tarefa até "Validação", a spec, o parecer anterior e o diff, sem o relato da implementação.
 
 ## Achados
 

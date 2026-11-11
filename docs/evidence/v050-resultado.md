@@ -1,83 +1,29 @@
 # Resultado da v0.5.0
 
-**Estado: apto nos critérios obrigatórios publicados da v0.5.0, candidato local r7.**
+## Capacidades
 
-## Candidato
+- O registro da base de conhecimento nasce dos snapshots públicos e do corpus fictício de demonstração; só documentos `simulated_internal` são editáveis, e as fontes oficiais ficam somente leitura.
+- Rascunhos têm revisões otimistas e diff; cada versão candidata é construída numa coleção Qdrant própria, com manifesto congelado e etapa explícita de teste.
+- Ativação e rollback são explícitos, com verificação de integridade da coleção contra o manifesto e log de eventos com autor, hora e evidência.
+- Cada execução captura uma versão identificada da base no início e termina nela, mesmo que outra seja ativada no meio.
+- Lotes de embedding reservam orçamento antes da chamada e liquidam uma vez depois; o teto persistente de cada ledger (`<ledger>.limit`) é gravado no primeiro uso, e uma configuração posterior não o aumenta.
+- A Administração no Streamlit cobre documentos, editor, diff, estimativa, build, teste, ativação e rollback; a conversa se recupera por GET depois de uma falha de transporte, sem reenvio automático.
 
-[R7](v050-candidato-r7.json), dois projetos em
-`codex/v0.5.0-base-versionada`, alterações locais sobre as mains v0.4 integradas.
-Fonte `ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c`,
-46arquivos backend/85web. Runtime/build backend idênticos aos do r3,
-confirmados na [evidência Docker r7](v050-docker-r7.json).
+## Validação
 
-## Validação e correções
+| Verificação | Resultado |
+| --- | --- |
+| Candidato | [R7](v050-candidato-r7.json): 46 arquivos do backend e 85 da interface, fonte `ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c`; runtime e build do backend iguais aos do r3 ([Docker r7](v050-docker-r7.json)) |
+| Suíte do backend | 293 testes aprovados |
+| Interface | 20 testes aprovados; Ruff limpo |
+| Revisão independente | Backend apto ([revisão](v050-reviewer-r2.md)); recuperação da conversa por GET apta no r7 ([revisão da interface](v050-reviewer-ui-r3.md)) |
+| Validação com modelos reais | Embeddings, construção da base de referência, ciclo rascunho → candidata → teste → ativação → rollback pela interface, proteções 403, 409 e 429, captura de versão durante a troca, comparação real de Router DeepSeek e JEV, e a resposta persistida recuperada pela interface com um GET, sem POST repetido ([validação](v050-qa-r3.md)) |
+| Critérios | CA-41 e RF-63 a RF-66 com evidência nas três execuções reais |
 
-- Backend: [revisão r2](v050-reviewer-r2.md) apta com293 testes; código de
-  runtime preservado durante as correções web.
-- QA r1 reprovou confirmações UI e apresentação da resposta
-  após falha de transporte. Build/teste/ativação backend, inferências OpenAI
-  e comparação DeepSeek/JEV tiveram evidências conforme o relatório.
-- Correções49/50/51 implementadas por Developer gpt-6-luna/high autorizado.
-  Suíte web20/Ruff externo passaram; script estrito retornou2 por Ruff ausente
-  no venv web, com pytest/estrutura/skills aprovados.
-- Reviewer UI r1 encontrou confirmação de teto
-  desatualizada; Reviewer UI r2 confirmou sua correção
-  no r6. Revisão independente reutilizou o mesmo agente gpt-6-luna/high.
-- Mesmo QA gpt-6-luna/high reativado para jornada no navegador, recuperação
-  manual GET, concorrência/retorno/rerun e regressão pertinente restante.
-  Não foram repetidos bootstrap ou smokes pagos já válidos.
-- QA r2 comprovou confirmações, build/teste/ativação/retorno
-  pela UI e captura consistente durante troca de versão. GET200 encontrou
-  resposta persistida, mas a UI permaneceu pendente; [defeito52](../tasks/52-recuperar-conversa-get-ui-v050.md)
-  e [correção53](../tasks/53-consumir-contrato-real-conversa-v050.md) usam o
-  payload sintético real como referência. Efeito da nota fictícia na resposta
-  ficou inconclusivo; recusa de afirmar prazo oficial não foi tratada como defeito.
-- [Reviewer UI r3](v050-reviewer-ui-r3.md) conferiu o formato real do GET,
-  fixture e reprodução independente, aprovando r7 para retornar ao mesmo QA.
-  [QA r3](v050-qa-r3.md) comprovou no navegador a recuperação da resposta
-  persistida, limpando pendência com GET e sem POST repetido. Navegação não
-  gerou nova inferência.
+## Gasto
 
-O QA auditou o veredito contra CA-41, RF63–66, spec derivada e história v1,
-sem mudar essas fontes: os critérios obrigatórios têm evidência nas rodadas
-r1/r2/r3. A consulta opcional sobre o texto fictício não chegou a Knowledge;
-permanece inconclusiva e não prova consumo desse trecho. Reproduzir marcador
-não é critério publicado, portanto não é usado para bloquear nem para alegar
-um comportamento não demonstrado. A tentativa adicional de navegador ficou
-indisponível; a limitação consta do relatório.
+US$0,00553883 na campanha (35 entradas, teto adicional de US$0,25), sem reservas abertas. O mesmo gasto aparece no ledger primário (885 entradas, US$0,34852844) e não é somado duas vezes. Acumulado do projeto: US$0,59837466, com teto de US$5 na época.
 
-## Custos e limites
+## Decisão
 
-Baseline da campanha ao fim de QA r1:17linhas, US$0,00282289, zero reservas
-abertas. Primário867linhas/US$0,34581250; delta da campanha representa as
-mesmas chamadas e não é somado duas vezes. Acumulado histórico reconciliado
-nesse ponto:US$0,59565872.
-
-QA r2 manteve o MESMO arquivo/ID e cap adicionalUS$0,25. Ao encerramento:
-campanha33linhas/US$0,00532161, delta r2US$0,00249872; primário883linhas/
-US$0,34831122, mesmo delta; zero reservas abertas. Acumulado reconciliado
-US$0,59815744. PrimárioUS$1 e teto globalUS$5 preservados.
-
-Encerramento r3: campanha35entradas, **US$0,00553883**; delta r3US$0,00021722.
-Primário885entradas/US$0,34852844, mesmo delta acumulado da campanha desde o
-baseline. Acumulado reconciliado do projeto: **US$0,59837466 de US$5**.
-Zero reservas abertas e saldo de campanhaUS$0,24446117; nenhum cap renovado.
-
-Auditoria final do Supervisor conferiu
-46/85arquivos de fonte,128runtime/129build sem divergências, os dois ledgers
-em somente leitura e ausência de listeners nas quatro portas próprias de QA.
-Serviços encerrados; dados, logs, fixture e controles persistentes preservados.
-
-## Pendências
-
-Candidato local pronto para decisão de integração. O plano aprovado exclui
-integração Git v0.5; ela continua dependendo de autorização específica.
-Tarefa46 registra P3 conhecidos para tratamento posterior. Nenhum commit,
-push, PR, merge, tag ou publicação v0.5 foi executado neste conjunto.
-
-## Integração (registrada na v0.6.0)
-
-Integrada em 2026-10-27 com autorização do responsável: PRs backend #6 e web #2,
-merges locais com a identidade do projeto (`c3a9027`, `4192169`) e tags `v0.4.0`
-e `v0.5.0`. A tarefa 46 foi incorporada à tarefa 54. Detalhes, conferência dos
-blobs e o incidente de identidade corrigido estão em supervisão v0.6.0.
+Integrada na `main` em 2026-10-27 (PRs backend #6 e web #2), com as tags `v0.4.0` e `v0.5.0`. O retorno à v0.4.0 é pela migração 0007 → 0006, que remove as tabelas da base e mantém as coleções Qdrant.

@@ -1,9 +1,11 @@
-# Revisão independente da T70 — rodada 1
+# Revisão independente da tarefa 70 (rubrica e juiz independente), v0.8.0
 
-- **Candidato:** `f3872d669f1c821e7c2dd9fdde3f2e8c7ebb423d`, branch `codex/v0.8.0-avaliacao`, base `8f2baa6`; worktree destacado `review-a`, HEAD e status iguais antes e depois.
-- **Independência:** subagente `reviewer` (sonnet/xhigh) em contexto frio; leu a tarefa até "Validação", a spec e o plano; não leu as passagens do Developer; não abriu o conteúdo do holdout (blob idêntico entre base e candidato, lacre verde). Gravado pelo Supervisor a partir do relatório do Reviewer.
-- **Parecer:** **correções necessárias** — 1 P2, 10 P3.
-- **Decisão do Supervisor sobre o P2:** opção (a): o `/v1` volta a usar `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` como antes, e o juiz da campanha ganha variáveis próprias (`JUDGE_PROVIDER`/`JUDGE_MODEL`, padrão DeepSeek). Também evita que o `.env` antigo do responsável faça o `eval --judge` recusar.
+**Parecer final: apto**, no candidato `0b64b00df4f84c1b4bcd9fcbc9bff5a35fa160f0` (segunda revisão, no fim). A primeira revisão, registrada logo abaixo, examinou o candidato `f3872d6` e pediu uma correção no avaliador padrão do `/v1`.
+
+- **Candidato da primeira revisão:** `f3872d669f1c821e7c2dd9fdde3f2e8c7ebb423d`, base `8f2baa6`; HEAD e status iguais antes e depois.
+- **Independência:** contexto novo (sonnet/xhigh); leu a tarefa até "Validação", a spec e o plano, sem o relato da implementação; não abriu o conteúdo do holdout (blob idêntico entre base e candidato, lacre verde).
+- **Parecer da primeira revisão:** correções necessárias (um ponto e dez menores).
+- **Decisão sobre o ponto:** o `/v1` volta a usar `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` como antes, e o juiz da campanha ganha variáveis próprias (`JUDGE_PROVIDER`/`JUDGE_MODEL`, padrão DeepSeek).
 
 ## Achado
 

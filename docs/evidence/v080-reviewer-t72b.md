@@ -1,8 +1,10 @@
-# Revisão independente da T72b — rodada 1
+# Revisão independente da tarefa 72b (jornadas e `router.v6`), v0.8.0
 
-- **Candidato:** `c861bee52ec43128c3801a9be0609effca9e3f61` (código em `046cb73`), branch `codex/v0.8.0-replan`, worktree destacado `review-a2`; HEAD e status iguais antes e depois. Diff `5da3de5..c861bee` sem `docs/`.
-- **Independência:** subagente `reviewer` (sonnet/xhigh) em contexto frio. A leitura da tarefa devolveu o arquivo inteiro, inclusive Validação e Status com os números do Developer; o Reviewer declara isso, não abriu a passagem nem a tabela caso a caso e re-derivou cada número por execução. Não abriu o holdout. Gravado pelo Supervisor a partir do relatório do Reviewer.
-- **Parecer:** **correções necessárias** — 1 P2 (só rótulo), 8 P3; nenhum defeito de produto, quebra de contrato ou regressão no eval programado.
+**Parecer final: apto**, no candidato `bba6e04d6f0ad40b7d7dae627125c517a20a6d98` (quarta revisão, no fim). As três primeiras pediram ajustes no rótulo de `V030-ENABLEMENT-PENDING`, sem defeito de produto.
+
+- **Candidato da primeira revisão:** `c861bee52ec43128c3801a9be0609effca9e3f61` (código em `046cb73`); HEAD e status iguais antes e depois. Diff `5da3de5..c861bee` sem `docs/`.
+- **Independência:** contexto novo (sonnet/xhigh). A leitura da tarefa devolveu o arquivo inteiro, inclusive Validação e Status com os números da implementação; a revisão declara isso, não abriu o relato da implementação nem a tabela caso a caso e re-derivou cada número por execução. Não abriu o holdout.
+- **Parecer da primeira revisão:** correções necessárias (um ponto de rótulo e oito menores); nenhum defeito de produto, quebra de contrato ou regressão no eval programado.
 
 ## Achado
 

@@ -1,10 +1,9 @@
-# Passagem de papel: QA v0.9.0, retrieval com embeddings reais (momentos 4 a 7), rodada 1
+# Validação com modelos reais da v0.9.0: retrieval com embeddings reais (momentos 4 a 7)
 
-- **Papel e responsável:** QA (subagente, contexto novo), 2026-11-05, de 22:55 a 23:01 UTC.
+**Parecer final: apto**, com as observações abaixo, sobre o candidato [v090-candidato-r2.json](v090-candidato-r2.json) (fingerprint `2811389f…`), em 2026-11-05, de 22:55 a 23:01 UTC.
+
 - **Objetivo e critérios:** CA-52 (tabela denso × híbrido × híbrido+reranker em `dev` e no holdout de retrieval lacrado, com Recall@6, MRR e nDCG@6, e decisão registrada) e a regressão da história [juiz-retrieval-v090.md](../historias/juiz-retrieval-v090.md), versão 1, momentos 4 a 7. Spec [juiz-retrieval-v090.md](../specs/juiz-retrieval-v090.md), D7, D8 e "Orçamento"; [ADR 0020](../architecture/decisions/0020-retrieval-hibrido-holdout.md).
 - **Escopo:** CLI `merchant-assistant eval-retrieval`, nos três modos e nos dois splits; ledger do projeto `data/runtime/budget.sqlite3`; relatório `docs/evidence/v090-retrieval.md` e `.json`.
-- **Estado:** **apto**, com as limitações abaixo.
-- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR. Nada foi commitado.
 - **Base e versão final:** HEAD `d7775ff` (`git rev-parse HEAD`). O manifesto [v090-candidato-r2.json](v090-candidato-r2.json) fixa `f611480`. `git diff --stat f611480 d7775ff` mostra só o próprio manifesto, e `git diff aa68cff d7775ff -- src tests prompts pyproject.toml` vem vazio. Os 195 arquivos do manifesto foram recalculados sobre `git show HEAD:<path>` e os 195 conferem. O fingerprint `2811389fedeb82b713a2df714e25f0ce71a1450745c1969b9087ca02279e448b` também recalcula: sha256 das linhas `path:sha256\n`, em ordem. `git status` mostra `src/`, `tests/` e `prompts/` limpos, e só os não rastreados de sempre.
 - **Independência:** independente. O contexto era novo e eu não escrevi nem revisei o código.
 

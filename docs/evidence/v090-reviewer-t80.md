@@ -1,12 +1,12 @@
-# Passagem de papel: revisão da tarefa 80 (retrieval híbrido BM25 + RRF), rodada 1
+# Revisão independente da tarefa 80 (retrieval híbrido BM25 + RRF), v0.9.0
 
-- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
-- **Objetivo e critérios:** tarefa 80; spec `juiz-retrieval-v090.md` D7, D10, CA-52 (parte determinística) e a linha "Regressão"; história, momentos 4 e 7; plano, decisões técnicas 17 a 19. Lidos só até "## Validação" da tarefa; não li a Validação, o Status nem `v090-developer.md`.
+**Parecer final: apto**, no candidato `687895c` (2026-11-05, segunda revisão, mais abaixo). A primeira revisão, registrada logo abaixo, examinou o candidato `c99aa90` e pediu correções, fechadas na segunda.
+
+- **Objetivo e critérios:** tarefa 80; spec `juiz-retrieval-v090.md` D7, D10, CA-52 (parte determinística) e a linha "Regressão"; história, momentos 4 e 7; plano, decisões técnicas 17 a 19. Lidos só até "## Validação" da tarefa; não li a Validação, o Status nem o relato da implementação.
 - **Escopo:** `5d82fd0` e `c99aa90` (`rag/bm25.py`, `rag/index.py`, `rag/kb.py`, `config.py`, `main.py`, `testing.py`, `evaluation/retrieval.py`, `cli.py` no bloco `eval-retrieval`, `pyproject.toml`, `tests/scenarios/retrieval.jsonl`, `tests/unit/rag/test_bm25_hybrid.py`, `tests/integration/test_v090_hybrid.py`).
-- **Estado:** **correções necessárias** (nenhum P1; 3 P2; P3 registrados).
-- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR.
-- **Base e versão final:** base `fee7a78`; candidato `c99aa90` (árvore `e4a0fdb`); suíte no HEAD `94df63c` (árvore `1c7bb20`). Blobs dos arquivos da tarefa 80 idênticos entre `c99aa90` e `94df63c`; `cli.py` muda só nos blocos da tarefa 79 (nada em `eval-retrieval`). Durante a revisão a branch ganhou `4a9f263` e `216c66c`, **só documentação** (tarefa 79, história e passagem do Developer); `src/`, `tests/` e `pyproject.toml` da árvore de trabalho iguais a `94df63c` no início e no fim. Alterações locais de outro escritor em `docs/tasks/79-...md` e `docs/evidence/v090-developer.md` ignoradas.
-- **Independência:** independente. Não implementei nada; não recebi passagem nem diagnóstico. Uma passagem do Developer da tarefa 80 existe no scratchpad compartilhado e **não foi lida**.
+- **Estado na primeira revisão:** correções necessárias (três pontos; outros menores registrados).
+- **Base e versão final:** base `fee7a78`; candidato `c99aa90` (árvore `e4a0fdb`); suíte no HEAD `94df63c` (árvore `1c7bb20`). Blobs dos arquivos da tarefa 80 idênticos entre `c99aa90` e `94df63c`; `cli.py` muda só nos blocos da tarefa 79 (nada em `eval-retrieval`). Durante a revisão o HEAD ganhou `4a9f263` e `216c66c`, **só documentação** (tarefa 79, história e relato da implementação); `src/`, `tests/` e `pyproject.toml` da árvore de trabalho iguais a `94df63c` no início e no fim. Alterações locais em documentos da tarefa 79 ignoradas.
+- **Independência:** independente. Não implementei nada nem recebi diagnóstico; o relato da implementação da tarefa 80 **não foi lido**.
 
 ## Comandos e números
 

@@ -1,4 +1,6 @@
-# Revisão independente — v0.3.0 jornadas, rodada 6
+# Revisão independente das jornadas da v0.3.0
+
+**Parecer final: apto**, no candidato `v0.3.0-local-r6` (manifesto `v030-candidato-r6.json`).
 
 ## Parecer
 

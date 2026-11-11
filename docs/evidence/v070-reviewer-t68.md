@@ -1,8 +1,10 @@
-# Revisão independente da T68 — rodada 1
+# Revisão independente da tarefa 68 (regressão e fechamento), v0.7.0
 
-- **Candidato:** `861a80ff4cfef80c20b2cc3a97d9666583608f48` (código igual a `f536d9d`), branch `codex/v0.7.0-identidade-hitl`, worktree destacado `C:\workspace\ai-getnet-case-wt\review-a2`; HEAD e `git status` iguais antes e depois. Diff `6876adc..f536d9d`, 13 arquivos.
-- **Independência:** subagente `reviewer` (sonnet/xhigh) em contexto frio; leu a tarefa até "Validação" e não leu as passagens do Developer. Um `grep` devolveu incidentalmente a linha da tabela de Validação com o nome de dois testes; o Reviewer declara não ter usado a linha, porque já tinha lido e mutado esses testes. Gravado pelo Supervisor a partir do relatório do Reviewer.
-- **Parecer:** **correções necessárias** — 1 P2, nenhum P1; fora ele, apta para QA.
+**Parecer final: apto**, no candidato `4be9130247b8b233b37d94e67b76a891fc6d77b0` (código em `a7fb6b0`), na segunda revisão, no fim. A primeira revisão, registrada logo abaixo, examinou o candidato `861a80f` e pediu uma correção no rótulo de `SC-HANDOFF`.
+
+- **Candidato da primeira revisão:** `861a80ff4cfef80c20b2cc3a97d9666583608f48` (código igual a `f536d9d`); HEAD e `git status` iguais antes e depois. Diff `6876adc..f536d9d`, 13 arquivos.
+- **Independência:** contexto novo (sonnet/xhigh); leu a tarefa até "Validação", sem o relato da implementação. Um `grep` devolveu incidentalmente a linha da tabela de Validação com o nome de dois testes; a revisão declara não ter usado a linha, porque já tinha lido e mutado esses testes.
+- **Parecer da primeira revisão:** correções necessárias (um ponto de rótulo); fora ele, apta.
 
 ## Achado
 

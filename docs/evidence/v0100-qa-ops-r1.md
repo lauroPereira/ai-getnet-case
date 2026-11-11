@@ -1,14 +1,11 @@
-# Passagem de papel: QA da v0.10.0, momentos 4 a 8 (comparação interrompida e retomada, `/metrics`, regras de alerta), rodada 1
+# Validação com modelos reais da v0.10.0, momentos 4 a 8 (comparação interrompida e retomada, `/metrics`, regras de alerta)
 
-- Papel e responsável: QA (subagente), despachado pelo Supervisor.
+**Parecer final: apto** nos momentos 4 a 8 (CA-58 e CA-59), com os desvios e as observações abaixo, sobre o candidato [v0100-candidato-r1.json](v0100-candidato-r1.json) (head `c1042a5`).
+
 - Objetivo e critérios: viver os momentos 4 a 8 da [história](../historias/rubrica-operacao-v0100.md) (versão 1, 2026-11-05) e comprovar CA-58 e CA-59 da [spec](../specs/rubrica-operacao-v0100.md) (D3 a D6).
 - Escopo: API local (uvicorn, Qdrant embutido) em runtime isolado novo; `POST /v1/comparisons/estimate`, `POST /v1/comparisons`, `GET /v1/comparisons/{id}`, `POST /v1/comparisons/{id}/resume`, `GET /metrics`, `GET /ready`; `alerts/rules.yml`; fumaça offline. Fora: Docker, navegador, chamadas Anthropic, `eval --judge`.
-- Estado: **apto**, com os desvios e as observações abaixo.
-- Branch e PR: `codex/v0.10.0-rubrica-operacao`, sem PR. Nada commitado.
 - Base e versão final: HEAD `92230de` ("docs: pin the v0.10.0 candidate (r1)"); manifesto [v0100-candidato-r1.json](v0100-candidato-r1.json) (head `c1042a5`, tree `b92dbbc2`). `git diff c1042a5 HEAD` muda só o próprio manifesto. Alterações locais: nenhuma em `src/`, `tests/`, `alerts/` ou `prompts/` (`git status` limpo nesses caminhos).
-- Independência: independente quanto ao Developer e aos Reviewers. Li as passagens dos Reviewers das tarefas 84 (rodada 2) e 85 (rodada 1) só para conhecer os limites declarados (P3-4, P3-5). Não li código para julgar, só para achar a regra de orçamento do `start` e o papel exigido pela rota.
-- Próxima ação e responsável: Supervisor (resolver as duas perguntas de premissa; tarefa 86 já cobre P3-5 e o README).
-- Decisão humana pendente: nenhuma.
+- Independência: independente da implementação e das revisões. Li as revisões das tarefas 84 e 85 só para conhecer os limites registrados nelas. Não li código para julgar, só para achar a regra de orçamento do `start` e o papel exigido pela rota.
 
 ## Pré-checagens (sem custo), 00:48 a 00:50 (-03:00)
 

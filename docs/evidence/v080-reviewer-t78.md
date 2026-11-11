@@ -1,6 +1,6 @@
-# Revisão independente da tarefa 78 (rótulos CA-51) — v0.8.0
+# Revisão independente da tarefa 78 (rótulos CA-51), v0.8.0
 
-Reviewer nativo (`opus`/`high`) em contexto frio, 2026-11-05; sem a passagem do Developer; tarefa lida só até "## Validação"; holdout só por blob e hash.
+**Parecer final: apto**, no candidato `1baa7b31ed28724a2536ae33a12f11a4d41c4cf8` (r11, quarta revisão, no fim). Contexto novo (`opus`/`high`), 2026-11-05, sem o relato da implementação; tarefa lida só até "## Validação"; holdout só por blob e hash.
 
 ## Rodada 1 — candidato `2b62993cd6f09f806d735ad266c29e1ad1872a0c` (r8)
 

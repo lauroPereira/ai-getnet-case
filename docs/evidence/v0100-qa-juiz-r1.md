@@ -1,7 +1,8 @@
-# Passagem de papel: QA da v0.10.0, momentos 1 a 3 (rubrica `judge.v4`), rodada 1
+# Validação com modelos reais da v0.10.0, momentos 1 a 3 (rubrica `judge.v4`)
 
-- **Papel e responsável:** QA nativo, contexto novo, 2026-11-06. Caixa-preta pela CLI (`merchant-assistant eval` e `eval-calibrate`), sem Docker e sem navegador, como pedido.
-- **Objetivo e critérios:** CA-57 pelos momentos 1 a 3 de [rubrica-operacao-v0100.md](../historias/rubrica-operacao-v0100.md) (versão 1, 2026-11-05), com a spec [rubrica-operacao-v0100.md](../specs/rubrica-operacao-v0100.md) (D1, D2, "Orçamento") e a regra operacional do P2-4 da v0.9.0 ([v090-qa-juiz-r2.md](v090-qa-juiz-r2.md)).
+**Parecer final: apto** nos momentos 1 a 3 (CA-57), em 2026-11-06, sobre o candidato fixado pelos blobs da tarefa 83 (abaixo). Caixa-preta pela CLI (`merchant-assistant eval` e `eval-calibrate`), sem Docker e sem navegador.
+
+- **Objetivo e critérios:** CA-57 pelos momentos 1 a 3 de [rubrica-operacao-v0100.md](../historias/rubrica-operacao-v0100.md) (versão 1, 2026-11-05), com a spec [rubrica-operacao-v0100.md](../specs/rubrica-operacao-v0100.md) (D1, D2, "Orçamento") e a regra operacional de rejulgamento da v0.9.0 ([v090-qa-juiz-r2.md](v090-qa-juiz-r2.md)).
 - **Escopo:**
   - 72 julgamentos DeepSeek sob `judge.v4`;
   - sonda Opus de 3 julgamentos;
@@ -9,11 +10,10 @@
   - relatório multi-bloco `eval-calibrate` contra as mesmas 24 notas humanas.
 
   Não houve nota humana nova nem seed: só o rejulgamento das respostas gravadas.
-- **Estado:** **apto** para os momentos 1 a 3. Os três produziram o resultado esperado, sem falha, recusa ou corte. O relatório traz os quatro blocos, a tabela das frases genéricas e a linha D2. A decisão do padrão da rubrica fica com o Supervisor (tarefa 86), e a D2 está verificada abaixo, sem decidir.
-- **Branch e PR:** `codex/v0.10.0-rubrica-operacao`, sem PR. Nada commitado pelo QA.
+- **Resultado:** os três momentos produziram o resultado esperado, sem falha, recusa ou corte. O relatório traz os quatro blocos, a tabela das frases genéricas e a linha D2, verificada abaixo; a escolha da rubrica padrão é da tarefa 86.
 - **Base e versão final:**
-  - HEAD `5005d81` no início. Durante a rodada, a branch avançou para `4195468`, com um commit de outro agente que só toca `docs/evidence/v0100-developer.md` e `docs/tasks/85-metrics-e-alertas.md` (`git diff --stat 5005d81 4195468 -- src prompts tests` vazio).
-  - Não há manifesto `v0100-candidato-*.json`. Fixei o candidato pelos blobs da tarefa 83, iguais aos do HEAD e aos da revisão r2 ([v0100-reviewer-t83.md](v0100-reviewer-t83.md)): `judge.v3.md 7375786`, `judge.v4.md 2c0f2c9`, `cli.py 210c785`, `calibration.py a037f91`, `judge.py 9b48a14` e `scripted_judge.py 73105e2`.
+  - HEAD `5005d81` no início. Durante a execução, o HEAD avançou para `4195468`, com um commit que só toca documentação (`git diff --stat 5005d81 4195468 -- src prompts tests` vazio).
+  - Não há manifesto `v0100-candidato-*.json`. Fixei o candidato pelos blobs da tarefa 83, iguais aos do HEAD e aos da revisão final ([v0100-reviewer-t83.md](v0100-reviewer-t83.md)): `judge.v3.md 7375786`, `judge.v4.md 2c0f2c9`, `cli.py 210c785`, `calibration.py a037f91`, `judge.py 9b48a14` e `scripted_judge.py 73105e2`.
   - Sem alterações locais nesses arquivos (`git hash-object` = `git rev-parse HEAD:<path>`).
 - **Independência:** independente (não implementei nem revisei a tarefa 83).
 

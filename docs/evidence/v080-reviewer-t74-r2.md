@@ -1,6 +1,6 @@
-# Revisão independente da correção pós-QA da v0.8.0
+# Revisão independente da correção anterior ao holdout da v0.8.0 (tarefa 74)
 
-O Reviewer usou `gpt-6.1-terra/xhigh` em contexto novo e examinou somente pacotes isolados, sem consultar o conjunto lacrado, o runtime ou o ledger.
+**Parecer final: apto em revisão estática**, no candidato `4c3c8a98ddfc4f7af7bba877177f3479152159b5`. A revisão usou `gpt-6.1-terra/xhigh` em contexto novo e examinou somente pacotes isolados, sem consultar o conjunto lacrado, o runtime ou o ledger.
 
 | Candidato | Parecer | Evidência |
 | --- | --- | --- |

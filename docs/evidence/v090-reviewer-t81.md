@@ -1,12 +1,12 @@
-# Passagem de papel: revisão da tarefa 81 (reranker, holdout de retrieval e nDCG), rodada 1
+# Revisão independente da tarefa 81 (reranker, holdout de retrieval e nDCG), v0.9.0
 
-- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
+**Parecer final: apto**, no candidato `aa68cff` (2026-11-05, segunda revisão, mais abaixo). A primeira revisão, registrada logo abaixo, examinou o candidato `4c27e4a` e pediu correções, fechadas na segunda.
+
 - **Objetivo e critérios:** tarefa 81, lida só até "## Validação"; spec `juiz-retrieval-v090.md` D7, D8, D10 e CA-52, mais a linha "Regressão"; história, momentos 5 e 6; P3 abertos de `v090-reviewer-t80.md`.
 - **Escopo:** `8c1970b` (holdout e lacre), `2856be1` (`rag/rerank.py`, `prompts/rerank.v1.md`, `rag/index.py`, `config.py`, `agents/knowledge.py`, `scripted_policy.py`), `37dfbf6` (`evaluation/retrieval.py`, `cli.py` no bloco `eval-retrieval`) e `4c27e4a` (`.env.example`). Testes: `test_rerank.py`, `test_retrieval_metrics.py`, `test_v090_rerank.py` e `test_retrieval_holdout_v090.py`.
-- **Estado:** **correções necessárias**. Nenhum P1, 3 P2 e P3 registrados.
-- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR.
+- **Estado na primeira revisão:** correções necessárias (três pontos; outros menores registrados).
 - **Base e versão final:** base `fad0eb2`; candidato `4c27e4a` (árvore `0e8822e`); HEAD `632c84a`, que só acrescenta documentação (`git diff 4c27e4a HEAD -- src tests prompts .env.example pyproject.toml` vazio). Não há manifesto `v090-candidato-*.json` desta tarefa: o `r1` existente fixa o experimento do juiz. Por isso fixei o candidato pelos blobs: `rerank.py d8fcbd7`, `index.py d1a5e50`, `retrieval.py b3fef0e`, `cli.py 7871861`, `config.py 4c957a6`, `knowledge.py 8f6a04c`, `scripted_policy.py cdb86a2`, `rerank.v1.md d494f42`, holdout `1a615cf` e lacre `1d5c0eb`. HEAD e árvore de trabalho estavam iguais no início e no fim da revisão (sem alterações locais em `src/`, `tests/` e `prompts/`).
-- **Independência:** independente. Não implementei nada e não li `v090-developer.md` nem a Validação ou o Status da tarefa 81.
+- **Independência:** independente. Não implementei nada e não li o relato da implementação nem a Validação ou o Status da tarefa 81.
 
 ## Comandos e números
 

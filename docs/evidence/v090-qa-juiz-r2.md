@@ -1,11 +1,11 @@
-# Passagem de papel: QA da v0.9.0, momentos 1 a 3 (experimento do juiz), rodada 2
+# Validação com modelos reais da v0.9.0, momentos 1 a 3 (experimento do juiz)
 
-- **Papel e responsável:** QA nativo, contexto novo; caixa-preta pela CLI (`merchant-assistant eval` e `eval-calibrate`). Sem Docker e sem navegador, como pedido.
-- **Objetivo e critérios:** CA-56 pelos momentos 1 a 3 de [juiz-retrieval-v090.md](../historias/juiz-retrieval-v090.md) (versão 1, 2026-11-05), com a spec [juiz-retrieval-v090.md](../specs/juiz-retrieval-v090.md) (D1, D2, D5, "Orçamento") e a regra operacional do P2-4 (complemento de D1; [v090-reviewer-t79.md](v090-reviewer-t79.md), rodada 2).
-- **Escopo:** sonda de 3 julgamentos Opus, 72 julgamentos (3 repetições) sobre as 24 respostas da calibração e relatório `eval-calibrate --judge`. Retoma a rodada 1, que ficou bloqueada por credencial. O responsável trocou a `ANTHROPIC_API_KEY` no `.env`, e o QA não leu o valor.
-- **Estado:** **apto** para os momentos 1 a 3. Os três momentos produziram o resultado esperado. Não houve falha, recusa nem corte. O relatório traz tudo o que o CA-56 pede, menos a decisão escrita, que cabe ao Supervisor (ver "Achados"). A regra D2 está verificada abaixo, sem decidir.
-- **Branch e PR:** `codex/v0.9.0-juiz-retrieval`, sem PR. Nada commitado pelo QA.
-- **Base e versão final:** candidato [v090-candidato-r1.json](v090-candidato-r1.json) (head do manifesto `80a0853`, fingerprint `e3a8895f…81df`). HEAD durante toda a rodada: `f7ffe2b` (o parecer da rodada 1 sobre `f8f7db4`, só documentação).
+**Parecer final: apto** nos momentos 1 a 3 (CA-56), sobre o candidato [v090-candidato-r1.json](v090-candidato-r1.json) (head `80a0853`, fingerprint `e3a8895f…81df`). Caixa-preta pela CLI (`merchant-assistant eval` e `eval-calibrate`), sem Docker e sem navegador.
+
+- **Objetivo e critérios:** CA-56 pelos momentos 1 a 3 de [juiz-retrieval-v090.md](../historias/juiz-retrieval-v090.md) (versão 1, 2026-11-05), com a spec [juiz-retrieval-v090.md](../specs/juiz-retrieval-v090.md) (D1, D2, D5, "Orçamento") e a regra operacional de rejulgamento (complemento de D1; [v090-reviewer-t79.md](v090-reviewer-t79.md)).
+- **Escopo:** sonda de 3 julgamentos Opus, 72 julgamentos (3 repetições) sobre as 24 respostas da calibração e relatório `eval-calibrate --judge`. A chave do provedor foi trocada no `.env` antes da execução, sem leitura do valor.
+- **Resultado:** os três momentos produziram o resultado esperado, sem falha, recusa nem corte. O relatório traz tudo o que o CA-56 pede; a regra D2 está verificada abaixo, e a decisão escrita está na [ADR 0021](../architecture/decisions/0021-juiz-modelo-e-regua.md).
+- **Base e versão final:** candidato [v090-candidato-r1.json](v090-candidato-r1.json) (head do manifesto `80a0853`, fingerprint `e3a8895f…81df`). HEAD durante toda a execução: `f7ffe2b` (só documentação depois de `f8f7db4`).
 - **Independência:** independente (não implementei nem revisei a tarefa 79).
 
 ## Pré-checagens (sem custo)

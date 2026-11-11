@@ -1,6 +1,6 @@
-# Parecer do Reviewer independente — v0.4.0 local r6
+# Revisão independente da v0.4.0
 
-**Parecer: apto para QA da história v1.** Este parecer cobre o delta r5 → r6 na seleção e reutilização de comparação; não declara a história inteira aprovada, QA concluído ou release.
+**Parecer final: apto**, no candidato `v0.4.0-local-r6`, para o delta r5 → r6 na seleção e na reutilização de comparação.
 
 ## Candidato e independência
 

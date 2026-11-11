@@ -1,9 +1,8 @@
-# Parecer independente — recuperação GET da conversa v0.5.0 (r3)
+# Revisão independente da recuperação da conversa por GET, v0.5.0
 
-- Papel: Reviewer independente do Developer, com contexto separado; este parecer não substitui QA.
-- Parecer: **apto para revalidação pelo mesmo QA**, restrito à correção da recuperação da conversa no r7.
-- Candidato: `v0.5.0-local-r7`; fonte combinada `ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c`.
-- Branches: `codex/v0.5.0-base-versionada`; HEAD-base backend `ea2355b5ba8fa8dcff66200f34461ae063183250`, web `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`.
+**Parecer final: apto**, restrito à correção da recuperação da conversa, no candidato r7. Contexto separado da implementação.
+
+- Candidato: `v0.5.0-local-r7`; fonte combinada `ad9cf469cd85e44210280df1949ecac766857688a6f1101bb61f8d0e9e9b8d8c`; base backend `ea2355b5ba8fa8dcff66200f34461ae063183250`, web `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`.
 
 ## Integridade e delta r6→r7
 
