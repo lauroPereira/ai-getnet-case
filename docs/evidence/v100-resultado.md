@@ -13,7 +13,7 @@
 | --- | --- |
 | Suíte estrita | 2.982 testes aprovados no host e dentro da imagem sem rede (`docker run --network none`); Ruff, links e caminhos pessoais limpos |
 | Compose sem imagem publicada | O compose constrói a imagem e a pilha fica saudável em 40 s; `/ready` informa aplicação 1.0.0 e esquema 16 |
-| Trilha de 10 minutos | Percorrida pela interface com modelo real: login por redirecionamento, pergunta de recebíveis com datas e valores, encaminhamento com protocolo, resposta da operadora pelo Ticketing e avaliação por IA da resposta (notas 5, 5 e 5) |
+| Trilha de 10 minutos | Percorrida pela interface com modelo real: login por redirecionamento, pergunta de recebíveis com datas e valores, encaminhamento com protocolo, resposta da operadora pelo Ticketing e avaliação por IA da resposta do assistente (notas 5, 5 e 5) |
 | Proxy do túnel | Só `GET` e `POST /v1/auth/authorize` chegam à API; token, revogação, mensagens, OpenAPI, saúde, métricas e JWKS são respondidos pela interface; o websocket atravessa; o logout revoga (token de acesso `401`, refresh `400`); cabeçalhos de encaminhamento não são confiados |
 | Credenciais | Com endereço público registrado e credenciais de exemplo, a API não sobe e nomeia contas e variáveis, sem valores; com senhas de uso único, sobe e a senha publicada é recusada |
 | Acesso por outra rede | Túnel rápido usado por um celular em rede móvel: login por redirecionamento, atendimento, encaminhamento e resposta da operadora pelo endereço público |
