@@ -1,25 +1,37 @@
 # Getnet Merchant Assistant — Multi-Agent Support System
 
-A multi-agent assistant that answers Getnet merchants about their sales, payouts, card machines and Getnet products
-over one HTTP endpoint, and hands the case to a human operator when it needs one. It serves merchants asking
-questions, support operators working the hand-off queue (in a web screen or on Telegram) and the team that runs and
-measures it (judge, retrieval metrics, traces and a budget guard). A **Router** sends each message to a **Knowledge
-Agent** (RAG over Getnet's official website, or the web), a **Customer Support Agent** with tools over the merchant's
-synthetic account or an **Escalation Agent**, and a **Personality** step writes every reply of the assistant in one voice; a reply written by a human operator
-reaches the merchant in the operator's own words.
+One HTTP endpoint answers a Getnet merchant about sales, payouts, card machines and products with facts from the
+merchant's own account and from Getnet's official pages, and brings a human attendant into the same conversation when
+the case calls for one.
 
-**Status:** v1.1.0 (not released). The merchant asks about their human-support tickets in any conversation and gets
-the protocol, its state and the attendant's reply; the interface brings back the latest conversation after the page
-is reloaded; profiles and Router engines whose provider key the backend lacks show as unavailable. It builds on
-v1.0.0: the image on GHCR per release tag with the dependencies pinned in `uv.lock`, the demonstration through a
-tunnel with the sign-in by redirect, the [10-minute walkthrough](#10-minute-walkthrough) and the
-[before and after table](#what-changed-since-v0100). Since v0.13.0 it has sign-in by redirect, external OIDC issuers,
-two API workers, webhook resend, the operator on Telegram and OTLP spans; the campaign judge is `judge.v5` and hybrid
-retrieval reranks by default. What each version added is in
-[Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation),
-and what comes next in the [Roadmap](#roadmap).
+| For | What it delivers |
+| --- | --- |
+| Merchants | Answers in Portuguese or English with the amounts, dates and protocols of their own account, the official source of each product answer, and a protocol to follow when a person takes over |
+| Support operators | A queue on a web screen or on Telegram with each case summarized; they claim, reply, approve or reject, and their reply reaches the merchant as written |
+| The platform team | Every decision traced, every tool call authorized and audited, spend reserved before each paid call, and answer quality measured by a calibrated independent judge |
 
-Run it in one of two ways (Docker with Compose v2 and an OpenAI key; details in [Run it](#run-it)):
+**Release:** v1.1.0 (2026-11-11) · [what each version added](#beyond-the-challenge) · [changelog](CHANGELOG.md) · [results by version](docs/evidence/README.md)
+
+## Results at a glance
+
+Each figure links to its versioned record. All data is synthetic.
+
+| Area | Measured result | Record |
+| --- | --- | --- |
+| Challenge fit | 10 of 10 challenge examples answered over HTTP on the Docker stack; 13 of 13 business journeys approved by the independent judge | [v0.8.0 validation](docs/evidence/v080-d12-pre-holdout-r6.md) |
+| Answer quality | Sealed holdout, 25 cases × 3 runs, scored 1 to 5 by a judge from another provider: groundedness 4.67, factual correctness 4.61, relevance 4.83, usefulness 4.64 | [holdout](docs/evidence/v080-holdout-r7.md) |
+| Evaluation method | The judge is chosen by a rule written before each run: `judge.v5` reaches kappa 0.647 (95% CI 0.28–0.92) against gold labels on 36 sealed answers, with 0.97 to 1.00 agreement within one point | [v0.11.0](docs/evidence/v0110-resultado.md) |
+| Retrieval | Hybrid search with reranking on a sealed 25-question holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 | [retrieval](docs/evidence/v0110-retrieval.md) |
+| Orchestration | 400 replanning decisions in validation: 382 taken by a named rule, 18 by the model, each with its origin in the trace and a three-hop limit in code | [replanning, as it ran](#replanning-as-it-ran) |
+| Security and identity | OAuth 2.0 authorization code with PKCE and rotating refresh tokens; every tool call checks scope and merchant and writes an audit row (4 calls, 4 rows); 10 browser logins, 10 sessions | [v0.7.0](docs/evidence/v070-resultado.md), [v0.13.0](docs/evidence/v0130-resultado.md) |
+| Human oversight | A handoff pauses the conversation, an attendant answers from the queue and the reply reaches the merchant in the attendant's words; the merchant follows the ticket from any conversation | [v0.7.0 story](docs/evidence/v070-qa.md), [v1.1.0](docs/evidence/v110-resultado.md) |
+| Memory and resilience | A 27-turn conversation kept the exact amounts, dates and protocols; a comparison stopped after 1 of 6 cells resumed the other 5 and paid each cell once; two API workers share the work | [v0.12.0](docs/evidence/v0120-resultado.md), [v0.10.0](docs/evidence/v0100-qa-ops-r1.md), [v0.13.0](docs/evidence/v0130-resultado.md) |
+| Cost and latency | US$0.0024 per answer on average over 132 validation answers, p50 7.4 s; a US$0.05 cap per request and a ledger per installation, reserved before each paid call | [campaign](docs/evidence/v080-all-r3.md) |
+| Production engineering | One image per release tag built from a lockfile; the strict suite runs inside the image with no network; external access through a tunnel that exposes only the login page and the interface | [v1.0.0](docs/evidence/v100-resultado.md) |
+| Automated tests | 3,060 test cases from 1,447 test functions (607 unit, 840 integration), run offline with a scripted model at zero cost | [testing and evaluation](#testing-and-evaluation) |
+
+**Run it** with Docker (Compose v2) and an OpenAI key; the details are in [Run it](#run-it) and a guided tour with
+screenshots in the [10-minute walkthrough](#10-minute-walkthrough):
 
 ```bash
 cp .env.example .env                 # set OPENAI_API_KEY
@@ -31,46 +43,38 @@ curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-ty
   -d '{"message": "When will the money from yesterday'"'"'s sales be deposited?"}'
 ```
 
-Since v0.7.0 `POST /messages` requires a token: the merchant comes from the token, not from the body. The user and password above are fictitious demo values from `.env.example`.
+The merchant comes from the token, never from the request body. The user and password above are fictitious
+demonstration values from `.env.example`.
 
-### What changed since v0.10.0
+## How it is built
 
-Each figure comes from the versioned evidence linked in its row; all data is synthetic. The index of every result is
-in [docs/evidence](docs/evidence/README.md).
+One row per engineering area, with the decision that carries it and where to read more. The items of the original
+*AI Hardcore Engineer — Multi-Agent Support System* challenge are marked in the first column.
 
-| Area | v0.10.0 | Now | Evidence |
+| Area | Decision | Section | Code |
 | --- | --- | --- | --- |
-| Attendance | Last full campaign (v0.8.0, `judge.v3`): 44 development cases × 3 runs, groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13, 12/13, 12/13 | No new full campaign. Replanning can be switched off and compared: on 4 paired cases, 0 model-decided replans with `REPLAN=off` and 8 with `REPLAN=on`. Sale cancellation runs only after an explicit yes | [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md); [v0.12.0](docs/evidence/v0120-resultado.md) |
-| Evaluation (judge) | Default `judge.v3` against one human rater (the owner, 24 answers): unsupported-claim agreement 0.667, kappa −0.200; 0 of the 4 generic claims flagged | Default `judge.v5`, claim by claim, against adjudicated gold labels on 36 sealed answers (rated by the owner and a model panel; disagreements settled by model proposals the owner accepted): kappa 0.647 (95% CI 0.28–0.92), against 0.538 for `judge.v3` on the same answers and labels; ±1 agreement 0.972 / 0.972 / 1.000 / 1.000; US$0.000945 per judgement (`judge.v3`: US$0.000398) | [v0.10.0 calibration](docs/evidence/v0100-juiz-v4.md); [v0.11.0](docs/evidence/v0110-resultado.md) |
-| Retrieval | Hybrid (BM25 + dense), no reranker; sealed holdout of 25 questions: Recall@6 1.000, MRR 0.920, nDCG@6 0.921 | Hybrid with the reranker by default; same holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 (same-depth control `hybrid@36`: 0.907); 1,752 ms per query, against 501 ms for `hybrid` in the same run | [v0.9.0 retrieval](docs/evidence/v090-retrieval.md); [v0.11.0 retrieval](docs/evidence/v0110-retrieval.md) |
-| Memory | Recent turns only; multi-turn conversations 4/4 (2 to 3 turns each) | Rolling summary and a register of facts taken from tool results; a 27-turn conversation kept the exact facts, warned when context was missing and recovered it | [v0.8.0 conversations](docs/evidence/v080-conversations-r4.md); [v0.12.0](docs/evidence/v0120-resultado.md) |
-| Identity | Own issuer only, every tool call audited (4 tool calls, 4 audit rows); the web client sent the user's password (password grant) | Sign-in by redirect on the issuer's page (authorization code with PKCE, rotating refresh) and external OIDC issuers; 10 logins in a real browser: 10 sessions, no orphan login, a code issued on one worker exchanged on the other | [v0.7.0](docs/evidence/v070-resultado.md); [v0.13.0](docs/evidence/v0130-resultado.md) |
-| Operation | One API worker; a comparison killed after 1 of 6 cells resumed the other 5 to `completed`, each cell paid once; `/metrics` and 4 alert rules | Two API workers sharing a comparison lease: owner suspended before and after a paid reservation, no cell paid twice; exhausted webhooks resent; operator on Telegram; OTLP spans and a dashboard. v1.0.0 adds the image per release tag, `uv.lock` and the tunnel profile | [v0.10.0 operation](docs/evidence/v0100-qa-ops-r1.md); [v0.13.0](docs/evidence/v0130-resultado.md) |
-| Automated tests | Strict suite: 2,148 passed | Strict suite: 2,698 passed (v0.12.0), 2,944 passed (v0.13.0), no skips | [v0.10.0 build](docs/evidence/v0100-candidato-r1.json); [v0.12.0](docs/evidence/v0120-resultado.md), [v0.13.0](docs/evidence/v0130-resultado.md) |
+| Orchestration (challenge: three or more agents, Router as entry point) | A LangGraph graph with typed state: the Router plans, specialists run, and a rule-first replanner decides the next hop with a named origin | [Architecture](#architecture), [Message workflow](#message-workflow) | `orchestration/graph.py`, `agents/router.py` |
+| Knowledge and RAG (challenge: RAG over Getnet's site and web search) | Versioned snapshots of the official pages, hybrid BM25 and dense retrieval with reranking, web search with the cited page kept as evidence; the knowledge base has draft, test, activation and rollback | [RAG pipeline](#rag-pipeline) | `rag/`, `agents/knowledge.py` |
+| Tools and actions (challenge: Customer Support Agent with tools) | 11 tools over the merchant's account, with the customer bound from the token; the one write, a sale cancellation, runs after an explicit yes, idempotent and audited | [Support tools and data](#support-tools-and-synthetic-data) | `tools/`, `agents/support.py` |
+| Security and identity | Credential, principal, authorization, merchant and audit row on every request; roles with scopes; sign-in by redirect and external OIDC issuers | [Identity and authorization](#identity-and-authorization) | `api/identity.py`, `tools/registry.py` |
+| Human oversight (bonus: escalation and handoff) | The graph pauses on a handoff and resumes with the attendant's action; a ticketing service and a Telegram channel work the same queue | [Human in the loop](#human-in-the-loop) | `agents/escalation.py`, `handoffs.py`, `ticketing/` |
+| Memory and resilience | Rolling summary and a register of facts taken from tool results; checkpoints in SQLite; idempotent handoffs and webhooks with resend | [Conversations and case follow-up](#conversations-and-case-follow-up) | `conversations.py`, `data/webhook_outbox.py` |
+| Guardrails (bonus) | Sensitive data masked before any model call; every amount, date and percentage in a reply must appear in that request's evidence | [Guardrails and reliability](#guardrails-and-reliability) | `guardrails/` |
+| Evaluation and quality (challenge: testing strategy) | Offline suite with a scripted model, paid validation with a judge from another provider, sealed holdouts and decision rules written before each measurement | [Testing and evaluation](#testing-and-evaluation) | `tests/`, `evaluation/` |
+| Observability and cost (bonus) | Step-by-step trace, Prometheus metrics with alert rules, OTLP spans and a dashboard; a budget ledger with atomic reservations | [Observability](#observability) | `observability/`, `orchestration/budget.py` |
+| Production (challenge: HTTP endpoint with a JSON body, Docker) | FastAPI with strict schemas; a multi-stage image from `uv.lock`, Compose with Qdrant, ticketing and mocks, CI with the strict suite | [Run it](#run-it), [Operations](#operations) | `api/app.py`, `Dockerfile`, `docker-compose.yml` |
+| Prompts and LLM tools (challenge) | Versioned prompts per agent, structured outputs validated by schema, model profiles per agent | [How the LLM tools are used](#how-the-llm-tools-are-used) | `prompts/`, `llm/` |
+| Engineering decisions | 26 decision records, each with the alternative not adopted and the reason | [Design decisions](#design-decisions) | `docs/architecture/decisions/` |
 
-The two judge rows use different references: the v0.10.0 figures compare the judge with one human rater on 24
-answers; the current ones compare it with gold labels on 36 sealed answers, where the owner and a model panel rated
-each answer and their disagreements were settled by model proposals the owner accepted. The fair comparison is
-inside the current row: `judge.v3` 0.538 against `judge.v5` 0.647 on the same answers and labels.
+Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `Dockerfile` and `docker-compose.yml` are
+at the repository root.
 
-### Where each part of the challenge lives
+## Who operates what
 
-The project started from the *AI Hardcore Engineer — Multi-Agent Support System* challenge; each item maps to a
-section and to code:
-
-| Challenge item | Section | Code |
-| --- | --- | --- |
-| Three or more cooperating agents and how they communicate | [Architecture](#architecture), [Message workflow](#message-workflow) | `orchestration/graph.py`, `orchestration/state.py` |
-| Router as entry point and workflow manager | [Architecture](#architecture) | `agents/router.py`, `prompts/router.v7.md` |
-| Knowledge Agent: RAG over Getnet's site plus web search | [RAG pipeline](#rag-pipeline) | `rag/`, `agents/knowledge.py` |
-| Customer Support Agent with tools | [Support tools and data](#support-tools-and-synthetic-data) | `tools/`, `agents/support.py` |
-| HTTP endpoint with a JSON body | [Run it](#run-it), [Message workflow](#message-workflow) | `api/app.py`, `api/schemas.py` |
-| Docker | [Run it](#run-it) | `Dockerfile`, `docker-compose.yml` |
-| Testing strategy | [Testing and evaluation](#testing-and-evaluation) | `tests/`, `evaluation/` |
-| Prompts and use of LLM tools | [How the LLM tools are used](#how-the-llm-tools-are-used) | `prompts/`, `llm/` |
-| Bonus: human escalation agent, guardrails, handoff, evaluation and observability | [Guardrails and reliability](#guardrails-and-reliability), [Observability](#observability), [Testing and evaluation](#testing-and-evaluation) | `agents/escalation.py`, `guardrails/`, `observability/` |
-
-Code paths are shortened from `src/merchant_assistant/`; `prompts/`, `tests/`, `Dockerfile` and `docker-compose.yml` are at the repository root. Features built beyond the challenge (an interface, model profiles, an alternative Router engine, a versioned knowledge base, MCP) are described in [Beyond the challenge](#beyond-the-challenge).
+- **Attendants** work the handoff queue in the Ticketing screen of the interface or in a Telegram chat: claim a case, reply in their own words, approve the assistant's draft or reject it with an instruction.
+- **Knowledge administrators** change what the assistant knows through a versioned knowledge base: draft, candidate collection, test, activation and rollback.
+- **The platform team** follows `/metrics`, four alert rules, OTLP spans and the Grafana dashboard, and sets the spending limits: US$0.05 per request and US$1.00 per installation by default, both enforced before the call is made.
+- **Running costs** in the measured runs: about US$0.001 to build the index on first start, about US$0.03 for the 10 challenge examples, US$0.0024 per answer on average in the validation campaign.
 
 ---
 
@@ -658,6 +662,26 @@ tests), with `store=false`:
   `admin`, password `GRAFANA_ADMIN_PASSWORD`, a fictitious demo value in `.env.example`) opens the dashboard.
 
 ## Testing and evaluation
+
+### What changed since v0.10.0
+
+Each figure comes from the versioned evidence linked in its row; all data is synthetic. The index of every result is
+in [docs/evidence](docs/evidence/README.md).
+
+| Area | v0.10.0 | Now | Evidence |
+| --- | --- | --- | --- |
+| Attendance | Last full campaign (v0.8.0, `judge.v3`): 44 development cases × 3 runs, groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13, 12/13, 12/13 | No new full campaign. Replanning can be switched off and compared: on 4 paired cases, 0 model-decided replans with `REPLAN=off` and 8 with `REPLAN=on`. Sale cancellation runs only after an explicit yes | [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md); [v0.12.0](docs/evidence/v0120-resultado.md) |
+| Evaluation (judge) | Default `judge.v3` against one human rater (the owner, 24 answers): unsupported-claim agreement 0.667, kappa −0.200; 0 of the 4 generic claims flagged | Default `judge.v5`, claim by claim, against adjudicated gold labels on 36 sealed answers (rated by the owner and a model panel; disagreements settled by model proposals the owner accepted): kappa 0.647 (95% CI 0.28–0.92), against 0.538 for `judge.v3` on the same answers and labels; ±1 agreement 0.972 / 0.972 / 1.000 / 1.000; US$0.000945 per judgement (`judge.v3`: US$0.000398) | [v0.10.0 calibration](docs/evidence/v0100-juiz-v4.md); [v0.11.0](docs/evidence/v0110-resultado.md) |
+| Retrieval | Hybrid (BM25 + dense), no reranker; sealed holdout of 25 questions: Recall@6 1.000, MRR 0.920, nDCG@6 0.921 | Hybrid with the reranker by default; same holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 (same-depth control `hybrid@36`: 0.907); 1,752 ms per query, against 501 ms for `hybrid` in the same run | [v0.9.0 retrieval](docs/evidence/v090-retrieval.md); [v0.11.0 retrieval](docs/evidence/v0110-retrieval.md) |
+| Memory | Recent turns only; multi-turn conversations 4/4 (2 to 3 turns each) | Rolling summary and a register of facts taken from tool results; a 27-turn conversation kept the exact facts, warned when context was missing and recovered it | [v0.8.0 conversations](docs/evidence/v080-conversations-r4.md); [v0.12.0](docs/evidence/v0120-resultado.md) |
+| Identity | Own issuer only, every tool call audited (4 tool calls, 4 audit rows); the web client sent the user's password (password grant) | Sign-in by redirect on the issuer's page (authorization code with PKCE, rotating refresh) and external OIDC issuers; 10 logins in a real browser: 10 sessions, no orphan login, a code issued on one worker exchanged on the other | [v0.7.0](docs/evidence/v070-resultado.md); [v0.13.0](docs/evidence/v0130-resultado.md) |
+| Operation | One API worker; a comparison killed after 1 of 6 cells resumed the other 5 to `completed`, each cell paid once; `/metrics` and 4 alert rules | Two API workers sharing a comparison lease: owner suspended before and after a paid reservation, no cell paid twice; exhausted webhooks resent; operator on Telegram; OTLP spans and a dashboard. v1.0.0 adds the image per release tag, `uv.lock` and the tunnel profile | [v0.10.0 operation](docs/evidence/v0100-qa-ops-r1.md); [v0.13.0](docs/evidence/v0130-resultado.md) |
+| Automated tests | Strict suite: 2,148 passed | Strict suite: 2,698 passed (v0.12.0), 2,944 passed (v0.13.0), no skips | [v0.10.0 build](docs/evidence/v0100-candidato-r1.json); [v0.12.0](docs/evidence/v0120-resultado.md), [v0.13.0](docs/evidence/v0130-resultado.md) |
+
+The two judge rows use different references: the v0.10.0 figures compare the judge with one human rater on 24
+answers; the current ones compare it with gold labels on 36 sealed answers, where the owner and a model panel rated
+each answer and their disagreements were settled by model proposals the owner accepted. The fair comparison is
+inside the current row: `judge.v3` 0.538 against `judge.v5` 0.647 on the same answers and labels.
 
 **Strategy.**
 
