@@ -13,7 +13,7 @@ Adotar as práticas de execução do `ampeli-sdd` que reduzem a espera entre pas
 ## Pré-condições
 
 - Q19 aprovada pelo responsável em 2026-11-03 ("Aprovo, etapa 0"), o que inclui as alterações em AGENTS.md, CLAUDE.md e `.claude/`.
-- Q20: `opus`/`high` nos três papéis, como na configuração da v0.6.0, registrado como reversível.
+- Modelo e esforço: `opus`/`high` nos três papéis, como na configuração da v0.6.0, registrado como reversível.
 
 ## Arquivos prováveis
 
