@@ -1,0 +1,2626 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "ajuste-04.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "ajuste-24-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.4,
+   "deterministic": 1.0,
+   "content": 0.4,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 5954,
+   "latency_p95_ms": 8127,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 3,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 3.73,
+    "factual_correctness": 3.87,
+    "relevance": 4.67,
+    "usefulness": 4.2
+   },
+   "unsupported_claim_rate": 0.2,
+   "claim_verdicts": {
+    "claims": 75,
+    "supported": 38,
+    "partial": 34,
+    "generic": 3,
+    "not_found": 0,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 7005,
+    "latency_p95_ms": 8127,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.83,
+     "factual_correctness": 3.83,
+     "relevance": 4.67,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.5,
+    "claim_verdicts": {
+     "claims": 42,
+     "supported": 30,
+     "partial": 9,
+     "generic": 3,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "holdout": {
+    "n": 3,
+    "passed": 0.333,
+    "deterministic": 1.0,
+    "content": 0.333,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 5954,
+    "latency_p95_ms": 7540,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 2,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.67,
+     "factual_correctness": 3.89,
+     "relevance": 4.67,
+     "usefulness": 4.33
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 33,
+     "supported": 8,
+     "partial": 25,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 3,
+    "passed": 0.667,
+    "deterministic": 1.0,
+    "content": 0.667,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 5884,
+    "latency_p95_ms": 8127,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.11,
+     "factual_correctness": 4.22,
+     "relevance": 4.56,
+     "usefulness": 4.11
+    },
+    "unsupported_claim_rate": 0.333,
+    "claim_verdicts": {
+     "claims": 57,
+     "supported": 38,
+     "partial": 16,
+     "generic": 3,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "pt": {
+    "n": 2,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6747,
+    "latency_p95_ms": 7540,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 2,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.17,
+     "factual_correctness": 3.33,
+     "relevance": 4.83,
+     "usefulness": 4.33
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 18,
+     "supported": 0,
+     "partial": 18,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "general_web": {
+    "knowledge": 3
+   },
+   "knowledge": {
+    "knowledge": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:26:30+00:00",
+  "judge_cost_usd": 0.00621,
+  "judge_usage": {
+   "judgements": 15,
+   "total": {
+    "input_tokens": 46392,
+    "cache_read_tokens": 43776,
+    "cache_creation_tokens": 0,
+    "output_tokens": 4302
+   },
+   "mean": {
+    "input_tokens": 3092.8,
+    "cache_read_tokens": 2918.4,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 286.8
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 3
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 15,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 3.73,
+      "std": 0.46,
+      "exact": 0.467,
+      "within_one": 1.0,
+      "pairs": 15
+     },
+     "factual_correctness": {
+      "mean": 3.87,
+      "std": 0.23,
+      "exact": 0.733,
+      "within_one": 1.0,
+      "pairs": 15
+     },
+     "relevance": {
+      "mean": 4.67,
+      "std": 0.46,
+      "exact": 0.467,
+      "within_one": 1.0,
+      "pairs": 15
+     },
+     "usefulness": {
+      "mean": 4.2,
+      "std": 0.23,
+      "exact": 0.733,
+      "within_one": 1.0,
+      "pairs": 15
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.2,
+     "exact": 1.0,
+     "pairs": 15
+    }
+   },
+   "by_route": {
+    "general_web": {
+     "cases": 3,
+     "judgements": 9,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.22,
+       "std": 0.38,
+       "exact": 0.556,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "factual_correctness": {
+       "mean": 3.44,
+       "std": 0.38,
+       "exact": 0.556,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "relevance": {
+       "mean": 4.78,
+       "std": 0.38,
+       "exact": 0.556,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "usefulness": {
+       "mean": 4.22,
+       "std": 0.19,
+       "exact": 0.778,
+       "within_one": 1.0,
+       "pairs": 9
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 9
+     }
+    },
+    "knowledge": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 2,
+     "judgements": 6,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.83,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "factual_correctness": {
+       "mean": 3.83,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.5,
+      "exact": 1.0,
+      "pairs": 6
+     }
+    },
+    "holdout": {
+     "cases": 3,
+     "judgements": 9,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.67,
+       "std": 0.38,
+       "exact": 0.556,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "factual_correctness": {
+       "mean": 3.89,
+       "std": 0.19,
+       "exact": 0.778,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.38,
+       "exact": 0.556,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "usefulness": {
+       "mean": 4.33,
+       "std": 0.38,
+       "exact": 0.556,
+       "within_one": 1.0,
+       "pairs": 9
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 9
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "EX01",
+   "repetition": 1,
+   "request_id": "req_evald82649d57e03",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the difference between the Get Clássica and the Get Smart?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Both Get Clássica and Get Smart accept Pix, QR Code, and contactless payments, and offer Wi-Fi, mobile data, and free data plans.\n\nGet Clássica has a touchscreen, up to 12 hours of battery life, and free automatic receipt-roll replacement. Get Smart includes business-management apps and a sales simulator, with 3G and 4G connectivity.\n\nThe public offer shows Get Clássica at R$ 79,90 and Get Smart at R$ 129,90, both displayed as free. Your own conditions depend on your contract.",
+   "sources": [
+    "Getnet | Maquininha de cartão: Melhores taxas e opções grátis",
+    "Getnet | Taxas - Getnet"
+   ],
+   "duration_ms": 8127,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "What's the difference between the Get Clássica and the Get Smart?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Getnet | Maquininha de cartão: Melhores taxas e opções grátis",
+     "Getnet | Taxas - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\nPrepare seu negócio para vender mais na Black Friday com as maquininhas Getnet\nAceite cartões em moedas estrangeiras\nReceba pagamentos pelo Pix de forma rápida e segura\nConta e cartão grátis\nRecebimento em 2 dias úteis\nFrete Grátis\nESCOLHA SUA MAQUININHA\nAcelere suas vendas na Black Friday: ofertas especiais em maquininhas selecionadas\nSelecione sua faixa de faturamento e encontre as melhores taxas para sua empresa\nAté R$ 10 mil\nNOVO\nAcima de R$ 10 mil\nAcima de R$ 20 mil\nAcima de R$ 40 mil\nAcima de R$ 80 mil\n0,85%\nDébito\n2,69%\nCrédito\n9,07%\nCrédito 6x\nBaseado em seu faturamento, você tem R$ 319,69 de desconto no aluguel das maquininhas\nGet Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis\nALUGAR GET CLÁSSICA\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nBateria com até 12hrs de duração\nTela touchscreen\nManutenção vitalícia\nGet Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90\nGrátis\nALUGAR GET SMART\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nAplicativos para gestão do seu negócio\nSimulador de vendas\nManutenção vitalícia\nRecebeu sua maquininha de outra pessoa?"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-taxas",
+      "text": "Getnet | Taxas - Getnet\nConfira as taxas das nossas soluções\nNavegue no menu ao lado e confira as nossas taxas.\nTaxas sujeitas a alteração de acordo com as condições dos produtos e serviços contratados. Com nossas maquininhas de cartão, Link de Pagamento e Get Tap você recebe na sua Get Conta sem pagar mais por isso!\nDébito\n0,99%\n1x\n2,89%\n2x\n7,80%\n3x\n8,22%\n4x\n8,64%\n5x\n9,06%\n6x\n9,48%\n7x\n9,90%\n8x\n10,32%\n9x\n10,74%\n10x\n11,16%\n11x\n11,58%\n12x\n12,00%\nEscolha a maquininha ideal para o seu negócio aqui\nGet Clássica\nPagamento por aproximação, Pix e QR Code\nComprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática\nConexão Wi-Fi, chip 3G e plano de dados gratuitos\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ\nGet Smart\nPagamento por aproximação, Pix e QR Code\nSem fio com duração de até 12h de bateria\nConexão Wi-Fi, 3G, 4G e plano de dados gratuitos\nComprovante impresso na hora ou via SMS\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 2283,
+     "kept_chars": 2283,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Both Get Clássica and Get Smart accept Pix, QR Code, and contactless payments, and offer Wi-Fi, mobile data, and free data plans.\n\nGet Clássica has a touchscreen, up to 12 hours of battery life, and free automatic receipt-roll replacement. Get Smart includes business-management apps and a sales simulator, with 3G and 4G connectivity.\n\nThe public offer shows Get Clássica at R$ 79,90 and Get Smart at R$ 129,90, both displayed as free. Your own conditions depend on your contract."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 2283,
+    "kept_chars": 2283,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00061897,
+   "judge": {
+    "evaluation_id": "eval_0a9f694f83d2487ab655",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Both Get Clássica and Get Smart accept Pix, QR Code, and contactless payments",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Both Get Clássica and Get Smart offer Wi-Fi, mobile data, and free data plans",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Get Clássica has a touchscreen",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "Get Clássica has up to 12 hours of battery life",
+       "kind": "value"
+      },
+      {
+       "n": 5,
+       "text": "Get Clássica has free automatic receipt-roll replacement",
+       "kind": "fact"
+      },
+      {
+       "n": 6,
+       "text": "Get Smart includes business-management apps and a sales simulator",
+       "kind": "fact"
+      },
+      {
+       "n": 7,
+       "text": "Get Smart has 3G and 4G connectivity",
+       "kind": "fact"
+      },
+      {
+       "n": 8,
+       "text": "The public offer shows Get Clássica at R$ 79,90",
+       "kind": "value"
+      },
+      {
+       "n": 9,
+       "text": "The public offer shows Get Smart at R$ 129,90",
+       "kind": "value"
+      },
+      {
+       "n": 10,
+       "text": "Both are displayed as free",
+       "kind": "fact"
+      },
+      {
+       "n": 11,
+       "text": "Your own conditions depend on your contract",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Aceita Pix, QR Code, aproximação e chip"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "Wi-fi, chip 3G e plano de dados grátis"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Tela touchscreen"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Bateria com até 12hrs de duração"
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Reposição de bobina grátis e automática"
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "Aplicativos para gestão do seu negócio\nSimulador de vendas"
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Conexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "Get Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90"
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "Get Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90"
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "De:\nR$ 79,90\nGrátis ... De:\nR$ 129,90\nGrátis"
+      },
+      {
+       "n": 11,
+       "verdict": "generic",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "All product facts and prices trace to the passages; only the contract-dependence sentence is unsupported.",
+     "factual_correctness": "Facts and prices match the evidence; the closing contract caveat is not backed by any item.",
+     "relevance": "Directly compares Get Clássica and Get Smart features and prices as asked.",
+     "usefulness": "Clear, concise comparison, but the unsupported contract sentence adds little and is generic."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00069744,
+    "usage": {
+     "input_tokens": 4036,
+     "cache_read_tokens": 3840,
+     "cache_creation_tokens": 0,
+     "output_tokens": 513
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_0a9f694f83d2487ab655",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Both Get Clássica and Get Smart accept Pix, QR Code, and contactless payments",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Both Get Clássica and Get Smart offer Wi-Fi, mobile data, and free data plans",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Get Clássica has a touchscreen",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Get Clássica has up to 12 hours of battery life",
+        "kind": "value"
+       },
+       {
+        "n": 5,
+        "text": "Get Clássica has free automatic receipt-roll replacement",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Get Smart includes business-management apps and a sales simulator",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "Get Smart has 3G and 4G connectivity",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "The public offer shows Get Clássica at R$ 79,90",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "The public offer shows Get Smart at R$ 129,90",
+        "kind": "value"
+       },
+       {
+        "n": 10,
+        "text": "Both are displayed as free",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Your own conditions depend on your contract",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Aceita Pix, QR Code, aproximação e chip"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Wi-fi, chip 3G e plano de dados grátis"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Tela touchscreen"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Bateria com até 12hrs de duração"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Reposição de bobina grátis e automática"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Aplicativos para gestão do seu negócio\nSimulador de vendas"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Conexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Get Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Get Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90"
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "De:\nR$ 79,90\nGrátis ... De:\nR$ 129,90\nGrátis"
+       },
+       {
+        "n": 11,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All product facts and prices trace to the passages; only the contract-dependence sentence is unsupported.",
+      "factual_correctness": "Facts and prices match the evidence; the closing contract caveat is not backed by any item.",
+      "relevance": "Directly compares Get Clássica and Get Smart features and prices as asked.",
+      "usefulness": "Clear, concise comparison, but the unsupported contract sentence adds little and is generic."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00069744,
+     "usage": {
+      "input_tokens": 4036,
+      "cache_read_tokens": 3840,
+      "cache_creation_tokens": 0,
+      "output_tokens": 513
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_dd979b2c7ec74eb8a11b",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Both Get Clássica and Get Smart accept Pix, QR Code, and contactless payments",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Both Get Clássica and Get Smart offer Wi-Fi, mobile data, and free data plans",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Get Clássica has a touchscreen",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Get Clássica has up to 12 hours of battery life",
+        "kind": "value"
+       },
+       {
+        "n": 5,
+        "text": "Get Clássica has free automatic receipt-roll replacement",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Get Smart includes business-management apps and a sales simulator",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "Get Smart has 3G and 4G connectivity",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "The public offer shows Get Clássica at R$ 79,90",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "The public offer shows Get Smart at R$ 129,90",
+        "kind": "value"
+       },
+       {
+        "n": 10,
+        "text": "Both are displayed as free",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Your own conditions depend on your contract",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Get Clássica\nA melhor opção para seu negócio... Aceita Pix, QR Code, aproximação e chip"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Wi-fi, chip 3G e plano de dados grátis"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Tela touchscreen"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Bateria com até 12hrs de duração"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Reposição de bobina grátis e automática"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Aplicativos para gestão do seu negócio\nSimulador de vendas"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Conexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Get Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Get Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90"
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "De:\nR$ 79,90\nGrátis"
+       },
+       {
+        "n": 11,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All product facts trace to the passages, but the final contract-dependence statement has no supporting item.",
+      "factual_correctness": "Product details and prices match the passages; the contract-dependence conclusion lacks evidence.",
+      "relevance": "The reply clearly compares the two machines' features, addressing the merchant's question directly.",
+      "usefulness": "Clear, concise contrast of features and prices, though the closing contract caveat is unsupported."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00069624,
+     "usage": {
+      "input_tokens": 4036,
+      "cache_read_tokens": 3840,
+      "cache_creation_tokens": 0,
+      "output_tokens": 512
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_1255fefb0e7b460f8b99",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Both Get Clássica and Get Smart accept Pix, QR Code, and contactless payments",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Both Get Clássica and Get Smart offer Wi-Fi, mobile data, and free data plans",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Get Clássica has a touchscreen",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Get Clássica has up to 12 hours of battery life",
+        "kind": "value"
+       },
+       {
+        "n": 5,
+        "text": "Get Clássica has free automatic receipt-roll replacement",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Get Smart includes business-management apps and a sales simulator",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "Get Smart has 3G and 4G connectivity",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "The public offer shows Get Clássica at R$ 79,90",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "The public offer shows Get Smart at R$ 129,90",
+        "kind": "value"
+       },
+       {
+        "n": 10,
+        "text": "Both are displayed as free",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Your own conditions depend on your contract",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Get Clássica\nPagamento por aproximação, Pix e QR Code ... Get Smart\nPagamento por aproximação, Pix e QR Code"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Aceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Tela touchscreen"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Bateria com até 12hrs de duração"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Reposição de bobina grátis e automática"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Aplicativos para gestão do seu negócio\nSimulador de vendas"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Conexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Get Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Get Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90\nGrátis"
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "De:\nR$ 79,90\nGrátis ... De:\nR$ 129,90\nGrátis"
+       },
+       {
+        "n": 11,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All product facts and prices match the passages; only the closing contract-dependence sentence is unsupported.",
+      "factual_correctness": "Product details and prices agree with the evidence; the contract-dependence note is an unsupported generalization.",
+      "relevance": "Directly compares the two machines the merchant asked about.",
+      "usefulness": "Clear, polite comparison in the merchant's language, though slightly concise and ends with a generic caveat."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00074184,
+     "usage": {
+      "input_tokens": 4036,
+      "cache_read_tokens": 3840,
+      "cache_creation_tokens": 0,
+      "output_tokens": 550
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  },
+  {
+   "id": "PT02",
+   "repetition": 1,
+   "request_id": "req_eval18b2fbfa556b",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Qual a previsão do tempo em Porto Alegre amanhã?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Amanhã, 5 de novembro, Porto Alegre deve ter pancadas e trovoadas durante a madrugada e pela manhã. À tarde, o tempo deve melhorar, com sol. A previsão indica temperaturas entre 19 °C e 27 °C.",
+   "sources": [
+    "Web search data provider: oai-weather"
+   ],
+   "duration_ms": 5954,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Qual a previsão do tempo em Porto Alegre amanhã?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Web search data provider: oai-weather"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Amanhã, 5 de novembro, Porto Alegre deve ter pancadas e trovoadas durante a madrugada e pela manhã. À tarde, o tempo deve melhorar, com sol. A previsão indica temperaturas entre 19 °C e 27 °C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.01045681,
+   "judge": {
+    "evaluation_id": "eval_a595fa2898864578bccc",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Amanhã, 5 de novembro, Porto Alegre deve ter pancadas e trovoadas durante a madrugada e pela manhã",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "À tarde, o tempo deve melhorar, com sol",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "A previsão indica temperaturas entre 19 °C e 27 °C",
+       "kind": "value"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Web search text unavailable; statements are consistent with the listed weather source but no passage confirms them.",
+     "factual_correctness": "Nothing contradicts the forecast, but the specifics cannot be verified against recorded evidence.",
+     "relevance": "It directly answers the merchant's question about tomorrow's weather in Porto Alegre.",
+     "usefulness": "Clear, concise and in Portuguese; gives a usable forecast, though unverified."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00031103,
+    "usage": {
+     "input_tokens": 2887,
+     "cache_read_tokens": 2688,
+     "cache_creation_tokens": 0,
+     "output_tokens": 196
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_a595fa2898864578bccc",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Amanhã, 5 de novembro, Porto Alegre deve ter pancadas e trovoadas durante a madrugada e pela manhã",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "À tarde, o tempo deve melhorar, com sol",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A previsão indica temperaturas entre 19 °C e 27 °C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web search text unavailable; statements are consistent with the listed weather source but no passage confirms them.",
+      "factual_correctness": "Nothing contradicts the forecast, but the specifics cannot be verified against recorded evidence.",
+      "relevance": "It directly answers the merchant's question about tomorrow's weather in Porto Alegre.",
+      "usefulness": "Clear, concise and in Portuguese; gives a usable forecast, though unverified."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00031103,
+     "usage": {
+      "input_tokens": 2887,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 196
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_66797314a511408b990f",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Amanhã, 5 de novembro, Porto Alegre deve ter pancadas e trovoadas durante a madrugada e pela manhã",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "À tarde, o tempo deve melhorar, com sol",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A previsão indica temperaturas entre 19 °C e 27 °C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "The web text was not available; the forecast claims are consistent with the listed weather source.",
+      "factual_correctness": "No contradictions visible; forecast details cannot be verified without the web text.",
+      "relevance": "The reply directly answers the merchant's question about tomorrow's weather in Porto Alegre.",
+      "usefulness": "Clear, concise, in Portuguese, with specific actionable forecast information."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00033863,
+     "usage": {
+      "input_tokens": 2887,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 219
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_33f8f3e0102e4c42b93d",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Amanhã, 5 de novembro, Porto Alegre deve ter pancadas e trovoadas durante a madrugada e pela manhã",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "À tarde, o tempo deve melhorar, com sol",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A previsão indica temperaturas entre 19 °C e 27 °C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Web text unavailable, so the forecast details can only be checked against the source title, which is consistent.",
+      "factual_correctness": "No contradiction with available evidence; details are plausible and internally consistent.",
+      "relevance": "Directly answers the merchant's question about tomorrow's weather in Porto Alegre.",
+      "usefulness": "Clear, concise, polite and in Portuguese, giving actionable forecast details."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034103,
+     "usage": {
+      "input_tokens": 2887,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 221
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  },
+  {
+   "id": "PT07",
+   "repetition": 1,
+   "request_id": "req_evalbcf3dfc3fe68",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Qual a cotação do euro hoje?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Hoje, 4 de novembro de 2026, €1 equivale a cerca de R$ 6,13 pela cotação comercial. O valor pode variar conforme o horário e a instituição.",
+   "sources": [
+    "Euro Hoje (EUR) | Cotações | Remessa Online"
+   ],
+   "duration_ms": 7540,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Qual a cotação do euro hoje?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Euro Hoje (EUR) | Cotações | Remessa Online"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Hoje, 4 de novembro de 2026, €1 equivale a cerca de R$ 6,13 pela cotação comercial. O valor pode variar conforme o horário e a instituição."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.01066181,
+   "judge": {
+    "evaluation_id": "eval_27de042a1c914f1d9ccc",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Hoje, 4 de novembro de 2026",
+       "kind": "date"
+      },
+      {
+       "n": 2,
+       "text": "€1 equivale a cerca de R$ 6,13 pela cotação comercial",
+       "kind": "value"
+      },
+      {
+       "n": 3,
+       "text": "O valor pode variar conforme o horário e a instituição",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Web text was not recorded, so only consistency with the listed source can be judged.",
+     "factual_correctness": "Reply is consistent in topic with the Euro Hoje source; no contradictory item exists.",
+     "relevance": "The reply directly answers the merchant's request for today's euro rate.",
+     "usefulness": "Clear, concise and in Portuguese, though the rate's institution and time are vague."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00029843,
+    "usage": {
+     "input_tokens": 2849,
+     "cache_read_tokens": 2688,
+     "cache_creation_tokens": 0,
+     "output_tokens": 195
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_27de042a1c914f1d9ccc",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Hoje, 4 de novembro de 2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "€1 equivale a cerca de R$ 6,13 pela cotação comercial",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "O valor pode variar conforme o horário e a instituição",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text was not recorded, so only consistency with the listed source can be judged.",
+      "factual_correctness": "Reply is consistent in topic with the Euro Hoje source; no contradictory item exists.",
+      "relevance": "The reply directly answers the merchant's request for today's euro rate.",
+      "usefulness": "Clear, concise and in Portuguese, though the rate's institution and time are vague."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00029843,
+     "usage": {
+      "input_tokens": 2849,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 195
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_2ffe9ed0c87f4a9897b9",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Hoje, 4 de novembro de 2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "€1 equivale a cerca de R$ 6,13 pela cotação comercial",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "O valor pode variar conforme o horário e a instituição",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Euro Hoje (EUR) | Cotações | Remessa Online"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text was not recorded; the rate and date are unverifiable, only the caveat and source title align.",
+      "factual_correctness": "No contradiction visible, but the rate and date cannot be checked against any recorded evidence.",
+      "relevance": "The reply directly answers the merchant's question about today's euro rate.",
+      "usefulness": "Clear, concise and polite Portuguese, with the quote framed as approximate and variable."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00032243,
+     "usage": {
+      "input_tokens": 2849,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 215
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_b692cd8ddbd347fb8d7c",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Hoje, 4 de novembro de 2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "€1 equivale a cerca de R$ 6,13 pela cotação comercial",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "O valor pode variar conforme o horário e a instituição",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Euro Hoje (EUR) | Cotações | Remessa Online"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text not available; claims only consistent with listed source title and summary allowance.",
+      "factual_correctness": "No web text to verify the rate; the figure and date cannot be confirmed or contradicted.",
+      "relevance": "Reply directly answers the merchant's question about today's euro rate.",
+      "usefulness": "Clear, polite answer in Portuguese with a caveat, though the exact rate is unverifiable here."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00032003,
+     "usage": {
+      "input_tokens": 2849,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 213
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  },
+  {
+   "id": "EX07",
+   "repetition": 1,
+   "request_id": "req_eval523195c0ac8d",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the euro exchange rate today?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "As of today, November 4, 2026, €1 is approximately R$6.16 at the European Central Bank’s reference rate. Actual exchange providers may offer different rates and fees.",
+   "sources": [
+    "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+   ],
+   "duration_ms": 5884,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "What's the euro exchange rate today?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "As of today, November 4, 2026, €1 is approximately R$6.16 at the European Central Bank’s reference rate. Actual exchange providers may offer different rates and fees."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.0106598,
+   "judge": {
+    "evaluation_id": "eval_08ab154582524e0d9a25",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "As of today, November 4, 2026",
+       "kind": "date"
+      },
+      {
+       "n": 2,
+       "text": "€1 is approximately R$6.16 at the European Central Bank’s reference rate",
+       "kind": "value"
+      },
+      {
+       "n": 3,
+       "text": "Actual exchange providers may offer different rates and fees",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Reply is consistent with the source titles; web text was not recorded, per evidence notes.",
+     "factual_correctness": "No contradictions with listed sources; figure can't be verified but nothing contradicts it.",
+     "relevance": "Directly answers the merchant's question about today's euro exchange rate.",
+     "usefulness": "Clear, concise, polite, in English matching the merchant, with a caveat on provider variation."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00040553,
+    "usage": {
+     "input_tokens": 2842,
+     "cache_read_tokens": 2688,
+     "cache_creation_tokens": 0,
+     "output_tokens": 286
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_08ab154582524e0d9a25",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "As of today, November 4, 2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "€1 is approximately R$6.16 at the European Central Bank’s reference rate",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "Actual exchange providers may offer different rates and fees",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Reply is consistent with the source titles; web text was not recorded, per evidence notes.",
+      "factual_correctness": "No contradictions with listed sources; figure can't be verified but nothing contradicts it.",
+      "relevance": "Directly answers the merchant's question about today's euro exchange rate.",
+      "usefulness": "Clear, concise, polite, in English matching the merchant, with a caveat on provider variation."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00040553,
+     "usage": {
+      "input_tokens": 2842,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 286
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_4ae73984d35b49b2a244",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "As of today, November 4, 2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "€1 is approximately R$6.16 at the European Central Bank’s reference rate",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "Actual exchange providers may offer different rates and fees",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text unavailable; claims rest only on the source title, which names the date and ECB rate.",
+      "factual_correctness": "Reply is consistent with the listed source title; the specific rate cannot be verified without the page.",
+      "relevance": "Directly answers the merchant's question about today's euro exchange rate.",
+      "usefulness": "Clear, polite and in the merchant's language, with a brief caveat about provider rates and fees."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034313,
+     "usage": {
+      "input_tokens": 2842,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 234
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_79f8bb05191a47729cc8",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "As of today, November 4, 2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "€1 is approximately R$6.16 at the European Central Bank’s reference rate",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "Actual exchange providers may offer different rates and fees",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Official Euro to BRL Exchange Rate November 4, 2026 | ECB"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text not recorded; rate and date align with the source title but no passage confirms the figure.",
+      "factual_correctness": "Consistent with the ECB-titled source; the R$6.16 figure cannot be verified without web text.",
+      "relevance": "Directly answers the merchant's question about today's euro exchange rate.",
+      "usefulness": "Clear, polite, in the merchant's language, with a caveat about provider rates and fees."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034673,
+     "usage": {
+      "input_tokens": 2842,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 237
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  },
+  {
+   "id": "UC17",
+   "repetition": 1,
+   "request_id": "req_eval77ad8b4bf537",
+   "split": "holdout",
+   "language": "en",
+   "message": "When will the money from yesterday's sales be deposited?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "I couldn’t find your account in the demo environment, so I can’t check your business information. Please verify that your user ID is correct, or ask to speak with an agent. In the meantime, I can answer general questions about Getnet products.",
+   "sources": [],
+   "duration_ms": 2779,
+   "cost_usd": 0.0,
+   "model_calls": 2,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "When will the money from yesterday's sales be deposited?",
+    "status": "answered",
+    "route": "support",
+    "sources": [],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "I couldn’t find your account in the demo environment, so I can’t check your business information. Please verify that your user ID is correct, or ask to speak with an agent. In the meantime, I can answer general questions about Getnet products."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00015911,
+   "judge": {
+    "evaluation_id": "eval_a16a579c114f4f349387",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "I couldn’t find your account in the demo environment",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "I can’t check your business information",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Please verify that your user ID is correct",
+       "kind": "guidance"
+      },
+      {
+       "n": 4,
+       "text": "or ask to speak with an agent",
+       "kind": "guidance"
+      },
+      {
+       "n": 5,
+       "text": "I can answer general questions about Getnet products",
+       "kind": "promise"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 4,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 5,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "The reply contains no invented facts; it only states a gap and offers channels.",
+     "factual_correctness": "Nothing contradicts the evidence; with no account data, stating the account was not found is consistent.",
+     "relevance": "It addresses the deposit question by explaining it cannot check the account, though it gives no deposit timing.",
+     "usefulness": "Clear, polite, in the merchant's language; it states the gap plainly and offers verification and an agent."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00035633,
+    "usage": {
+     "input_tokens": 2850,
+     "cache_read_tokens": 2688,
+     "cache_creation_tokens": 0,
+     "output_tokens": 243
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_a16a579c114f4f349387",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I couldn’t find your account in the demo environment",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "I can’t check your business information",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Please verify that your user ID is correct",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "or ask to speak with an agent",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "I can answer general questions about Getnet products",
+        "kind": "promise"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 5,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The reply contains no invented facts; it only states a gap and offers channels.",
+      "factual_correctness": "Nothing contradicts the evidence; with no account data, stating the account was not found is consistent.",
+      "relevance": "It addresses the deposit question by explaining it cannot check the account, though it gives no deposit timing.",
+      "usefulness": "Clear, polite, in the merchant's language; it states the gap plainly and offers verification and an agent."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00035633,
+     "usage": {
+      "input_tokens": 2850,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 243
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_4f4c14326f6241ac9890",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I couldn’t find your account in the demo environment",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "I can’t check your business information",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Please verify that your user ID is correct",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "or ask to speak with an agent",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "I can answer general questions about Getnet products",
+        "kind": "promise"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 5,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All statements are gaps or next steps consistent with the empty evidence; no invented facts.",
+      "factual_correctness": "Reply is internally consistent and claims no facts the evidence contradicts.",
+      "relevance": "Merchant asked about deposit timing; reply correctly states it cannot check the account and offers alternatives.",
+      "usefulness": "Clear, polite, in English, states the gap plainly and gives the merchant actionable next steps."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034433,
+     "usage": {
+      "input_tokens": 2850,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 233
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_bc49170c14a846e7a66b",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I couldn’t find your account in the demo environment",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "I can’t check your business information",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Please verify that your user ID is correct",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "or ask to speak with an agent",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "I can answer general questions about Getnet products",
+        "kind": "promise"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 5,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Gap statements and courtesy are supported by the empty evidence; no account data or channels are confirmed.",
+      "factual_correctness": "No contradictions; the reply does not invent amounts, dates or statuses.",
+      "relevance": "It addresses the deposit question by explaining it cannot check the account and offering alternatives.",
+      "usefulness": "Clear, polite and in the merchant's language, though it offers no concrete deposit timeline."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034673,
+     "usage": {
+      "input_tokens": 2850,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 235
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  }
+ ]
+}

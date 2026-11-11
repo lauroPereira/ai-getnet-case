@@ -1,0 +1,735 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 1,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "ajuste-03-retry-1.csv",
+  "only_sample_ids": 1,
+  "selected_answers": 1,
+  "claims_from": [
+   "ajuste-24-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 1,
+   "passed": 0.0,
+   "deterministic": 1.0,
+   "content": 0.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 11419,
+   "latency_p95_ms": 11419,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 1,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.0,
+    "factual_correctness": 3.0,
+    "relevance": 4.0,
+    "usefulness": 4.0
+   },
+   "unsupported_claim_rate": 1.0,
+   "claim_verdicts": {
+    "claims": 11,
+    "supported": 9,
+    "partial": 1,
+    "generic": 0,
+    "not_found": 1,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "holdout": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11419,
+    "latency_p95_ms": 11419,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 3.0,
+     "relevance": 4.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 11,
+     "supported": 9,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 1,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   },
+   "pt": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11419,
+    "latency_p95_ms": 11419,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 3.0,
+     "relevance": 4.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 11,
+     "supported": 9,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 1,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:29:43+00:00",
+  "judge_cost_usd": 0.00075,
+  "judge_usage": {
+   "judgements": 1,
+   "total": {
+    "input_tokens": 4578,
+    "cache_read_tokens": 4352,
+    "cache_creation_tokens": 0,
+    "output_tokens": 545
+   },
+   "mean": {
+    "input_tokens": 4578.0,
+    "cache_read_tokens": 4352.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 545.0
+   }
+  },
+  "web_evidence": {
+   "answers": 1,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 1,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 1 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 1,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": 3.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": 1.0,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {
+    "knowledge_and_support": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   },
+   "by_split": {
+    "holdout": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT05",
+   "repetition": 1,
+   "request_id": "req_eval2853f10e88ba",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Minha maquininha não conecta na internet, o que eu faço?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "A Get Smart está marcada como offline. O último sinal recebido foi hoje às 11:31; isso não confirma a conexão atual, embora haja uma rede Wi-Fi configurada.\n\nNa tela inicial, toque em “Wi-Fi” e depois em “Procurar Redes”. Selecione sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n\nSe continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha. Entre em contato com o suporte para continuar a verificação.",
+   "sources": [
+    "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Card machine status (your account)"
+   ],
+   "duration_ms": 11419,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Minha maquininha não conecta na internet, o que eu faço?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Card machine status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-05T10:25:00-03:00\", \"created_at\": \"2026-09-05T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-04T19:51:28-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"checks\": [{\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-04T19:51:28-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-04T19:51:28-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"device\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": \"dev_1988_gs01\"}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-04T11:31:07-03:00\", \"minutes_since_last_seen\": 500, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-04T19:51:34-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+      "text": "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet\nConectar sua maquininha Getnet ao Wi-Fi é um passo essencial para garantir transações rápidas e seguras. A boa notícia é que o processo é simples e pode ser feito em poucos minutos. Siga este guia rápido:\nPasso a passo para configurar o Wi-Fi na maquininha Getnet\n1. Acesse a opção de Wi-Fi na tela inicial.\nNa tela principal da sua maquininha, clique na opção “Wi-Fi”.\n2. Procure pelas redes disponíveis.\nSelecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas.\n3. Escolha sua rede.\nLocalize o nome da sua rede na lista e clique sobre ela.\n4. Insira a [credential removed] Wi-Fi.\nDigite a [credential removed] sua rede com atenção e confirme.\n5. Conexão concluída!\nApós a confirmação, sua maquininha estará conectada à internet.\nBenefícios de conectar ao Wi-Fi\nTransações mais rápidas:\nA conexão Wi-Fi oferece maior estabilidade em comparação a redes móveis.\nFacilidade de uso:\nIdeal para ambientes fixos, como lojas ou escritórios.\nEconomia de dados:\nEvita o uso do plano de dados da maquininha.\nDica:\nCertifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros. Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nComo proceder para que minha bateria da Get Smart se mantenha com uma boa duração?\nDeixe a bateria carregando sempre que possível e, de preferência, por pelo menos 3 horas seguidas. Não espere a bateria descarregar completamente para recarregá-la. O ideal é carregar a bateria quando o nível estiver em 20%.\nA Get Smart aceita pagamento com auxilio emergencial?\nA Get Smart aceita pagamento com auxilio emergencial?\nSim, basta fazer o processo de pagamento com\nQR Code\n, selecionando a opção débito.\nver mais\ndemais\ndúvidas\nAlgar\nComo insiro o Chip na minha máquina?\nComo insiro o Chip na minha máquina?\nSiga os passos a seguir:\n– Com a máquina desligada, abra a tampa na parte de trás\n– Insira o chip no local destinado, sinalizado com SIM1 ou SIM2, com a parte metálica voltada para baixo\n– Feche a tampa, ligue a máquina e aguarde a conexão de rede de dados\n– Com a indicação de rede conectada (2G ou 3G), a máquina está pronta para uso\n– Faça um teste de comunicação para verificar a conectividade do seu chip, seguindo os passos:\n• Pressione o botão função – F, # ou o da sua máquina\n• Pressione 60\n• Selecione a opção 2 – manutenção\n• Selecione a opção 1 – teste de comunicação"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3797,
+     "kept_chars": 3797,
+     "items": 5,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "A Get Smart está marcada como offline. O último sinal recebido foi hoje às 11:31; isso não confirma a conexão atual, embora haja uma rede Wi-Fi configurada.\n\nNa tela inicial, toque em “Wi-Fi” e depois em “Procurar Redes”. Selecione sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n\nSe continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha. Entre em contato com o suporte para continuar a verificação."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3797,
+    "kept_chars": 3797,
+    "items": 5,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00095334,
+   "judge": {
+    "evaluation_id": "eval_ba098432f1f54c398467",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "A Get Smart está marcada como offline.",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "O último sinal recebido foi hoje às 11:31.",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "Isso não confirma a conexão atual.",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "Há uma rede Wi-Fi configurada.",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Na tela inicial, toque em “Wi-Fi”.",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "Depois toque em “Procurar Redes”.",
+       "kind": "guidance"
+      },
+      {
+       "n": 7,
+       "text": "Selecione sua rede.",
+       "kind": "guidance"
+      },
+      {
+       "n": 8,
+       "text": "Digite a [credential removed] atenção e confirme.",
+       "kind": "guidance"
+      },
+      {
+       "n": 9,
+       "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+       "kind": "guidance"
+      },
+      {
+       "n": 10,
+       "text": "Se continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha.",
+       "kind": "fact"
+      },
+      {
+       "n": 11,
+       "text": "Entre em contato com o suporte para continuar a verificação.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"model\": \"Get Smart\", \"status\": \"offline\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"last_seen_at\": \"2026-11-04T11:31:07-03:00\", ... \"observed_at\": \"2026-11-04T19:51:34-03:00\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"Signals are the last ones received; no remote command is executed on the device.\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"wifi_configured\": true"
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Na tela principal da sua maquininha, clique na opção “Wi-Fi”."
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "Selecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas."
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Localize o nome da sua rede na lista e clique sobre ela."
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "Digite a [credential removed] sua rede com atenção e confirme."
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "Certifique-se de que o Wi-Fi está funcionando corretamente"
+      },
+      {
+       "n": 10,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 11,
+       "verdict": "partial",
+       "support": "no item names a support channel; handoff/trace absent"
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 3,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Most facts trace to device tool results and the Wi-Fi passage; the claim of no other steps is unsupported.",
+     "factual_correctness": "Status, last seen and Wi-Fi steps are correct, but asserting no other diagnostic steps exist is not backed.",
+     "relevance": "Directly addresses the Wi-Fi connection issue with the device status and configuration steps.",
+     "usefulness": "Clear, polite Portuguese with actionable steps, though the unsupported no-other-steps line weakens guidance."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00074791,
+    "usage": {
+     "input_tokens": 4578,
+     "cache_read_tokens": 4352,
+     "cache_creation_tokens": 0,
+     "output_tokens": 545
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_ba098432f1f54c398467",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Get Smart está marcada como offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "O último sinal recebido foi hoje às 11:31.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Isso não confirma a conexão atual.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Há uma rede Wi-Fi configurada.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Na tela inicial, toque em “Wi-Fi”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Depois toque em “Procurar Redes”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Selecione sua rede.",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Digite a [credential removed] atenção e confirme.",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Se continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha.",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Entre em contato com o suporte para continuar a verificação.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"model\": \"Get Smart\", \"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-04T11:31:07-03:00\", ... \"observed_at\": \"2026-11-04T19:51:34-03:00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"Signals are the last ones received; no remote command is executed on the device.\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Na tela principal da sua maquininha, clique na opção “Wi-Fi”."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Selecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Localize o nome da sua rede na lista e clique sobre ela."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Digite a [credential removed] sua rede com atenção e confirme."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente"
+       },
+       {
+        "n": 10,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 11,
+        "verdict": "partial",
+        "support": "no item names a support channel; handoff/trace absent"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Most facts trace to device tool results and the Wi-Fi passage; the claim of no other steps is unsupported.",
+      "factual_correctness": "Status, last seen and Wi-Fi steps are correct, but asserting no other diagnostic steps exist is not backed.",
+      "relevance": "Directly addresses the Wi-Fi connection issue with the device status and configuration steps.",
+      "usefulness": "Clear, polite Portuguese with actionable steps, though the unsupported no-other-steps line weakens guidance."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00074791,
+     "usage": {
+      "input_tokens": 4578,
+      "cache_read_tokens": 4352,
+      "cache_creation_tokens": 0,
+      "output_tokens": 545
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  }
+ ]
+}

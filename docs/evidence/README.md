@@ -71,6 +71,7 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 
 | Arquivo | Conteúdo |
 | --- | --- |
+| [v080-resultado.md](v080-resultado.md) | Resultado consolidado |
 | [v080-all-r3.md](v080-all-r3.md) ([JSON](v080-all-r3.json)) | Campanha: 44 casos, jornadas e conversas, três execuções |
 | [v080-d12-pre-holdout-r6.md](v080-d12-pre-holdout-r6.md) | Validação pré-holdout com modelos reais; dados em [v080-healthy-r6.md](v080-healthy-r6.md) (traces em [v080-healthy-traces-r6.json](v080-healthy-traces-r6.json)), [v080-healthy-r5.md](v080-healthy-r5.md), [v080-healthy-r4.md](v080-healthy-r4.md), [v080-conversations-r4.md](v080-conversations-r4.md), [v080-tool-down-r5.md](v080-tool-down-r5.md) e [v080-smoke-r6.json](v080-smoke-r6.json) |
 | [v080-judge-repeat-r6.md](v080-judge-repeat-r6.md) | Variação do juiz |
@@ -84,6 +85,7 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 
 | Arquivo | Conteúdo |
 | --- | --- |
+| [v090-resultado.md](v090-resultado.md) | Resultado consolidado |
 | [v090-retrieval.md](v090-retrieval.md) ([JSON](v090-retrieval.json)) | Retrieval por modo no dev e no holdout `retrieval_holdout_v090` |
 | [v090-juiz-opus.md](v090-juiz-opus.md), [v090-juiz-opus-r3.md](v090-juiz-opus-r3.md) | Calibração com dois juízes |
 | [v090-qa-retrieval-r1.md](v090-qa-retrieval-r1.md), [v090-qa-hybrid-r1.md](v090-qa-hybrid-r1.md), [v090-qa-juiz-r2.md](v090-qa-juiz-r2.md) | Validação com modelos reais |
@@ -94,6 +96,7 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 
 | Arquivo | Conteúdo |
 | --- | --- |
+| [v0100-resultado.md](v0100-resultado.md) | Resultado consolidado |
 | [v0100-juiz-v4.md](v0100-juiz-v4.md), [v0100-juiz-deepseek-v4.md](v0100-juiz-deepseek-v4.md), [v0100-juiz-opus-v4.md](v0100-juiz-opus-v4.md) | `judge.v4` contra a calibração humana, com os dois juízes |
 | [v0100-qa-juiz-r1.md](v0100-qa-juiz-r1.md), [v0100-qa-ops-r1.md](v0100-qa-ops-r1.md) | Validação com modelos reais (rubrica; comparação interrompida e retomada, `/metrics`, alertas) |
 | [v0100-reviewer-t83.md](v0100-reviewer-t83.md), [v0100-reviewer-t84.md](v0100-reviewer-t84.md), [v0100-reviewer-t85.md](v0100-reviewer-t85.md) | Revisões independentes |
@@ -104,6 +107,13 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v0110-resultado.md](v0110-resultado.md) | Resultado consolidado do juiz por afirmação e da configuração de retrieval |
+| [v0110-calibracao.md](v0110-calibracao.md) | Calibração do juiz contra rótulos de referência: κ 0,647 do `judge.v5` nas 36 respostas seladas, recalculável sem chamada a modelo, com o comando |
+| `v0110-calibracao-responsavel-*.csv`, `v0110-calibracao-modelo-a-*.csv`, `v0110-calibracao-modelo-b-*.csv`, `v0110-calibracao-painel-*.csv`, [v0110-calibracao-adjudicacao.csv](v0110-calibracao-adjudicacao.csv), [v0110-calibracao-rotulos-referencia.csv](v0110-calibracao-rotulos-referencia.csv) | Notas do responsável, de cada modelo do painel e do painel; adjudicação aprovada pelo responsável; rótulos de referência |
+| `v0110-calibracao-juiz/` | Julgamentos do `judge.v5` nas 60 respostas (29 relatórios JSON) |
+| [v0110-v5-ajuste.md](v0110-v5-ajuste.md) | Ajuste do `judge.v5` no conjunto de ajuste (24 respostas da v0.8.0): 4 de 4 frases genéricas marcadas |
+| [v0110-qa.md](v0110-qa.md) ([JSON](v0110-qa.json)), [v0110-qa-holdout-v080.md](v0110-qa-holdout-v080.md) ([JSON](v0110-qa-holdout-v080.json)) | Campanha com modelos reais: desenvolvimento (44 casos, jornadas e conversas, três execuções) e holdout da v0.8.0. Nos JSON, o texto de páginas de terceiros foi omitido; ficam a URL, o tamanho e o hash |
+| [v0110-reviewer-v5i3b.md](v0110-reviewer-v5i3b.md) | Revisão independente |
+| [v0110-candidato-r3.json](v0110-candidato-r3.json) | Manifesto do candidato |
 | [v0110-retrieval.md](v0110-retrieval.md) ([JSON](v0110-retrieval.json)) | Métricas de retrieval em dev e no holdout, incluindo o controle `hybrid@36` |
 | [v0110-calibracao-amostra.csv](v0110-calibracao-amostra.csv), [v0110-calibracao-amostra-claims.csv](v0110-calibracao-amostra-claims.csv), [selo](../../tests/scenarios/calibration_v0110.sha256) | Amostra selada de calibração e afirmações |
 
@@ -112,22 +122,26 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v0120-resultado.md](v0120-resultado.md) | Resultado consolidado: resumo rolante e registro de fatos, conversa longa, replanejamento com e sem, cancelamento com confirmação explícita, suíte estrita e gasto da campanha |
+| [v0120-validacao.md](v0120-validacao.md) | Validação momento a momento (candidato integrado e modelo real, com a ablação do replanejamento) e revisão independente: re-derivações, testes e mutações |
 
 ## v0.13.0 (identidade e operação)
 
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v0130-resultado.md](v0130-resultado.md) | Resultado consolidado: login por redirecionamento, emissores OIDC, dois workers, reenvio de webhooks, operador no Telegram, OTLP e painel, migrações, suíte estrita e gasto da campanha |
+| [v0130-validacao.md](v0130-validacao.md) | Validação momento a momento (emissor externo, dois workers, reenvio, OTLP, Telegram, login pela interface) e revisão independente |
 
 ## v1.0.0 (imagem publicada, dependências fixadas e túnel de demonstração)
 
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v100-resultado.md](v100-resultado.md) | Resultado consolidado: imagem por tag com `uv.lock`, suíte estrita dentro da imagem sem rede, compose sem imagem publicada, trilha de 10 minutos com modelo real, proxy do túnel, trava de credenciais de exemplo, acesso por outra rede e gasto |
+| [v100-validacao.md](v100-validacao.md) | Validação momento a momento (imagem, trilha de 10 minutos, proxy do túnel, credenciais, acesso por outra rede) e revisão independente |
 
 ## v1.1.0 (tickets do lojista, retomada da conversa e resposta da atendente)
 
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v110-resultado.md](v110-resultado.md) | Resultado consolidado: tickets do lojista em qualquer conversa, retomada da última conversa, resposta da atendente com as palavras dela, perfis disponíveis, isolamento entre lojistas, suíte estrita e gasto das campanhas |
+| [v110-validacao.md](v110-validacao.md) | Validação momento a momento (tickets, retomada, resposta da atendente, disponibilidade) e revisão independente |
 | [v110-cobertura.md](v110-cobertura.md) | Cobertura dos testes automatizados: 93,8% das instruções e 88,0% dos ramos, com a tabela por pacote e o comando da medição |

@@ -1,0 +1,546 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 1,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-04-retry-1.csv",
+  "only_sample_ids": 1,
+  "selected_answers": 1,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 1,
+   "passed": 0.0,
+   "deterministic": 1.0,
+   "content": 0.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 6450,
+   "latency_p95_ms": 6450,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 1,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 3.0,
+    "factual_correctness": 4.0,
+    "relevance": 5.0,
+    "usefulness": 4.0
+   },
+   "unsupported_claim_rate": 1.0,
+   "claim_verdicts": {
+    "claims": 3,
+    "supported": 2,
+    "partial": 0,
+    "generic": 1,
+    "not_found": 0,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6450,
+    "latency_p95_ms": 6450,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.0,
+     "factual_correctness": 4.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 3,
+     "supported": 2,
+     "partial": 0,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6450,
+    "latency_p95_ms": 6450,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.0,
+     "factual_correctness": 4.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 3,
+     "supported": 2,
+     "partial": 0,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "pt": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   }
+  },
+  "paths": {
+   "knowledge": {
+    "knowledge": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:28:37+00:00",
+  "judge_cost_usd": 0.0004,
+  "judge_usage": {
+   "judgements": 1,
+   "total": {
+    "input_tokens": 3199,
+    "cache_read_tokens": 2944,
+    "cache_creation_tokens": 0,
+    "output_tokens": 257
+   },
+   "mean": {
+    "input_tokens": 3199.0,
+    "cache_read_tokens": 2944.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 257.0
+   }
+  },
+  "web_evidence": {
+   "answers": 1,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 1,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 1 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 1,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 3.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": 1.0,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {
+    "knowledge": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "EX09",
+   "repetition": 1,
+   "request_id": "req_evalab91d48895ef",
+   "split": "dev",
+   "language": "en",
+   "message": "How many installments can I split a sale into with the crediário?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments. The maximum and available options depend on the card issuer’s policies, and your conditions depend on your contract.",
+   "sources": [
+    "Crediário - Getnet"
+   ],
+   "duration_ms": 6450,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "How many installments can I split a sale into with the crediário?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Crediário - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-crediario",
+      "text": "Crediário - Getnet\nCrediário\nUma opção de pagamento diferenciado com possibilidade de parcelamento em até\n48x\n* para seus clientes.\nFaça uma Simulação:\ncom o valor de todas as parcelas e encargos antes da venda para oferecer transparência ao seu cliente\nAumente o Movimento:\nno seu estabelecimento oferecendo mais opções de pagamento aos seus clientes\nMaior poder de compra:\npara o seu cliente\nReceba o valor total de suas vendas:\nem até 2 dias úteis com taxa única e sem custo de antecipação\nOfereça parcelamento:\nem até 48x* para o seu cliente.\n*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão\nmais vendas para você,\nmais vantagens para o seu cliente\npara o seu negócio\npara o seu negócio\nO Crediário é mais uma opção de pagamento que você pode oferecer para vender mais. E você recebe o valor da venda em até 2 dias úteis e com taxa única¹, aumentando seu capital de giro!\npara o seu cliente\npara o seu cliente\nCom o Crediário, ele pode parcelar em até 48 vezes² no cartão de crédito com taxas que cabem no bolso.\nVocê oferece mais comodidade e poder de compra.\n¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente\n."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1196,
+     "kept_chars": 1196,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments. The maximum and available options depend on the card issuer’s policies, and your conditions depend on your contract."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1196,
+    "kept_chars": 1196,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.00047497,
+   "judge": {
+    "evaluation_id": "eval_b177c74d01ef425abce6",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments.",
+       "kind": "value"
+      },
+      {
+       "n": 2,
+       "text": "The maximum and available options depend on the card issuer’s policies.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Your conditions depend on your contract.",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Uma opção de pagamento diferenciado com possibilidade de parcelamento em até 48x* para seus clientes."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+      },
+      {
+       "n": 3,
+       "verdict": "generic",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "The 48x and card-issuer statements are supported, but the contract-dependence claim is generic with no evidence.",
+     "factual_correctness": "48x and issuer dependence match the page; the contract statement adds an unsupported condition.",
+     "relevance": "It directly answers how many installments Crediário allows for the merchant's sales.",
+     "usefulness": "Clear, concise and in English answering the merchant; the contract remark adds little actionable content."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00040256,
+    "usage": {
+     "input_tokens": 3199,
+     "cache_read_tokens": 2944,
+     "cache_creation_tokens": 0,
+     "output_tokens": 257
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_b177c74d01ef425abce6",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments.",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "The maximum and available options depend on the card issuer’s policies.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Your conditions depend on your contract.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Uma opção de pagamento diferenciado com possibilidade de parcelamento em até 48x* para seus clientes."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The 48x and card-issuer statements are supported, but the contract-dependence claim is generic with no evidence.",
+      "factual_correctness": "48x and issuer dependence match the page; the contract statement adds an unsupported condition.",
+      "relevance": "It directly answers how many installments Crediário allows for the merchant's sales.",
+      "usefulness": "Clear, concise and in English answering the merchant; the contract remark adds little actionable content."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00040256,
+     "usage": {
+      "input_tokens": 3199,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 257
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

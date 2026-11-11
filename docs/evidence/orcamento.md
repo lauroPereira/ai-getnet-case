@@ -17,7 +17,7 @@ Desde 2026-11-07, o limite de gasto é definido pelo responsável por provedor, 
 | v0.8.0 | US$0,84 na campanha `v080-qa` e US$0,03 no ledger do volume Docker | US$1,40 | [CHANGELOG](../../CHANGELOG.md), 0.8.0; transições de teto abaixo |
 | v0.9.0 | Juiz `claude-opus-5-5` US$1,34 (ledger Anthropic separado); seis medições de retrieval US$0,016 | US$4,00 (juiz) | [CHANGELOG](../../CHANGELOG.md), 0.9.0 |
 | v0.10.0 | `judge.v4`: DeepSeek US$0,025 e `claude-opus-5-5` US$1,37 (ledger Anthropic separado); comparação interrompida e retomada US$0,006 (ledger isolado) | — | [CHANGELOG](../../CHANGELOG.md), 0.10.0 |
-| v0.11.0 | Custo por julgamento: `judge.v5` US$0,000945; `judge.v3` US$0,000398 | — | [Resultado](v0110-resultado.md) |
+| v0.11.0 | US$0,913 na campanha `v0110-qa` (agente, juiz, ajuste e calibração); custo por julgamento: `judge.v5` US$0,000945 e `judge.v3` US$0,000398 | US$1,00 | [Resultado](v0110-resultado.md) |
 | v0.12.0 | US$0,471 | — | [Resultado](v0120-resultado.md) |
 | v0.13.0 | US$0,064 | US$0,15 | [Resultado](v0130-resultado.md) |
 | v1.0.0 | US$0,0038 na campanha `v100-qa` e US$0,0033 na janela do túnel | US$0,10 cada | [Resultado](v100-resultado.md) |

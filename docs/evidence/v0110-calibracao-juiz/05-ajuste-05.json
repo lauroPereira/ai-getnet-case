@@ -1,0 +1,2457 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "ajuste-05.csv",
+  "only_sample_ids": 4,
+  "selected_answers": 4,
+  "claims_from": [
+   "ajuste-24-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 4
+ },
+ "summary": {
+  "overall": {
+   "n": 4,
+   "passed": 0.5,
+   "deterministic": 0.75,
+   "content": 0.75,
+   "route_ok": 1.0,
+   "status_ok": 0.75,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 0.75,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 9905,
+   "latency_p95_ms": 23363,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 4,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.33,
+    "factual_correctness": 4.33,
+    "relevance": 4.67,
+    "usefulness": 4.33
+   },
+   "unsupported_claim_rate": 0.25,
+   "claim_verdicts": {
+    "claims": 69,
+    "supported": 61,
+    "partial": 3,
+    "generic": 3,
+    "not_found": 2,
+    "standard": 6
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 0.5,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 0.5,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.5,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 14313,
+    "latency_p95_ms": 23363,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.5,
+     "factual_correctness": 4.33,
+     "relevance": 4.67,
+     "usefulness": 4.17
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 27,
+     "supported": 24,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 2,
+     "standard": 6
+    }
+   },
+   "holdout": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9905,
+    "latency_p95_ms": 13425,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.17,
+     "factual_correctness": 4.33,
+     "relevance": 4.67,
+     "usefulness": 4.5
+    },
+    "unsupported_claim_rate": 0.5,
+    "claim_verdicts": {
+     "claims": 42,
+     "supported": 37,
+     "partial": 2,
+     "generic": 3,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 5264,
+    "latency_p95_ms": 5264,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 3.67,
+     "relevance": 4.33,
+     "usefulness": 3.33
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 9,
+     "supported": 6,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 2,
+     "standard": 6
+    }
+   },
+   "pt": {
+    "n": 3,
+    "passed": 0.333,
+    "deterministic": 0.667,
+    "content": 0.667,
+    "route_ok": 1.0,
+    "status_ok": 0.667,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.667,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 13425,
+    "latency_p95_ms": 23363,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.44,
+     "factual_correctness": 4.56,
+     "relevance": 4.78,
+     "usefulness": 4.67
+    },
+    "unsupported_claim_rate": 0.333,
+    "claim_verdicts": {
+     "claims": 60,
+     "supported": 55,
+     "partial": 2,
+     "generic": 3,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "human_handoff": {
+    "escalation": 1
+   },
+   "knowledge": {
+    "knowledge": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:27:11+00:00",
+  "judge_cost_usd": 0.00682,
+  "judge_usage": {
+   "judgements": 12,
+   "total": {
+    "input_tokens": 47982,
+    "cache_read_tokens": 45696,
+    "cache_creation_tokens": 0,
+    "output_tokens": 4887
+   },
+   "mean": {
+    "input_tokens": 3998.5,
+    "cache_read_tokens": 3808.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 407.2
+   }
+  },
+  "web_evidence": {
+   "answers": 4,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 4 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 4,
+    "judgements": 12,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.33,
+      "std": 0.39,
+      "exact": 0.583,
+      "within_one": 0.917,
+      "pairs": 12
+     },
+     "factual_correctness": {
+      "mean": 4.33,
+      "std": 0.29,
+      "exact": 0.667,
+      "within_one": 1.0,
+      "pairs": 12
+     },
+     "relevance": {
+      "mean": 4.67,
+      "std": 0.43,
+      "exact": 0.667,
+      "within_one": 0.833,
+      "pairs": 12
+     },
+     "usefulness": {
+      "mean": 4.33,
+      "std": 0.14,
+      "exact": 0.833,
+      "within_one": 1.0,
+      "pairs": 12
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.25,
+     "exact": 1.0,
+     "pairs": 12
+    }
+   },
+   "by_route": {
+    "human_handoff": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": 1.0,
+       "exact": 0.0,
+       "within_one": 0.667,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 3.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.33,
+       "std": 1.15,
+       "exact": 0.333,
+       "within_one": 0.333,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 3.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "knowledge": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 3.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "knowledge_and_support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 2,
+     "judgements": 6,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.5,
+       "std": 0.5,
+       "exact": 0.5,
+       "within_one": 0.833,
+       "pairs": 6
+      },
+      "factual_correctness": {
+       "mean": 4.33,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.667,
+       "within_one": 0.667,
+       "pairs": 6
+      },
+      "usefulness": {
+       "mean": 4.17,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 6
+     }
+    },
+    "holdout": {
+     "cases": 2,
+     "judgements": 6,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.17,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "factual_correctness": {
+       "mean": 4.33,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "usefulness": {
+       "mean": 4.5,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.5,
+      "exact": 1.0,
+      "pairs": 6
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT09",
+   "repetition": 1,
+   "request_id": "req_eval2e616e08c70e",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Em quantas parcelas posso vender no crediário?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "O Crediário permite parcelamento em até 48x. O prazo máximo disponível varia conforme o emissor do cartão e as políticas de crédito dele. As condições do seu estabelecimento, incluindo a taxa de desconto (MDR), dependem do contrato e podem ser consultadas no Portal do Cliente ou no Aplicativo Getnet Brasil.",
+   "sources": [
+    "Crediário - Getnet"
+   ],
+   "duration_ms": 6385,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Em quantas parcelas posso vender no crediário?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Crediário - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-crediario",
+      "text": "Crediário - Getnet\nCrediário\nUma opção de pagamento diferenciado com possibilidade de parcelamento em até\n48x\n* para seus clientes.\nFaça uma Simulação:\ncom o valor de todas as parcelas e encargos antes da venda para oferecer transparência ao seu cliente\nAumente o Movimento:\nno seu estabelecimento oferecendo mais opções de pagamento aos seus clientes\nMaior poder de compra:\npara o seu cliente\nReceba o valor total de suas vendas:\nem até 2 dias úteis com taxa única e sem custo de antecipação\nOfereça parcelamento:\nem até 48x* para o seu cliente.\n*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão\nmais vendas para você,\nmais vantagens para o seu cliente\npara o seu negócio\npara o seu negócio\nO Crediário é mais uma opção de pagamento que você pode oferecer para vender mais. E você recebe o valor da venda em até 2 dias úteis e com taxa única¹, aumentando seu capital de giro!\npara o seu cliente\npara o seu cliente\nCom o Crediário, ele pode parcelar em até 48 vezes² no cartão de crédito com taxas que cabem no bolso.\nVocê oferece mais comodidade e poder de compra.\n¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente\n."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1196,
+     "kept_chars": 1196,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "O Crediário permite parcelamento em até 48x. O prazo máximo disponível varia conforme o emissor do cartão e as políticas de crédito dele. As condições do seu estabelecimento, incluindo a taxa de desconto (MDR), dependem do contrato e podem ser consultadas no Portal do Cliente ou no Aplicativo Getnet Brasil."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1196,
+    "kept_chars": 1196,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00049897,
+   "judge": {
+    "evaluation_id": "eval_2e5641999e784c98bfcd",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "O Crediário permite parcelamento em até 48x.",
+       "kind": "value"
+      },
+      {
+       "n": 2,
+       "text": "O prazo máximo disponível varia conforme o emissor do cartão e as políticas de crédito dele.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "As condições do seu estabelecimento, incluindo a taxa de desconto (MDR), dependem do contrato.",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "As condições podem ser consultadas no Portal do Cliente ou no Aplicativo Getnet Brasil.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Ofereça parcelamento:\nem até 48x* para o seu cliente."
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+      },
+      {
+       "n": 3,
+       "verdict": "generic",
+       "support": ""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente"
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "48x and the issuer variation and the MDR channels are supported; the contract-dependence statement has no support.",
+     "factual_correctness": "The 48x limit is right, but adding policies de crédito and contract dependence goes beyond the evidence.",
+     "relevance": "The reply answers how many installments are possible, though it adds unrequested contract and MDR details.",
+     "usefulness": "Clear, concise, in Portuguese, with the key limit and the issuer caveat; the extra contract remark is not actionable."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00044953,
+    "usage": {
+     "input_tokens": 3285,
+     "cache_read_tokens": 3072,
+     "cache_creation_tokens": 0,
+     "output_tokens": 306
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_2e5641999e784c98bfcd",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O Crediário permite parcelamento em até 48x.",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "O prazo máximo disponível varia conforme o emissor do cartão e as políticas de crédito dele.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "As condições do seu estabelecimento, incluindo a taxa de desconto (MDR), dependem do contrato.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "As condições podem ser consultadas no Portal do Cliente ou no Aplicativo Getnet Brasil.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Ofereça parcelamento:\nem até 48x* para o seu cliente."
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "48x and the issuer variation and the MDR channels are supported; the contract-dependence statement has no support.",
+      "factual_correctness": "The 48x limit is right, but adding policies de crédito and contract dependence goes beyond the evidence.",
+      "relevance": "The reply answers how many installments are possible, though it adds unrequested contract and MDR details.",
+      "usefulness": "Clear, concise, in Portuguese, with the key limit and the issuer caveat; the extra contract remark is not actionable."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00044953,
+     "usage": {
+      "input_tokens": 3285,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 306
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_3ce60af2bcc14c7f9d0b",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O Crediário permite parcelamento em até 48x.",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "O prazo máximo disponível varia conforme o emissor do cartão e as políticas de crédito dele.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "As condições do seu estabelecimento, incluindo a taxa de desconto (MDR), dependem do contrato.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "As condições podem ser consultadas no Portal do Cliente ou no Aplicativo Getnet Brasil.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Ofereça parcelamento:\nem até 48x* para o seu cliente."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "48x and MDR channel are supported; the contract dependence for the merchant's conditions is not stated by any item.",
+      "factual_correctness": "The 48x limit and card-issuer variation match the page; the contract-dependence statement lacks evidence.",
+      "relevance": "It answers the installment-limit question directly, though it adds unsolicited contract and MDR remarks.",
+      "usefulness": "Clear, polite Portuguese with the key answer (até 48x) up front and a valid channel for MDR."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00045073,
+     "usage": {
+      "input_tokens": 3285,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 307
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f221cee19f804a7694ba",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O Crediário permite parcelamento em até 48x.",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "O prazo máximo disponível varia conforme o emissor do cartão e as políticas de crédito dele.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "As condições do seu estabelecimento, incluindo a taxa de desconto (MDR), dependem do contrato.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "As condições podem ser consultadas no Portal do Cliente ou no Aplicativo Getnet Brasil.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Uma opção de pagamento diferenciado com possibilidade de parcelamento em até\n48x* para seus clientes."
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "48x and the channel for MDR are supported, but the contract dependence and credit-policy addition are not evidenced.",
+      "factual_correctness": "Main figure agrees with the source; the contract-dependence statement and credit policies lack backing.",
+      "relevance": "Directly answers the installment question with the 48x figure and its condition.",
+      "usefulness": "Clear, polite and in Portuguese, but mixes an unsupported contract caveat with the answer."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00044233,
+     "usage": {
+      "input_tokens": 3285,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 300
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 1,
+   "request_id": "req_evale4bdd691f01b",
+   "split": "dev",
+   "language": "en",
+   "message": "I want to close my contract.",
+   "route": "human_handoff",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "escalation",
+   "answer": "I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-BA567E.",
+   "sources": [],
+   "duration_ms": 5264,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "I want to close my contract.",
+    "status": "handoff",
+    "route": "human_handoff",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-05T10:25:00-03:00\", \"created_at\": \"2026-09-05T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"status\": \"pending\"}, {\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"status\": \"attention\"}, {\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"1 declined transaction(s) today.\", \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"status\": \"attention\"}, {\"check\": \"contracts_service\", \"note\": \"Contract source reachable.\", \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-04T19:54:16-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"general\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1479,
+     "kept_chars": 1479,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261104-BA567E."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1479,
+    "kept_chars": 1479,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00033277,
+   "judge": {
+    "evaluation_id": "eval_84fbd43513a64478af18",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "I've handed your case to a human agent on our support team",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "who will reply here",
+       "kind": "promise"
+      },
+      {
+       "n": 3,
+       "text": "Protocol: HO-20261104-BA567E",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "handoff"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "handoff"
+      },
+      {
+       "n": 3,
+       "verdict": "not_found",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Handoff and reply promise rest on the handoff status, but the protocol code HO-20261104-BA567E appears in no evidence item.",
+     "factual_correctness": "Handoff statement matches status; the protocol code is unverified and not traceable to any item.",
+     "relevance": "The reply correctly hands the contract-closure request to a human agent, matching the handoff status.",
+     "usefulness": "Clear, polite and concise in English, but the unverified protocol code adds little for the merchant."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.0003438,
+    "usage": {
+     "input_tokens": 3374,
+     "cache_read_tokens": 3200,
+     "cache_creation_tokens": 0,
+     "output_tokens": 227
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_84fbd43513a64478af18",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I've handed your case to a human agent on our support team",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "who will reply here",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocol: HO-20261104-BA567E",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Handoff and reply promise rest on the handoff status, but the protocol code HO-20261104-BA567E appears in no evidence item.",
+      "factual_correctness": "Handoff statement matches status; the protocol code is unverified and not traceable to any item.",
+      "relevance": "The reply correctly hands the contract-closure request to a human agent, matching the handoff status.",
+      "usefulness": "Clear, polite and concise in English, but the unverified protocol code adds little for the merchant."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003438,
+     "usage": {
+      "input_tokens": 3374,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 227
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_ca8478d3498d45319aac",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I've handed your case to a human agent on our support team",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "who will reply here",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocol: HO-20261104-BA567E",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Handoff statement follows the status, but the protocol code HO-20261104-BA567E appears in no evidence item.",
+      "factual_correctness": "Handoff and reply promise match the status; the specific protocol code is unverified.",
+      "relevance": "The merchant asked to close the contract and the case was correctly handed to a human agent.",
+      "usefulness": "Clear and polite handoff message, but it lacks the unverified protocol code's backing and any guidance."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.000333,
+     "usage": {
+      "input_tokens": 3374,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 218
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_fd6f44c6434748e3bc24",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I've handed your case to a human agent on our support team",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "who will reply here",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocol: HO-20261104-BA567E",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 4,
+      "relevance": 3,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "The handoff statement matches the handoff status; only the protocol code lacks an item.",
+      "factual_correctness": "Handoff claim agrees with status; protocol code is unverified but harmless.",
+      "relevance": "Case was correctly handed over, but the reply gives no guidance on closing the contract.",
+      "usefulness": "Clear and polite, but the merchant learns nothing about next steps for closing."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003102,
+     "usage": {
+      "input_tokens": 3374,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 199
+     },
+     "error": null
+    }
+   ],
+   "expected_claims": [
+    [
+     "human"
+    ]
+   ],
+   "deterministic": true,
+   "content": true
+  },
+  {
+   "id": "REPLAN-TOOL-DOWN",
+   "repetition": 1,
+   "request_id": "req_eval06d0d2e78460",
+   "split": "dev",
+   "language": "pt",
+   "message": "A taxa da venda no débito de ontem está correta?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "Sim. A taxa da venda no débito de ontem (03/11/2026) está correta: o valor esperado e o cobrado foram ambos R$ 1,94, sem diferença. A venda foi de R$ 150,00, e o valor líquido após a taxa é R$ 148,06.",
+   "sources": [
+    "Synthetic pricing and independent charge comparison",
+    "Recorded fee breakdown (synthetic charge service)"
+   ],
+   "duration_ms": 23363,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": false,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing",
+    "get_fee_breakdown"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "A taxa da venda no débito de ontem está correta?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Synthetic pricing and independent charge comparison",
+     "Recorded fee breakdown (synthetic charge service)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:48:22-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T19:48:22-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"debit\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"charge\": {\"charged_fee_minor\": 194, \"components\": [{\"amount_minor\": 194, \"name\": \"debit_fee\"}], \"conditions\": {\"channel\": \"pos\", \"installments\": 1, \"payment_type\": \"debit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"installments\": [{\"fee_minor\": 194, \"gross_minor\": 15000, \"net_minor\": 14806, \"number\": 1}], \"recorded\": true, \"transaction_id\": \"sale_1988_0001\"}, \"comparison\": {\"charged_fee_display\": \"R$ 1,94\", \"charged_fee_minor\": 194, \"comparison_method\": \"integer_minor_units\", \"currency\": \"BRL\", \"difference_display\": \"R$ 0,00\", \"difference_minor\": 0, \"expected_fee_display\": \"R$ 1,94\", \"expected_fee_minor\": 194, \"result\": \"consistent\"}, \"financial_evidence\": {\"charge\": {\"components\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"name\": \"debit_fee\"}], \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"installments\": [{\"fee_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"number\": 1}]}, \"pricing\": {\"components\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"name\": \"debit_fee\"}], \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"installments\": [{\"fee_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"number\": 1}]}, \"sale\": {\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}}}, \"note\": \"A comparison does not execute a correction, refund, or financial action.\", \"observed_at\": \"2026-11-04T19:48:29-03:00\", \"pricing\": {\"applicable\": true, \"components\": [{\"amount_minor\": 194, \"name\": \"debit_fee\"}], \"conditions\": {\"channel\": \"pos\", \"installments\": 1, \"payment_type\": \"debit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"expected_fee_minor\": 194, \"installments\": [{\"fee_minor\": 194, \"gross_minor\": 15000, \"net_minor\": 14806, \"number\": 1}], \"rule_id\": \"pricing_mock_v1_debit\", \"rule_version\": \"1.0.0\", \"transaction_id\": \"sale_1988_0001\"}, \"sale\": {\"channel\": \"pos\", \"gross_amount_minor\": 15000, \"installments\": 1, \"payment_type\": \"debit\", \"pricing_plan\": \"demo_standard\", \"sale_date\": \"2026-11-03\"}, \"source\": \"independent_synthetic_pricing_and_charge_services\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_fee_breakdown",
+      "text": "{\"arguments\": {\"installments\": null, \"payment_type\": \"debit\", \"period\": \"yesterday\", \"sale_date\": null}, \"result\": {\"charged_fee_minor\": 194, \"components\": [{\"amount_minor\": 194, \"name\": \"debit_fee\"}], \"conditions\": {\"channel\": \"pos\", \"installments\": 1, \"payment_type\": \"debit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"installments\": [{\"fee_minor\": 194, \"gross_minor\": 15000, \"net_minor\": 14806, \"number\": 1}], \"observed_at\": \"2026-11-04T19:48:29-03:00\", \"recorded\": true, \"source\": \"independent_synthetic_charge_service\", \"transaction_id\": \"sale_1988_0001\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3522,
+     "kept_chars": 3522,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Sim. A taxa da venda no débito de ontem (03/11/2026) está correta: o valor esperado e o cobrado foram ambos R$ 1,94, sem diferença. A venda foi de R$ 150,00, e o valor líquido após a taxa é R$ 148,06."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3522,
+    "kept_chars": 3522,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00061737,
+   "judge": {
+    "evaluation_id": "eval_441922f58e1d4c5caceb",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Sim, a taxa da venda no débito de ontem está correta",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "A venda no débito foi em 03/11/2026",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "O valor esperado e o cobrado foram ambos R$ 1,94",
+       "kind": "value"
+      },
+      {
+       "n": 4,
+       "text": "Não houve diferença",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "A venda foi de R$ 150,00",
+       "kind": "value"
+      },
+      {
+       "n": 6,
+       "text": "O valor líquido após a taxa é R$ 148,06",
+       "kind": "value"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"result\": \"consistent\" ... \"difference_minor\": 0"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"sale_date\": \"2026-11-03\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"charged_fee_display\": \"R$ 1,94\", ... \"expected_fee_display\": \"R$ 1,94\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"difference_display\": \"R$ 0,00\", \"difference_minor\": 0, \"result\": \"consistent\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}"
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}"
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All figures, the date and the consistency result come from the tool results.",
+     "factual_correctness": "Fee R$ 1,94 matches expected, zero difference, gross R$ 150,00 and net R$ 148,06 all agree.",
+     "relevance": "Directly answers whether yesterday's debit sale fee was correct.",
+     "usefulness": "Clear, concise, polite, in Portuguese, with concrete figures the merchant can act on."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00055844,
+    "usage": {
+     "input_tokens": 4365,
+     "cache_read_tokens": 4224,
+     "cache_creation_tokens": 0,
+     "output_tokens": 409
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_441922f58e1d4c5caceb",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, a taxa da venda no débito de ontem está correta",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A venda no débito foi em 03/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O valor esperado e o cobrado foram ambos R$ 1,94",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "Não houve diferença",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "A venda foi de R$ 150,00",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "O valor líquido após a taxa é R$ 148,06",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"result\": \"consistent\" ... \"difference_minor\": 0"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"sale_date\": \"2026-11-03\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"charged_fee_display\": \"R$ 1,94\", ... \"expected_fee_display\": \"R$ 1,94\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"difference_display\": \"R$ 0,00\", \"difference_minor\": 0, \"result\": \"consistent\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All figures, the date and the consistency result come from the tool results.",
+      "factual_correctness": "Fee R$ 1,94 matches expected, zero difference, gross R$ 150,00 and net R$ 148,06 all agree.",
+      "relevance": "Directly answers whether yesterday's debit sale fee was correct.",
+      "usefulness": "Clear, concise, polite, in Portuguese, with concrete figures the merchant can act on."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00055844,
+     "usage": {
+      "input_tokens": 4365,
+      "cache_read_tokens": 4224,
+      "cache_creation_tokens": 0,
+      "output_tokens": 409
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_2052065445a9435f9bee",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, a taxa da venda no débito de ontem está correta",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A venda no débito foi em 03/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O valor esperado e o cobrado foram ambos R$ 1,94",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "Não houve diferença",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "A venda foi de R$ 150,00",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "O valor líquido após a taxa é R$ 148,06",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"result\": \"consistent\" ... \"charged_fee_display\": \"R$ 1,94\", ... \"difference_minor\": 0"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"sale_date\": \"2026-11-03\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"expected_fee_display\": \"R$ 1,94\", \"charged_fee_display\": \"R$ 1,94\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"difference_display\": \"R$ 0,00\", \"difference_minor\": 0"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"sale\": {\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}}"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every figure, date and conclusion in the reply traces directly to the pricing and fee-breakdown tool results.",
+      "factual_correctness": "The fees, sale amount, date and net amount all match the tool results, and the comparison is consistent.",
+      "relevance": "It directly answers whether yesterday's debit sale fee was correct, with the exact figures.",
+      "usefulness": "Clear, concise, in Portuguese, and gives the merchant the expected/charged fee and net amount."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00057884,
+     "usage": {
+      "input_tokens": 4365,
+      "cache_read_tokens": 4224,
+      "cache_creation_tokens": 0,
+      "output_tokens": 426
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_9b23a3f614de40369c6a",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, a taxa da venda no débito de ontem está correta",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A venda no débito foi em 03/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O valor esperado e o cobrado foram ambos R$ 1,94",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "Não houve diferença",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "A venda foi de R$ 150,00",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "O valor líquido após a taxa é R$ 148,06",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"comparison\": {... \"result\": \"consistent\" ... \"difference_minor\": 0} / \"payment_type\": \"debit\", \"sale_date\": \"2026-11-03\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"sale\": {\"channel\": \"pos\", \"gross_amount_minor\": 15000, \"installments\": 1, \"payment_type\": \"debit\", \"pricing_plan\": \"demo_standard\", \"sale_date\": \"2026-11-03\"}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"expected_fee_display\": \"R$ 1,94\", \"expected_fee_minor\": 194, ... \"charged_fee_display\": \"R$ 1,94\", \"charged_fee_minor\": 194"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"difference_display\": \"R$ 0,00\", \"difference_minor\": 0 ... \"result\": \"consistent\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"sale\": {\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}}"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every figure, date and conclusion matches the pricing tool results.",
+      "factual_correctness": "Fee R$ 1,94, difference zero, gross R$ 150,00 and net R$ 148,06 all agree with evidence.",
+      "relevance": "Directly answers whether yesterday's debit sale fee was correct.",
+      "usefulness": "Clear, concise, in Portuguese, with all amounts the merchant needs."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00067004,
+     "usage": {
+      "input_tokens": 4365,
+      "cache_read_tokens": 4224,
+      "cache_creation_tokens": 0,
+      "output_tokens": 502
+     },
+     "error": null
+    }
+   ],
+   "deterministic": false,
+   "content": true
+  },
+  {
+   "id": "PT08",
+   "repetition": 1,
+   "request_id": "req_eval87264d6ab851",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Minha maquininha está mostrando erro de transação negada.",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Encontrei duas transações negadas:\n- Hoje, R$ 230,00 no crédito, código 51: o motivo registrado é saldo ou limite insuficiente no cartão. Ofereça outro cartão ou Pix.\n- Em 01/11, R$ 45,90 no débito, código 05: o banco emissor não autorizou a compra. Peça ao comprador que fale com o banco ou use outro meio de pagamento.\n\nEssas negativas, por si só, não indicam defeito na maquininha.",
+   "sources": [
+    "Transações negadas",
+    "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+    "Erro ADQ 1-50: erro de leitura - Getnet",
+    "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet",
+    "Card authorization events (your account)"
+   ],
+   "duration_ms": 13425,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "find_authorization_events"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Minha maquininha está mostrando erro de transação negada.",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Transações negadas",
+     "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+     "Erro ADQ 1-50: erro de leitura - Getnet",
+     "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet",
+     "Card authorization events (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:52:02-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"checks\": [{\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-04T19:52:02-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"1 declined transaction(s) today.\", \"observed_at\": \"2026-11-04T19:52:02-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-04T19:52:02-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"authorization\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "find_authorization_events",
+      "text": "{\"arguments\": {\"limit\": 5, \"period\": \"last_7_days\", \"status\": \"declined\"}, \"result\": {\"date_from\": \"2026-10-29\", \"date_to\": \"2026-11-04\", \"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000}, \"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\", \"occurred_at\": \"2026-11-04T11:21:07-03:00\", \"payment_type\": \"credit\", \"reason_category\": \"insufficient_funds\", \"response_code\": \"51\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0101\"}, {\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\", \"minor\": 4590}, \"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\", \"occurred_at\": \"2026-11-01T16:02:00-03:00\", \"payment_type\": \"debit\", \"reason_category\": \"issuer_declined\", \"response_code\": \"05\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0100\"}], \"note\": \"Only codes documented in the demo have a reason; others stay unknown.\", \"observed_at\": \"2026-11-04T19:52:09-03:00\", \"source\": \"AuthorizationsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "demo:KB-DEMO-AUTHORIZATIONS-001",
+      "text": "Transações negadas\n## Códigos de resposta documentados na demonstração\n\nCódigos sintéticos do ambiente de demonstração. Um código fora desta tabela tem motivo desconhecido.\n\n| Código | Categoria | O que significa para o lojista | Próximo passo |\n| --- | --- | --- | --- |\n| 05 | issuer_declined | O banco emissor do cartão não autorizou a compra. | Pedir ao comprador que fale com o banco emissor ou use outro meio de pagamento. |\n| 51 | insufficient_funds | Saldo ou limite insuficiente no cartão do comprador. | Oferecer outro meio de pagamento, como outro cartão ou Pix. |\n| 57 | not_permitted | Transação não permitida para este cartão. | Confirmar se a bandeira e a modalidade estão habilitadas; se estiverem, pedir outro meio de pagamento. |\n| 91 | issuer_unavailable | Emissor temporariamente indisponível. | Aguardar alguns minutos e tentar novamente. |\n\nNegativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha. Mensagens \"Erro ADQ\" na tela são erros do equipamento e seguem a página oficial de erros da maquininha."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-91",
+      "text": "Erro ADQ 4-91: erro na aprovação da venda - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-1-50",
+      "text": "Erro ADQ 1-50: erro de leitura - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso apareça um “Erro ADQ” na tela da sua maquininha, você mesmo pode corrigir isso rapidamente. Verifique o código do erro e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-83",
+      "text": "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 4639,
+     "kept_chars": 4639,
+     "items": 7,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Encontrei duas transações negadas:\n- Hoje, R$ 230,00 no crédito, código 51: o motivo registrado é saldo ou limite insuficiente no cartão. Ofereça outro cartão ou Pix.\n- Em 01/11, R$ 45,90 no débito, código 05: o banco emissor não autorizou a compra. Peça ao comprador que fale com o banco ou use outro meio de pagamento.\n\nEssas negativas, por si só, não indicam defeito na maquininha."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 4639,
+    "kept_chars": 4639,
+    "items": 7,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00102915,
+   "judge": {
+    "evaluation_id": "eval_91f5f7b8957b4cffa303",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Encontrei duas transações negadas",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Hoje, R$ 230,00 no crédito",
+       "kind": "value"
+      },
+      {
+       "n": 3,
+       "text": "código 51",
+       "kind": "value"
+      },
+      {
+       "n": 4,
+       "text": "o motivo registrado é saldo ou limite insuficiente no cartão",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Ofereça outro cartão ou Pix",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "Em 01/11, R$ 45,90 no débito",
+       "kind": "value"
+      },
+      {
+       "n": 7,
+       "text": "código 05",
+       "kind": "value"
+      },
+      {
+       "n": 8,
+       "text": "o banco emissor não autorizou a compra",
+       "kind": "fact"
+      },
+      {
+       "n": 9,
+       "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+       "kind": "guidance"
+      },
+      {
+       "n": 10,
+       "text": "Essas negativas, por si só, não indicam defeito na maquininha",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\"...\"transaction_id\": \"txn_1988_0101\"}, {...\"transaction_id\": \"txn_1988_0100\"}]"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000}... \"occurred_at\": \"2026-11-04T11:21:07-03:00\", \"payment_type\": \"credit\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"reason_category\": \"insufficient_funds\", \"response_code\": \"51\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\"...\"occurred_at\": \"2026-11-01T16:02:00-03:00\", \"payment_type\": \"debit\""
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "\"reason_category\": \"issuer_declined\", \"response_code\": \"05\""
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every amount, code, date, reason and next step traces directly to the authorization events tool result and KB passage.",
+     "factual_correctness": "All figures, codes, dates and interpretations agree with the tool result and demo passage.",
+     "relevance": "It addresses the declined-transaction error by showing the actual declined events and their causes and next steps.",
+     "usefulness": "Clear, concise, in Portuguese, with concrete causes and actions the merchant can take."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00088942,
+    "usage": {
+     "input_tokens": 4970,
+     "cache_read_tokens": 4736,
+     "cache_creation_tokens": 0,
+     "output_tokens": 659
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_91f5f7b8957b4cffa303",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encontrei duas transações negadas",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Hoje, R$ 230,00 no crédito",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "código 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "o motivo registrado é saldo ou limite insuficiente no cartão",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Ofereça outro cartão ou Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Em 01/11, R$ 45,90 no débito",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "código 05",
+        "kind": "value"
+       },
+       {
+        "n": 8,
+        "text": "o banco emissor não autorizou a compra",
+        "kind": "fact"
+       },
+       {
+        "n": 9,
+        "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Essas negativas, por si só, não indicam defeito na maquininha",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\"...\"transaction_id\": \"txn_1988_0101\"}, {...\"transaction_id\": \"txn_1988_0100\"}]"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000}... \"occurred_at\": \"2026-11-04T11:21:07-03:00\", \"payment_type\": \"credit\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"reason_category\": \"insufficient_funds\", \"response_code\": \"51\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\"...\"occurred_at\": \"2026-11-01T16:02:00-03:00\", \"payment_type\": \"debit\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"reason_category\": \"issuer_declined\", \"response_code\": \"05\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, code, date, reason and next step traces directly to the authorization events tool result and KB passage.",
+      "factual_correctness": "All figures, codes, dates and interpretations agree with the tool result and demo passage.",
+      "relevance": "It addresses the declined-transaction error by showing the actual declined events and their causes and next steps.",
+      "usefulness": "Clear, concise, in Portuguese, with concrete causes and actions the merchant can take."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00088942,
+     "usage": {
+      "input_tokens": 4970,
+      "cache_read_tokens": 4736,
+      "cache_creation_tokens": 0,
+      "output_tokens": 659
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_9c63ea14e7a44d7ca059",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encontrei duas transações negadas",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Hoje, R$ 230,00 no crédito",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "código 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "o motivo registrado é saldo ou limite insuficiente no cartão",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Ofereça outro cartão ou Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Em 01/11, R$ 45,90 no débito",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "código 05",
+        "kind": "value"
+       },
+       {
+        "n": 8,
+        "text": "o banco emissor não autorizou a compra",
+        "kind": "fact"
+       },
+       {
+        "n": 9,
+        "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Essas negativas, por si só, não indicam defeito na maquininha",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\" ... \"status\": \"declined\" ... {\"amount\": ... \"display\": \"R$ 45,90\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-04T11:21:07-03:00\" ... \"display\": \"R$ 230,00\" ... \"payment_type\": \"credit\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"response_code\": \"51\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0101\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\" ... \"response_code\": \"51\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-01T16:02:00-03:00\" ... \"display\": \"R$ 45,90\" ... \"payment_type\": \"debit\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"response_code\": \"05\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0100\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every value, code and next step matches the authorization events and the demo table.",
+      "factual_correctness": "Amounts, dates, codes and reasons agree with the tool results and passage.",
+      "relevance": "Directly addresses the denied-transaction error with the merchant's actual declines and next steps.",
+      "usefulness": "Clear, concise, in Portuguese, with actionable next steps per transaction."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00089782,
+     "usage": {
+      "input_tokens": 4970,
+      "cache_read_tokens": 4736,
+      "cache_creation_tokens": 0,
+      "output_tokens": 666
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_e1e595b062bb44f9bfa6",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encontrei duas transações negadas",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Hoje, R$ 230,00 no crédito",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "código 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "o motivo registrado é saldo ou limite insuficiente no cartão",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Ofereça outro cartão ou Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Em 01/11, R$ 45,90 no débito",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "código 05",
+        "kind": "value"
+       },
+       {
+        "n": 8,
+        "text": "o banco emissor não autorizou a compra",
+        "kind": "fact"
+       },
+       {
+        "n": 9,
+        "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Essas negativas, por si só, não indicam defeito na maquininha",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\" ... \"status\": \"declined\" ... {\"amount\": ... \"R$ 45,90\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-04T11:21:07-03:00\", ... \"display\": \"R$ 230,00\", ... \"payment_type\": \"credit\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"response_code\": \"51\", \"retry_allowed\": false, \"status\": \"declined\" ... \"display\": \"R$ 230,00\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\", ... \"response_code\": \"51\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-01T16:02:00-03:00\", ... \"display\": \"R$ 45,90\", ... \"payment_type\": \"debit\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"response_code\": \"05\", \"retry_allowed\": false, \"status\": \"declined\" ... \"R$ 45,90\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\", ... \"response_code\": \"05\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, date, code and motive matches the authorization tool result and the demo passage.",
+      "factual_correctness": "Amounts, dates, codes and motives all agree with the evidence and are internally consistent.",
+      "relevance": "The reply directly addresses the declined-transaction error the merchant reported.",
+      "usefulness": "Clear, concise Portuguese with concrete per-transaction next steps the merchant can act on."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00090022,
+     "usage": {
+      "input_tokens": 4970,
+      "cache_read_tokens": 4736,
+      "cache_creation_tokens": 0,
+      "output_tokens": 668
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  }
+ ]
+}

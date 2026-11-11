@@ -1,0 +1,3262 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-02.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.8,
+   "deterministic": 1.0,
+   "content": 0.8,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 7887,
+   "latency_p95_ms": 13479,
+   "cost_usd": 0,
+   "judge_failed": 1,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.93,
+    "factual_correctness": 4.93,
+    "relevance": 4.93,
+    "usefulness": 4.79
+   },
+   "unsupported_claim_rate": 0.071,
+   "claim_verdicts": {
+    "claims": 112,
+    "supported": 109,
+    "partial": 2,
+    "generic": 1,
+    "not_found": 0,
+    "standard": 6
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 12734,
+    "latency_p95_ms": 12734,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 33,
+     "supported": 32,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "holdout": {
+    "n": 4,
+    "passed": 0.75,
+    "deterministic": 1.0,
+    "content": 0.75,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 7628,
+    "latency_p95_ms": 13479,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 4,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.91,
+     "factual_correctness": 4.91,
+     "relevance": 4.91,
+     "usefulness": 4.73
+    },
+    "unsupported_claim_rate": 0.091,
+    "claim_verdicts": {
+     "claims": 79,
+     "supported": 77,
+     "partial": 1,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 6
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 12734,
+    "latency_p95_ms": 12734,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 33,
+     "supported": 32,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "pt": {
+    "n": 4,
+    "passed": 0.75,
+    "deterministic": 1.0,
+    "content": 0.75,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 7628,
+    "latency_p95_ms": 13479,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 4,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.91,
+     "factual_correctness": 4.91,
+     "relevance": 4.91,
+     "usefulness": 4.73
+    },
+    "unsupported_claim_rate": 0.091,
+    "claim_verdicts": {
+     "claims": 79,
+     "supported": 77,
+     "partial": 1,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 6
+    }
+   }
+  },
+  "paths": {
+   "human_handoff": {
+    "escalation": 1
+   },
+   "knowledge": {
+    "knowledge": 2
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 2
+   }
+  },
+  "generated_at": "2026-11-09T11:19:16+00:00",
+  "judge_cost_usd": 0.01525,
+  "judge_usage": {
+   "judgements": 14,
+   "total": {
+    "input_tokens": 59398,
+    "cache_read_tokens": 48896,
+    "cache_creation_tokens": 0,
+    "output_tokens": 6533
+   },
+   "mean": {
+    "input_tokens": 4242.7,
+    "cache_read_tokens": 3492.6,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 466.6
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 14,
+    "failed": 1,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.93,
+      "std": 0.14,
+      "exact": 0.923,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "factual_correctness": {
+      "mean": 4.93,
+      "std": 0.14,
+      "exact": 0.923,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "relevance": {
+      "mean": 4.93,
+      "std": 0.12,
+      "exact": 0.846,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "usefulness": {
+      "mean": 4.79,
+      "std": 0.37,
+      "exact": 0.615,
+      "within_one": 1.0,
+      "pairs": 13
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.071,
+     "exact": 0.923,
+     "pairs": 13
+    }
+   },
+   "by_route": {
+    "human_handoff": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "knowledge": {
+     "cases": 2,
+     "judgements": 5,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.8,
+       "std": 0.35,
+       "exact": 0.75,
+       "within_one": 1.0,
+       "pairs": 4
+      },
+      "factual_correctness": {
+       "mean": 4.8,
+       "std": 0.35,
+       "exact": 0.75,
+       "within_one": 1.0,
+       "pairs": 4
+      },
+      "relevance": {
+       "mean": 4.8,
+       "std": 0.29,
+       "exact": 0.5,
+       "within_one": 1.0,
+       "pairs": 4
+      },
+      "usefulness": {
+       "mean": 4.6,
+       "std": 0.64,
+       "exact": 0.25,
+       "within_one": 1.0,
+       "pairs": 4
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.2,
+      "exact": 0.75,
+      "pairs": 4
+     }
+    },
+    "knowledge_and_support": {
+     "cases": 2,
+     "judgements": 6,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 6
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "holdout": {
+     "cases": 4,
+     "judgements": 11,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.91,
+       "std": 0.18,
+       "exact": 0.9,
+       "within_one": 1.0,
+       "pairs": 10
+      },
+      "factual_correctness": {
+       "mean": 4.91,
+       "std": 0.18,
+       "exact": 0.9,
+       "within_one": 1.0,
+       "pairs": 10
+      },
+      "relevance": {
+       "mean": 4.91,
+       "std": 0.14,
+       "exact": 0.8,
+       "within_one": 1.0,
+       "pairs": 10
+      },
+      "usefulness": {
+       "mean": 4.73,
+       "std": 0.47,
+       "exact": 0.5,
+       "within_one": 1.0,
+       "pairs": 10
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.091,
+      "exact": 0.9,
+      "pairs": 10
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT01",
+   "repetition": 1,
+   "request_id": "req_eval899e5d4bdaa5",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Qual a diferença entre a Get Clássica e a Get Smart?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "A Get Clássica tem tela touchscreen, reposição de bobina grátis e automática e conexão Wi-Fi, chip 3G e plano de dados gratuitos. A Get Smart inclui aplicativos para gestão do negócio e simulador de vendas, tem conexão Wi-Fi, 3G e 4G e bateria com duração de até 12h.\n\nAs duas aceitam pagamento por aproximação, Pix e QR Code, e permitem enviar o comprovante impresso ou via SMS.",
+   "sources": [
+    "Getnet | Maquininha de cartão: Melhores taxas e opções grátis",
+    "Getnet | Taxas - Getnet"
+   ],
+   "duration_ms": 7369,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Qual a diferença entre a Get Clássica e a Get Smart?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Getnet | Maquininha de cartão: Melhores taxas e opções grátis",
+     "Getnet | Taxas - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\nPrepare seu negócio para vender mais na Black Friday com as maquininhas Getnet\nAceite cartões em moedas estrangeiras\nReceba pagamentos pelo Pix de forma rápida e segura\nConta e cartão grátis\nRecebimento em 2 dias úteis\nFrete Grátis\nESCOLHA SUA MAQUININHA\nAcelere suas vendas na Black Friday: ofertas especiais em maquininhas selecionadas\nSelecione sua faixa de faturamento e encontre as melhores taxas para sua empresa\nAté R$ 10 mil\nNOVO\nAcima de R$ 10 mil\nAcima de R$ 20 mil\nAcima de R$ 40 mil\nAcima de R$ 80 mil\n0,85%\nDébito\n2,69%\nCrédito\n9,07%\nCrédito 6x\nBaseado em seu faturamento, você tem R$ 319,69 de desconto no aluguel das maquininhas\nGet Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis\nALUGAR GET CLÁSSICA\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nBateria com até 12hrs de duração\nTela touchscreen\nManutenção vitalícia\nGet Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90\nGrátis\nALUGAR GET SMART\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nAplicativos para gestão do seu negócio\nSimulador de vendas\nManutenção vitalícia\nRecebeu sua maquininha de outra pessoa?"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-taxas",
+      "text": "Getnet | Taxas - Getnet\nConfira as taxas das nossas soluções\nNavegue no menu ao lado e confira as nossas taxas.\nTaxas sujeitas a alteração de acordo com as condições dos produtos e serviços contratados. Com nossas maquininhas de cartão, Link de Pagamento e Get Tap você recebe na sua Get Conta sem pagar mais por isso!\nDébito\n0,99%\n1x\n2,89%\n2x\n7,80%\n3x\n8,22%\n4x\n8,64%\n5x\n9,06%\n6x\n9,48%\n7x\n9,90%\n8x\n10,32%\n9x\n10,74%\n10x\n11,16%\n11x\n11,58%\n12x\n12,00%\nEscolha a maquininha ideal para o seu negócio aqui\nGet Clássica\nPagamento por aproximação, Pix e QR Code\nComprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática\nConexão Wi-Fi, chip 3G e plano de dados gratuitos\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ\nGet Smart\nPagamento por aproximação, Pix e QR Code\nSem fio com duração de até 12h de bateria\nConexão Wi-Fi, 3G, 4G e plano de dados gratuitos\nComprovante impresso na hora ou via SMS\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 2283,
+     "kept_chars": 2283,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "A Get Clássica tem tela touchscreen, reposição de bobina grátis e automática e conexão Wi-Fi, chip 3G e plano de dados gratuitos. A Get Smart inclui aplicativos para gestão do negócio e simulador de vendas, tem conexão Wi-Fi, 3G e 4G e bateria com duração de até 12h.\n\nAs duas aceitam pagamento por aproximação, Pix e QR Code, e permitem enviar o comprovante impresso ou via SMS."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 2283,
+    "kept_chars": 2283,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00058557,
+   "judge": {
+    "evaluation_id": "eval_8bd4e5ec232a48de9c08",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "A Get Clássica tem tela touchscreen",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "A Get Clássica tem reposição de bobina grátis e automática",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "A Get Clássica tem conexão Wi-Fi, chip 3G e plano de dados gratuitos",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "A Get Smart inclui aplicativos para gestão do negócio e simulador de vendas",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "A Get Smart tem conexão Wi-Fi, 3G e 4G",
+       "kind": "fact"
+      },
+      {
+       "n": 6,
+       "text": "A Get Smart tem bateria com duração de até 12h",
+       "kind": "value"
+      },
+      {
+       "n": 7,
+       "text": "As duas aceitam pagamento por aproximação, Pix e QR Code",
+       "kind": "fact"
+      },
+      {
+       "n": 8,
+       "text": "As duas permitem enviar o comprovante impresso ou via SMS",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Get Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis\nALUGAR GET CLÁSSICA\n...\nTela touchscreen"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "Get Clássica\n...\nComprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Conexão Wi-Fi, chip 3G e plano de dados gratuitos"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Get Smart\n...\nAplicativos para gestão do seu negócio\nSimulador de vendas"
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Get Smart\n...\nConexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "Sem fio com duração de até 12h de bateria"
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Get Clássica\nPagamento por aproximação, Pix e QR Code"
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "Pagamento por aproximação, Pix e QR Code\n...\nComprovante impresso na hora ou via SMS"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Every feature listed is quoted directly from the two Getnet passages.",
+     "factual_correctness": "All features attributed to each machine match the source pages without contradictions.",
+     "relevance": "Reply contrasts both machines but omits pricing and the Smart's billing-based advantage.",
+     "usefulness": "Clear, concise, in Portuguese, listing practical differences so the merchant can compare."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00104779,
+    "usage": {
+     "input_tokens": 3980,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 474
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_8bd4e5ec232a48de9c08",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Get Clássica tem tela touchscreen",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A Get Clássica tem reposição de bobina grátis e automática",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A Get Clássica tem conexão Wi-Fi, chip 3G e plano de dados gratuitos",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "A Get Smart inclui aplicativos para gestão do negócio e simulador de vendas",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "A Get Smart tem conexão Wi-Fi, 3G e 4G",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "A Get Smart tem bateria com duração de até 12h",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "As duas aceitam pagamento por aproximação, Pix e QR Code",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "As duas permitem enviar o comprovante impresso ou via SMS",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Get Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis\nALUGAR GET CLÁSSICA\n...\nTela touchscreen"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Get Clássica\n...\nComprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Conexão Wi-Fi, chip 3G e plano de dados gratuitos"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Get Smart\n...\nAplicativos para gestão do seu negócio\nSimulador de vendas"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Get Smart\n...\nConexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Sem fio com duração de até 12h de bateria"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Get Clássica\nPagamento por aproximação, Pix e QR Code"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Pagamento por aproximação, Pix e QR Code\n...\nComprovante impresso na hora ou via SMS"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Every feature listed is quoted directly from the two Getnet passages.",
+      "factual_correctness": "All features attributed to each machine match the source pages without contradictions.",
+      "relevance": "Reply contrasts both machines but omits pricing and the Smart's billing-based advantage.",
+      "usefulness": "Clear, concise, in Portuguese, listing practical differences so the merchant can compare."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00104779,
+     "usage": {
+      "input_tokens": 3980,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 474
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_633677d496a348e3a266",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Get Clássica tem tela touchscreen",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A Get Clássica tem reposição de bobina grátis e automática",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A Get Clássica tem conexão Wi-Fi, chip 3G e plano de dados gratuitos",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "A Get Smart inclui aplicativos para gestão do negócio e simulador de vendas",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "A Get Smart tem conexão Wi-Fi, 3G e 4G",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "A Get Smart tem bateria com duração de até 12h",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "As duas aceitam pagamento por aproximação, Pix e QR Code",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "As duas permitem enviar o comprovante impresso ou via SMS",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Bateria com até 12hrs de duração\nTela touchscreen\nManutenção vitalícia"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Comprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Wi-fi, chip 3G e plano de dados grátis"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Aplicativos para gestão do seu negócio\nSimulador de vendas"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Conexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Sem fio com duração de até 12h de bateria"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Pagamento por aproximação, Pix e QR Code"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Comprovante impresso na hora ou via SMS"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All features stated are directly quoted from the two official passages.",
+      "factual_correctness": "Every feature matches the source pages without contradiction.",
+      "relevance": "Directly compares both machines answering the merchant's question.",
+      "usefulness": "Clear, concise Portuguese comparison distinguishing the two models."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00053904,
+     "usage": {
+      "input_tokens": 3980,
+      "cache_read_tokens": 3840,
+      "cache_creation_tokens": 0,
+      "output_tokens": 395
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_7c2b6e59c82745068a95",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Get Clássica tem tela touchscreen",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A Get Clássica tem reposição de bobina grátis e automática",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A Get Clássica tem conexão Wi-Fi, chip 3G e plano de dados gratuitos",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "A Get Smart inclui aplicativos para gestão do negócio e simulador de vendas",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "A Get Smart tem conexão Wi-Fi, 3G e 4G",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "A Get Smart tem bateria com duração de até 12h",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "As duas aceitam pagamento por aproximação, Pix e QR Code",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "As duas permitem enviar o comprovante impresso ou via SMS",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Bateria com até 12hrs de duração\nTela touchscreen"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Comprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Wi-fi, chip 3G e plano de dados grátis"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Aplicativos para gestão do seu negócio\nSimulador de vendas"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Conexão Wi-Fi, 3G, 4G e plano de dados gratuitos"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Sem fio com duração de até 12h de bateria"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Pagamento por aproximação, Pix e QR Code"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Comprovante impresso na hora ou via SMS"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every statement is quoted directly from the two official Getnet passages.",
+      "factual_correctness": "All features match the passages, no contradictions or invented details.",
+      "relevance": "It directly answers the difference between Get Clássica and Get Smart.",
+      "usefulness": "Clear, concise, polite, in Portuguese, and gives comparable feature lists."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00048024,
+     "usage": {
+      "input_tokens": 3980,
+      "cache_read_tokens": 3840,
+      "cache_creation_tokens": 0,
+      "output_tokens": 346
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "PT06",
+   "repetition": 1,
+   "request_id": "req_eval97a3646c38e9",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Como funciona a antecipação de recebíveis na Getnet?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Você pode antecipar vendas no crédito, à vista ou parceladas pelo App Getnet Brasil. Acesse **Serviços > Antecipação de Vendas**, escolha a conta bancária, confira a simulação e confirme a solicitação. O valor mínimo é de R$50,00; acompanhe o status em “Meus Pedidos”.\n\nPara habilitar a Antecipação Automática, acesse **Serviços > Antecipação Automática**. É necessário ter perfil administrativo e senha, e a solicitação pode levar até 48 horas. A antecipação só ocorre com saldo de pelo menos R$ 50,00 e está sujeita à avaliação individual de crédito.\n\nAs taxas variam conforme a transação, o volume de vendas e o segmento. Consulte as condições do seu contrato no App Getnet Brasil ou no Portal do Cliente Getnet.",
+   "sources": [
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Taxas Getnet: Entenda nosso MDR (taxa por transação) - Getnet",
+    "Como habilitar antecipação automática pelo App - Getnet",
+    "Como antecipar suas vendas pelo app - Getnet"
+   ],
+   "duration_ms": 7887,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Como funciona a antecipação de recebíveis na Getnet?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Taxas Getnet: Entenda nosso MDR (taxa por transação) - Getnet",
+     "Como habilitar antecipação automática pelo App - Getnet",
+     "Como antecipar suas vendas pelo app - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nSim, você pode solicitar a alteração das taxas nos canais da Getnet:\nAplicativo da Getnet;\nPortal do Cliente\n– para contratação de máquina adicional (aluguel ou compra);\nCentral de Relacionamento Getnet, por meio do telefone 4002-4000 e realizar a solicitação.\nQual a taxa para Antecipação Automática?\nQual a taxa para Antecipação Automática?\nA Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’. Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática.\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nInformações de taxas\npara venda no débito e crédito\nPara maior transparência disponibilizamos todas as taxas cobradas em suas transações de vendas.\nPlano de recebimento:\n2 dias úteis*\nReceba conforme\nsuas vendas\nDébito:\n1,89%\n1,95%\nCrédito à vista:\n3,99%"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-taxas-taxas-por-transacao",
+      "text": "Taxas Getnet: Entenda nosso MDR (taxa por transação) - Getnet\n2. Taxa de Transação:\nCobrada por cada transação realizada, seja ela de crédito, débito, Pix ou parcelamento.\n3.Taxa de Antecipação:\nAplicada quando você opta por antecipar os recebíveis das vendas realizadas.\nComo as taxas são calculadas?\nAs taxas da Getnet são calculadas com base em diversos fatores, incluindo o tipo de transação, o volume de vendas e o segmento do seu negócio. Para obter uma estimativa precisa das taxas aplicáveis ao seu caso, recomendamos que você consulte nossa página de taxas.\nBenefícios das taxas da Getnet\nTransparência: Todas as taxas são claramente detalhadas, sem surpresas.\nCompetitividade: Oferecemos taxas competitivas para ajudar seu negócio a crescer.\nFlexibilidade: Opções de antecipação de recebíveis para melhorar seu fluxo de caixa.\nAplicativo Getnet (disponível iOS e Android): é possível conferir informações sobre taxas e demais produtos contratados.\nVocê pode consultar as taxas também no Aplicativo Getnet Brasil e no Portal do Cliente Getnet.\nPortal do Cliente Getnet: opção “Credenciamento”, “Impressão do contrato” ou opção “Produtos contratados e taxas”."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-habilitar-antecipacao-automatica-pelo-app",
+      "text": "Como habilitar antecipação automática pelo App - Getnet\nVocê pode habilitar a antecipação automática direto pelo App Getnet Brasil. Contudo, lembre-se que para qualquer solicitação de ativação e desativação é necessário ter um perfil administrativo e [credential removed] conseguir seguir.\nPasso a passo para habilitar a antecipação automática:\n1. Acesse o App com seu login e [credential removed]\n2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;\n4. Clique Habilitar;\n5. Insira sua [credential removed] leia os termos e condições e clique Habilitar;\n6. Pronto! Sua solicitação foi enviada e pode demorar até 48 horas.\n7. Verifique o valor final e clique em Antecipar.\nCaso deseje desabilitar, basta selecionar Antecipação Automática na área Serviços e desabilitar.\nA habilitação é livre, porém para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 4188,
+     "kept_chars": 4188,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Você pode antecipar vendas no crédito, à vista ou parceladas pelo App Getnet Brasil. Acesse **Serviços > Antecipação de Vendas**, escolha a conta bancária, confira a simulação e confirme a solicitação. O valor mínimo é de R$50,00; acompanhe o status em “Meus Pedidos”.\n\nPara habilitar a Antecipação Automática, acesse **Serviços > Antecipação Automática**. É necessário ter perfil administrativo e senha, e a solicitação pode levar até 48 horas. A antecipação só ocorre com saldo de pelo menos R$ 50,00 e está sujeita à avaliação individual de crédito.\n\nAs taxas variam conforme a transação, o volume de vendas e o segmento. Consulte as condições do seu contrato no App Getnet Brasil ou no Portal do Cliente Getnet."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 4188,
+    "kept_chars": 4188,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.00063447,
+   "judge": {
+    "evaluation_id": "eval_a6d2add754be411f8ac6",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Você pode antecipar vendas no crédito, à vista ou parceladas pelo App Getnet Brasil",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Acesse Serviços > Antecipação de Vendas",
+       "kind": "guidance"
+      },
+      {
+       "n": 3,
+       "text": "escolha a conta bancária",
+       "kind": "guidance"
+      },
+      {
+       "n": 4,
+       "text": "confira a simulação",
+       "kind": "guidance"
+      },
+      {
+       "n": 5,
+       "text": "confirme a solicitação",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "O valor mínimo é de R$50,00",
+       "kind": "value"
+      },
+      {
+       "n": 7,
+       "text": "acompanhe o status em “Meus Pedidos”",
+       "kind": "guidance"
+      },
+      {
+       "n": 8,
+       "text": "Para habilitar a Antecipação Automática, acesse Serviços > Antecipação Automática",
+       "kind": "guidance"
+      },
+      {
+       "n": 9,
+       "text": "É necessário ter perfil administrativo e senha",
+       "kind": "fact"
+      },
+      {
+       "n": 10,
+       "text": "a solicitação pode levar até 48 horas",
+       "kind": "date"
+      },
+      {
+       "n": 11,
+       "text": "A antecipação só ocorre com saldo de pelo menos R$ 50,00",
+       "kind": "fact"
+      },
+      {
+       "n": 12,
+       "text": "está sujeita à avaliação individual de crédito",
+       "kind": "fact"
+      },
+      {
+       "n": 13,
+       "text": "As taxas variam conforme a transação, o volume de vendas e o segmento",
+       "kind": "fact"
+      },
+      {
+       "n": 14,
+       "text": "Consulte as condições do seu contrato no App Getnet Brasil ou no Portal do Cliente Getnet",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Escolha qual você deseja receber o valor antecipado."
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;"
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "é necessário ter um perfil administrativo e [credential removed] conseguir seguir."
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "Sua solicitação foi enviada e pode demorar até 48 horas."
+      },
+      {
+       "n": 11,
+       "verdict": "supported",
+       "support": "para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+      },
+      {
+       "n": 12,
+       "verdict": "supported",
+       "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato"
+      },
+      {
+       "n": 13,
+       "verdict": "supported",
+       "support": "As taxas da Getnet são calculadas com base em diversos fatores, incluindo o tipo de transação, o volume de vendas e o segmento do seu negócio."
+      },
+      {
+       "n": 14,
+       "verdict": "generic",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts and steps trace to the passages, except the generic reference to contract conditions.",
+     "factual_correctness": "Amounts, steps and conditions match the evidence with no contradictions.",
+     "relevance": "Directly explains how receivables anticipation works, including automatic anticipation and minimum value.",
+     "usefulness": "Clear, concise, in Portuguese, with actionable app steps and plain statement of conditions."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00157459,
+    "usage": {
+     "input_tokens": 4772,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 715
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_a6d2add754be411f8ac6",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Você pode antecipar vendas no crédito, à vista ou parceladas pelo App Getnet Brasil",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Acesse Serviços > Antecipação de Vendas",
+        "kind": "guidance"
+       },
+       {
+        "n": 3,
+        "text": "escolha a conta bancária",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "confira a simulação",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "confirme a solicitação",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "O valor mínimo é de R$50,00",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "acompanhe o status em “Meus Pedidos”",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Para habilitar a Antecipação Automática, acesse Serviços > Antecipação Automática",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "É necessário ter perfil administrativo e senha",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "a solicitação pode levar até 48 horas",
+        "kind": "date"
+       },
+       {
+        "n": 11,
+        "text": "A antecipação só ocorre com saldo de pelo menos R$ 50,00",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "está sujeita à avaliação individual de crédito",
+        "kind": "fact"
+       },
+       {
+        "n": 13,
+        "text": "As taxas variam conforme a transação, o volume de vendas e o segmento",
+        "kind": "fact"
+       },
+       {
+        "n": 14,
+        "text": "Consulte as condições do seu contrato no App Getnet Brasil ou no Portal do Cliente Getnet",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Escolha qual você deseja receber o valor antecipado."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "é necessário ter um perfil administrativo e [credential removed] conseguir seguir."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Sua solicitação foi enviada e pode demorar até 48 horas."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato"
+       },
+       {
+        "n": 13,
+        "verdict": "supported",
+        "support": "As taxas da Getnet são calculadas com base em diversos fatores, incluindo o tipo de transação, o volume de vendas e o segmento do seu negócio."
+       },
+       {
+        "n": 14,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts and steps trace to the passages, except the generic reference to contract conditions.",
+      "factual_correctness": "Amounts, steps and conditions match the evidence with no contradictions.",
+      "relevance": "Directly explains how receivables anticipation works, including automatic anticipation and minimum value.",
+      "usefulness": "Clear, concise, in Portuguese, with actionable app steps and plain statement of conditions."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00157459,
+     "usage": {
+      "input_tokens": 4772,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 715
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_1d64cb946ed84b70a63a",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0039621,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\"claim..."
+    },
+    {
+     "evaluation_id": "eval_9dc9d73d0a344bac93fb",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Você pode antecipar vendas no crédito, à vista ou parceladas pelo App Getnet Brasil",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Acesse Serviços > Antecipação de Vendas",
+        "kind": "guidance"
+       },
+       {
+        "n": 3,
+        "text": "escolha a conta bancária",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "confira a simulação",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "confirme a solicitação",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "O valor mínimo é de R$50,00",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "acompanhe o status em “Meus Pedidos”",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Para habilitar a Antecipação Automática, acesse Serviços > Antecipação Automática",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "É necessário ter perfil administrativo e senha",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "a solicitação pode levar até 48 horas",
+        "kind": "date"
+       },
+       {
+        "n": 11,
+        "text": "A antecipação só ocorre com saldo de pelo menos R$ 50,00",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "está sujeita à avaliação individual de crédito",
+        "kind": "fact"
+       },
+       {
+        "n": 13,
+        "text": "As taxas variam conforme a transação, o volume de vendas e o segmento",
+        "kind": "fact"
+       },
+       {
+        "n": 14,
+        "text": "Consulte as condições do seu contrato no App Getnet Brasil ou no Portal do Cliente Getnet",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Escolha qual você deseja receber o valor antecipado."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "é necessário ter um perfil administrativo e [credential removed] conseguir seguir."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "6. Pronto! Sua solicitação foi enviada e pode demorar até 48 horas."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+       },
+       {
+        "n": 13,
+        "verdict": "supported",
+        "support": "As taxas da Getnet são calculadas com base em diversos fatores, incluindo o tipo de transação, o volume de vendas e o segmento do seu negócio."
+       },
+       {
+        "n": 14,
+        "verdict": "partial",
+        "support": "Você pode consultar as taxas também no Aplicativo Getnet Brasil e no Portal do Cliente Getnet."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Nearly all facts trace to the passages; the contract-conditions phrasing is only partly backed by items.",
+      "factual_correctness": "Amounts, steps and timings match the evidence; slight overreach on consulting contract conditions.",
+      "relevance": "Directly explains how receivable anticipation works, covering manual and automatic routes.",
+      "usefulness": "Clear, concise and in Portuguese with actionable steps; contract wording is a minor weakness."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00099725,
+     "usage": {
+      "input_tokens": 4772,
+      "cache_read_tokens": 4608,
+      "cache_creation_tokens": 0,
+      "output_tokens": 767
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "PT05",
+   "repetition": 1,
+   "request_id": "req_eval26be86e93ecf",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Minha maquininha não conecta na internet, o que eu faço?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Sua Get Smart está offline. A última comunicação foi em 06/11 às 21:16. O Wi-Fi aparece configurado, mas não há conexão no momento.\n\n1. Na tela inicial, selecione “Wi-Fi” > “Procurar Redes”, escolha sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n2. Para testar a comunicação, pressione o botão de função (F, # ou o botão da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação.",
+   "sources": [
+    "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Card machine status (your account)"
+   ],
+   "duration_ms": 13479,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Minha maquininha não conecta na internet, o que eu faço?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Card machine status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-08T10:25:00-03:00\", \"created_at\": \"2026-09-08T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-07T00:21:14-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"checks\": [{\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-07T00:21:14-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-07T00:21:14-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"device\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": \"dev_1988_gs01\"}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\", \"minutes_since_last_seen\": 184, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-07T00:21:20-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+      "text": "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet\nConectar sua maquininha Getnet ao Wi-Fi é um passo essencial para garantir transações rápidas e seguras. A boa notícia é que o processo é simples e pode ser feito em poucos minutos. Siga este guia rápido:\nPasso a passo para configurar o Wi-Fi na maquininha Getnet\n1. Acesse a opção de Wi-Fi na tela inicial.\nNa tela principal da sua maquininha, clique na opção “Wi-Fi”.\n2. Procure pelas redes disponíveis.\nSelecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas.\n3. Escolha sua rede.\nLocalize o nome da sua rede na lista e clique sobre ela.\n4. Insira a [credential removed] Wi-Fi.\nDigite a [credential removed] sua rede com atenção e confirme.\n5. Conexão concluída!\nApós a confirmação, sua maquininha estará conectada à internet.\nBenefícios de conectar ao Wi-Fi\nTransações mais rápidas:\nA conexão Wi-Fi oferece maior estabilidade em comparação a redes móveis.\nFacilidade de uso:\nIdeal para ambientes fixos, como lojas ou escritórios.\nEconomia de dados:\nEvita o uso do plano de dados da maquininha.\nDica:\nCertifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros. Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\n• Pressione o botão função – F, # ou o da sua máquina\n• Pressione 60\n• Selecione a opção 2 – manutenção\n• Selecione a opção 1 – teste de comunicação\nQuais os benefícios do Chip Algar?\nQuais os benefícios do Chip Algar?\n– Um único Chip que se conecta a várias operadoras\n– Você pode utilizar a sua máquina em qualquer local com cobertura 2G/3G\n– Elimina necessidade de trocas de Chip\nO que é o Chip Algar?\nO que é o Chip Algar?\nO chip algar é um chip multioperadora, ou seja, é uma solução na qual um único chip se conecta a várias operadoras, garantindo a conectividade em todo o Brasil.\nver mais\nAluguel\nQuais bandeiras são consideradas para compor o faturamento mínimo estipulado pela condição comercial?\nQuais bandeiras são consideradas para compor o faturamento mínimo estipulado pela condição comercial?\nPara conceder o benefício da isenção, será avaliado qual foi o valor transacionado nas bandeiras Visa, Master, Elo, Amex e Hipercard. Não é considerado o faturamento de voucher.\nAs condições comerciais são cumulativas? O que acontecerá caso ocorra a contratação de uma nova condição comercial?"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3716,
+     "kept_chars": 3716,
+     "items": 5,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Sua Get Smart está offline. A última comunicação foi em 06/11 às 21:16. O Wi-Fi aparece configurado, mas não há conexão no momento.\n\n1. Na tela inicial, selecione “Wi-Fi” > “Procurar Redes”, escolha sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n2. Para testar a comunicação, pressione o botão de função (F, # ou o botão da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3716,
+    "kept_chars": 3716,
+    "items": 5,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00094316,
+   "judge": {
+    "evaluation_id": "eval_ada61b567f084960b0da",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Sua Get Smart está offline.",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "A última comunicação foi em 06/11 às 21:16.",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "O Wi-Fi aparece configurado, mas não há conexão no momento.",
+       "kind": "status"
+      },
+      {
+       "n": 4,
+       "text": "Na tela inicial, selecione “Wi-Fi” > “Procurar Redes”, escolha sua rede, digite a [credential removed] atenção e confirme.",
+       "kind": "guidance"
+      },
+      {
+       "n": 5,
+       "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "Para testar a comunicação, pressione o botão de função (F, # ou o botão da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"status\": \"offline\" ... \"model\": \"Get Smart\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"wifi_configured\": true ... \"status\": \"offline\", ... \"minutes_since_last_seen\": 184"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Selecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas. Localize o nome da sua rede na lista e clique sobre ela. Digite a [credential removed] sua rede com atenção e confirme."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros."
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "Pressione o botão função – F, # ou o da sua máquina • Pressione 60 • Selecione a opção 2 – manutenção • Selecione a opção 1 – teste de comunicação"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every fact and step traces to the device tool result or the two Getnet passages.",
+     "factual_correctness": "Offline status, last-seen time and steps all match the evidence consistently.",
+     "relevance": "Directly addresses the merchant's Wi-Fi connection problem with diagnosis and steps.",
+     "usefulness": "Clear, concise, in Portuguese, with actionable troubleshooting steps and stated device status."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00111666,
+    "usage": {
+     "input_tokens": 4455,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 444
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_ada61b567f084960b0da",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sua Get Smart está offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "A última comunicação foi em 06/11 às 21:16.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O Wi-Fi aparece configurado, mas não há conexão no momento.",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "Na tela inicial, selecione “Wi-Fi” > “Procurar Redes”, escolha sua rede, digite a [credential removed] atenção e confirme.",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Para testar a comunicação, pressione o botão de função (F, # ou o botão da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"status\": \"offline\" ... \"model\": \"Get Smart\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true ... \"status\": \"offline\", ... \"minutes_since_last_seen\": 184"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Selecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas. Localize o nome da sua rede na lista e clique sobre ela. Digite a [credential removed] sua rede com atenção e confirme."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Pressione o botão função – F, # ou o da sua máquina • Pressione 60 • Selecione a opção 2 – manutenção • Selecione a opção 1 – teste de comunicação"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every fact and step traces to the device tool result or the two Getnet passages.",
+      "factual_correctness": "Offline status, last-seen time and steps all match the evidence consistently.",
+      "relevance": "Directly addresses the merchant's Wi-Fi connection problem with diagnosis and steps.",
+      "usefulness": "Clear, concise, in Portuguese, with actionable troubleshooting steps and stated device status."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00111666,
+     "usage": {
+      "input_tokens": 4455,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 444
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_3267d400caec415d95a0",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sua Get Smart está offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "A última comunicação foi em 06/11 às 21:16.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O Wi-Fi aparece configurado, mas não há conexão no momento.",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "Na tela inicial, selecione “Wi-Fi” > “Procurar Redes”, escolha sua rede, digite a [credential removed] atenção e confirme.",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Para testar a comunicação, pressione o botão de função (F, # ou o botão da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\"... \"minutes_since_last_seen\": 184"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true\", ... \"status\": \"offline\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Na tela principal da sua maquininha, clique na opção \"Wi-Fi\". Selecione \"Procurar Redes\"... Localize o nome da sua rede na lista e clique sobre ela. Digite a [credential removed] sua rede"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Pressione o botão função – F, # ou o da sua máquina • Pressione 60 • Selecione a opção 2 – manutenção • Selecione a opção 1 – teste de comunicação"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every fact, status, date and step is traced to tool results or official passages.",
+      "factual_correctness": "Reply matches device status and instructions accurately and is internally consistent.",
+      "relevance": "Directly addresses the merchant's Wi-Fi connection problem with diagnostic and troubleshooting steps.",
+      "usefulness": "Clear, concise, polite Portuguese with actionable steps tailored to the merchant's device."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00061904,
+     "usage": {
+      "input_tokens": 4455,
+      "cache_read_tokens": 4224,
+      "cache_creation_tokens": 0,
+      "output_tokens": 437
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f67a0ecf835c44018d54",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sua Get Smart está offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "A última comunicação foi em 06/11 às 21:16.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O Wi-Fi aparece configurado, mas não há conexão no momento.",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "Na tela inicial, selecione “Wi-Fi” > “Procurar Redes”, escolha sua rede, digite a [credential removed] atenção e confirme.",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Para testar a comunicação, pressione o botão de função (F, # ou o botão da sua máquina), pressione 60, selecione 2 – manutenção e depois 1 – teste de comunicação.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true ... \"status\": \"offline\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Na tela principal da sua maquininha, clique na opção “Wi-Fi”. Selecione “Procurar Redes” ... Digite a [credential removed] sua rede com atenção e confirme."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Pressione o botão função – F, # ou o da sua máquina • Pressione 60 • Selecione a opção 2 – manutenção • Selecione a opção 1 – teste de comunicação"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every status, date and step in the reply traces to tool results and the cited passages.",
+      "factual_correctness": "Offline status, last-seen timestamp and Wi-Fi configuration match the device tool result exactly.",
+      "relevance": "Directly addresses the merchant's Wi-Fi connection problem with the diagnostic and fixes.",
+      "usefulness": "Clear, concise Portuguese steps the merchant can act on immediately."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00059984,
+     "usage": {
+      "input_tokens": 4455,
+      "cache_read_tokens": 4224,
+      "cache_creation_tokens": 0,
+      "output_tokens": 421
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "EX08",
+   "repetition": 1,
+   "request_id": "req_eval8ad392a1907a",
+   "split": "dev",
+   "language": "en",
+   "message": "My card machine is showing a transaction decline error.",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "The recent records show two card authorization declines, not a confirmed card-machine fault:\n\n- On November 6, 2026, a credit transaction for R$ 230,00 was declined with code 51. The buyer’s card had insufficient balance or limit. Offer another card or Pix; retry is not allowed.\n- On November 4, 2026, a debit transaction for R$ 45,90 was declined with code 05. The issuer did not authorize it. Ask the buyer to contact their bank or use another payment method.\n\nIf the screen specifically shows “Erro ADQ,” check the displayed ADQ code to determine the equipment procedure.",
+   "sources": [
+    "Transações negadas",
+    "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+    "Erro ADQ 1-50: erro de leitura - Getnet",
+    "Card authorization events (your account)"
+   ],
+   "duration_ms": 12734,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "find_authorization_events"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "My card machine is showing a transaction decline error.",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Transações negadas",
+     "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+     "Erro ADQ 1-50: erro de leitura - Getnet",
+     "Card authorization events (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:20:01-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"checks\": [{\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-07T00:20:01-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"0 declined transaction(s) today.\", \"observed_at\": \"2026-11-07T00:20:01-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-07T00:20:01-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"authorization\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "find_authorization_events",
+      "text": "{\"arguments\": {\"limit\": 5, \"period\": \"last_7_days\", \"status\": \"declined\"}, \"result\": {\"date_from\": \"2026-11-01\", \"date_to\": \"2026-11-07\", \"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000}, \"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\", \"occurred_at\": \"2026-11-06T21:06:41-03:00\", \"payment_type\": \"credit\", \"reason_category\": \"insufficient_funds\", \"response_code\": \"51\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0101\"}, {\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\", \"minor\": 4590}, \"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\", \"occurred_at\": \"2026-11-04T16:02:00-03:00\", \"payment_type\": \"debit\", \"reason_category\": \"issuer_declined\", \"response_code\": \"05\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0100\"}], \"note\": \"Only codes documented in the demo have a reason; others stay unknown.\", \"observed_at\": \"2026-11-07T00:20:08-03:00\", \"source\": \"AuthorizationsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "demo:KB-DEMO-AUTHORIZATIONS-001",
+      "text": "Transações negadas\n## Códigos de resposta documentados na demonstração\n\nCódigos sintéticos do ambiente de demonstração. Um código fora desta tabela tem motivo desconhecido.\n\n| Código | Categoria | O que significa para o lojista | Próximo passo |\n| --- | --- | --- | --- |\n| 05 | issuer_declined | O banco emissor do cartão não autorizou a compra. | Pedir ao comprador que fale com o banco emissor ou use outro meio de pagamento. |\n| 51 | insufficient_funds | Saldo ou limite insuficiente no cartão do comprador. | Oferecer outro meio de pagamento, como outro cartão ou Pix. |\n| 57 | not_permitted | Transação não permitida para este cartão. | Confirmar se a bandeira e a modalidade estão habilitadas; se estiverem, pedir outro meio de pagamento. |\n| 91 | issuer_unavailable | Emissor temporariamente indisponível. | Aguardar alguns minutos e tentar novamente. |\n\nNegativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha. Mensagens \"Erro ADQ\" na tela são erros do equipamento e seguem a página oficial de erros da maquininha."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-91",
+      "text": "Erro ADQ 4-91: erro na aprovação da venda - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-1-50",
+      "text": "Erro ADQ 1-50: erro de leitura - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso apareça um “Erro ADQ” na tela da sua maquininha, você mesmo pode corrigir isso rapidamente. Verifique o código do erro e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 4050,
+     "kept_chars": 4050,
+     "items": 6,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "The recent records show two card authorization declines, not a confirmed card-machine fault:\n\n- On November 6, 2026, a credit transaction for R$ 230,00 was declined with code 51. The buyer’s card had insufficient balance or limit. Offer another card or Pix; retry is not allowed.\n- On November 4, 2026, a debit transaction for R$ 45,90 was declined with code 05. The issuer did not authorize it. Ask the buyer to contact their bank or use another payment method.\n\nIf the screen specifically shows “Erro ADQ,” check the displayed ADQ code to determine the equipment procedure."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 4050,
+    "kept_chars": 4050,
+    "items": 6,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00104538,
+   "judge": {
+    "evaluation_id": "eval_63382fa2282445b58164",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "The recent records show two card authorization declines, not a confirmed card-machine fault",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "On November 6, 2026, a credit transaction for R$ 230,00 was declined with code 51",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "a credit transaction for R$ 230,00 was declined with code 51",
+       "kind": "value"
+      },
+      {
+       "n": 4,
+       "text": "The buyer's card had insufficient balance or limit",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Offer another card or Pix",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "retry is not allowed",
+       "kind": "fact"
+      },
+      {
+       "n": 7,
+       "text": "On November 4, 2026, a debit transaction for R$ 45,90 was declined with code 05",
+       "kind": "date"
+      },
+      {
+       "n": 8,
+       "text": "a debit transaction for R$ 45,90 was declined with code 05",
+       "kind": "value"
+      },
+      {
+       "n": 9,
+       "text": "The issuer did not authorize it",
+       "kind": "fact"
+      },
+      {
+       "n": 10,
+       "text": "Ask the buyer to contact their bank or use another payment method",
+       "kind": "guidance"
+      },
+      {
+       "n": 11,
+       "text": "If the screen specifically shows \"Erro ADQ,\" check the displayed ADQ code to determine the equipment procedure",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha. Os eventos: status \"declined\" for both transactions."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"occurred_at\": \"2026-11-06T21:06:41-03:00\", \"payment_type\": \"credit\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"display\": \"R$ 230,00\", \"minor\": 23000 ... \"response_code\": \"51\", ... \"status\": \"declined\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "\"retry_allowed\": false"
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "\"occurred_at\": \"2026-11-04T16:02:00-03:00\", \"payment_type\": \"debit\""
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "\"display\": \"R$ 45,90\", \"minor\": 4590 ... \"response_code\": \"05\", ... \"status\": \"declined\""
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+      },
+      {
+       "n": 11,
+       "verdict": "supported",
+       "support": "Mensagens \"Erro ADQ\" na tela são erros do equipamento e seguem a página oficial de erros da maquininha."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every amount, date, code and step is traceable to the tool results and passages.",
+     "factual_correctness": "Amounts, dates, codes and decline reasons all agree with the authorization events and demo table.",
+     "relevance": "It addresses the decline report and explains the ADQ cases, matching the merchant's question.",
+     "usefulness": "Clear, polite English reply with concrete next steps and the ADQ fallback guidance."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00144786,
+    "usage": {
+     "input_tokens": 4767,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 642
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_63382fa2282445b58164",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "The recent records show two card authorization declines, not a confirmed card-machine fault",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "On November 6, 2026, a credit transaction for R$ 230,00 was declined with code 51",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "a credit transaction for R$ 230,00 was declined with code 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "The buyer's card had insufficient balance or limit",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Offer another card or Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "retry is not allowed",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "On November 4, 2026, a debit transaction for R$ 45,90 was declined with code 05",
+        "kind": "date"
+       },
+       {
+        "n": 8,
+        "text": "a debit transaction for R$ 45,90 was declined with code 05",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "The issuer did not authorize it",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "Ask the buyer to contact their bank or use another payment method",
+        "kind": "guidance"
+       },
+       {
+        "n": 11,
+        "text": "If the screen specifically shows \"Erro ADQ,\" check the displayed ADQ code to determine the equipment procedure",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha. Os eventos: status \"declined\" for both transactions."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-06T21:06:41-03:00\", \"payment_type\": \"credit\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"display\": \"R$ 230,00\", \"minor\": 23000 ... \"response_code\": \"51\", ... \"status\": \"declined\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"retry_allowed\": false"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-04T16:02:00-03:00\", \"payment_type\": \"debit\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"display\": \"R$ 45,90\", \"minor\": 4590 ... \"response_code\": \"05\", ... \"status\": \"declined\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "Mensagens \"Erro ADQ\" na tela são erros do equipamento e seguem a página oficial de erros da maquininha."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, date, code and step is traceable to the tool results and passages.",
+      "factual_correctness": "Amounts, dates, codes and decline reasons all agree with the authorization events and demo table.",
+      "relevance": "It addresses the decline report and explains the ADQ cases, matching the merchant's question.",
+      "usefulness": "Clear, polite English reply with concrete next steps and the ADQ fallback guidance."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00144786,
+     "usage": {
+      "input_tokens": 4767,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 642
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_4bae4fa506c84c978e49",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "The recent records show two card authorization declines, not a confirmed card-machine fault",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "On November 6, 2026, a credit transaction for R$ 230,00 was declined with code 51",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "a credit transaction for R$ 230,00 was declined with code 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "The buyer's card had insufficient balance or limit",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Offer another card or Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "retry is not allowed",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "On November 4, 2026, a debit transaction for R$ 45,90 was declined with code 05",
+        "kind": "date"
+       },
+       {
+        "n": 8,
+        "text": "a debit transaction for R$ 45,90 was declined with code 05",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "The issuer did not authorize it",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "Ask the buyer to contact their bank or use another payment method",
+        "kind": "guidance"
+       },
+       {
+        "n": 11,
+        "text": "If the screen specifically shows \"Erro ADQ,\" check the displayed ADQ code to determine the equipment procedure",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-06T21:06:41-03:00\", \"payment_type\": \"credit\", \"reason_category\": \"insufficient_funds\", \"response_code\": \"51\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\"... \"response_code\": \"51\", ... \"status\": \"declined\", \"transaction_id\": \"txn_1988_0101\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"reason_category\": \"insufficient_funds\", \"response_code\": \"51\", \"retry_allowed\": false"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-04T16:02:00-03:00\", \"payment_type\": \"debit\", ... \"amount\": {\"display\": \"R$ 45,90\"...}, \"response_code\": \"05\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\", \"minor\": 4590}, ... \"response_code\": \"05\", ... \"status\": \"declined\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+       },
+       {
+        "n": 11,
+        "verdict": "partial",
+        "support": "Verifique o código apresentado e siga as instruções abaixo."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All amounts, dates, codes and steps trace to the tool results and the demo passage.",
+      "factual_correctness": "The reply matches the transaction records and correctly avoids concluding a machine fault.",
+      "relevance": "It addresses the decline error and points to the Erro ADQ procedure when applicable.",
+      "usefulness": "Clear, concise, English, with concrete next steps and the ADQ guidance."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00090935,
+     "usage": {
+      "input_tokens": 4767,
+      "cache_read_tokens": 4608,
+      "cache_creation_tokens": 0,
+      "output_tokens": 695
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_bbf4dd0e0cb04163a7eb",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "The recent records show two card authorization declines, not a confirmed card-machine fault",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "On November 6, 2026, a credit transaction for R$ 230,00 was declined with code 51",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "a credit transaction for R$ 230,00 was declined with code 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "The buyer's card had insufficient balance or limit",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Offer another card or Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "retry is not allowed",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "On November 4, 2026, a debit transaction for R$ 45,90 was declined with code 05",
+        "kind": "date"
+       },
+       {
+        "n": 8,
+        "text": "a debit transaction for R$ 45,90 was declined with code 05",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "The issuer did not authorize it",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "Ask the buyer to contact their bank or use another payment method",
+        "kind": "guidance"
+       },
+       {
+        "n": 11,
+        "text": "If the screen specifically shows \"Erro ADQ,\" check the displayed ADQ code to determine the equipment procedure",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "occurred_at: 2026-11-06T21:06:41-03:00, payment_type: credit, response_code: 51"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "amount display R$ 230,00, payment_type credit, response_code 51, status declined"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "customer_message: Saldo ou limite insuficiente no cartão do comprador."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "next_step: Ofereça outro meio de pagamento, como outro cartão ou Pix."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "retry_allowed: false"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "occurred_at: 2026-11-04T16:02:00-03:00, payment_type: debit, response_code: 05"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "amount display R$ 45,90, payment_type debit, response_code 05, status declined"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "customer_message: Transação não autorizada pelo banco emissor do cartão."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "next_step: Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "Verifique o código apresentado e siga as instruções abaixo."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, date, code, reason and next step traces to the authorization events and passages.",
+      "factual_correctness": "Decline details match the tool results and the reply correctly distinguishes declines from a machine fault.",
+      "relevance": "Addresses the decline error directly, explaining causes and next steps.",
+      "usefulness": "Clear, concise, polite English summary the merchant can act on immediately."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00075215,
+     "usage": {
+      "input_tokens": 4767,
+      "cache_read_tokens": 4608,
+      "cache_creation_tokens": 0,
+      "output_tokens": 564
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "UC14",
+   "repetition": 1,
+   "request_id": "req_eval4d6ea6fd2269",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Quero falar com um atendente humano",
+   "route": "human_handoff",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "escalation",
+   "answer": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261107-3E69A1.",
+   "sources": [],
+   "duration_ms": 5263,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Quero falar com um atendente humano",
+    "status": "handoff",
+    "route": "human_handoff",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-08T10:25:00-03:00\", \"created_at\": \"2026-09-08T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"status\": \"pending\"}, {\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"status\": \"attention\"}, {\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"0 declined transaction(s) today.\", \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"status\": \"ok\"}, {\"check\": \"contracts_service\", \"note\": \"Contract source reachable.\", \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-07T00:22:40-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"general\"}}"
+     },
+     {
+      "kind": "trace",
+      "label": "escalation protocol",
+      "text": "HO-20261107-3E69A1"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1490,
+     "kept_chars": 1490,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261107-3E69A1."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1490,
+    "kept_chars": 1490,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00035937,
+   "judge": {
+    "evaluation_id": "eval_e9625b39d5b54eb3b829",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Encaminhei seu caso para um atendente da nossa equipe",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "que vai responder por aqui",
+       "kind": "promise"
+      },
+      {
+       "n": 3,
+       "text": "Protocolo: HO-20261107-3E69A1",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "HO-20261107-3E69A1"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "HO-20261107-3E69A1"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "HO-20261107-3E69A1"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Handoff status and protocol code are both traceable to the evidence trace.",
+     "factual_correctness": "Reply matches handoff status and quotes the correct protocol code; no contradictions.",
+     "relevance": "Merchant asked for a human attendant and the reply confirms the handoff.",
+     "usefulness": "Clear, concise, polite Portuguese reply giving the protocol for follow-up."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00053856,
+    "usage": {
+     "input_tokens": 3416,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 222
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_e9625b39d5b54eb3b829",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encaminhei seu caso para um atendente da nossa equipe",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "que vai responder por aqui",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocolo: HO-20261107-3E69A1",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "HO-20261107-3E69A1"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "HO-20261107-3E69A1"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "HO-20261107-3E69A1"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Handoff status and protocol code are both traceable to the evidence trace.",
+      "factual_correctness": "Reply matches handoff status and quotes the correct protocol code; no contradictions.",
+      "relevance": "Merchant asked for a human attendant and the reply confirms the handoff.",
+      "usefulness": "Clear, concise, polite Portuguese reply giving the protocol for follow-up."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00053856,
+     "usage": {
+      "input_tokens": 3416,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 222
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_c2b3d8040f7a448ab9fc",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encaminhei seu caso para um atendente da nossa equipe",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "que vai responder por aqui",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocolo: HO-20261107-3E69A1",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "HO-20261107-3E69A1"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the handoff status and the escalation protocol code.",
+      "factual_correctness": "Reply agrees with the handoff status and protocol; nothing contradicted.",
+      "relevance": "Merchant asked for a human attendant and the case was handed off.",
+      "usefulness": "Clear, polite, in Portuguese, and gives the protocol; brief but actionable."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003324,
+     "usage": {
+      "input_tokens": 3416,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 207
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_7cf79f2ffca249259646",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encaminhei seu caso para um atendente da nossa equipe",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "que vai responder por aqui",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocolo: HO-20261107-3E69A1",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "HO-20261107-3E69A1"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the handoff status and the recorded protocol trace.",
+      "factual_correctness": "The reply correctly reflects the handoff status and the protocol code.",
+      "relevance": "The merchant asked for a human and the reply confirms the handoff.",
+      "usefulness": "Clear, polite, in Portuguese, and gives the protocol the merchant can reference."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003288,
+     "usage": {
+      "input_tokens": 3416,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 204
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

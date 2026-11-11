@@ -1,0 +1,680 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "holdout_v080",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v0110-qa-holdout-v080.json",
+  "recorded_answers": 25,
+  "only_sample": "seladas-holdout-03.csv",
+  "only_sample_ids": 1,
+  "selected_answers": 1,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 1,
+   "passed": 1.0,
+   "deterministic": 1.0,
+   "content": 1.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 6518,
+   "latency_p95_ms": 6518,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 1,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 5.0,
+    "factual_correctness": 5.0,
+    "relevance": 5.0,
+    "usefulness": 5.0
+   },
+   "unsupported_claim_rate": 0.0,
+   "claim_verdicts": {
+    "claims": 9,
+    "supported": 9,
+    "partial": 0,
+    "generic": 0,
+    "not_found": 0,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "holdout_v080": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6518,
+    "latency_p95_ms": 6518,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 9,
+     "supported": 9,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   },
+   "pt": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6518,
+    "latency_p95_ms": 6518,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 9,
+     "supported": 9,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "knowledge": {
+    "knowledge": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:23:25+00:00",
+  "judge_cost_usd": 0.00148,
+  "judge_usage": {
+   "judgements": 3,
+   "total": {
+    "input_tokens": 9528,
+    "cache_read_tokens": 8320,
+    "cache_creation_tokens": 0,
+    "output_tokens": 891
+   },
+   "mean": {
+    "input_tokens": 3176.0,
+    "cache_read_tokens": 2773.3,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 297.0
+   }
+  },
+  "web_evidence": {
+   "answers": 1,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 3,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     },
+     "factual_correctness": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     },
+     "relevance": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     },
+     "usefulness": {
+      "mean": 5.0,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 3
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.0,
+     "exact": 1.0,
+     "pairs": 3
+    }
+   },
+   "by_route": {
+    "knowledge": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "holdout_v080": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "HV080-PT-KNOW-CREDIARIO-PAYOUT",
+   "repetition": 1,
+   "request_id": "req_eval2b98b89ca1ae",
+   "split": "holdout_v080",
+   "language": "pt",
+   "message": "No crediário, se o cliente dividir em muitas vezes, eu recebo parcelado ou tudo junto? Em quanto tempo?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "No Crediário, você recebe o valor da venda de uma única vez, independentemente da quantidade de parcelas escolhida pelo cliente. O pagamento é feito em até 2 dias úteis após a captura da transação. Do valor da transação original, é descontada a taxa de desconto.",
+   "sources": [
+    "Crediário - Getnet"
+   ],
+   "duration_ms": 6518,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "No crediário, se o cliente dividir em muitas vezes, eu recebo parcelado ou tudo junto? Em quanto tempo?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Crediário - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-crediario",
+      "text": "Crediário - Getnet\nLembrando que a simulação é apenas para consulta, sendo sujeita a análise de crédito, portanto, cabe ao emissor do cartão aprovar a transação no momento da contratação.\nOnde visualizo o pagamento e em que prazo eu recebo?\nAs informações de pagamento podem ser consultadas no Aplicativo Getnet (Vendas) e/ou no\nPortal do Cliente.\nTodas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação, de uma única vez, independente da quantidade de parcelas escolhida pelo portador. Lembrando que do valor da transação original é subtraído o valor da taxa de desconto.\nQualquer estabelecimento pode ter o Crediário? E se eu não quiser ter o produto?\nA habilitação do produto Crediário está sujeita à análise pela Getnet.\nCaso você não deseje ter o Crediário como mais uma opção de pagamento, basta entrar em contato com a Central de Atendimento da Getnet e solicitar a desabilitação desta modalidade.\nainda tem\ndúvidas?"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 976,
+     "kept_chars": 976,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "No Crediário, você recebe o valor da venda de uma única vez, independentemente da quantidade de parcelas escolhida pelo cliente. O pagamento é feito em até 2 dias úteis após a captura da transação. Do valor da transação original, é descontada a taxa de desconto."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 976,
+    "kept_chars": 976,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00046077,
+   "judge": {
+    "evaluation_id": "eval_e6247fe3bae34e899af9",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "No Crediário, você recebe o valor da venda de uma única vez, independentemente da quantidade de parcelas escolhida pelo cliente.",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "O pagamento é feito em até 2 dias úteis após a captura da transação.",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "Do valor da transação original, é descontada a taxa de desconto.",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação, de uma única vez, independente da quantidade de parcelas escolhida pelo portador."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Lembrando que do valor da transação original é subtraído o valor da taxa de desconto."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All three statements are taken directly from the Crediário passage.",
+     "factual_correctness": "The reply matches the passage exactly on lump-sum payment, 2-day term and discount rate.",
+     "relevance": "It directly answers both parts: payment is lump sum and within 2 business days.",
+     "usefulness": "Clear, concise, polite, in Portuguese, and fully answers the merchant's question."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00060019,
+    "usage": {
+     "input_tokens": 3176,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 302
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_e6247fe3bae34e899af9",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "No Crediário, você recebe o valor da venda de uma única vez, independentemente da quantidade de parcelas escolhida pelo cliente.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "O pagamento é feito em até 2 dias úteis após a captura da transação.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Do valor da transação original, é descontada a taxa de desconto.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação, de uma única vez, independente da quantidade de parcelas escolhida pelo portador."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Lembrando que do valor da transação original é subtraído o valor da taxa de desconto."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All three statements are taken directly from the Crediário passage.",
+      "factual_correctness": "The reply matches the passage exactly on lump-sum payment, 2-day term and discount rate.",
+      "relevance": "It directly answers both parts: payment is lump sum and within 2 business days.",
+      "usefulness": "Clear, concise, polite, in Portuguese, and fully answers the merchant's question."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00060019,
+     "usage": {
+      "input_tokens": 3176,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 302
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_fa2f76c44d81412e9d4c",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "No Crediário, você recebe o valor da venda de uma única vez, independentemente da quantidade de parcelas escolhida pelo cliente.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "O pagamento é feito em até 2 dias úteis após a captura da transação.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Do valor da transação original, é descontada a taxa de desconto.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação, de uma única vez, independente da quantidade de parcelas escolhida pelo portador."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Lembrando que do valor da transação original é subtraído o valor da taxa de desconto."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Todas as afirmações da resposta reproduzem diretamente o trecho da página Crediário - Getnet.",
+      "factual_correctness": "Valores e prazos conferem com a evidência, sem contradições.",
+      "relevance": "Responde exatamente às duas perguntas: recebimento único e prazo de pagamento.",
+      "usefulness": "Clara, concisa, em português e com a informação prática que o lojista precisa."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00043526,
+     "usage": {
+      "input_tokens": 3176,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 290
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_855d5a1e6fe84331bb69",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "No Crediário, você recebe o valor da venda de uma única vez, independentemente da quantidade de parcelas escolhida pelo cliente.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "O pagamento é feito em até 2 dias úteis após a captura da transação.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Do valor da transação original, é descontada a taxa de desconto.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação, de uma única vez, independente da quantidade de parcelas escolhida pelo portador."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Todas as vendas realizadas na modalidade Crediário são pagas em até 2 dias úteis após a captura da transação"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Lembrando que do valor da transação original é subtraído o valor da taxa de desconto."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All three statements are quoted directly from the official Crediário passage.",
+      "factual_correctness": "The reply matches the evidence exactly on payout timing, single payment and discount rate.",
+      "relevance": "It directly answers both parts of the merchant's question about installments and timing.",
+      "usefulness": "Clear, concise and in Portuguese, giving the merchant the exact payout rule and deadline."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00044606,
+     "usage": {
+      "input_tokens": 3176,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 299
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

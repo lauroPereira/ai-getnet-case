@@ -1,0 +1,2535 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-05.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.8,
+   "deterministic": 1.0,
+   "content": 0.8,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 8522,
+   "latency_p95_ms": 12132,
+   "cost_usd": 0,
+   "judge_failed": 2,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.85,
+    "factual_correctness": 4.85,
+    "relevance": 4.85,
+    "usefulness": 4.62
+   },
+   "unsupported_claim_rate": 0.077,
+   "claim_verdicts": {
+    "claims": 64,
+    "supported": 60,
+    "partial": 3,
+    "generic": 1,
+    "not_found": 0,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8712,
+    "latency_p95_ms": 10379,
+    "cost_usd": 0,
+    "judge_failed": 2,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.5,
+     "factual_correctness": 4.5,
+     "relevance": 4.5,
+     "usefulness": 4.25
+    },
+    "unsupported_claim_rate": 0.25,
+    "claim_verdicts": {
+     "claims": 22,
+     "supported": 18,
+     "partial": 3,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "holdout": {
+    "n": 3,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8522,
+    "latency_p95_ms": 12132,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 4.78
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 42,
+     "supported": 42,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8712,
+    "latency_p95_ms": 10379,
+    "cost_usd": 0,
+    "judge_failed": 2,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.5,
+     "factual_correctness": 4.5,
+     "relevance": 4.5,
+     "usefulness": 4.25
+    },
+    "unsupported_claim_rate": 0.25,
+    "claim_verdicts": {
+     "claims": 22,
+     "supported": 18,
+     "partial": 3,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "pt": {
+    "n": 3,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8522,
+    "latency_p95_ms": 12132,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 4.78
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 42,
+     "supported": 42,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "general_web": {
+    "knowledge": 1
+   },
+   "knowledge": {
+    "knowledge": 1,
+    "knowledge → web": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:21:39+00:00",
+  "judge_cost_usd": 0.01626,
+  "judge_usage": {
+   "judgements": 13,
+   "total": {
+    "input_tokens": 49724,
+    "cache_read_tokens": 42240,
+    "cache_creation_tokens": 0,
+    "output_tokens": 5400
+   },
+   "mean": {
+    "input_tokens": 3824.9,
+    "cache_read_tokens": 3249.2,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 415.4
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 2,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 13,
+    "failed": 2,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.85,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 11
+     },
+     "factual_correctness": {
+      "mean": 4.85,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 11
+     },
+     "relevance": {
+      "mean": 4.85,
+      "std": 0.28,
+      "exact": 0.909,
+      "within_one": 0.909,
+      "pairs": 11
+     },
+     "usefulness": {
+      "mean": 4.62,
+      "std": 0.26,
+      "exact": 0.727,
+      "within_one": 1.0,
+      "pairs": 11
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.077,
+     "exact": 0.909,
+     "pairs": 11
+    }
+   },
+   "by_route": {
+    "general_web": {
+     "cases": 1,
+     "judgements": 2,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "relevance": {
+       "mean": 4.0,
+       "std": 1.41,
+       "exact": 0.0,
+       "within_one": 0.0,
+       "pairs": 1
+      },
+      "usefulness": {
+       "mean": 3.5,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.5,
+      "exact": 0.0,
+      "pairs": 1
+     }
+    },
+    "knowledge": {
+     "cases": 2,
+     "judgements": 6,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "usefulness": {
+       "mean": 4.67,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 6
+     }
+    },
+    "knowledge_and_support": {
+     "cases": 1,
+     "judgements": 2,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 1
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 2,
+     "judgements": 4,
+     "failed": 2,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.5,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 2
+      },
+      "factual_correctness": {
+       "mean": 4.5,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 2
+      },
+      "relevance": {
+       "mean": 4.5,
+       "std": 0.71,
+       "exact": 0.5,
+       "within_one": 0.5,
+       "pairs": 2
+      },
+      "usefulness": {
+       "mean": 4.25,
+       "std": 0.35,
+       "exact": 0.5,
+       "within_one": 1.0,
+       "pairs": 2
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.25,
+      "exact": 0.5,
+      "pairs": 2
+     }
+    },
+    "holdout": {
+     "cases": 3,
+     "judgements": 9,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "usefulness": {
+       "mean": 4.78,
+       "std": 0.19,
+       "exact": 0.778,
+       "within_one": 1.0,
+       "pairs": 9
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 9
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT03",
+   "repetition": 1,
+   "request_id": "req_evala9644f9cf1e7",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Quando vai cair o dinheiro das vendas de ontem?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "Das vendas de ontem, o Pix líquido de R$ 80,00 já foi confirmado na conta em 06/11/2026.\n\nO débito líquido de R$ 148,06 está previsto para 09/11/2026, mas o crédito ainda não foi confirmado. O crédito à vista líquido de R$ 1.162,20 está previsto para 10/11/2026, também sem confirmação até o momento.",
+   "sources": [
+    "Receivables schedule (your account)",
+    "Payout status (your account)"
+   ],
+   "duration_ms": 8522,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_receivables_schedule",
+    "get_payout_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Quando vai cair o dinheiro das vendas de ontem?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Receivables schedule (your account)",
+     "Payout status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:20:51-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-07T00:20:51-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-07T00:20:51-03:00\", \"status\": \"pending\"}], \"observed_at\": \"2026-11-07T00:20:51-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"receivables\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_receivables_schedule",
+      "text": "{\"arguments\": {\"date_field\": \"sale_date\", \"date_from\": null, \"date_to\": null, \"period\": \"yesterday\"}, \"result\": {\"count\": 3, \"date_field\": \"sale_date\", \"date_from\": \"2026-11-06\", \"date_to\": \"2026-11-06\", \"net_total\": {\"currency\": \"BRL\", \"display\": \"R$ 1.390,26\", \"minor\": 139026}, \"note\": \"Expected dates come from the schedule record. Use get_payout_status to know if credit is confirmed.\", \"observed_at\": \"2026-11-07T00:20:53-03:00\", \"receivables\": [{\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-09\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\", \"sale_captured_at\": \"2026-11-06T09:42:00-03:00\", \"sale_id\": \"sale_1988_0001\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-10\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 37,80\", \"minor\": 3780}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.200,00\", \"minor\": 120000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\", \"sale_captured_at\": \"2026-11-06T13:05:00-03:00\", \"sale_id\": \"sale_1988_0002\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-06\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 0,00\", \"minor\": 0}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, \"normalized_status\": \"settled\", \"payment_type\": \"pix\", \"receivable_id\": \"rcv_1988_0003\", \"sale_captured_at\": \"2026-11-06T17:30:00-03:00\", \"sale_id\": \"sale_1988_0003\", \"source_status\": \"SETTLED\", \"status_meaning\": \"Receivable settled.\"}], \"source\": \"ReceivablesMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_payout_status",
+      "text": "{\"arguments\": {\"receivable_ids\": [\"rcv_1988_0001\", \"rcv_1988_0002\", \"rcv_1988_0003\"]}, \"result\": {\"observed_at\": \"2026-11-07T00:20:54-03:00\", \"payouts\": [{\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\", \"stage\": \"PAID\", \"stage_meaning\": \"Credit confirmed in the receiving account.\"}], \"source\": \"PayoutMock\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3693,
+     "kept_chars": 3693,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Das vendas de ontem, o Pix líquido de R$ 80,00 já foi confirmado na conta em 06/11/2026.\n\nO débito líquido de R$ 148,06 está previsto para 09/11/2026, mas o crédito ainda não foi confirmado. O crédito à vista líquido de R$ 1.162,20 está previsto para 10/11/2026, também sem confirmação até o momento."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3693,
+    "kept_chars": 3693,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00067619,
+   "judge": {
+    "evaluation_id": "eval_3364e8087d9844f484f7",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Das vendas de ontem, o Pix líquido de R$ 80,00 já foi confirmado na conta em 06/11/2026",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "Pix líquido de R$ 80,00",
+       "kind": "value"
+      },
+      {
+       "n": 3,
+       "text": "confirmado na conta em 06/11/2026",
+       "kind": "date"
+      },
+      {
+       "n": 4,
+       "text": "O débito líquido de R$ 148,06 está previsto para 09/11/2026",
+       "kind": "date"
+      },
+      {
+       "n": 5,
+       "text": "débito líquido de R$ 148,06",
+       "kind": "value"
+      },
+      {
+       "n": 6,
+       "text": "o crédito ainda não foi confirmado",
+       "kind": "status"
+      },
+      {
+       "n": 7,
+       "text": "O crédito à vista líquido de R$ 1.162,20 está previsto para 10/11/2026",
+       "kind": "date"
+      },
+      {
+       "n": 8,
+       "text": "crédito à vista líquido de R$ 1.162,20",
+       "kind": "value"
+      },
+      {
+       "n": 9,
+       "text": "também sem confirmação até o momento",
+       "kind": "status"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\" ... \"receivable_id\": \"rcv_1988_0003\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000} ... \"payment_type\": \"pix\", \"receivable_id\": \"rcv_1988_0003\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"stage\": \"PAID\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"expected_payment_date\": \"2026-11-09\" ... \"net_amount\": {\"display\": \"R$ 148,06\"}, \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806} ... \"payment_type\": \"debit\""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "\"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", ... \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "\"expected_payment_date\": \"2026-11-10\" ... \"net_amount\": {\"display\": \"R$ 1.162,20\"}, \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\""
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220} ... \"payment_type\": \"credit\""
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "\"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every amount, date and status matches the receivables schedule and payout status tool results.",
+     "factual_correctness": "Amounts, dates and confirmation statuses all agree with the evidence without contradiction.",
+     "relevance": "The reply answers when yesterday's sales money will land, detailing each of the three receivables.",
+     "usefulness": "Clear, concise Portuguese giving each sale's amount, expected date and whether credit is confirmed."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00155539,
+    "usage": {
+     "input_tokens": 4544,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 756
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_3364e8087d9844f484f7",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Das vendas de ontem, o Pix líquido de R$ 80,00 já foi confirmado na conta em 06/11/2026",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Pix líquido de R$ 80,00",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "confirmado na conta em 06/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "O débito líquido de R$ 148,06 está previsto para 09/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 5,
+        "text": "débito líquido de R$ 148,06",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "o crédito ainda não foi confirmado",
+        "kind": "status"
+       },
+       {
+        "n": 7,
+        "text": "O crédito à vista líquido de R$ 1.162,20 está previsto para 10/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 8,
+        "text": "crédito à vista líquido de R$ 1.162,20",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "também sem confirmação até o momento",
+        "kind": "status"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\" ... \"receivable_id\": \"rcv_1988_0003\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000} ... \"payment_type\": \"pix\", \"receivable_id\": \"rcv_1988_0003\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"stage\": \"PAID\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-09\" ... \"net_amount\": {\"display\": \"R$ 148,06\"}, \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806} ... \"payment_type\": \"debit\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", ... \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-10\" ... \"net_amount\": {\"display\": \"R$ 1.162,20\"}, \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220} ... \"payment_type\": \"credit\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, date and status matches the receivables schedule and payout status tool results.",
+      "factual_correctness": "Amounts, dates and confirmation statuses all agree with the evidence without contradiction.",
+      "relevance": "The reply answers when yesterday's sales money will land, detailing each of the three receivables.",
+      "usefulness": "Clear, concise Portuguese giving each sale's amount, expected date and whether credit is confirmed."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00155539,
+     "usage": {
+      "input_tokens": 4544,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 756
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_e7aeff5d84db4a9c8d83",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Das vendas de ontem, o Pix líquido de R$ 80,00 já foi confirmado na conta em 06/11/2026",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Pix líquido de R$ 80,00",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "confirmado na conta em 06/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "O débito líquido de R$ 148,06 está previsto para 09/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 5,
+        "text": "débito líquido de R$ 148,06",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "o crédito ainda não foi confirmado",
+        "kind": "status"
+       },
+       {
+        "n": 7,
+        "text": "O crédito à vista líquido de R$ 1.162,20 está previsto para 10/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 8,
+        "text": "crédito à vista líquido de R$ 1.162,20",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "também sem confirmação até o momento",
+        "kind": "status"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"payment_type\": \"pix\" ... \"net_amount\": {\"display\": \"R$ 80,00\" ...}, ... \"normalized_status\": \"settled\"; \"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"pai"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\", \"minor\": 8000}, ... \"payment_type\": \"pix\", \"receivable_id\": \"rcv_1988_0003\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-09\", ... \"net_amount\": {\"display\": \"R$ 148,06\"} ... \"payment_type\": \"debit\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806} ... \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-10\", ... \"net_amount\": {\"display\": \"R$ 1.162,20\"} ... \"payment_type\": \"credit\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220} ... \"payment_type\": \"credit\", \"receivable_id\": \"rcv_1988_0002\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All amounts, dates and statuses match the receivables schedule and payout status tool results.",
+      "factual_correctness": "Reply agrees with evidence: Pix paid, debit and credit scheduled with credit unconfirmed.",
+      "relevance": "Directly answers when yesterday's sales money will arrive, per each receivable.",
+      "usefulness": "Clear, concise, in Portuguese, giving each amount with its expected or confirmed date."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00100651,
+     "usage": {
+      "input_tokens": 4544,
+      "cache_read_tokens": 4352,
+      "cache_creation_tokens": 0,
+      "output_tokens": 769
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_02e271cb510b4cc4a4a2",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Das vendas de ontem, o Pix líquido de R$ 80,00 já foi confirmado na conta em 06/11/2026",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Pix líquido de R$ 80,00",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "confirmado na conta em 06/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "O débito líquido de R$ 148,06 está previsto para 09/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 5,
+        "text": "débito líquido de R$ 148,06",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "o crédito ainda não foi confirmado",
+        "kind": "status"
+       },
+       {
+        "n": 7,
+        "text": "O crédito à vista líquido de R$ 1.162,20 está previsto para 10/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 8,
+        "text": "crédito à vista líquido de R$ 1.162,20",
+        "kind": "value"
+       },
+       {
+        "n": 9,
+        "text": "também sem confirmação até o momento",
+        "kind": "status"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "pix ... net_amount R$ 80,00 ... settled ... Credit confirmed in the receiving account ... confirmed_at 2026-11-06T17:31:00-03:00"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"payment_type\": \"pix\" ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 80,00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true ... \"stage_meaning\": \"Credit confirmed in the receiving account.\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"payment_type\": \"debit\" ... \"net_amount\": {\"display\": \"R$ 148,06\" ... \"expected_payment_date\": \"2026-11-09\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"payment_type\": \"debit\" ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\" ... \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"payment_type\": \"credit\" ... \"net_amount\": {\"display\": \"R$ 1.162,20\" ... \"expected_payment_date\": \"2026-11-10\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"payment_type\": \"credit\" ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\" ... \"credit not confirmed yet.\""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, date and status matches the receivables schedule and payout status tool results.",
+      "factual_correctness": "Amounts, expected dates and confirmation states all agree with the tool results, with no contradictions.",
+      "relevance": "The reply directly answers when yesterday's sales money will arrive, per receivable.",
+      "usefulness": "Clear, concise Portuguese breakdown of each sale's net amount, expected date and confirmation state."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00086491,
+     "usage": {
+      "input_tokens": 4544,
+      "cache_read_tokens": 4352,
+      "cache_creation_tokens": 0,
+      "output_tokens": 651
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "NOEV",
+   "repetition": 1,
+   "request_id": "req_eval4397f13107c7",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Qual é a taxa de juros da maquininha Get Ultra Pro 9000?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → web",
+   "answer": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000. Se sua dúvida for sobre o Crediário, a taxa de desconto faz parte do contrato e pode ser consultada no Portal do Cliente ou no Aplicativo Getnet Brasil.",
+   "sources": [
+    "Crediário - Getnet"
+   ],
+   "duration_ms": 12132,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Qual é a taxa de juros da maquininha Get Ultra Pro 9000?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Crediário - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-crediario",
+      "text": "Crediário - Getnet\nPortal do Cliente\n. Você também pode contatar a Central de Atendimento para verificar se o seu Estabelecimento está habilitado para operar com a modalidade. Caso a modalidade esteja habilitada, mas a opção Crediário ainda não esteja disponível em sua máquina, é importante realizar uma transação de adquirência (bandeiras Mastercard, Visa, Elo e Amex) ou proceder com a inicialização do terminal (Suporte > Bandeiras > Funções Técnicas > Inicialização). A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet e pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil.\nAté quantas parcelas posso fazer e como sei os juros para informar ao meu cliente (portador do cartão)?\nCada emissor de cartão estabelece o limite de parcelas conforme as suas políticas de crédito.\nOs juros ao cliente (portador do cartão) serão visualizados por meio da simulação realizada diretamente na maquininha: Inserindo o cartão, incluindo o valor e a opção de pagamento na opção crédito > crediário.\nÉ possível também a impressão do comprovante da simulação na maquininha com bobina, assim o cliente conseguirá avaliar os juros e o valor final da compra."
+     },
+     {
+      "kind": "web_page",
+      "label": "Getnet | Taxas - Getnet",
+      "title": "Getnet | Taxas - Getnet",
+      "url": "https://site.getnet.com.br/taxas/?utm_source=openai",
+      "text": "[third-party page text omitted from the versioned record; see url]",
+      "text_sha256": "a1d1f8f6b37189ab24d5380192ba26203780b560d983bd20500fe9a9feea9ea6",
+      "text_chars": 619
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1826,
+     "kept_chars": 1826,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search. Each evidence item of kind \"web_page\" is the text of a page the search cited (its title and url are given), fetched when the reply was evaluated, masked and cut like the other items: judge the reply against it as you would a passage. The page may have changed since the reply was written."
+    ],
+    "reply": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000. Se sua dúvida for sobre o Crediário, a taxa de desconto faz parte do contrato e pode ser consultada no Portal do Cliente ou no Aplicativo Getnet Brasil."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1826,
+    "kept_chars": 1826,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.01112372,
+   "judge": {
+    "evaluation_id": "eval_0d4a9d7b4ffc4360ae52",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Se sua dúvida for sobre o Crediário, a taxa de desconto faz parte do contrato",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "a taxa de desconto pode ser consultada no Portal do Cliente ou no Aplicativo Getnet Brasil",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "The gap statement, the contractual nature of the Crediário rate and the channels are all in the evidence.",
+     "factual_correctness": "The reply accurately reflects the evidence and correctly declines to give an unconfirmed rate.",
+     "relevance": "It addresses the rate question for the named machine, declines, and offers the related Crediário channel.",
+     "usefulness": "Clear, polite, in Portuguese, and points to concrete channels, though it does not explicitly list product rates."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00068659,
+    "usage": {
+     "input_tokens": 3536,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 284
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_0d4a9d7b4ffc4360ae52",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Se sua dúvida for sobre o Crediário, a taxa de desconto faz parte do contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "a taxa de desconto pode ser consultada no Portal do Cliente ou no Aplicativo Getnet Brasil",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The gap statement, the contractual nature of the Crediário rate and the channels are all in the evidence.",
+      "factual_correctness": "The reply accurately reflects the evidence and correctly declines to give an unconfirmed rate.",
+      "relevance": "It addresses the rate question for the named machine, declines, and offers the related Crediário channel.",
+      "usefulness": "Clear, polite, in Portuguese, and points to concrete channels, though it does not explicitly list product rates."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00068659,
+     "usage": {
+      "input_tokens": 3536,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 284
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_5ddc19f339884a469378",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Se sua dúvida for sobre o Crediário, a taxa de desconto faz parte do contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "a taxa de desconto pode ser consultada no Portal do Cliente ou no Aplicativo Getnet Brasil",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet e pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet e pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet e pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the Crediário passage, including the rate being in the contract and the portal/app channel.",
+      "factual_correctness": "Reply accurately reflects the evidence and states the gap plainly without contradictions.",
+      "relevance": "Directly addresses the merchant's rate question, states the gap and offers the relevant Crediário route.",
+      "usefulness": "Clear, concise and in Portuguese; points to portal/app, though the specific product rate remains unresolved."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00049637,
+     "usage": {
+      "input_tokens": 3536,
+      "cache_read_tokens": 3328,
+      "cache_creation_tokens": 0,
+      "output_tokens": 345
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_46d2601eac074d0b8dfb",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Se sua dúvida for sobre o Crediário, a taxa de desconto faz parte do contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "a taxa de desconto pode ser consultada no Portal do Cliente ou no Aplicativo Getnet Brasil",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Não consegui confirmar a taxa de juros ou de transação específica da maquininha Get Ultra Pro 9000"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "A taxa de desconto do Crediário é parte integrante do seu contrato de Adesão ao Sistema Getnet"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "pode ser consultada no Portal do Cliente e/ou no Aplicativo Getnet Brasil."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the Crediário passage: the gap, the contract dependence and the channels named.",
+      "factual_correctness": "The reply agrees with the evidence and makes no wrong amounts, dates or conclusions.",
+      "relevance": "It answers the merchant's rate question, states the rate cannot be confirmed and points to where to see it.",
+      "usefulness": "Clear, concise, polite Brazilian Portuguese; states the gap plainly and gives actionable channels."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00041597,
+     "usage": {
+      "input_tokens": 3536,
+      "cache_read_tokens": 3328,
+      "cache_creation_tokens": 0,
+      "output_tokens": 278
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "EX07",
+   "repetition": 1,
+   "request_id": "req_evaldb9064b4ce8e",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the euro exchange rate today?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "On Saturday, November 7, 2026, the euro is about R$6.14. The latest European Central Bank reference rate I found is €1 = R$6.1449, dated November 6. Actual exchange providers may offer different rates.",
+   "sources": [
+    "Euro exchange rates charts"
+   ],
+   "duration_ms": 7045,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "What's the euro exchange rate today?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Euro exchange rates charts"
+    ],
+    "evidence": [
+     {
+      "kind": "web_page",
+      "label": "Euro exchange rates charts",
+      "title": "Euro exchange rates charts",
+      "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/eurofxref-graph-brl.et.html?utm_source=openai",
+      "text": "[third-party page text omitted from the versioned record; see url]",
+      "text_sha256": "266954d58e3a0f010e0846f4018e2f244b978041323776ab187f4a69f48ea187",
+      "text_chars": 1582
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1582,
+     "kept_chars": 1582,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search. Each evidence item of kind \"web_page\" is the text of a page the search cited (its title and url are given), fetched when the reply was evaluated, masked and cut like the other items: judge the reply against it as you would a passage. The page may have changed since the reply was written."
+    ],
+    "reply": "On Saturday, November 7, 2026, the euro is about R$6.14. The latest European Central Bank reference rate I found is €1 = R$6.1449, dated November 6. Actual exchange providers may offer different rates."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1582,
+    "kept_chars": 1582,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": null,
+   "source_cost_usd": 0.0106955,
+   "judge": {
+    "evaluation_id": "eval_6e5a6f3208b84752ba82",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": null,
+    "state": "failed",
+    "model_used": "deepseek-flash",
+    "scores": {},
+    "reasons": {},
+    "unsupported_claim": null,
+    "cost_usd": 0.0035505,
+    "usage": null,
+    "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_6e5a6f3208b84752ba82",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0035505,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    },
+    {
+     "evaluation_id": "eval_99c6ae7fb77048a6b11a",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "On Saturday, November 7, 2026, the euro is about R$6.14",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "The latest European Central Bank reference rate I found is €1 = R$6.1449",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "dated November 6",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Actual exchange providers may offer different rates",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 3,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Rates and dates trace to the ECB page; only the provider caveat and the 2026 year are not evidenced.",
+      "factual_correctness": "The rate 6.1449 and November 6 date match the page; the year 2026 and Saturday attribution are unverified.",
+      "relevance": "The merchant asked for today's euro rate but got a Brazilian real rate from a past date, which only partly answers.",
+      "usefulness": "Clear and polite, but it gives a historical BRL reference rate rather than the current rate the merchant wanted."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00055177,
+     "usage": {
+      "input_tokens": 3929,
+      "cache_read_tokens": 3712,
+      "cache_creation_tokens": 0,
+      "output_tokens": 387
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f99591894a9a4b9eb8d9",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "On Saturday, November 7, 2026, the euro is about R$6.14",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "The latest European Central Bank reference rate I found is €1 = R$6.1449",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "dated November 6",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Actual exchange providers may offer different rates",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "6 6.1449"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 4,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The rate and the R$6.14 figure match the ECB page; the caveat about other providers has no source.",
+      "factual_correctness": "The rate figure agrees with the ECB table, though the day/date labelling is not confirmed by the page.",
+      "relevance": "It directly answers the exchange-rate question, though with the BRL rate rather than a general euro rate.",
+      "usefulness": "Clear, concise and polite with the rate given, but the caveat about providers is an unsupported addition."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00049177,
+     "usage": {
+      "input_tokens": 3929,
+      "cache_read_tokens": 3712,
+      "cache_creation_tokens": 0,
+      "output_tokens": 337
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "PT10",
+   "repetition": 1,
+   "request_id": "req_eval95c14151f42c",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Posso vender pelo WhatsApp usando o Link de Pagamento?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Sim. Você pode usar o Link de Pagamento da Getnet para vender pelo WhatsApp. Depois de criar o link, é só compartilhá-lo por lá.",
+   "sources": [
+    "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+   ],
+   "duration_ms": 5867,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Posso vender pelo WhatsApp usando o Link de Pagamento?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+      "text": "Descontinuação dos pagamentos via WhatsApp Business - Getnet\nA partir de\n15/01\n, por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado.\nO que muda para você, cliente da Getnet?\nCaso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento. Sendo assim, você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento.\nComo usar o link de pagamento?\nO link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física. Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida.\nVocê pode configurar este link, com um ou mais meios de pagamentos: débito, crédito a vista, crédito parcelado, Pix ou Carteiras Digitais.\nApós criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)\nQuando a migração acontece?\nA migração já está sendo realizada, com data fim até\n15/01/2026\n, data oficial da descontinuação do WhatsApp Pay.\nQuais as vantagens desse novo pacote?\nAo migrar para o link de pagamento, você conta com:"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1250,
+     "kept_chars": 1250,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Sim. Você pode usar o Link de Pagamento da Getnet para vender pelo WhatsApp. Depois de criar o link, é só compartilhá-lo por lá."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1250,
+    "kept_chars": 1250,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00041257,
+   "judge": {
+    "evaluation_id": "eval_81aa97b9c5694036b913",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Sim, você pode usar o Link de Pagamento da Getnet para vender pelo WhatsApp",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Depois de criar o link, é só compartilhá-lo por lá",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Both statements are directly supported by the passage about Link de Pagamento for WhatsApp sales.",
+     "factual_correctness": "The reply agrees with the evidence and contains no contradictions.",
+     "relevance": "It directly answers whether the merchant can sell via WhatsApp using Link de Pagamento.",
+     "usefulness": "Clear, concise, polite and in the merchant's language, giving an actionable answer."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00051439,
+    "usage": {
+     "input_tokens": 3166,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 233
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_81aa97b9c5694036b913",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, você pode usar o Link de Pagamento da Getnet para vender pelo WhatsApp",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Depois de criar o link, é só compartilhá-lo por lá",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Both statements are directly supported by the passage about Link de Pagamento for WhatsApp sales.",
+      "factual_correctness": "The reply agrees with the evidence and contains no contradictions.",
+      "relevance": "It directly answers whether the merchant can sell via WhatsApp using Link de Pagamento.",
+      "usefulness": "Clear, concise, polite and in the merchant's language, giving an actionable answer."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00051439,
+     "usage": {
+      "input_tokens": 3166,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 233
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_bd8c2dfcbaf1415d8117",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, você pode usar o Link de Pagamento da Getnet para vender pelo WhatsApp",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Depois de criar o link, é só compartilhá-lo por lá",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Both statements trace directly to the passage about Link de Pagamento for WhatsApp sales.",
+      "factual_correctness": "The reply agrees with the passage: link is ideal for WhatsApp and can be shared there after creation.",
+      "relevance": "It directly answers the merchant's question about selling via WhatsApp with Link de Pagamento.",
+      "usefulness": "Clear, concise, polite and in the merchant's language, giving an actionable answer."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00037466,
+     "usage": {
+      "input_tokens": 3166,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 242
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_2e96a9528dec4344ae47",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, você pode usar o Link de Pagamento da Getnet para vender pelo WhatsApp",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Depois de criar o link, é só compartilhá-lo por lá",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Both statements are directly supported by the passage about the payment link for WhatsApp sales.",
+      "factual_correctness": "The reply agrees with the evidence and is internally consistent.",
+      "relevance": "It directly answers whether the merchant can sell via WhatsApp using the payment link.",
+      "usefulness": "Clear, concise, polite, in Portuguese, and gives the actionable step of sharing the link."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00036386,
+     "usage": {
+      "input_tokens": 3166,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 233
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "EX05",
+   "repetition": 1,
+   "request_id": "req_eval6c73b24471be",
+   "split": "dev",
+   "language": "en",
+   "message": "My card machine won't connect to the internet, what should I do?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Your Get Smart is currently reported offline. Its last signal was received on November 6, 2026 at 21:16:41. Wi-Fi is configured, but this does not confirm the machine’s current connection.\n\nOn the machine’s home screen, tap “Wi-Fi,” select “Procurar Redes,” choose your network, enter the password carefully, and confirm. Check that the Wi-Fi network is working and that the password is correct. A stable connection is needed for transactions.\n\nI couldn’t confirm troubleshooting steps for other connection types or what to do if Wi-Fi still fails.",
+   "sources": [
+    "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+    "Card machine status (your account)"
+   ],
+   "duration_ms": 10379,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "My card machine won't connect to the internet, what should I do?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+     "Card machine status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-08T10:25:00-03:00\", \"created_at\": \"2026-09-08T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-07T00:19:24-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"checks\": [{\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-07T00:19:24-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-07T00:19:24-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"device\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": \"dev_1988_gs01\"}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\", \"minutes_since_last_seen\": 182, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-07T00:19:29-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+      "text": "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet\nConectar sua maquininha Getnet ao Wi-Fi é um passo essencial para garantir transações rápidas e seguras. A boa notícia é que o processo é simples e pode ser feito em poucos minutos. Siga este guia rápido:\nPasso a passo para configurar o Wi-Fi na maquininha Getnet\n1. Acesse a opção de Wi-Fi na tela inicial.\nNa tela principal da sua maquininha, clique na opção “Wi-Fi”.\n2. Procure pelas redes disponíveis.\nSelecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas.\n3. Escolha sua rede.\nLocalize o nome da sua rede na lista e clique sobre ela.\n4. Insira a [credential removed] Wi-Fi.\nDigite a [credential removed] sua rede com atenção e confirme.\n5. Conexão concluída!\nApós a confirmação, sua maquininha estará conectada à internet.\nBenefícios de conectar ao Wi-Fi\nTransações mais rápidas:\nA conexão Wi-Fi oferece maior estabilidade em comparação a redes móveis.\nFacilidade de uso:\nIdeal para ambientes fixos, como lojas ou escritórios.\nEconomia de dados:\nEvita o uso do plano de dados da maquininha.\nDica:\nCertifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros. Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 2574,
+     "kept_chars": 2574,
+     "items": 4,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Your Get Smart is currently reported offline. Its last signal was received on November 6, 2026 at 21:16:41. Wi-Fi is configured, but this does not confirm the machine’s current connection.\n\nOn the machine’s home screen, tap “Wi-Fi,” select “Procurar Redes,” choose your network, enter the password carefully, and confirm. Check that the Wi-Fi network is working and that the password is correct. A stable connection is needed for transactions.\n\nI couldn’t confirm troubleshooting steps for other connection types or what to do if Wi-Fi still fails."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 2574,
+    "kept_chars": 2574,
+    "items": 4,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00089077,
+   "judge": {
+    "evaluation_id": "eval_c6e8c1f8c04b402db6f4",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Your Get Smart is currently reported offline.",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "Its last signal was received on November 6, 2026 at 21:16:41.",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "Wi-Fi is configured, but this does not confirm the machine's current connection.",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "On the machine's home screen, tap \"Wi-Fi,\" select \"Procurar Redes,\" choose your network, enter the [credential removed] and confirm.",
+       "kind": "guidance"
+      },
+      {
+       "n": 5,
+       "text": "Check that the Wi-Fi network is working and that the [credential removed] correct.",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "A stable connection is needed for transactions.",
+       "kind": "fact"
+      },
+      {
+       "n": 7,
+       "text": "I couldn't confirm troubleshooting steps for other connection types or what to do if Wi-Fi still fails.",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"status\": \"offline\", \"model\": \"Get Smart\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"wifi_configured\": true; \"Signals are the last ones received; no remote command is executed on the device.\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "1. Acesse a opção de Wi-Fi na tela inicial... 2. Selecione \"Procurar Redes\"... 3. Localize o nome da sua rede... 4. Digite a senha... e confirme."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a senha inserida sem erros."
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts, status, date and steps trace to the tool results and the Wi-Fi passage.",
+     "factual_correctness": "Status offline, last-seen date and Wi-Fi steps agree with evidence; no contradictions.",
+     "relevance": "Addresses the offline machine and gives Wi-Fi reconfiguration steps matching the merchant's issue.",
+     "usefulness": "Clear, concise and polite; states the gap about other connection types plainly."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00103219,
+    "usage": {
+     "input_tokens": 4064,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 440
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_c6e8c1f8c04b402db6f4",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Your Get Smart is currently reported offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Its last signal was received on November 6, 2026 at 21:16:41.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Wi-Fi is configured, but this does not confirm the machine's current connection.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "On the machine's home screen, tap \"Wi-Fi,\" select \"Procurar Redes,\" choose your network, enter the [credential removed] and confirm.",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "Check that the Wi-Fi network is working and that the [credential removed] correct.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "A stable connection is needed for transactions.",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "I couldn't confirm troubleshooting steps for other connection types or what to do if Wi-Fi still fails.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"status\": \"offline\", \"model\": \"Get Smart\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true; \"Signals are the last ones received; no remote command is executed on the device.\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "1. Acesse a opção de Wi-Fi na tela inicial... 2. Selecione \"Procurar Redes\"... 3. Localize o nome da sua rede... 4. Digite a senha... e confirme."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a senha inserida sem erros."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, status, date and steps trace to the tool results and the Wi-Fi passage.",
+      "factual_correctness": "Status offline, last-seen date and Wi-Fi steps agree with evidence; no contradictions.",
+      "relevance": "Addresses the offline machine and gives Wi-Fi reconfiguration steps matching the merchant's issue.",
+      "usefulness": "Clear, concise and polite; states the gap about other connection types plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00103219,
+     "usage": {
+      "input_tokens": 4064,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 440
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_b22bcd2db22845f0b77f",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Your Get Smart is currently reported offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Its last signal was received on November 6, 2026 at 21:16:41.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Wi-Fi is configured, but this does not confirm the machine's current connection.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "On the machine's home screen, tap \"Wi-Fi,\" select \"Procurar Redes,\" choose your network, enter the [credential removed] and confirm.",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "Check that the Wi-Fi network is working and that the [credential removed] correct.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "A stable connection is needed for transactions.",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "I couldn't confirm troubleshooting steps for other connection types or what to do if Wi-Fi still fails.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true ... \"note\": \"Signals are the last ones received; no remote command is executed on the device.\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Acesse a opção de Wi-Fi na tela inicial. ... Selecione “Procurar Redes” ... Localize o nome da sua rede na lista e clique sobre ela. ... Digite a [credential removed] sua rede com atenção e confirme."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, dates, status and steps trace to the device tool result and the Wi-Fi passage.",
+      "factual_correctness": "Reply matches the offline status, last-seen timestamp and the Wi-Fi setup guide without contradiction.",
+      "relevance": "Directly addresses the machine's internet problem with the relevant Wi-Fi setup steps.",
+      "usefulness": "Clear, polite, concise English steps plus an honest statement of what could not be confirmed."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00062424,
+     "usage": {
+      "input_tokens": 4064,
+      "cache_read_tokens": 3840,
+      "cache_creation_tokens": 0,
+      "output_tokens": 445
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_d0cf5dbdfe224fbd999d",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0037347,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\"claim..."
+    }
+   ]
+  }
+ ]
+}

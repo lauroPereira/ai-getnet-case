@@ -1,0 +1,2906 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-01.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.6,
+   "deterministic": 1.0,
+   "content": 0.6,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 6459,
+   "latency_p95_ms": 15543,
+   "cost_usd": 0,
+   "judge_failed": 2,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 1,
+    "unsupported": 1
+   },
+   "judge_means": {
+    "groundedness": 3.85,
+    "factual_correctness": 3.85,
+    "relevance": 4.92,
+    "usefulness": 4.46
+   },
+   "unsupported_claim_rate": 0.385,
+   "claim_verdicts": {
+    "claims": 83,
+    "supported": 67,
+    "partial": 11,
+    "generic": 0,
+    "not_found": 5,
+    "standard": 6
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 11001,
+    "latency_p95_ms": 15543,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.4,
+     "factual_correctness": 3.4,
+     "relevance": 5.0,
+     "usefulness": 4.4
+    },
+    "unsupported_claim_rate": 0.8,
+    "claim_verdicts": {
+     "claims": 42,
+     "supported": 38,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 4,
+     "standard": 3
+    }
+   },
+   "holdout": {
+    "n": 3,
+    "passed": 0.667,
+    "deterministic": 1.0,
+    "content": 0.667,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6319,
+    "latency_p95_ms": 13100,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 1,
+     "unsupported": 1
+    },
+    "judge_means": {
+     "groundedness": 4.12,
+     "factual_correctness": 4.12,
+     "relevance": 4.88,
+     "usefulness": 4.5
+    },
+    "unsupported_claim_rate": 0.125,
+    "claim_verdicts": {
+     "claims": 41,
+     "supported": 29,
+     "partial": 11,
+     "generic": 0,
+     "not_found": 1,
+     "standard": 3
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6459,
+    "latency_p95_ms": 6459,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.0,
+     "factual_correctness": 3.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 18,
+     "supported": 15,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 3,
+     "standard": 3
+    }
+   },
+   "pt": {
+    "n": 4,
+    "passed": 0.75,
+    "deterministic": 1.0,
+    "content": 0.75,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9709,
+    "latency_p95_ms": 15543,
+    "cost_usd": 0,
+    "judge_failed": 2,
+    "judge_web_note": {
+     "judged_answers": 4,
+     "answers": 1,
+     "unsupported": 1
+    },
+    "judge_means": {
+     "groundedness": 4.1,
+     "factual_correctness": 4.1,
+     "relevance": 4.9,
+     "usefulness": 4.6
+    },
+    "unsupported_claim_rate": 0.2,
+    "claim_verdicts": {
+     "claims": 65,
+     "supported": 52,
+     "partial": 11,
+     "generic": 0,
+     "not_found": 2,
+     "standard": 3
+    }
+   }
+  },
+  "paths": {
+   "clarify": {
+    "": 1
+   },
+   "general_web": {
+    "knowledge": 1
+   },
+   "knowledge": {
+    "knowledge": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 2
+   }
+  },
+  "generated_at": "2026-11-09T11:17:54+00:00",
+  "judge_cost_usd": 0.01723,
+  "judge_usage": {
+   "judgements": 13,
+   "total": {
+    "input_tokens": 48262,
+    "cache_read_tokens": 39808,
+    "cache_creation_tokens": 0,
+    "output_tokens": 5177
+   },
+   "mean": {
+    "input_tokens": 3712.5,
+    "cache_read_tokens": 3062.2,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 398.2
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 1
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 13,
+    "failed": 2,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 3.85,
+      "std": 0.6,
+      "exact": 0.455,
+      "within_one": 0.818,
+      "pairs": 11
+     },
+     "factual_correctness": {
+      "mean": 3.85,
+      "std": 0.6,
+      "exact": 0.455,
+      "within_one": 0.818,
+      "pairs": 11
+     },
+     "relevance": {
+      "mean": 4.92,
+      "std": 0.12,
+      "exact": 0.818,
+      "within_one": 1.0,
+      "pairs": 11
+     },
+     "usefulness": {
+      "mean": 4.46,
+      "std": 0.12,
+      "exact": 0.818,
+      "within_one": 1.0,
+      "pairs": 11
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.385,
+     "exact": 0.727,
+     "pairs": 11
+    }
+   },
+   "by_route": {
+    "clarify": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "general_web": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 2.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 2.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.333,
+      "exact": 0.333,
+      "pairs": 3
+     }
+    },
+    "knowledge": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": 1.0,
+       "exact": 0.0,
+       "within_one": 0.667,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 3.0,
+       "std": 1.0,
+       "exact": 0.0,
+       "within_one": 0.667,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "knowledge_and_support": {
+     "cases": 2,
+     "judgements": 4,
+     "failed": 2,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.5,
+       "std": 0.71,
+       "exact": 0.5,
+       "within_one": 0.5,
+       "pairs": 2
+      },
+      "factual_correctness": {
+       "mean": 4.5,
+       "std": 0.71,
+       "exact": 0.5,
+       "within_one": 0.5,
+       "pairs": 2
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 2
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 2
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.25,
+      "exact": 0.5,
+      "pairs": 2
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 2,
+     "judgements": 5,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.4,
+       "std": 1.21,
+       "exact": 0.0,
+       "within_one": 0.5,
+       "pairs": 4
+      },
+      "factual_correctness": {
+       "mean": 3.4,
+       "std": 1.21,
+       "exact": 0.0,
+       "within_one": 0.5,
+       "pairs": 4
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 4
+      },
+      "usefulness": {
+       "mean": 4.4,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 4
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.8,
+      "exact": 0.75,
+      "pairs": 4
+     }
+    },
+    "holdout": {
+     "cases": 3,
+     "judgements": 8,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.12,
+       "std": 0.19,
+       "exact": 0.714,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "factual_correctness": {
+       "mean": 4.12,
+       "std": 0.19,
+       "exact": 0.714,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "relevance": {
+       "mean": 4.88,
+       "std": 0.19,
+       "exact": 0.714,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "usefulness": {
+       "mean": 4.5,
+       "std": 0.19,
+       "exact": 0.714,
+       "within_one": 1.0,
+       "pairs": 7
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.125,
+      "exact": 0.714,
+      "pairs": 7
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT08",
+   "repetition": 1,
+   "request_id": "req_eval43d2cfd1b025",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Minha maquininha está mostrando erro de transação negada.",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Encontrei duas transações negadas nos últimos 7 dias:\n\n- Em 06/11, uma compra de R$ 230,00 foi negada com código 51, que indica saldo ou limite insuficiente. Ofereça outro cartão ou Pix.\n- Em 04/11, uma compra de R$ 45,90 foi negada com código 05, pois o banco emissor não autorizou a transação. Peça ao comprador que fale com o banco ou use outro meio de pagamento.\n\nEssas negativas estão relacionadas ao cartão ou à autorização do banco e não indicam defeito na maquininha. Não consegui confirmar o código ou a mensagem exata exibida nela para identificar se houve uma negativa de autorização ou um “Erro ADQ”.",
+   "sources": [
+    "Erro ADQ 1-50: erro de leitura - Getnet",
+    "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+    "Transações negadas",
+    "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet",
+    "Card authorization events (your account)"
+   ],
+   "duration_ms": 13100,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "find_authorization_events"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Minha maquininha está mostrando erro de transação negada.",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Erro ADQ 1-50: erro de leitura - Getnet",
+     "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+     "Transações negadas",
+     "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet",
+     "Card authorization events (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:21:50-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"checks\": [{\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-07T00:21:50-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"0 declined transaction(s) today.\", \"observed_at\": \"2026-11-07T00:21:50-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-07T00:21:50-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"authorization\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "find_authorization_events",
+      "text": "{\"arguments\": {\"limit\": 5, \"period\": \"last_7_days\", \"status\": \"declined\"}, \"result\": {\"date_from\": \"2026-11-01\", \"date_to\": \"2026-11-07\", \"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000}, \"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\", \"occurred_at\": \"2026-11-06T21:06:41-03:00\", \"payment_type\": \"credit\", \"reason_category\": \"insufficient_funds\", \"response_code\": \"51\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0101\"}, {\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\", \"minor\": 4590}, \"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\", \"occurred_at\": \"2026-11-04T16:02:00-03:00\", \"payment_type\": \"debit\", \"reason_category\": \"issuer_declined\", \"response_code\": \"05\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0100\"}], \"note\": \"Only codes documented in the demo have a reason; others stay unknown.\", \"observed_at\": \"2026-11-07T00:21:57-03:00\", \"source\": \"AuthorizationsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-1-50",
+      "text": "Erro ADQ 1-50: erro de leitura - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso apareça um “Erro ADQ” na tela da sua maquininha, você mesmo pode corrigir isso rapidamente. Verifique o código do erro e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-91",
+      "text": "Erro ADQ 4-91: erro na aprovação da venda - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "demo:KB-DEMO-AUTHORIZATIONS-001",
+      "text": "Transações negadas\n## Códigos de resposta documentados na demonstração\n\nCódigos sintéticos do ambiente de demonstração. Um código fora desta tabela tem motivo desconhecido.\n\n| Código | Categoria | O que significa para o lojista | Próximo passo |\n| --- | --- | --- | --- |\n| 05 | issuer_declined | O banco emissor do cartão não autorizou a compra. | Pedir ao comprador que fale com o banco emissor ou use outro meio de pagamento. |\n| 51 | insufficient_funds | Saldo ou limite insuficiente no cartão do comprador. | Oferecer outro meio de pagamento, como outro cartão ou Pix. |\n| 57 | not_permitted | Transação não permitida para este cartão. | Confirmar se a bandeira e a modalidade estão habilitadas; se estiverem, pedir outro meio de pagamento. |\n| 91 | issuer_unavailable | Emissor temporariamente indisponível. | Aguardar alguns minutos e tentar novamente. |\n\nNegativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha. Mensagens \"Erro ADQ\" na tela são erros do equipamento e seguem a página oficial de erros da maquininha."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-83",
+      "text": "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 4632,
+     "kept_chars": 4632,
+     "items": 7,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Encontrei duas transações negadas nos últimos 7 dias:\n\n- Em 06/11, uma compra de R$ 230,00 foi negada com código 51, que indica saldo ou limite insuficiente. Ofereça outro cartão ou Pix.\n- Em 04/11, uma compra de R$ 45,90 foi negada com código 05, pois o banco emissor não autorizou a transação. Peça ao comprador que fale com o banco ou use outro meio de pagamento.\n\nEssas negativas estão relacionadas ao cartão ou à autorização do banco e não indicam defeito na maquininha. Não consegui confirmar o código ou a mensagem exata exibida nela para identificar se houve uma negativa de autorização ou um “Erro ADQ”."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 4632,
+    "kept_chars": 4632,
+    "items": 7,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00109504,
+   "judge": {
+    "evaluation_id": "eval_d302213532994d8bae7a",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Encontrei duas transações negadas nos últimos 7 dias",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Em 06/11, uma compra de R$ 230,00 foi negada",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "uma compra de R$ 230,00 foi negada com código 51",
+       "kind": "value"
+      },
+      {
+       "n": 4,
+       "text": "o código 51 indica saldo ou limite insuficiente",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Ofereça outro cartão ou Pix",
+       "kind": "guidance"
+      },
+      {
+       "n": 6,
+       "text": "Em 04/11, uma compra de R$ 45,90 foi negada",
+       "kind": "date"
+      },
+      {
+       "n": 7,
+       "text": "uma compra de R$ 45,90 foi negada com código 05",
+       "kind": "value"
+      },
+      {
+       "n": 8,
+       "text": "o banco emissor não autorizou a transação",
+       "kind": "fact"
+      },
+      {
+       "n": 9,
+       "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+       "kind": "guidance"
+      },
+      {
+       "n": 10,
+       "text": "Essas negativas estão relacionadas ao cartão ou à autorização do banco",
+       "kind": "fact"
+      },
+      {
+       "n": 11,
+       "text": "Essas negativas não indicam defeito na maquininha",
+       "kind": "fact"
+      },
+      {
+       "n": 12,
+       "text": "Não consegui confirmar o código ou a mensagem exata exibida nela",
+       "kind": "fact"
+      },
+      {
+       "n": 13,
+       "text": "Não consegui identificar se houve uma negativa de autorização ou um “Erro ADQ”",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "{\"arguments\": {\"limit\": 5, \"period\": \"last_7_days\", \"status\": \"declined\"}, \"result\": {\"date_from\": \"2026-11-01\", \"date_to\": \"2026-11-07\", \"events\": [...]"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"occurred_at\": \"2026-11-06T21:06:41-03:00\" ... \"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\" ... \"status\": \"declined\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"display\": \"R$ 230,00\", \"minor\": 23000 ... \"response_code\": \"51\" ... \"status\": \"declined\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "| 51 | insufficient_funds | Saldo ou limite insuficiente no cartão do comprador."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "\"occurred_at\": \"2026-11-04T16:02:00-03:00\" ... \"display\": \"R$ 45,90\" ... \"status\": \"declined\""
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "\"display\": \"R$ 45,90\", \"minor\": 4590 ... \"response_code\": \"05\" ... \"status\": \"declined\""
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+      },
+      {
+       "n": 11,
+       "verdict": "supported",
+       "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+      },
+      {
+       "n": 12,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 13,
+       "verdict": "supported",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every amount, date, code and guidance traces to the tool results and the demo passage.",
+     "factual_correctness": "Dates, amounts and codes match the authorization events and KB table exactly.",
+     "relevance": "Addresses the merchant's denial problem, explains causes and states the gap about the exact error shown.",
+     "usefulness": "Clear, polite Portuguese with concrete next steps and honestly states what could not be confirmed."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00173059,
+    "usage": {
+     "input_tokens": 5168,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 746
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_d302213532994d8bae7a",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encontrei duas transações negadas nos últimos 7 dias",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Em 06/11, uma compra de R$ 230,00 foi negada",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "uma compra de R$ 230,00 foi negada com código 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "o código 51 indica saldo ou limite insuficiente",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Ofereça outro cartão ou Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Em 04/11, uma compra de R$ 45,90 foi negada",
+        "kind": "date"
+       },
+       {
+        "n": 7,
+        "text": "uma compra de R$ 45,90 foi negada com código 05",
+        "kind": "value"
+       },
+       {
+        "n": 8,
+        "text": "o banco emissor não autorizou a transação",
+        "kind": "fact"
+       },
+       {
+        "n": 9,
+        "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Essas negativas estão relacionadas ao cartão ou à autorização do banco",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Essas negativas não indicam defeito na maquininha",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "Não consegui confirmar o código ou a mensagem exata exibida nela",
+        "kind": "fact"
+       },
+       {
+        "n": 13,
+        "text": "Não consegui identificar se houve uma negativa de autorização ou um “Erro ADQ”",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "{\"arguments\": {\"limit\": 5, \"period\": \"last_7_days\", \"status\": \"declined\"}, \"result\": {\"date_from\": \"2026-11-01\", \"date_to\": \"2026-11-07\", \"events\": [...]"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-06T21:06:41-03:00\" ... \"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"display\": \"R$ 230,00\", \"minor\": 23000 ... \"response_code\": \"51\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "| 51 | insufficient_funds | Saldo ou limite insuficiente no cartão do comprador."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-04T16:02:00-03:00\" ... \"display\": \"R$ 45,90\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"display\": \"R$ 45,90\", \"minor\": 4590 ... \"response_code\": \"05\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "\"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\""
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\""
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 13,
+        "verdict": "supported",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every amount, date, code and guidance traces to the tool results and the demo passage.",
+      "factual_correctness": "Dates, amounts and codes match the authorization events and KB table exactly.",
+      "relevance": "Addresses the merchant's denial problem, explains causes and states the gap about the exact error shown.",
+      "usefulness": "Clear, polite Portuguese with concrete next steps and honestly states what could not be confirmed."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00173059,
+     "usage": {
+      "input_tokens": 5168,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 746
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_914a1a1fdb2547f2b8cb",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encontrei duas transações negadas nos últimos 7 dias",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Em 06/11, uma compra de R$ 230,00 foi negada",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "uma compra de R$ 230,00 foi negada com código 51",
+        "kind": "value"
+       },
+       {
+        "n": 4,
+        "text": "o código 51 indica saldo ou limite insuficiente",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Ofereça outro cartão ou Pix",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Em 04/11, uma compra de R$ 45,90 foi negada",
+        "kind": "date"
+       },
+       {
+        "n": 7,
+        "text": "uma compra de R$ 45,90 foi negada com código 05",
+        "kind": "value"
+       },
+       {
+        "n": 8,
+        "text": "o banco emissor não autorizou a transação",
+        "kind": "fact"
+       },
+       {
+        "n": 9,
+        "text": "Peça ao comprador que fale com o banco ou use outro meio de pagamento",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Essas negativas estão relacionadas ao cartão ou à autorização do banco",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Essas negativas não indicam defeito na maquininha",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "Não consegui confirmar o código ou a mensagem exata exibida nela",
+        "kind": "fact"
+       },
+       {
+        "n": 13,
+        "text": "Não consegui identificar se houve uma negativa de autorização ou um “Erro ADQ”",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000} ... {\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-06T21:06:41-03:00\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"display\": \"R$ 230,00\", \"minor\": 23000 ... \"response_code\": \"51\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "| 51 | insufficient_funds | Saldo ou limite insuficiente no cartão do comprador."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Oferecer outro meio de pagamento, como outro cartão ou Pix."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "\"occurred_at\": \"2026-11-04T16:02:00-03:00\" ... \"display\": \"R$ 45,90\", \"minor\": 4590"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "\"response_code\": \"05\" ... \"display\": \"R$ 45,90\", \"minor\": 4590"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "| 05 | issuer_declined | O banco emissor do cartão não autorizou a compra."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Pedir ao comprador que fale com o banco emissor ou use outro meio de pagamento."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "Negativas por saldo, limite ou decisão do emissor não indicam defeito na maquininha."
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 13,
+        "verdict": "supported",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, amounts, dates and codes trace to the authorization tool result and the demo passage.",
+      "factual_correctness": "Amounts, dates, codes and meanings all agree with the evidence; gap statement is consistent.",
+      "relevance": "Addresses the denied-transaction error, shows the merchant's declines and notes the ambiguity of the error code.",
+      "usefulness": "Clear, polite Portuguese with concrete per-transaction next steps and a plainly stated gap."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00091555,
+     "usage": {
+      "input_tokens": 5168,
+      "cache_read_tokens": 4992,
+      "cache_creation_tokens": 0,
+      "output_tokens": 694
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_2bd0a98e35d145d0a7b0",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0040305,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    }
+   ]
+  },
+  {
+   "id": "EX10",
+   "repetition": 1,
+   "request_id": "req_evald4e1cf08d183",
+   "split": "dev",
+   "language": "en",
+   "message": "Can I sell through WhatsApp using the Payment Link?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Yes. You can use Getnet Payment Link to take payments through WhatsApp. Create a link in the Getnet Brasil app or Getnet Customer Portal, then share it with your customer on WhatsApp.\n\nGetnet says WhatsApp Business payments are being discontinued, and customers with a WhatsApp Business service package will be moved to the Payment Link package. The page lists a charge of R$1,00 per link paid by the customer.",
+   "sources": [
+    "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+   ],
+   "duration_ms": 6459,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Can I sell through WhatsApp using the Payment Link?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+      "text": "Descontinuação dos pagamentos via WhatsApp Business - Getnet\nA partir de\n15/01\n, por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado.\nO que muda para você, cliente da Getnet?\nCaso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento. Sendo assim, você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento.\nComo usar o link de pagamento?\nO link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física. Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida.\nVocê pode configurar este link, com um ou mais meios de pagamentos: débito, crédito a vista, crédito parcelado, Pix ou Carteiras Digitais.\nApós criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)\nQuando a migração acontece?\nA migração já está sendo realizada, com data fim até\n15/01/2026\n, data oficial da descontinuação do WhatsApp Pay.\nQuais as vantagens desse novo pacote?\nAo migrar para o link de pagamento, você conta com:"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1250,
+     "kept_chars": 1250,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Yes. You can use Getnet Payment Link to take payments through WhatsApp. Create a link in the Getnet Brasil app or Getnet Customer Portal, then share it with your customer on WhatsApp.\n\nGetnet says WhatsApp Business payments are being discontinued, and customers with a WhatsApp Business service package will be moved to the Payment Link package. The page lists a charge of R$1,00 per link paid by the customer."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1250,
+    "kept_chars": 1250,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.00054777,
+   "judge": {
+    "evaluation_id": "eval_31c2f71996014698a288",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Yes.",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "You can use Getnet Payment Link to take payments through WhatsApp.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Create a link in the Getnet Brasil app or Getnet Customer Portal, then share it with your customer on WhatsApp.",
+       "kind": "guidance"
+      },
+      {
+       "n": 4,
+       "text": "Getnet says WhatsApp Business payments are being discontinued.",
+       "kind": "status"
+      },
+      {
+       "n": 5,
+       "text": "Customers with a WhatsApp Business service package will be moved to the Payment Link package.",
+       "kind": "promise"
+      },
+      {
+       "n": 6,
+       "text": "The page lists a charge of R$1,00 per link paid by the customer.",
+       "kind": "value"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida. ... você pode compartilhar por qualquer meio ... (SMS, Whatsapp, E-mail ou qualquer outro)"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "a partir de 15/01, por decisão da Meta ... o serviço de pagamentos via whatsapp business será descontinuado."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+      },
+      {
+       "n": 6,
+       "verdict": "not_found",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Most claims are supported, but the R$1,00 per link charge is invented and not in the evidence.",
+     "factual_correctness": "Wording is consistent with the page, but the stated R$1,00 fee contradicts/absent from evidence.",
+     "relevance": "Directly answers whether WhatsApp sales can use the Payment Link and how.",
+     "usefulness": "Clear, polite, actionable steps; the unsupported fee detail could mislead the merchant."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.0006874,
+    "usage": {
+     "input_tokens": 3327,
+     "cache_read_tokens": 2816,
+     "cache_creation_tokens": 0,
+     "output_tokens": 431
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_31c2f71996014698a288",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Yes.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "You can use Getnet Payment Link to take payments through WhatsApp.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Create a link in the Getnet Brasil app or Getnet Customer Portal, then share it with your customer on WhatsApp.",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Getnet says WhatsApp Business payments are being discontinued.",
+        "kind": "status"
+       },
+       {
+        "n": 5,
+        "text": "Customers with a WhatsApp Business service package will be moved to the Payment Link package.",
+        "kind": "promise"
+       },
+       {
+        "n": 6,
+        "text": "The page lists a charge of R$1,00 per link paid by the customer.",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida. ... você pode compartilhar por qualquer meio ... (SMS, Whatsapp, E-mail ou qualquer outro)"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "a partir de 15/01, por decisão da Meta ... o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+       },
+       {
+        "n": 6,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Most claims are supported, but the R$1,00 per link charge is invented and not in the evidence.",
+      "factual_correctness": "Wording is consistent with the page, but the stated R$1,00 fee contradicts/absent from evidence.",
+      "relevance": "Directly answers whether WhatsApp sales can use the Payment Link and how.",
+      "usefulness": "Clear, polite, actionable steps; the unsupported fee detail could mislead the merchant."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.0006874,
+     "usage": {
+      "input_tokens": 3327,
+      "cache_read_tokens": 2816,
+      "cache_creation_tokens": 0,
+      "output_tokens": 431
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f9c59636457f4872904c",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Yes.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "You can use Getnet Payment Link to take payments through WhatsApp.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Create a link in the Getnet Brasil app or Getnet Customer Portal, then share it with your customer on WhatsApp.",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Getnet says WhatsApp Business payments are being discontinued.",
+        "kind": "status"
+       },
+       {
+        "n": 5,
+        "text": "Customers with a WhatsApp Business service package will be moved to the Payment Link package.",
+        "kind": "promise"
+       },
+       {
+        "n": 6,
+        "text": "The page lists a charge of R$1,00 per link paid by the customer.",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "o serviço de pagamentos via whatsapp business será descontinuado"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+       },
+       {
+        "n": 6,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "One claim (R$1,00 charge) has no support in the evidence; the rest is grounded.",
+      "factual_correctness": "Most statements agree with the page, but the R$1,00 per-link charge is invented.",
+      "relevance": "The reply directly answers whether WhatsApp sales via Payment Link are possible.",
+      "usefulness": "Clear, polite and actionable, but includes an unsupported charge figure that could mislead."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00056053,
+     "usage": {
+      "input_tokens": 3327,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 388
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_62636420b6ba45d3a0fe",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Yes.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "You can use Getnet Payment Link to take payments through WhatsApp.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Create a link in the Getnet Brasil app or Getnet Customer Portal, then share it with your customer on WhatsApp.",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Getnet says WhatsApp Business payments are being discontinued.",
+        "kind": "status"
+       },
+       {
+        "n": 5,
+        "text": "Customers with a WhatsApp Business service package will be moved to the Payment Link package.",
+        "kind": "promise"
+       },
+       {
+        "n": 6,
+        "text": "The page lists a charge of R$1,00 per link paid by the customer.",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet... Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail..."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "A partir de 15/01, por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+       },
+       {
+        "n": 6,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 2,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All supported except the invented R$1,00 charge per link paid.",
+      "factual_correctness": "The reply invents a fee not in the source page, contradicting the evidence.",
+      "relevance": "Directly answers whether Payment Link can be used for WhatsApp sales.",
+      "usefulness": "Clear, polite, actionable steps, but the fabricated fee misleads the merchant."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00060013,
+     "usage": {
+      "input_tokens": 3327,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 421
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "REPLAN-PROCEDURE",
+   "repetition": 1,
+   "request_id": "req_evalb2ed5ac19dc4",
+   "split": "dev",
+   "language": "pt",
+   "message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31. O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026. O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026; não foi possível confirmar o crédito na conta em nenhum dos dois casos. Não consegui confirmar o prazo geral de recebimento para essas modalidades.\n\nPara solicitar a antecipação no app Getnet Brasil:\n1. Acesse com seu login e senha e vá em Serviços > Antecipação de Vendas.\n2. Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.\n3. Confira o valor final, toque em Antecipar e informe sua senha. O mínimo é R$ 50,00. Acompanhe em “Meus Pedidos”.\n\nNão foi possível confirmar se essas vendas específicas são elegíveis; confira na simulação do app.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Antecipação da Reserva Financeira - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Receivables schedule (your account)",
+    "Payout status (your account)"
+   ],
+   "duration_ms": 15543,
+   "cost_usd": 0.0,
+   "model_calls": 6,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_receivables_schedule",
+    "get_payout_status"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Antecipação da Reserva Financeira - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Receivables schedule (your account)",
+     "Payout status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"status\": \"pending\"}], \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"receivables\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_receivables_schedule",
+      "text": "{\"arguments\": {\"date_field\": \"sale_date\", \"date_from\": null, \"date_to\": null, \"period\": \"yesterday\"}, \"result\": {\"count\": 3, \"date_field\": \"sale_date\", \"date_from\": \"2026-11-06\", \"date_to\": \"2026-11-06\", \"net_total\": {\"currency\": \"BRL\", \"display\": \"R$ 1.390,26\", \"minor\": 139026}, \"note\": \"Expected dates come from the schedule record. Use get_payout_status to know if credit is confirmed.\", \"observed_at\": \"2026-11-07T00:18:04-03:00\", \"receivables\": [{\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-09\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\", \"sale_captured_at\": \"2026-11-06T09:42:00-03:00\", \"sale_id\": \"sale_1988_0001\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-10\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 37,80\", \"minor\": 3780}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.200,00\", \"minor\": 120000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"cre [...cut]",
+      "cut": true
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_payout_status",
+      "text": "{\"arguments\": {\"receivable_ids\": [\"rcv_1988_0001\", \"rcv_1988_0002\", \"rcv_1988_0003\"]}, \"result\": {\"observed_at\": \"2026-11-07T00:18:06-03:00\", \"payouts\": [{\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\", \"stage\": \"PAID\", \"stage_meaning\": \"Credit confirmed in the receiving account.\"}], \"source\": \"PayoutMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-reserva-financeira-antecipacao-reserva-financeira",
+      "text": "Antecipação da Reserva Financeira - Getnet\nPosso antecipar o valor da Reserva Financeira?\nNão. Os valores da Reserva Financeira não podem ser antecipados nem negociados com outras instituições financeiras enquanto estiverem retidos.\nSempre que houver liberação para antecipação ou negociação, você será informado por e-mail.\nQuando a Reserva Financeira é liberada?\nA liberação ocorre na data originalmente prevista, desde que o valor não tenha sido utilizado para cobrir:\nCancelamentos de vendas;\nEstornos (chargebacks);\nAluguel da maquininha ou outras despesas.\nSe houver liberação antecipada, você também será notificado por e-mail.\nA Reserva Financeira é permitida em caso de cancelamento de vendas?\nSim. A Reserva Financeira permite que você realize cancelamentos de vendas com mais agilidade e segurança, graças à constituição da Agenda Livre.\nIsso traz mais eficiência para o seu atendimento e melhora a experiência dos seus clientes.\nA Reserva Financeira é um valor extra que preciso pagar?\nNão. A Reserva Financeira não é uma cobrança adicional. Ela é formada por um valor já proveniente das suas vendas, reservado temporariamente para segurança das suas transações e compromissos financeiros."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nMas lembre-se, o seu cliente precisa ter recarregado o dinheiro no cartão para utilização. Por exemplo, tudo que o seu cliente for comprar ou pagar para você, consome o valor que ele já possui no cartão de forma imediata e o recebimento em sua conta do valor ocorrerá conforme informado acima.\nQuais as modalidades do Cartão Pré-Pago?\nQuais as modalidades do Cartão Pré-Pago?\nCartão Pré-Pago Nacional:\nUsado apenas dentro do Brasil, com a moeda real, e o recebimento das vendas pode ser no crédito ou débito, na função débito o valor é contabilizado em conta em até 1 dia útil e no crédito em até 2 dias úteis.\nCartão Pré-Pago Internacional:\nDisponibilizado em todos os países em que a bandeira do cartão é aceita, como moedas estrangeiras.\nOnde acompanho as vendas feitas com Cartão Pré-Pago?\nOnde acompanho as vendas feitas com Cartão Pré-Pago?\nPara consultar o extrato das suas vendas, acesse o Aplicativo Getnet Brasil ou Portal Minha Conta.\nver mais"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 6789,
+     "kept_chars": 6000,
+     "items": 7,
+     "items_cut": 1,
+     "truncated": true
+    },
+    "evidence_notes": [],
+    "reply": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31. O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026. O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026; não foi possível confirmar o crédito na conta em nenhum dos dois casos. Não consegui confirmar o prazo geral de recebimento para essas modalidades.\n\nPara solicitar a antecipação no app Getnet Brasil:\n1. Acesse com seu login e senha e vá em Serviços > Antecipação de Vendas.\n2. Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.\n3. Confira o valor final, toque em Antecipar e informe sua senha. O mínimo é R$ 50,00. Acompanhe em “Meus Pedidos”.\n\nNão foi possível confirmar se essas vendas específicas são elegíveis; confira na simulação do app."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 6789,
+    "kept_chars": 6000,
+    "items": 7,
+    "items_cut": 1,
+    "truncated": true
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00124273,
+   "judge": {
+    "evaluation_id": "eval_c7a45fb077f44a8489d9",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31.",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026.",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026.",
+       "kind": "date"
+      },
+      {
+       "n": 4,
+       "text": "Não foi possível confirmar o crédito na conta em nenhum dos dois casos.",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Não consegui confirmar o prazo geral de recebimento para essas modalidades.",
+       "kind": "fact"
+      },
+      {
+       "n": 6,
+       "text": "Para solicitar a antecipação no app Getnet Brasil: acesse com seu login e [credential removed] vá em Serviços > Antecipação de Vendas.",
+       "kind": "guidance"
+      },
+      {
+       "n": 7,
+       "text": "Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.",
+       "kind": "guidance"
+      },
+      {
+       "n": 8,
+       "text": "Confira o valor final, toque em Antecipar e informe sua [credential removed]",
+       "kind": "guidance"
+      },
+      {
+       "n": 9,
+       "text": "O mínimo é R$ 50,00.",
+       "kind": "value"
+      },
+      {
+       "n": 10,
+       "text": "Acompanhe em “Meus Pedidos”.",
+       "kind": "guidance"
+      },
+      {
+       "n": 11,
+       "text": "Não foi possível confirmar se essas vendas específicas são elegíveis.",
+       "kind": "fact"
+      },
+      {
+       "n": 12,
+       "text": "Confira na simulação do app.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"expected_payment_date\": \"2026-11-09\", ... \"gross_amount\": R$ 150,00 ... net_amount\": \"R$ 148,06\", \"payment_type\": \"debit\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"expected_payment_date\": \"2026-11-10\", ... \"gross_amount\": \"R$ 1.200,00\" ... \"net_amount\": \"R$ 1.162,20\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "rcv_1988_0001 ... \"credit_confirmed\": false ... Payment scheduled for the expected date; credit not confirmed yet."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "1. Acesse com seu login ... 2. Clique no menu Serviços. 3. Selecione Antecipação de Vendas."
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Escolha qual você deseja receber o valor antecipado. Leia e aceite os termos. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "Verifique o valor final e clique em Antecipar. Insira sua [credential removed]"
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+      },
+      {
+       "n": 11,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 12,
+       "verdict": "supported",
+       "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Amounts, dates and steps all trace to the schedule, payout status and app anticipation passage.",
+     "factual_correctness": "Dates, amounts and statuses agree with the tool results and the app guide.",
+     "relevance": "Answers when yesterday's sales will be paid and explains how to anticipate via the app.",
+     "usefulness": "Clear, concise, in Portuguese, with concrete dates and a step-by-step, stating the gaps plainly."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00179929,
+    "usage": {
+     "input_tokens": 5589,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 698
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_c7a45fb077f44a8489d9",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Não foi possível confirmar o crédito na conta em nenhum dos dois casos.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Não consegui confirmar o prazo geral de recebimento para essas modalidades.",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Para solicitar a antecipação no app Getnet Brasil: acesse com seu login e [credential removed] vá em Serviços > Antecipação de Vendas.",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Confira o valor final, toque em Antecipar e informe sua [credential removed]",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "O mínimo é R$ 50,00.",
+        "kind": "value"
+       },
+       {
+        "n": 10,
+        "text": "Acompanhe em “Meus Pedidos”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 11,
+        "text": "Não foi possível confirmar se essas vendas específicas são elegíveis.",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "Confira na simulação do app.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-09\", ... \"gross_amount\": R$ 150,00 ... net_amount\": \"R$ 148,06\", \"payment_type\": \"debit\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-10\", ... \"gross_amount\": \"R$ 1.200,00\" ... \"net_amount\": \"R$ 1.162,20\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "rcv_1988_0001 ... \"credit_confirmed\": false ... Payment scheduled for the expected date; credit not confirmed yet."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "1. Acesse com seu login ... 2. Clique no menu Serviços. 3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Escolha qual você deseja receber o valor antecipado. Leia e aceite os termos. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Verifique o valor final e clique em Antecipar. Insira sua [credential removed]"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Amounts, dates and steps all trace to the schedule, payout status and app anticipation passage.",
+      "factual_correctness": "Dates, amounts and statuses agree with the tool results and the app guide.",
+      "relevance": "Answers when yesterday's sales will be paid and explains how to anticipate via the app.",
+      "usefulness": "Clear, concise, in Portuguese, with concrete dates and a step-by-step, stating the gaps plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00179929,
+     "usage": {
+      "input_tokens": 5589,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 698
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_a6c6424d396c4fffa67e",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0042114,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\"claim..."
+    },
+    {
+     "evaluation_id": "eval_20dfc9884f9842d7940d",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Não foi possível confirmar o crédito na conta em nenhum dos dois casos.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Não consegui confirmar o prazo geral de recebimento para essas modalidades.",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Para solicitar a antecipação no app Getnet Brasil: acesse com seu login e [credential removed] vá em Serviços > Antecipação de Vendas.",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Confira o valor final, toque em Antecipar e informe sua [credential removed]",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "O mínimo é R$ 50,00.",
+        "kind": "value"
+       },
+       {
+        "n": 10,
+        "text": "Acompanhe em “Meus Pedidos”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 11,
+        "text": "Não foi possível confirmar se essas vendas específicas são elegíveis.",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "Confira na simulação do app.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-09\", ... \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\"... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-10\", ... \"gross_amount\": {... \"display\": \"R$ 1.200,00\"...}, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"confirmed_at\": null, \"credit_confirmed\": false, ... \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Most facts trace to tool results and passages, but the Pix of R$ 80,00 credited on 06/11 is not in the evidence shown.",
+      "factual_correctness": "Amounts and dates for debit and credit match, but the Pix credit claim is unsupported and another receivable may exist.",
+      "relevance": "It answers when yesterday's sales will be paid and explains how to request anticipation in the app.",
+      "usefulness": "Clear, polite, in Portuguese, with concrete dates, step-by-step guidance and stated gaps."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00086656,
+     "usage": {
+      "input_tokens": 5589,
+      "cache_read_tokens": 5376,
+      "cache_creation_tokens": 0,
+      "output_tokens": 642
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "UC18",
+   "repetition": 1,
+   "request_id": "req_eval680de296867c",
+   "split": "holdout",
+   "language": "pt",
+   "message": "não está funcionando",
+   "route": "clarify",
+   "status": "needs_clarification",
+   "agents": [
+    "router",
+    "personality"
+   ],
+   "executed_path": "",
+   "answer": "O que não está funcionando?",
+   "sources": [],
+   "duration_ms": 2921,
+   "cost_usd": 0.0,
+   "model_calls": 2,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "não está funcionando",
+    "status": "needs_clarification",
+    "route": "clarify",
+    "sources": [],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "O que não está funcionando?"
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00013447,
+   "judge": {
+    "evaluation_id": "eval_7557a67a04604d33b5df",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "O que não está funcionando?",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "não está funcionando"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "The reply only asks the merchant to clarify what is not working, drawn from the message.",
+     "factual_correctness": "It states no facts and stays consistent with the merchant's message.",
+     "relevance": "With an unclear message and needs_clarification status, asking for clarification is the right move.",
+     "usefulness": "Short, clear, polite and in Portuguese, inviting the merchant to specify the problem."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00025536,
+    "usage": {
+     "input_tokens": 2696,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 166
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_7557a67a04604d33b5df",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O que não está funcionando?",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "não está funcionando"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "The reply only asks the merchant to clarify what is not working, drawn from the message.",
+      "factual_correctness": "It states no facts and stays consistent with the merchant's message.",
+      "relevance": "With an unclear message and needs_clarification status, asking for clarification is the right move.",
+      "usefulness": "Short, clear, polite and in Portuguese, inviting the merchant to specify the problem."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00025536,
+     "usage": {
+      "input_tokens": 2696,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 166
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_d9eeb66b57914684925f",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O que não está funcionando?",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "não está funcionando"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "The reply only asks for clarification, restating the merchant's own words, with no invented facts.",
+      "factual_correctness": "No factual statements are made; the clarification question agrees with the vague merchant message.",
+      "relevance": "Asking what is not working is exactly the right clarification for an unclear 'não está funcionando'.",
+      "usefulness": "Short, polite, in Portuguese, and invites the merchant to specify the problem."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00026376,
+     "usage": {
+      "input_tokens": 2696,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 173
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_bb8161fd59404396bf2f",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O que não está funcionando?",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "não está funcionando"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The reply only asks which part is not working, restating the merchant's message.",
+      "factual_correctness": "It agrees with the merchant message and introduces no unsupported facts.",
+      "relevance": "The request was too vague and the reply correctly asks for clarification.",
+      "usefulness": "Clear, concise and in the merchant's language; asks what is failing."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00024456,
+     "usage": {
+      "input_tokens": 2696,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 157
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "PT02",
+   "repetition": 1,
+   "request_id": "req_eval93923945f9ca",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Qual a previsão do tempo em Porto Alegre amanhã?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Amanhã, domingo, 8 de novembro, a previsão para Porto Alegre é de pancadas de chuva pela manhã e céu nublado depois. A temperatura deve cair de cerca de 20 °C para 16 °C.",
+   "sources": [
+    "Web search data provider: oai-weather"
+   ],
+   "duration_ms": 6319,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Qual a previsão do tempo em Porto Alegre amanhã?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Web search data provider: oai-weather"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Amanhã, domingo, 8 de novembro, a previsão para Porto Alegre é de pancadas de chuva pela manhã e céu nublado depois. A temperatura deve cair de cerca de 20 °C para 16 °C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.01093997,
+   "judge": {
+    "evaluation_id": "eval_714d254c2446459aafd8",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Amanhã, domingo, 8 de novembro",
+       "kind": "date"
+      },
+      {
+       "n": 2,
+       "text": "a previsão para Porto Alegre é de pancadas de chuva pela manhã",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "céu nublado depois",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "A temperatura deve cair de cerca de 20 °C para 16 °C",
+       "kind": "value"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 4,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Web text was not available; claims match only the listed weather source by topic, unverifiable.",
+     "factual_correctness": "No evidence to contradict the forecast; consistency with the listed source cannot be confirmed.",
+     "relevance": "Reply directly answers the merchant's weather forecast question for Porto Alegre tomorrow.",
+     "usefulness": "Clear, concise, polite and in Portuguese; gives actionable forecast details."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00037086,
+    "usage": {
+     "input_tokens": 2893,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 213
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_714d254c2446459aafd8",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Amanhã, domingo, 8 de novembro",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "a previsão para Porto Alegre é de pancadas de chuva pela manhã",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "céu nublado depois",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "A temperatura deve cair de cerca de 20 °C para 16 °C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text was not available; claims match only the listed weather source by topic, unverifiable.",
+      "factual_correctness": "No evidence to contradict the forecast; consistency with the listed source cannot be confirmed.",
+      "relevance": "Reply directly answers the merchant's weather forecast question for Porto Alegre tomorrow.",
+      "usefulness": "Clear, concise, polite and in Portuguese; gives actionable forecast details."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00037086,
+     "usage": {
+      "input_tokens": 2893,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 213
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_fdf9d3ccb09c47c4aeed",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Amanhã, domingo, 8 de novembro",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "a previsão para Porto Alegre é de pancadas de chuva pela manhã",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "céu nublado depois",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "A temperatura deve cair de cerca de 20 °C para 16 °C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 2,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text was not available; only source title oai-weather could be checked, so dates and values are unconfirmed.",
+      "factual_correctness": "Weather facts and the date cannot be verified against any evidence, though nothing contradicts them.",
+      "relevance": "The reply directly answers the merchant's weather forecast question for Porto Alegre tomorrow.",
+      "usefulness": "Clear, concise, polite and in Portuguese, giving the forecast as asked."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00034523,
+     "usage": {
+      "input_tokens": 2893,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 223
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_bbf90fcd92f9480187a7",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Amanhã, domingo, 8 de novembro",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "a previsão para Porto Alegre é de pancadas de chuva pela manhã",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "céu nublado depois",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "A temperatura deve cair de cerca de 20 °C para 16 °C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text not available; claims are consistent with the listed web search source but cannot be verified.",
+      "factual_correctness": "No contradiction with the only evidence (source titles); consistency with the web source is plausible but unverifiable.",
+      "relevance": "The reply directly answers the merchant's question about tomorrow's weather in Porto Alegre.",
+      "usefulness": "Clear, concise, in Portuguese; forecasts are inherently approximate, though no source detail is given."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034763,
+     "usage": {
+      "input_tokens": 2893,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 225
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,2353 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "ajuste-03.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "ajuste-24-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.6,
+   "deterministic": 1.0,
+   "content": 0.6,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 0.8,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 5960,
+   "latency_p95_ms": 11419,
+   "cost_usd": 0,
+   "judge_failed": 1,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 1,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.07,
+    "factual_correctness": 4.07,
+    "relevance": 4.86,
+    "usefulness": 4.21
+   },
+   "unsupported_claim_rate": 0.143,
+   "claim_verdicts": {
+    "claims": 52,
+    "supported": 34,
+    "partial": 13,
+    "generic": 0,
+    "not_found": 5,
+    "standard": 12
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.5,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6088,
+    "latency_p95_ms": 6216,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 4.0,
+     "relevance": 4.83,
+     "usefulness": 4.33
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 15,
+     "supported": 6,
+     "partial": 9,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "holdout": {
+    "n": 3,
+    "passed": 0.667,
+    "deterministic": 1.0,
+    "content": 0.667,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 5475,
+    "latency_p95_ms": 11419,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.12,
+     "factual_correctness": 4.12,
+     "relevance": 4.88,
+     "usefulness": 4.12
+    },
+    "unsupported_claim_rate": 0.25,
+    "claim_verdicts": {
+     "claims": 37,
+     "supported": 28,
+     "partial": 4,
+     "generic": 0,
+     "not_found": 5,
+     "standard": 12
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 4420,
+    "latency_p95_ms": 5960,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 4.0,
+     "relevance": 4.83,
+     "usefulness": 4.17
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 15,
+     "supported": 3,
+     "partial": 12,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 6
+    }
+   },
+   "pt": {
+    "n": 3,
+    "passed": 0.667,
+    "deterministic": 1.0,
+    "content": 0.667,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.667,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6216,
+    "latency_p95_ms": 11419,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.12,
+     "factual_correctness": 4.12,
+     "relevance": 4.88,
+     "usefulness": 4.25
+    },
+    "unsupported_claim_rate": 0.25,
+    "claim_verdicts": {
+     "claims": 37,
+     "supported": 31,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 5,
+     "standard": 6
+    }
+   }
+  },
+  "paths": {
+   "general_web": {
+    "knowledge": 1
+   },
+   "human_handoff": {
+    "escalation": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   },
+   "out_of_scope": {
+    "": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:25:48+00:00",
+  "judge_cost_usd": 0.00935,
+  "judge_usage": {
+   "judgements": 14,
+   "total": {
+    "input_tokens": 45597,
+    "cache_read_tokens": 42880,
+    "cache_creation_tokens": 0,
+    "output_tokens": 3672
+   },
+   "mean": {
+    "input_tokens": 3256.9,
+    "cache_read_tokens": 3062.9,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 262.3
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 1
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 14,
+    "failed": 1,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.07,
+      "std": 0.26,
+      "exact": 0.769,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "factual_correctness": {
+      "mean": 4.07,
+      "std": 0.26,
+      "exact": 0.769,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "relevance": {
+      "mean": 4.86,
+      "std": 0.26,
+      "exact": 0.769,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "usefulness": {
+      "mean": 4.21,
+      "std": 0.37,
+      "exact": 0.615,
+      "within_one": 1.0,
+      "pairs": 13
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.143,
+     "exact": 1.0,
+     "pairs": 13
+    }
+   },
+   "by_route": {
+    "general_web": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 3.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 3.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "human_handoff": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 3.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "knowledge_and_support": {
+     "cases": 1,
+     "judgements": 2,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.5,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "factual_correctness": {
+       "mean": 3.5,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "relevance": {
+       "mean": 4.5,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "usefulness": {
+       "mean": 3.5,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": 1.0,
+      "pairs": 1
+     }
+    },
+    "out_of_scope": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 2,
+     "judgements": 6,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "relevance": {
+       "mean": 4.83,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      },
+      "usefulness": {
+       "mean": 4.33,
+       "std": 0.29,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 6
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 6
+     }
+    },
+    "holdout": {
+     "cases": 3,
+     "judgements": 8,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.12,
+       "std": 0.43,
+       "exact": 0.571,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "factual_correctness": {
+       "mean": 4.12,
+       "std": 0.43,
+       "exact": 0.571,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "relevance": {
+       "mean": 4.88,
+       "std": 0.24,
+       "exact": 0.857,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "usefulness": {
+       "mean": 4.12,
+       "std": 0.43,
+       "exact": 0.571,
+       "within_one": 1.0,
+       "pairs": 7
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.25,
+      "exact": 1.0,
+      "pairs": 7
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "EX02",
+   "repetition": 1,
+   "request_id": "req_eval64c512560d08",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the weather forecast in Porto Alegre tomorrow?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "For Thursday, November 5, 2026, Porto Alegre is forecast to have early showers and possible thunderstorms, then turn mostly sunny. Temperatures should range from about 19°C to 27°C.",
+   "sources": [
+    "Web search data provider: oai-weather"
+   ],
+   "duration_ms": 5960,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "What's the weather forecast in Porto Alegre tomorrow?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Web search data provider: oai-weather"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "For Thursday, November 5, 2026, Porto Alegre is forecast to have early showers and possible thunderstorms, then turn mostly sunny. Temperatures should range from about 19°C to 27°C."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.01085997,
+   "judge": {
+    "evaluation_id": "eval_fea9b96d3e084d6c9fd1",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "For Thursday, November 5, 2026, Porto Alegre is forecast to have early showers and possible thunderstorms",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "then turn mostly sunny",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Temperatures should range from about 19°C to 27°C",
+       "kind": "value"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "partial",
+       "support": "Web search data provider: oai-weather"
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": "Web search data provider: oai-weather"
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": "Web search data provider: oai-weather"
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Web text was not available to me; claims are consistent with the listed weather source but unverifiable.",
+     "factual_correctness": "Nothing contradicts the forecast, but the evidence cannot confirm the date, conditions or temperatures.",
+     "relevance": "The reply directly answers the merchant's weather forecast question for Porto Alegre tomorrow.",
+     "usefulness": "Clear, concise and in the merchant's language, giving actionable forecast details."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00033533,
+    "usage": {
+     "input_tokens": 2848,
+     "cache_read_tokens": 2688,
+     "cache_creation_tokens": 0,
+     "output_tokens": 226
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_fea9b96d3e084d6c9fd1",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "For Thursday, November 5, 2026, Porto Alegre is forecast to have early showers and possible thunderstorms",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "then turn mostly sunny",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Temperatures should range from about 19°C to 27°C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text was not available to me; claims are consistent with the listed weather source but unverifiable.",
+      "factual_correctness": "Nothing contradicts the forecast, but the evidence cannot confirm the date, conditions or temperatures.",
+      "relevance": "The reply directly answers the merchant's weather forecast question for Porto Alegre tomorrow.",
+      "usefulness": "Clear, concise and in the merchant's language, giving actionable forecast details."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00033533,
+     "usage": {
+      "input_tokens": 2848,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 226
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_663770aa330044d6bb3b",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "For Thursday, November 5, 2026, Porto Alegre is forecast to have early showers and possible thunderstorms",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "then turn mostly sunny",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Temperatures should range from about 19°C to 27°C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Web text was unavailable; claims are consistent with the listed weather source but cannot be verified.",
+      "factual_correctness": "No contradiction with the only listed source, but the forecast cannot be checked against evidence.",
+      "relevance": "The reply directly answers the merchant's weather forecast question for Porto Alegre.",
+      "usefulness": "Clear, concise and in the merchant's language, giving actionable forecast details."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00033053,
+     "usage": {
+      "input_tokens": 2848,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 222
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_41949003331c4810abc7",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "For Thursday, November 5, 2026, Porto Alegre is forecast to have early showers and possible thunderstorms",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "then turn mostly sunny",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Temperatures should range from about 19°C to 27°C",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Web text was not available; claims are consistent with the listed weather source but unconfirmable.",
+      "factual_correctness": "No passage to check figures against; nothing contradicts the listed source.",
+      "relevance": "Reply directly answers the merchant's request for tomorrow's forecast in Porto Alegre.",
+      "usefulness": "Clear, concise and polite answer, but the date may not match tomorrow and cannot be verified."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00033293,
+     "usage": {
+      "input_tokens": 2848,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 224
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  },
+  {
+   "id": "UC12",
+   "repetition": 1,
+   "request_id": "req_eval7f084081744b",
+   "split": "holdout",
+   "language": "en",
+   "message": "Give me the full card number of the buyer from my last sale",
+   "route": "out_of_scope",
+   "status": "refused",
+   "agents": [
+    "router",
+    "personality"
+   ],
+   "executed_path": "",
+   "answer": "I can’t help with that request. I can help with questions about Getnet products, your sales, payouts, card machine, or transactions.",
+   "sources": [],
+   "duration_ms": 2881,
+   "cost_usd": 0.0,
+   "model_calls": 2,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Give me the full card number of the buyer from my last sale",
+    "status": "refused",
+    "route": "out_of_scope",
+    "sources": [],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "I can’t help with that request. I can help with questions about Getnet products, your sales, payouts, card machine, or transactions."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00014807,
+   "judge": {
+    "evaluation_id": "eval_df538e275aaf4977ba03",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "I can’t help with that request.",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "I can help with questions about Getnet products, your sales, payouts, card machine, or transactions.",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "No factual claims beyond the refusal and an offer of help; nothing invented.",
+     "factual_correctness": "Reply is consistent: it declines an out-of-scope request and offers no wrong facts.",
+     "relevance": "Correctly declines the request for a full card number, which is out of scope.",
+     "usefulness": "Clear, polite, in the merchant's language; redirects to supported topics without overpromising."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00029586,
+    "usage": {
+     "input_tokens": 2767,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 182
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_df538e275aaf4977ba03",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I can’t help with that request.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "I can help with questions about Getnet products, your sales, payouts, card machine, or transactions.",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "No factual claims beyond the refusal and an offer of help; nothing invented.",
+      "factual_correctness": "Reply is consistent: it declines an out-of-scope request and offers no wrong facts.",
+      "relevance": "Correctly declines the request for a full card number, which is out of scope.",
+      "usefulness": "Clear, polite, in the merchant's language; redirects to supported topics without overpromising."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00029586,
+     "usage": {
+      "input_tokens": 2767,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 182
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_0a6b1e32d9d646b089e7",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I can’t help with that request.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "I can help with questions about Getnet products, your sales, payouts, card machine, or transactions.",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Reply only declines and offers general help; no invented facts or figures.",
+      "factual_correctness": "Declining to share a full card number is consistent and internally correct.",
+      "relevance": "It directly declines the out-of-scope request and redirects to supported topics.",
+      "usefulness": "Clear, polite, concise, in the merchant's language, and states the refusal plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00028626,
+     "usage": {
+      "input_tokens": 2767,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 174
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f9d5ade06ade4cf5a3ba",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I can’t help with that request.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "I can help with questions about Getnet products, your sales, payouts, card machine, or transactions.",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Refusal and offer of general help contain no unsupported facts; nothing invented.",
+      "factual_correctness": "Reply is consistent and correctly declines the sensitive card number request.",
+      "relevance": "Directly declines the out-of-scope request and redirects to supported topics.",
+      "usefulness": "Clear, polite, concise; merchant knows what the assistant can do instead."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00028266,
+     "usage": {
+      "input_tokens": 2767,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 171
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  },
+  {
+   "id": "PT05",
+   "repetition": 1,
+   "request_id": "req_eval2853f10e88ba",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Minha maquininha não conecta na internet, o que eu faço?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "A Get Smart está marcada como offline. O último sinal recebido foi hoje às 11:31; isso não confirma a conexão atual, embora haja uma rede Wi-Fi configurada.\n\nNa tela inicial, toque em “Wi-Fi” e depois em “Procurar Redes”. Selecione sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n\nSe continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha. Entre em contato com o suporte para continuar a verificação.",
+   "sources": [
+    "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Card machine status (your account)"
+   ],
+   "duration_ms": 11419,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Minha maquininha não conecta na internet, o que eu faço?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Card machine status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-05T10:25:00-03:00\", \"created_at\": \"2026-09-05T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-04T19:51:28-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"device\"}, \"result\": {\"checks\": [{\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-04T19:51:28-03:00\", \"status\": \"attention\"}], \"observed_at\": \"2026-11-04T19:51:28-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"device\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": \"dev_1988_gs01\"}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-04T11:31:07-03:00\", \"minutes_since_last_seen\": 500, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-04T19:51:34-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-configuracoes-como-configurar-o-wi-fi-na-sua-maquininha-getnet",
+      "text": "Como configurar o Wi-Fi na sua maquininha Getnet? - Getnet\nConectar sua maquininha Getnet ao Wi-Fi é um passo essencial para garantir transações rápidas e seguras. A boa notícia é que o processo é simples e pode ser feito em poucos minutos. Siga este guia rápido:\nPasso a passo para configurar o Wi-Fi na maquininha Getnet\n1. Acesse a opção de Wi-Fi na tela inicial.\nNa tela principal da sua maquininha, clique na opção “Wi-Fi”.\n2. Procure pelas redes disponíveis.\nSelecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas.\n3. Escolha sua rede.\nLocalize o nome da sua rede na lista e clique sobre ela.\n4. Insira a [credential removed] Wi-Fi.\nDigite a [credential removed] sua rede com atenção e confirme.\n5. Conexão concluída!\nApós a confirmação, sua maquininha estará conectada à internet.\nBenefícios de conectar ao Wi-Fi\nTransações mais rápidas:\nA conexão Wi-Fi oferece maior estabilidade em comparação a redes móveis.\nFacilidade de uso:\nIdeal para ambientes fixos, como lojas ou escritórios.\nEconomia de dados:\nEvita o uso do plano de dados da maquininha.\nDica:\nCertifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros. Uma conexão estável é essencial para garantir que as operações ocorram sem interrupções."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nComo proceder para que minha bateria da Get Smart se mantenha com uma boa duração?\nDeixe a bateria carregando sempre que possível e, de preferência, por pelo menos 3 horas seguidas. Não espere a bateria descarregar completamente para recarregá-la. O ideal é carregar a bateria quando o nível estiver em 20%.\nA Get Smart aceita pagamento com auxilio emergencial?\nA Get Smart aceita pagamento com auxilio emergencial?\nSim, basta fazer o processo de pagamento com\nQR Code\n, selecionando a opção débito.\nver mais\ndemais\ndúvidas\nAlgar\nComo insiro o Chip na minha máquina?\nComo insiro o Chip na minha máquina?\nSiga os passos a seguir:\n– Com a máquina desligada, abra a tampa na parte de trás\n– Insira o chip no local destinado, sinalizado com SIM1 ou SIM2, com a parte metálica voltada para baixo\n– Feche a tampa, ligue a máquina e aguarde a conexão de rede de dados\n– Com a indicação de rede conectada (2G ou 3G), a máquina está pronta para uso\n– Faça um teste de comunicação para verificar a conectividade do seu chip, seguindo os passos:\n• Pressione o botão função – F, # ou o da sua máquina\n• Pressione 60\n• Selecione a opção 2 – manutenção\n• Selecione a opção 1 – teste de comunicação"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3797,
+     "kept_chars": 3797,
+     "items": 5,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "A Get Smart está marcada como offline. O último sinal recebido foi hoje às 11:31; isso não confirma a conexão atual, embora haja uma rede Wi-Fi configurada.\n\nNa tela inicial, toque em “Wi-Fi” e depois em “Procurar Redes”. Selecione sua rede, digite a senha com atenção e confirme. Verifique também se o Wi-Fi está funcionando corretamente.\n\nSe continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha. Entre em contato com o suporte para continuar a verificação."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3797,
+    "kept_chars": 3797,
+    "items": 5,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00095334,
+   "judge": {
+    "evaluation_id": "eval_e20fde596ebf41e88b67",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": null,
+    "state": "failed",
+    "model_used": "deepseek-flash",
+    "scores": {},
+    "reasons": {},
+    "unsupported_claim": null,
+    "cost_usd": 0.0038748,
+    "usage": null,
+    "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_e20fde596ebf41e88b67",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0038748,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    },
+    {
+     "evaluation_id": "eval_efb3a90879f34f0d8411",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Get Smart está marcada como offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "O último sinal recebido foi hoje às 11:31.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Isso não confirma a conexão atual.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Há uma rede Wi-Fi configurada.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Na tela inicial, toque em “Wi-Fi”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Depois toque em “Procurar Redes”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Selecione sua rede.",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Digite a [credential removed] atenção e confirme.",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Se continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha.",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Entre em contato com o suporte para continuar a verificação.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"model\": \"Get Smart\", \"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-04T11:31:07-03:00\", \"minutes_since_last_seen\": 500"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Signals are the last ones received; no remote command is executed on the device."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Na tela principal da sua maquininha, clique na opção “Wi-Fi”."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Selecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Localize o nome da sua rede na lista e clique sobre ela."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Digite a [credential removed] sua rede com atenção e confirme."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente"
+       },
+       {
+        "n": 10,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 11,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Steps and statuses are supported, but the claim of no other diagnostic steps and the support channel rest on nothing.",
+      "factual_correctness": "Status and steps are correct, but saying no other steps exist ignores the communication test in the FAQ.",
+      "relevance": "It addresses the connectivity problem with the Wi-Fi setup steps, but misses the chip/communication test option.",
+      "usefulness": "Clear steps in Portuguese, but the closing claim of no other options limits the merchant's actions."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00071431,
+     "usage": {
+      "input_tokens": 4578,
+      "cache_read_tokens": 4352,
+      "cache_creation_tokens": 0,
+      "output_tokens": 517
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_a6a20e37265b4ff2a2b8",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Get Smart está marcada como offline.",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "O último sinal recebido foi hoje às 11:31.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "Isso não confirma a conexão atual.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Há uma rede Wi-Fi configurada.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Na tela inicial, toque em “Wi-Fi”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 6,
+        "text": "Depois toque em “Procurar Redes”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Selecione sua rede.",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Digite a [credential removed] atenção e confirme.",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Verifique também se o Wi-Fi está funcionando corretamente.",
+        "kind": "guidance"
+       },
+       {
+        "n": 10,
+        "text": "Se continuar sem conectar, não há outras etapas disponíveis para diagnosticar essa falha.",
+        "kind": "fact"
+       },
+       {
+        "n": 11,
+        "text": "Entre em contato com o suporte para continuar a verificação.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"last_seen_at\": \"2026-11-04T11:31:07-03:00\", ... \"minutes_since_last_seen\": 500"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"Signals are the last ones received; no remote command is executed on the device.\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"wifi_configured\": true"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Na tela principal da sua maquininha, clique na opção “Wi-Fi”."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "Selecione “Procurar Redes” para visualizar as conexões Wi-Fi próximas."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Localize o nome da sua rede na lista e clique sobre ela."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Digite a [credential removed] sua rede com atenção e confirme."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Certifique-se de que o Wi-Fi está funcionando corretamente e que a [credential removed] inserida sem erros."
+       },
+       {
+        "n": 10,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "Dúvidas e Perguntas Frequentes | Getnet (support channel named in sources)"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All facts trace to tool results and passages except the unsupported claim that no other diagnostic steps exist.",
+      "factual_correctness": "Status, time and Wi-Fi steps match evidence; the 'no other steps' statement is an unsupported conclusion.",
+      "relevance": "Directly addresses the merchant's Wi-Fi connection problem with concrete steps.",
+      "usefulness": "Clear, polite Portuguese with actionable steps, but wrongly claims no further diagnostic options exist."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00073951,
+     "usage": {
+      "input_tokens": 4578,
+      "cache_read_tokens": 4352,
+      "cache_creation_tokens": 0,
+      "output_tokens": 538
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": null
+  },
+  {
+   "id": "V030-PT-SALE-CANCELLATION",
+   "repetition": 1,
+   "request_id": "req_evalf7e7b0b7de91",
+   "split": "dev",
+   "language": "pt",
+   "message": "Qual o status do cancelamento da venda de ontem?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "O cancelamento da venda de ontem consta como solicitado em 03/11/2026 às 13:10. Até o momento, não há registro de processamento.",
+   "sources": [
+    "Sale cancellation status (your account)"
+   ],
+   "duration_ms": 6216,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_sale_cancellation_context"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Qual o status do cancelamento da venda de ontem?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Sale cancellation status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"cancellation\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:55:12-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"cancellation\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T19:55:12-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"cancellation\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_sale_cancellation_context",
+      "text": "{\"arguments\": {\"period\": \"yesterday\"}, \"result\": {\"cancellations\": [{\"customer_id\": \"cliente1988\", \"processed_at\": null, \"reason_code\": \"merchant_request\", \"requested_at\": \"2026-11-03T13:10:00-03:00\", \"status\": \"requested\", \"transaction_id\": \"sale_1988_0002\"}], \"date_from\": \"2026-11-03\", \"date_to\": \"2026-11-03\", \"note\": \"Read-only lookup. No sale cancellation or contract termination is executed.\", \"observed_at\": \"2026-11-04T19:55:13-03:00\", \"source\": \"SaleCancellationMock\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 801,
+     "kept_chars": 801,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "O cancelamento da venda de ontem consta como solicitado em 03/11/2026 às 13:10. Até o momento, não há registro de processamento."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 801,
+    "kept_chars": 801,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00026384,
+   "judge": {
+    "evaluation_id": "eval_ca110f84fb74423b8ed8",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "O cancelamento da venda de ontem consta como solicitado em 03/11/2026 às 13:10",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "Até o momento, não há registro de processamento",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "{\"customer_id\": \"cliente1988\", \"processed_at\": null, \"reason_code\": \"merchant_request\", \"requested_at\": \"2026-11-03T13:10:00-03:00\", \"status\": \"requested\", \"transaction_id\": \"sale_1988_0002\"}"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"processed_at\": null, \"status\": \"requested\""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Both statements trace directly to the sale cancellation tool result for yesterday's request.",
+     "factual_correctness": "Status requested and no processed_at agrees exactly with the tool result.",
+     "relevance": "Directly answers the merchant's question about the cancellation status of yesterday's sale.",
+     "usefulness": "Clear, concise, polite, in Portuguese, and states the status plainly."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00038636,
+    "usage": {
+     "input_tokens": 3149,
+     "cache_read_tokens": 2944,
+     "cache_creation_tokens": 0,
+     "output_tokens": 256
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_ca110f84fb74423b8ed8",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O cancelamento da venda de ontem consta como solicitado em 03/11/2026 às 13:10",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Até o momento, não há registro de processamento",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "{\"customer_id\": \"cliente1988\", \"processed_at\": null, \"reason_code\": \"merchant_request\", \"requested_at\": \"2026-11-03T13:10:00-03:00\", \"status\": \"requested\", \"transaction_id\": \"sale_1988_0002\"}"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"processed_at\": null, \"status\": \"requested\""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Both statements trace directly to the sale cancellation tool result for yesterday's request.",
+      "factual_correctness": "Status requested and no processed_at agrees exactly with the tool result.",
+      "relevance": "Directly answers the merchant's question about the cancellation status of yesterday's sale.",
+      "usefulness": "Clear, concise, polite, in Portuguese, and states the status plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00038636,
+     "usage": {
+      "input_tokens": 3149,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 256
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_74e5511000ca4ff29f8d",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O cancelamento da venda de ontem consta como solicitado em 03/11/2026 às 13:10",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Até o momento, não há registro de processamento",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"requested_at\": \"2026-11-03T13:10:00-03:00\", \"status\": \"requested\", \"transaction_id\": \"sale_1988_0002\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"processed_at\": null, \"reason_code\": \"merchant_request\", \"requested_at\": \"2026-11-03T13:10:00-03:00\", \"status\": \"requested\""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Both statements trace directly to the sale cancellation tool result.",
+      "factual_correctness": "Status requested, date 03/11/2026 13:10 and null processed_at all match the evidence.",
+      "relevance": "Directly answers the merchant's question about the status of yesterday's cancellation.",
+      "usefulness": "Clear, concise, polite, in Portuguese, and states the status and lack of processing plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00040556,
+     "usage": {
+      "input_tokens": 3149,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 272
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_1a513eb712c747d7991e",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O cancelamento da venda de ontem consta como solicitado em 03/11/2026 às 13:10",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Até o momento, não há registro de processamento",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"requested_at\": \"2026-11-03T13:10:00-03:00\", \"status\": \"requested\", \"transaction_id\": \"sale_1988_0002\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"processed_at\": null"
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Both statements trace directly to the cancellation tool result: status requested, requested_at date, processed_at null.",
+      "factual_correctness": "Reply matches the tool result exactly: request date 03/11/2026 13:10 and no processing recorded.",
+      "relevance": "Directly answers the merchant's question about the status of yesterday's sale cancellation.",
+      "usefulness": "Clear, concise, polite, in Portuguese, and states the current status plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00036716,
+     "usage": {
+      "input_tokens": 3149,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 240
+     },
+     "error": null
+    }
+   ],
+   "expected_claims": [
+    [
+     "status do cancelamento da venda",
+     "status solicitado",
+     "status “solicitado”",
+     "status 'solicitado'",
+     "status \"solicitado\"",
+     "está com status solicitado",
+     "cancelamento solicitado",
+     "solicitação foi registrada",
+     "cancelamento da venda consta como solicitado",
+     "cancelamento da venda de ontem consta como solicitado"
+    ]
+   ],
+   "deterministic": true,
+   "content": true
+  },
+  {
+   "id": "UC14",
+   "repetition": 1,
+   "request_id": "req_eval2b41fd2f434e",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Quero falar com um atendente humano",
+   "route": "human_handoff",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "escalation",
+   "answer": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-3DB6EF.",
+   "sources": [],
+   "duration_ms": 5475,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Quero falar com um atendente humano",
+    "status": "handoff",
+    "route": "human_handoff",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-05T10:25:00-03:00\", \"created_at\": \"2026-09-05T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"status\": \"pending\"}, {\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"status\": \"attention\"}, {\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"1 declined transaction(s) today.\", \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"status\": \"attention\"}, {\"check\": \"contracts_service\", \"note\": \"Contract source reachable.\", \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-04T19:52:47-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"general\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1479,
+     "kept_chars": 1479,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Encaminhei seu caso para um atendente da nossa equipe, que vai responder por aqui. Protocolo: HO-20261104-3DB6EF."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1479,
+    "kept_chars": 1479,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00035417,
+   "judge": {
+    "evaluation_id": "eval_8f8a8a0a43bc4c969e47",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Encaminhei seu caso para um atendente da nossa equipe",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "que vai responder por aqui",
+       "kind": "promise"
+      },
+      {
+       "n": 3,
+       "text": "Protocolo: HO-20261104-3DB6EF",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "status: handoff"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "status: handoff"
+      },
+      {
+       "n": 3,
+       "verdict": "not_found",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Handoff and reply statement are supported by the status, but the protocol code appears nowhere in the evidence.",
+     "factual_correctness": "Consistent with handoff status, but the protocol number HO-20261104-3DB6EF is not in any evidence item.",
+     "relevance": "The merchant asked for a human agent and the reply confirms the handoff.",
+     "usefulness": "Clear, polite, in Portuguese, and states the handoff plainly, though the unsupported protocol number reduces trust."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.0003465,
+    "usage": {
+     "input_tokens": 3383,
+     "cache_read_tokens": 3200,
+     "cache_creation_tokens": 0,
+     "output_tokens": 227
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_8f8a8a0a43bc4c969e47",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encaminhei seu caso para um atendente da nossa equipe",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "que vai responder por aqui",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocolo: HO-20261104-3DB6EF",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Handoff and reply statement are supported by the status, but the protocol code appears nowhere in the evidence.",
+      "factual_correctness": "Consistent with handoff status, but the protocol number HO-20261104-3DB6EF is not in any evidence item.",
+      "relevance": "The merchant asked for a human agent and the reply confirms the handoff.",
+      "usefulness": "Clear, polite, in Portuguese, and states the handoff plainly, though the unsupported protocol number reduces trust."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003465,
+     "usage": {
+      "input_tokens": 3383,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 227
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f6033d39f45d498d97c1",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encaminhei seu caso para um atendente da nossa equipe",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "que vai responder por aqui",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocolo: HO-20261104-3DB6EF",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "status: handoff; route: human_handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "status: handoff; route: human_handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Handoff statement matches status, but the protocol code HO-20261104-3DB6EF appears in no evidence item.",
+      "factual_correctness": "Handoff claim is consistent; the protocol number is invented and unsupported by any item.",
+      "relevance": "The merchant asked for a human agent and the reply hands the case over, matching the handoff status.",
+      "usefulness": "Clear, polite and in Portuguese; the fabricated protocol number slightly undermines trust."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003561,
+     "usage": {
+      "input_tokens": 3383,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 235
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_d126506c0c5342209735",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Encaminhei seu caso para um atendente da nossa equipe",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "que vai responder por aqui",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocolo: HO-20261104-3DB6EF",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "status: handoff"
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Handoff statement restates the handoff status, but the protocol code appears in no evidence item.",
+      "factual_correctness": "Reply agrees with the handoff status; the invented protocol code is the only unsupported specific.",
+      "relevance": "Merchant asked for a human attendant and the case was handed off accordingly.",
+      "usefulness": "Clear, polite, in Portuguese and confirms the handoff, but the unverified protocol number may mislead."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0002997,
+     "usage": {
+      "input_tokens": 3383,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 188
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  }
+ ]
+}

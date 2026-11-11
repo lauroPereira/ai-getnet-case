@@ -1,0 +1,572 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 1,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-05-retry2-1.csv",
+  "only_sample_ids": 1,
+  "selected_answers": 1,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 1,
+   "passed": 1.0,
+   "deterministic": 1.0,
+   "content": 1.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 7045,
+   "latency_p95_ms": 7045,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 1,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 5.0,
+    "factual_correctness": 4.0,
+    "relevance": 5.0,
+    "usefulness": 4.0
+   },
+   "unsupported_claim_rate": 0.0,
+   "claim_verdicts": {
+    "claims": 4,
+    "supported": 3,
+    "partial": 1,
+    "generic": 0,
+    "not_found": 0,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 7045,
+    "latency_p95_ms": 7045,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 4.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 4,
+     "supported": 3,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 1,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 7045,
+    "latency_p95_ms": 7045,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 4.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 4,
+     "supported": 3,
+     "partial": 1,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "pt": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   }
+  },
+  "paths": {
+   "general_web": {
+    "knowledge": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:30:39+00:00",
+  "judge_cost_usd": 0.00049,
+  "judge_usage": {
+   "judgements": 1,
+   "total": {
+    "input_tokens": 3929,
+    "cache_read_tokens": 3712,
+    "cache_creation_tokens": 0,
+    "output_tokens": 339
+   },
+   "mean": {
+    "input_tokens": 3929.0,
+    "cache_read_tokens": 3712.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 339.0
+   }
+  },
+  "web_evidence": {
+   "answers": 1,
+   "web_page": 1,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 1,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 1 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 1,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.0,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {
+    "general_web": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "EX07",
+   "repetition": 1,
+   "request_id": "req_evaldb9064b4ce8e",
+   "split": "dev",
+   "language": "en",
+   "message": "What's the euro exchange rate today?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "On Saturday, November 7, 2026, the euro is about R$6.14. The latest European Central Bank reference rate I found is €1 = R$6.1449, dated November 6. Actual exchange providers may offer different rates.",
+   "sources": [
+    "Euro exchange rates charts"
+   ],
+   "duration_ms": 7045,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "What's the euro exchange rate today?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Euro exchange rates charts"
+    ],
+    "evidence": [
+     {
+      "kind": "web_page",
+      "label": "Euro exchange rates charts",
+      "title": "Euro exchange rates charts",
+      "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/eurofxref-graph-brl.et.html?utm_source=openai",
+      "text": "[third-party page text omitted from the versioned record; see url]",
+      "text_sha256": "266954d58e3a0f010e0846f4018e2f244b978041323776ab187f4a69f48ea187",
+      "text_chars": 1582
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1582,
+     "kept_chars": 1582,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search. Each evidence item of kind \"web_page\" is the text of a page the search cited (its title and url are given), fetched when the reply was evaluated, masked and cut like the other items: judge the reply against it as you would a passage. The page may have changed since the reply was written."
+    ],
+    "reply": "On Saturday, November 7, 2026, the euro is about R$6.14. The latest European Central Bank reference rate I found is €1 = R$6.1449, dated November 6. Actual exchange providers may offer different rates."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1582,
+    "kept_chars": 1582,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.0106955,
+   "judge": {
+    "evaluation_id": "eval_7563ca4939c44fa3b3ff",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "On Saturday, November 7, 2026, the euro is about R$6.14",
+       "kind": "value"
+      },
+      {
+       "n": 2,
+       "text": "The latest European Central Bank reference rate I found is €1 = R$6.1449",
+       "kind": "value"
+      },
+      {
+       "n": 3,
+       "text": "dated November 6",
+       "kind": "date"
+      },
+      {
+       "n": 4,
+       "text": "Actual exchange providers may offer different rates",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "6 6.1449"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+      },
+      {
+       "n": 4,
+       "verdict": "partial",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Figures 6.1449 and the date come from the cited ECB page; the providers caveat adds no conflicting fact.",
+     "factual_correctness": "Values match the page, but the reply labels the rate as belonging to a 2026 Saturday, a year the page does not show.",
+     "relevance": "The reply directly answers the merchant's question about today's euro exchange rate.",
+     "usefulness": "Clear, concise and polite, giving the rate and a caveat; the year labeling may confuse the merchant slightly."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00049417,
+    "usage": {
+     "input_tokens": 3929,
+     "cache_read_tokens": 3712,
+     "cache_creation_tokens": 0,
+     "output_tokens": 339
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_7563ca4939c44fa3b3ff",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "On Saturday, November 7, 2026, the euro is about R$6.14",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "The latest European Central Bank reference rate I found is €1 = R$6.1449",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "dated November 6",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Actual exchange providers may offer different rates",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "6 6.1449"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "| 2 6.0990 | 3 6.1411 | 4 6.1579 | 5 6.1355 | 6 6.1449 | 7 | 8 |"
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Figures 6.1449 and the date come from the cited ECB page; the providers caveat adds no conflicting fact.",
+      "factual_correctness": "Values match the page, but the reply labels the rate as belonging to a 2026 Saturday, a year the page does not show.",
+      "relevance": "The reply directly answers the merchant's question about today's euro exchange rate.",
+      "usefulness": "Clear, concise and polite, giving the rate and a caveat; the year labeling may confuse the merchant slightly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00049417,
+     "usage": {
+      "input_tokens": 3929,
+      "cache_read_tokens": 3712,
+      "cache_creation_tokens": 0,
+      "output_tokens": 339
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

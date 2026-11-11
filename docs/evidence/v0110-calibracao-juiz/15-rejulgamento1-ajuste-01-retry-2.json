@@ -1,0 +1,740 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 1,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "ajuste-01-retry-2.csv",
+  "only_sample_ids": 1,
+  "selected_answers": 1,
+  "claims_from": [
+   "ajuste-24-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 1,
+   "passed": 0.0,
+   "deterministic": 1.0,
+   "content": 0.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 8534,
+   "latency_p95_ms": 8534,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 1,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.0,
+    "factual_correctness": 5.0,
+    "relevance": 5.0,
+    "usefulness": 5.0
+   },
+   "unsupported_claim_rate": 1.0,
+   "claim_verdicts": {
+    "claims": 12,
+    "supported": 11,
+    "partial": 0,
+    "generic": 1,
+    "not_found": 0,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "holdout": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8534,
+    "latency_p95_ms": 8534,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 12,
+     "supported": 11,
+     "partial": 0,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   },
+   "pt": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 8534,
+    "latency_p95_ms": 8534,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 12,
+     "supported": 11,
+     "partial": 0,
+     "generic": 1,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "knowledge": {
+    "knowledge": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:29:23+00:00",
+  "judge_cost_usd": 0.00084,
+  "judge_usage": {
+   "judgements": 1,
+   "total": {
+    "input_tokens": 4323,
+    "cache_read_tokens": 4096,
+    "cache_creation_tokens": 0,
+    "output_tokens": 626
+   },
+   "mean": {
+    "input_tokens": 4323.0,
+    "cache_read_tokens": 4096.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 626.0
+   }
+  },
+  "web_evidence": {
+   "answers": 1,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 1,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 1 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 1,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": 1.0,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {
+    "knowledge": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   },
+   "by_split": {
+    "holdout": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT06",
+   "repetition": 1,
+   "request_id": "req_eval0c6f7493f669",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Como funciona a antecipação de recebíveis na Getnet?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil. Acesse **Serviços > Antecipação de Vendas** e:\n1. Escolha uma conta bancária cadastrada e aceite os termos.\n2. Faça uma simulação para conferir valores, bandeiras e taxas. O valor mínimo é de R$50,00, e as taxas variam conforme o contrato.\n3. Se confirmar, confira o valor final, toque em **Antecipar** e informe sua senha. Acompanhe o status em **Meus Pedidos**.\n\nTambém é possível solicitar a habilitação da Antecipação Automática pelo app. A solicitação pode levar até 48 horas, exige saldo mínimo de R$ 50,00 para ocorrer e depende de avaliação individual do contrato.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Como habilitar antecipação automática pelo App - Getnet"
+   ],
+   "duration_ms": 8534,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Como funciona a antecipação de recebíveis na Getnet?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Como habilitar antecipação automática pelo App - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nSim, você pode solicitar a alteração das taxas nos canais da Getnet:\nAplicativo da Getnet;\nPortal do Cliente\n– para contratação de máquina adicional (aluguel ou compra);\nCentral de Relacionamento Getnet, por meio do telefone 4002-4000 e realizar a solicitação.\nQual a taxa para Antecipação Automática?\nQual a taxa para Antecipação Automática?\nA Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’. Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática.\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nInformações de taxas\npara venda no débito e crédito\nPara maior transparência disponibilizamos todas as taxas cobradas em suas transações de vendas.\nPlano de recebimento:\n2 dias úteis*\nReceba conforme\nsuas vendas\nDébito:\n1,89%\n1,95%\nCrédito à vista:\n3,99%"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-habilitar-antecipacao-automatica-pelo-app",
+      "text": "Como habilitar antecipação automática pelo App - Getnet\nVocê pode habilitar a antecipação automática direto pelo App Getnet Brasil. Contudo, lembre-se que para qualquer solicitação de ativação e desativação é necessário ter um perfil administrativo e [credential removed] conseguir seguir.\nPasso a passo para habilitar a antecipação automática:\n1. Acesse o App com seu login e [credential removed]\n2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;\n4. Clique Habilitar;\n5. Insira sua [credential removed] leia os termos e condições e clique Habilitar;\n6. Pronto! Sua solicitação foi enviada e pode demorar até 48 horas.\n7. Verifique o valor final e clique em Antecipar.\nCaso deseje desabilitar, basta selecionar Antecipação Automática na área Serviços e desabilitar.\nA habilitação é livre, porém para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3021,
+     "kept_chars": 3021,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil. Acesse **Serviços > Antecipação de Vendas** e:\n1. Escolha uma conta bancária cadastrada e aceite os termos.\n2. Faça uma simulação para conferir valores, bandeiras e taxas. O valor mínimo é de R$50,00, e as taxas variam conforme o contrato.\n3. Se confirmar, confira o valor final, toque em **Antecipar** e informe sua senha. Acompanhe o status em **Meus Pedidos**.\n\nTambém é possível solicitar a habilitação da Antecipação Automática pelo app. A solicitação pode levar até 48 horas, exige saldo mínimo de R$ 50,00 para ocorrer e depende de avaliação individual do contrato."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3021,
+    "kept_chars": 3021,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00060897,
+   "judge": {
+    "evaluation_id": "eval_1b30499ad46b410699fe",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Acesse Serviços > Antecipação de Vendas",
+       "kind": "guidance"
+      },
+      {
+       "n": 3,
+       "text": "Escolha uma conta bancária cadastrada e aceite os termos",
+       "kind": "guidance"
+      },
+      {
+       "n": 4,
+       "text": "Faça uma simulação para conferir valores, bandeiras e taxas",
+       "kind": "guidance"
+      },
+      {
+       "n": 5,
+       "text": "O valor mínimo é de R$50,00",
+       "kind": "value"
+      },
+      {
+       "n": 6,
+       "text": "As taxas variam conforme o contrato",
+       "kind": "fact"
+      },
+      {
+       "n": 7,
+       "text": "Se confirmar, confira o valor final, toque em Antecipar e informe sua senha",
+       "kind": "guidance"
+      },
+      {
+       "n": 8,
+       "text": "Acompanhe o status em Meus Pedidos",
+       "kind": "guidance"
+      },
+      {
+       "n": 9,
+       "text": "Também é possível solicitar a habilitação da Antecipação Automática pelo app",
+       "kind": "fact"
+      },
+      {
+       "n": 10,
+       "text": "A solicitação pode levar até 48 horas",
+       "kind": "date"
+      },
+      {
+       "n": 11,
+       "text": "Exige saldo mínimo de R$ 50,00 para ocorrer",
+       "kind": "value"
+      },
+      {
+       "n": 12,
+       "text": "Depende de avaliação individual do contrato",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos."
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+      },
+      {
+       "n": 6,
+       "verdict": "generic",
+       "support": ""
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]"
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "Você pode habilitar a antecipação automática direto pelo App Getnet Brasil."
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "Pronto! Sua solicitação foi enviada e pode demorar até 48 horas."
+      },
+      {
+       "n": 11,
+       "verdict": "supported",
+       "support": "para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+      },
+      {
+       "n": 12,
+       "verdict": "supported",
+       "support": "a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Almost all facts trace to passages; only the claim that rates vary by contract lacks support.",
+     "factual_correctness": "Amounts, steps and 48-hour timeframe agree with the evidence and are internally consistent.",
+     "relevance": "Directly explains how receivables anticipation and automatic anticipation work, matching the merchant's question.",
+     "usefulness": "Clear, concise, in Portuguese, with step-by-step guidance the merchant can act on."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00084388,
+    "usage": {
+     "input_tokens": 4323,
+     "cache_read_tokens": 4096,
+     "cache_creation_tokens": 0,
+     "output_tokens": 626
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_1b30499ad46b410699fe",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Acesse Serviços > Antecipação de Vendas",
+        "kind": "guidance"
+       },
+       {
+        "n": 3,
+        "text": "Escolha uma conta bancária cadastrada e aceite os termos",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Faça uma simulação para conferir valores, bandeiras e taxas",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "O valor mínimo é de R$50,00",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "As taxas variam conforme o contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "Se confirmar, confira o valor final, toque em Antecipar e informe sua senha",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Acompanhe o status em Meus Pedidos",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Também é possível solicitar a habilitação da Antecipação Automática pelo app",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "A solicitação pode levar até 48 horas",
+        "kind": "date"
+       },
+       {
+        "n": 11,
+        "text": "Exige saldo mínimo de R$ 50,00 para ocorrer",
+        "kind": "value"
+       },
+       {
+        "n": 12,
+        "text": "Depende de avaliação individual do contrato",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 6,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Você pode habilitar a antecipação automática direto pelo App Getnet Brasil."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Pronto! Sua solicitação foi enviada e pode demorar até 48 horas."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Almost all facts trace to passages; only the claim that rates vary by contract lacks support.",
+      "factual_correctness": "Amounts, steps and 48-hour timeframe agree with the evidence and are internally consistent.",
+      "relevance": "Directly explains how receivables anticipation and automatic anticipation work, matching the merchant's question.",
+      "usefulness": "Clear, concise, in Portuguese, with step-by-step guidance the merchant can act on."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00084388,
+     "usage": {
+      "input_tokens": 4323,
+      "cache_read_tokens": 4096,
+      "cache_creation_tokens": 0,
+      "output_tokens": 626
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": false
+  }
+ ]
+}

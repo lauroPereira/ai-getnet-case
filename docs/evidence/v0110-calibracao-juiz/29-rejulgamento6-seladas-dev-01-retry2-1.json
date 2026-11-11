@@ -1,0 +1,771 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 1,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-01-retry2-1.csv",
+  "only_sample_ids": 1,
+  "selected_answers": 1,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 1
+ },
+ "summary": {
+  "overall": {
+   "n": 1,
+   "passed": 0.0,
+   "deterministic": 1.0,
+   "content": 0.0,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 15543,
+   "latency_p95_ms": 15543,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 1,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 3.0,
+    "factual_correctness": 3.0,
+    "relevance": 5.0,
+    "usefulness": 4.0
+   },
+   "unsupported_claim_rate": 1.0,
+   "claim_verdicts": {
+    "claims": 12,
+    "supported": 11,
+    "partial": 0,
+    "generic": 0,
+    "not_found": 1,
+    "standard": 0
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 15543,
+    "latency_p95_ms": 15543,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.0,
+     "factual_correctness": 3.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 12,
+     "supported": 11,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 1,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 0,
+    "passed": null,
+    "route_ok": null,
+    "status_ok": null,
+    "language_ok": null,
+    "tools_ok": null,
+    "amounts_ok": null,
+    "content_ok": null,
+    "forbidden_ok": null,
+    "sources_ok": null,
+    "grounded_ok": null,
+    "cost_usd": 0
+   },
+   "pt": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 15543,
+    "latency_p95_ms": 15543,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.0,
+     "factual_correctness": 3.0,
+     "relevance": 5.0,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 12,
+     "supported": 11,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 1,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:32:33+00:00",
+  "judge_cost_usd": 0.00091,
+  "judge_usage": {
+   "judgements": 1,
+   "total": {
+    "input_tokens": 5589,
+    "cache_read_tokens": 5376,
+    "cache_creation_tokens": 0,
+    "output_tokens": 675
+   },
+   "mean": {
+    "input_tokens": 5589.0,
+    "cache_read_tokens": 5376.0,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 675.0
+   }
+  },
+  "web_evidence": {
+   "answers": 1,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 1,
+   "caveat": "Ressalva de amostra pequena (D19): 1 casos com 1 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 1,
+    "judgements": 1,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 3.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "factual_correctness": {
+      "mean": 3.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "relevance": {
+      "mean": 5.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     },
+     "usefulness": {
+      "mean": 4.0,
+      "std": null,
+      "exact": null,
+      "within_one": null,
+      "pairs": 0
+     }
+    },
+    "unsupported_claim": {
+     "rate": 1.0,
+     "exact": null,
+     "pairs": 0
+    }
+   },
+   "by_route": {
+    "knowledge_and_support": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 1,
+     "judgements": 1,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "factual_correctness": {
+       "mean": 3.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": null,
+       "exact": null,
+       "within_one": null,
+       "pairs": 0
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": null,
+      "pairs": 0
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "REPLAN-PROCEDURE",
+   "repetition": 1,
+   "request_id": "req_evalb2ed5ac19dc4",
+   "split": "dev",
+   "language": "pt",
+   "message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31. O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026. O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026; não foi possível confirmar o crédito na conta em nenhum dos dois casos. Não consegui confirmar o prazo geral de recebimento para essas modalidades.\n\nPara solicitar a antecipação no app Getnet Brasil:\n1. Acesse com seu login e senha e vá em Serviços > Antecipação de Vendas.\n2. Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.\n3. Confira o valor final, toque em Antecipar e informe sua senha. O mínimo é R$ 50,00. Acompanhe em “Meus Pedidos”.\n\nNão foi possível confirmar se essas vendas específicas são elegíveis; confira na simulação do app.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Antecipação da Reserva Financeira - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Receivables schedule (your account)",
+    "Payout status (your account)"
+   ],
+   "duration_ms": 15543,
+   "cost_usd": 0.0,
+   "model_calls": 6,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_receivables_schedule",
+    "get_payout_status"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Quando vai cair o dinheiro das vendas de ontem e como faço para antecipar esse valor?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Antecipação da Reserva Financeira - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Receivables schedule (your account)",
+     "Payout status (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"receivables\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"status\": \"pending\"}], \"observed_at\": \"2026-11-07T00:17:59-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"receivables\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_receivables_schedule",
+      "text": "{\"arguments\": {\"date_field\": \"sale_date\", \"date_from\": null, \"date_to\": null, \"period\": \"yesterday\"}, \"result\": {\"count\": 3, \"date_field\": \"sale_date\", \"date_from\": \"2026-11-06\", \"date_to\": \"2026-11-06\", \"net_total\": {\"currency\": \"BRL\", \"display\": \"R$ 1.390,26\", \"minor\": 139026}, \"note\": \"Expected dates come from the schedule record. Use get_payout_status to know if credit is confirmed.\", \"observed_at\": \"2026-11-07T00:18:04-03:00\", \"receivables\": [{\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-09\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 1,94\", \"minor\": 194}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 150,00\", \"minor\": 15000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\", \"minor\": 14806}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"debit\", \"receivable_id\": \"rcv_1988_0001\", \"sale_captured_at\": \"2026-11-06T09:42:00-03:00\", \"sale_id\": \"sale_1988_0001\", \"source_status\": \"LOT_DONE\", \"status_meaning\": \"Sales batch processed; this does not mean the money is in the account yet.\"}, {\"channel\": \"pos\", \"expected_payment_date\": \"2026-11-10\", \"fee\": {\"currency\": \"BRL\", \"display\": \"R$ 37,80\", \"minor\": 3780}, \"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.200,00\", \"minor\": 120000}, \"installments\": 1, \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\", \"minor\": 116220}, \"normalized_status\": \"batch_processed\", \"payment_type\": \"cre [...cut]",
+      "cut": true
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_payout_status",
+      "text": "{\"arguments\": {\"receivable_ids\": [\"rcv_1988_0001\", \"rcv_1988_0002\", \"rcv_1988_0003\"]}, \"result\": {\"observed_at\": \"2026-11-07T00:18:06-03:00\", \"payouts\": [{\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0001\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": null, \"credit_confirmed\": false, \"normalized_stage\": \"payout_scheduled\", \"receivable_id\": \"rcv_1988_0002\", \"stage\": \"SCHEDULED\", \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\"}, {\"confirmed_at\": \"2026-11-06T17:31:00-03:00\", \"credit_confirmed\": true, \"normalized_stage\": \"paid\", \"receivable_id\": \"rcv_1988_0003\", \"stage\": \"PAID\", \"stage_meaning\": \"Credit confirmed in the receiving account.\"}], \"source\": \"PayoutMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-reserva-financeira-antecipacao-reserva-financeira",
+      "text": "Antecipação da Reserva Financeira - Getnet\nPosso antecipar o valor da Reserva Financeira?\nNão. Os valores da Reserva Financeira não podem ser antecipados nem negociados com outras instituições financeiras enquanto estiverem retidos.\nSempre que houver liberação para antecipação ou negociação, você será informado por e-mail.\nQuando a Reserva Financeira é liberada?\nA liberação ocorre na data originalmente prevista, desde que o valor não tenha sido utilizado para cobrir:\nCancelamentos de vendas;\nEstornos (chargebacks);\nAluguel da maquininha ou outras despesas.\nSe houver liberação antecipada, você também será notificado por e-mail.\nA Reserva Financeira é permitida em caso de cancelamento de vendas?\nSim. A Reserva Financeira permite que você realize cancelamentos de vendas com mais agilidade e segurança, graças à constituição da Agenda Livre.\nIsso traz mais eficiência para o seu atendimento e melhora a experiência dos seus clientes.\nA Reserva Financeira é um valor extra que preciso pagar?\nNão. A Reserva Financeira não é uma cobrança adicional. Ela é formada por um valor já proveniente das suas vendas, reservado temporariamente para segurança das suas transações e compromissos financeiros."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nMas lembre-se, o seu cliente precisa ter recarregado o dinheiro no cartão para utilização. Por exemplo, tudo que o seu cliente for comprar ou pagar para você, consome o valor que ele já possui no cartão de forma imediata e o recebimento em sua conta do valor ocorrerá conforme informado acima.\nQuais as modalidades do Cartão Pré-Pago?\nQuais as modalidades do Cartão Pré-Pago?\nCartão Pré-Pago Nacional:\nUsado apenas dentro do Brasil, com a moeda real, e o recebimento das vendas pode ser no crédito ou débito, na função débito o valor é contabilizado em conta em até 1 dia útil e no crédito em até 2 dias úteis.\nCartão Pré-Pago Internacional:\nDisponibilizado em todos os países em que a bandeira do cartão é aceita, como moedas estrangeiras.\nOnde acompanho as vendas feitas com Cartão Pré-Pago?\nOnde acompanho as vendas feitas com Cartão Pré-Pago?\nPara consultar o extrato das suas vendas, acesse o Aplicativo Getnet Brasil ou Portal Minha Conta.\nver mais"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 6789,
+     "kept_chars": 6000,
+     "items": 7,
+     "items_cut": 1,
+     "truncated": true
+    },
+    "evidence_notes": [],
+    "reply": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31. O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026. O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026; não foi possível confirmar o crédito na conta em nenhum dos dois casos. Não consegui confirmar o prazo geral de recebimento para essas modalidades.\n\nPara solicitar a antecipação no app Getnet Brasil:\n1. Acesse com seu login e senha e vá em Serviços > Antecipação de Vendas.\n2. Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.\n3. Confira o valor final, toque em Antecipar e informe sua senha. O mínimo é R$ 50,00. Acompanhe em “Meus Pedidos”.\n\nNão foi possível confirmar se essas vendas específicas são elegíveis; confira na simulação do app."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 6789,
+    "kept_chars": 6000,
+    "items": 7,
+    "items_cut": 1,
+    "truncated": true
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.00124273,
+   "judge": {
+    "evaluation_id": "eval_bd16dc27c36244e6aa56",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31.",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026.",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026.",
+       "kind": "date"
+      },
+      {
+       "n": 4,
+       "text": "Não foi possível confirmar o crédito na conta em nenhum dos dois casos.",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Não consegui confirmar o prazo geral de recebimento para essas modalidades.",
+       "kind": "fact"
+      },
+      {
+       "n": 6,
+       "text": "Para solicitar a antecipação no app Getnet Brasil: acesse com seu login e [credential removed] vá em Serviços > Antecipação de Vendas.",
+       "kind": "guidance"
+      },
+      {
+       "n": 7,
+       "text": "Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.",
+       "kind": "guidance"
+      },
+      {
+       "n": 8,
+       "text": "Confira o valor final, toque em Antecipar e informe sua [credential removed]",
+       "kind": "guidance"
+      },
+      {
+       "n": 9,
+       "text": "O mínimo é R$ 50,00.",
+       "kind": "value"
+      },
+      {
+       "n": 10,
+       "text": "Acompanhe em “Meus Pedidos”.",
+       "kind": "guidance"
+      },
+      {
+       "n": 11,
+       "text": "Não foi possível confirmar se essas vendas específicas são elegíveis.",
+       "kind": "fact"
+      },
+      {
+       "n": 12,
+       "text": "Confira na simulação do app.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"expected_payment_date\": \"2026-11-09\", ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\"... \"payment_type\": \"debit\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"expected_payment_date\": \"2026-11-10\" ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\" ... \"payment_type\": \"cred\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"credit_confirmed\": false ... \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]"
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+      },
+      {
+       "n": 10,
+       "verdict": "supported",
+       "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+      },
+      {
+       "n": 11,
+       "verdict": "supported",
+       "support": ""
+      },
+      {
+       "n": 12,
+       "verdict": "supported",
+       "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Most items match tool results and the app passage, but the Pix R$ 80,00 credit claim has no evidence.",
+     "factual_correctness": "Dates and amounts for debit and credit agree, but the Pix payment is not in the tool results.",
+     "relevance": "It answers when yesterday's sales pay out and how to anticipate via the app.",
+     "usefulness": "Clear, polite Portuguese with concrete dates and step-by-step app guidance; one unsupported Pix line."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00090616,
+    "usage": {
+     "input_tokens": 5589,
+     "cache_read_tokens": 5376,
+     "cache_creation_tokens": 0,
+     "output_tokens": 675
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_bd16dc27c36244e6aa56",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Das vendas de ontem (06/11), o Pix de R$ 80,00 foi creditado em 06/11 às 17:31.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "O débito, de R$ 148,06 líquidos, tem previsão para 09/11/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "O crédito, de R$ 1.162,20 líquidos, tem previsão para 10/11/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Não foi possível confirmar o crédito na conta em nenhum dos dois casos.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Não consegui confirmar o prazo geral de recebimento para essas modalidades.",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Para solicitar a antecipação no app Getnet Brasil: acesse com seu login e [credential removed] vá em Serviços > Antecipação de Vendas.",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Escolha uma conta cadastrada, aceite os termos e confira a simulação, incluindo valores, bandeiras e taxas.",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Confira o valor final, toque em Antecipar e informe sua [credential removed]",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "O mínimo é R$ 50,00.",
+        "kind": "value"
+       },
+       {
+        "n": 10,
+        "text": "Acompanhe em “Meus Pedidos”.",
+        "kind": "guidance"
+       },
+       {
+        "n": 11,
+        "text": "Não foi possível confirmar se essas vendas específicas são elegíveis.",
+        "kind": "fact"
+       },
+       {
+        "n": 12,
+        "text": "Confira na simulação do app.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-09\", ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 148,06\"... \"payment_type\": \"debit\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"expected_payment_date\": \"2026-11-10\" ... \"net_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 1.162,20\" ... \"payment_type\": \"cred\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"credit_confirmed\": false ... \"stage_meaning\": \"Payment scheduled for the expected date; credit not confirmed yet.\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]"
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Most items match tool results and the app passage, but the Pix R$ 80,00 credit claim has no evidence.",
+      "factual_correctness": "Dates and amounts for debit and credit agree, but the Pix payment is not in the tool results.",
+      "relevance": "It answers when yesterday's sales pay out and how to anticipate via the app.",
+      "usefulness": "Clear, polite Portuguese with concrete dates and step-by-step app guidance; one unsupported Pix line."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00090616,
+     "usage": {
+      "input_tokens": 5589,
+      "cache_read_tokens": 5376,
+      "cache_creation_tokens": 0,
+      "output_tokens": 675
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}
