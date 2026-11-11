@@ -33,12 +33,12 @@ Controlar o estado do caso (`in_progress`, `awaiting_customer`, `resolved`, `han
 - [x] Transições inválidas são recusadas.
 - [x] Tentativas e resultados ficam registrados por caso.
 
-## Validação
+## Resultado
 
-2026-10-26: máquina de estados em `cases.py` (testes em `tests/unit/test_case_states.py`), sinal do caso no Router v2, rota `acknowledgement`, `customer_confirmed` e `tool_verified`, tentativas em `case_attempts` (migração 0003). Verificado com modelo programado e real. Desvio consciente do passo 2: não há evidência `informational` automática; respostas informativas ficam `awaiting_customer` até o lojista confirmar, critério mais estrito que o previsto. Ver [evidência](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md). Revisão não independente.
+Máquina de estados em `cases.py`, sinal do caso no Router v2, rota `acknowledgement`, evidências `customer_confirmed` e `tool_verified` e tentativas em `case_attempts` (migração 0003), verificados com modelo programado e real. Respostas informativas ficam `awaiting_customer` até o lojista confirmar, critério mais estrito que o do passo 2. Evidência: [memória e acompanhamento](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.2.0)
 ```

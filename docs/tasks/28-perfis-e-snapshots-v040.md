@@ -30,14 +30,12 @@ Persistência, migrações, configuração/contexto de execução, traces e test
 - [x] Referência/Híbrido/Ajustado têm diferenças declaradas e modelos compatíveis.
 - [x] Embeddings, guardrails, orçamento e regras financeiras não são campos editáveis.
 
-## Validação
+## Resultado
 
-Migration 0006 verificou subida/descida para schema 5 preservando dados legados; perfis publicados são imutáveis e modelos/capacidades/parâmetros validados. Parâmetros integram a versão e o digest; o snapshot registra o valor efetivo antes do payload. Cobertura em `tests/unit/data/test_migrations.py`, `tests/integration/test_v1_api.py` e `tests/unit/test_profile_output_parameters.py`; backend strict r4: 214 passed.
+Migração 0006 com subida e descida preservando os dados anteriores; perfis publicados imutáveis, parâmetros na versão e no digest e valor efetivo no snapshot antes do payload. Suíte estrita do backend: 214 testes. Evidência: [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.4.0)
 ```
-
-Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)).

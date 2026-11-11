@@ -10,7 +10,7 @@ RF-32 e RF-46; decisão 0011; [plano](../specs/jornadas-v030-plano.md).
 
 ## Pré-condições
 
-Main atualizada, branch de trabalho criada; contratos e migração propostos aprovados antes da implementação correspondente.
+Contratos e migração aprovados antes da implementação correspondente.
 
 ## Arquivos prováveis
 
@@ -30,17 +30,12 @@ Main atualizada, branch de trabalho criada; contratos e migração propostos apr
 - [x] Clientes validam contratos e falham de forma controlada.
 - [x] Serviço executável em contêiner; Compose válido e sem porta publicada.
 
-## Validação
+## Resultado
 
-Validação final: **191 testes**, Ruff, estrutura e skills aprovados; Compose
-válido. O serviço interno executou sem porta publicada no stack Docker, com
-smoke 17/17 e comunicação HTTP real entre API e mocks. Revisão técnica e QA
-independentes aptos. Evidências e limites no [resultado](../evidence/v030-resultado.md).
+Serviço interno de pricing e cobrança com dados sintéticos, sem porta publicada. Suíte estrita: 191 testes; stack Docker com smoke 17/17 e comunicação HTTP real entre API e mocks. Evidência: [resultado da v0.3.0](../evidence/v030-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.3.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v030-resultado.md)).

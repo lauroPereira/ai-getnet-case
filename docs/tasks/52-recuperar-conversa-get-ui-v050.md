@@ -6,13 +6,12 @@ Fazer a UI reconhecer e exibir a resposta do assistente quando a consulta manual
 
 ## Especificação relacionada
 
-[História v1](../historias/base-versionada-v050.md), requisito de recuperar resposta; [tarefa50](50-recuperacao-manual-chat-v050.md), em especial critério de conclusão sobre GET manual.
+[História v1](../historias/base-versionada-v050.md), requisito de recuperar resposta; [tarefa 50](50-recuperacao-manual-chat-v050.md), em especial critério de conclusão sobre GET manual.
 
 ## Pré-condições
 
-- Candidato de QA: r6, source fingerprint `45073733de04247748d583f5a57af01bfa3180979d8915616bd7db0af971aaa3`.
-- API isolada `127.0.0.1:18853`, UI `127.0.0.1:18553`, dados de cliente e mensagem sintéticos.
-- Payload GET preservado em `.pytest_cache/v050-qa-real-runtime/recovery-get-r2-sanitized.json`; não usa token nem dado privado.
+- API e interface locais isoladas, com dados de cliente e mensagem sintéticos.
+- Payload GET sanitizado como referência; não usa token nem dado privado.
 
 ## Arquivos prováveis
 
@@ -30,10 +29,6 @@ Web `app.py` e `tests/test_interface.py`; somente outros arquivos após avaliaç
 
 A pergunta ainda pendente corresponde à mensagem `merchant` recuperada; resposta `assistant` subsequente aparece na conversa, limpa pendência e habilita novo envio. Não repetir a POST, não inferir que GET vazio ocorreu quando backend retornou resposta, não exibir resposta antiga sem par da pergunta.
 
-## Observado no r6
-
-Proxy registrou uma única POST `/v1/messages` upstream200, com resposta descartada; API finalizou `answered`, request `req_199899ac93a24a7facd5`, conversation `conv_dcd0ec53dc9244ab8dd2`, custo trace `$0.00095223`, snapshot R2. GET manual `/v1/conversations/conv_dcd0ec53dc9244ab8dd2` retornou200 e payload com as duas mensagens acima. A UI continuou exibindo pergunta pendente e `Ainda não há resposta nova para esta pergunta. Atualize novamente mais tarde.` Nenhuma nova POST foi feita. A captura visual foi inspecionada por CUA e o payload JSON sintético está preservado no harness de QA.
-
 ## Critérios de conclusão
 
 - [x] GET com roles `merchant` e `assistant` recupera a resposta que segue a pergunta pendente.
@@ -41,12 +36,12 @@ Proxy registrou uma única POST `/v1/messages` upstream200, com resposta descart
 - [x] GET/rerun não repetem a POST; navegação/rerun continuam sem ação de envio automática.
 - [x] Teste focal consome fixture sintética com o formato observado, sem alterar o contrato público.
 
-## Validação
+## Resultado
 
-Reprodução de QA r2 no candidato r6: POST original caiu apenas no transporte após conclusão do upstream; GET manual 200; estado UI não recuperou. Ver payload `.pytest_cache/v050-qa-real-runtime/recovery-get-r2-sanitized.json`, eventos `.pytest_cache/v050-qa-real-runtime/proxy-r2-events.jsonl` e relatório v050-qa-r2.md. Correção e regressões sintéticas estão registradas em passagem Developer UI r4; QA real ainda deve revalidar no candidato r7.
+Corrigida na [tarefa 53](53-consumir-contrato-real-conversa-v050.md): o GET no formato real recupera a resposta e limpa a pendência sem repetir o POST, comprovado no navegador. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
 ```text
-concluída — corrigida pela tarefa 53, revisada no Reviewer UI r3 e revalidada no QA r3; integrada na v0.5.0
+concluída (v0.5.0)
 ```

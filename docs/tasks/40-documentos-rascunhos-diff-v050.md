@@ -10,7 +10,7 @@ Expor edição controlada do corpus fictício com leitura de oficiais.
 
 ## Pré-condições
 
-Contrato aprovado e registro da tarefa39 disponível.
+Contrato aprovado e registro da tarefa 39 disponível.
 
 ## Arquivos prováveis
 
@@ -25,17 +25,15 @@ API `/v1`, registro KB, schemas e testes de autorização/validação.
 ## Critérios de conclusão
 
 - [x] Escritas admin; demo/oficial recusados sem efeito.
-- [x] Limite64KiB e409 de revisão; nenhum caminho arbitrário.
+- [x] Limite de 64 KiB e 409 de revisão; nenhum caminho arbitrário.
 - [x] Texto editado não muda ferramentas, orçamento ou autoridade financeira.
 
-## Validação e status
+## Resultado
 
-Implementada pelo Developer r1. Contrato exercitado com fonte oficial somente leitura, demo sem escrita, revisão obsoleta (`409`), edição fictícia e diff. Unitários e integração usam transportes sintéticos; nenhuma chamada paga.
+Leitura de fontes oficiais, rascunho só para documentos fictícios, demo sem escrita, revisão obsoleta com `409`, edição e diff, cobertos por testes unitários e de integração com transportes sintéticos. Suíte estrita do backend: 293 testes. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.5.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

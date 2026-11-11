@@ -6,12 +6,12 @@ A interface Streamlit autentica por usuário e senha (JWT do assistente), mostra
 
 ## Especificação relacionada
 
-[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times" (Identidade e Serviço de ticketing), D3, D9, D10; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-85; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão 8. Repositório: `C:\workspace\ai-getnet-case-web`, branch `codex/v0.7.0-identidade-hitl` (Time B).
+[Spec v0.7.0, versão 2](../specs/identidade-hitl-v070.md) — "Contrato entre os times" (Identidade e Serviço de ticketing), D3, D9, D10; [spec 0.2](../specs/evolucao-producao-v070-v0100.md) RF-85; [plano](../specs/evolucao-producao-v070-v0100-plano.md) decisão 8. Repositório: `ai-getnet-case-web`.
 
 ## Pré-condições
 
-- Contrato da spec versão 2. Clientes falsos do assistente e do ticketing nos testes; integração real fica para o QA.
-- O OpenAPI do assistente para `/v1/auth/*`, `/v1/handoffs` e `/v1/messages` vem da branch do backend no commit que o Supervisor indicar; enquanto não houver, use o contrato da spec.
+- Contrato da spec versão 2. Clientes falsos do assistente e do ticketing nos testes; integração real na validação da versão.
+- O OpenAPI do assistente para `/v1/auth/*`, `/v1/handoffs` e `/v1/messages` vem do backend da versão; enquanto não houver, use o contrato da spec.
 - Não editar o repositório do backend.
 
 ## Arquivos prováveis
@@ -34,14 +34,12 @@ A interface Streamlit autentica por usuário e senha (JWT do assistente), mostra
 - [x] Nenhum POST em navegação e rerun (teste); senha nunca persistida nem exibida.
 - [x] Script estrito do web com código 0.
 
-## Validação
+## Resultado
 
-A preencher pelo Developer.
+Login por usuário e senha com o JWT do assistente, áreas por papel e tela de ticketing do operador com recepção, assumir, três ações, envio pendente e resolução. Suíte estrita do web: 92 testes. Evidência: [resultado da v0.7.0](../evidence/v070-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.7.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

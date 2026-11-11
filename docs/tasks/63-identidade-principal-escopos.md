@@ -10,7 +10,6 @@ O assistente emite e valida JWT; toda mensagem exige token; o lojista vem do pri
 
 ## Pré-condições
 
-- Branch `codex/v0.7.0-identidade-hitl` (Time A, checkout principal).
 - Migração reservada 0009: crie-a aqui com o que a identidade precisa (usuários e clients com hash, `api_principals.scopes`, `revoked_tokens`, `audit_events.principal_id`/`scope`/`on_behalf_of`, `rate_limit_hits`); a 64 acrescenta o resto na mesma migração. Não use 0010.
 - Sem chamada paga.
 
@@ -41,27 +40,12 @@ O assistente emite e valida JWT; toda mensagem exige token; o lojista vem do pri
 - [x] Nenhuma chave privada ou senha em texto no banco, no log ou no Git.
 - [x] `docker compose config` válido; smoke programado passa com token; suíte estrita com código 0.
 
-## Validação
+## Resultado
 
-Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md. Os critérios ficam desmarcados até a revisão e o QA.
-
-| Critério | Evidência determinística |
-| --- | --- |
-| CA-46: `401`, `identity_mismatch`, B não lê A | `tests/integration/test_v070_identity.py` (sem token, token inválido e expirado → `401`; `identity_mismatch`; B recebe `404` em `/conversations`, `/traces`, `/v1/conversations` e `/v1/runs` de A). Token adulterado, de outra chave, `kid` desconhecido, `typ` errado, HS256, outro `iss`, outra `aud`, `exp`/`nbf` fora da tolerância e `jti` revogado: `tests/unit/test_identity.py` |
-| CA-46: N tool calls → N registros | `test_n_tool_calls_leave_n_audit_rows_with_principal_scope_and_result`, `test_refused_tool_calls_are_audited_and_never_run` (recusa por escopo e por lojista), unidade em `test_identity.py` |
-| Operador/serviço em `POST /messages` → `403`; lojista sem `handoff:operate` | `test_operator_session_cannot_send_messages…`, `test_client_credentials_for_the_ticketing_service` |
-| JWKS valida com biblioteca independente; JWKS externo | `test_published_jwks_validates_the_issued_token_independently` (`jwt.PyJWKSet` sobre a resposta da rota), `test_external_jwks_replaces_the_local_key` (chave gerada no teste) |
-| `client_credentials` do `ticketing-demo`; segredo errado → `401 invalid_client` | `test_client_credentials_for_the_ticketing_service` |
-| Rate limit sem chamada a modelo | `test_rate_limit_returns_429_before_any_model_call` (relógio fixo; `/messages` e `/v1/messages`) |
-| MCP por token | `test_mcp_derives_the_merchant_from_the_token_and_refuses_others`, `test_mcp_cli_has_no_customer_option` |
-| Sem segredo em texto | Senhas só como hash PBKDF2 (`test_accounts_are_stored_as_hashes…`), ausentes do log (`test_password_grant_issues_tokens_per_principal`, `test_example_values_log_a_warning_at_startup`); chave de assinatura em `data/runtime/jwt/` (ignorado pelo Git) |
-| Compose, smoke e suíte | `docker compose config --quiet` → 0 numa cópia isolada sem `.env`; `test_smoke_gets_its_token_and_passes`; `lint_and_tests.py --strict` → código 0, **406 passed**, Ruff ok, skills ok |
-| Migração 0009 nos dois sentidos | `test_identity_migration_0009_round_trip` e as listas de `test_migrations.py`, `test_v060_api.py` e `test_v1_api.py` |
+Emissor RS256 com JWKS, verificador único, usuários com hash PBKDF2, escopo e lojista conferidos em cada tool call com auditoria, rate limit e MCP por token; migração 0009 nos dois sentidos. Suíte estrita: 406 testes. Na validação real, 4 tool calls geraram 4 linhas de auditoria com principal, escopo e resultado. Evidência: [resultado da v0.7.0](../evidence/v070-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.7.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

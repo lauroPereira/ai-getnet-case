@@ -10,7 +10,7 @@ RF-28 a RF-30; CA-18, CA-19 e CA-28. Cenário reservado FU02 já existente, sem 
 
 ## Pré-condições
 
-Rodada HTTP real r2 e fontes preservadas em [v030-real-http-r2.json](../evidence/v030-real-http-r2.json). Mesmo teto adicional US$0,15; saldo após rodada US$0,01415107.
+Respostas HTTP reais preservadas em [v030-real-http-r2.json](../evidence/v030-real-http-r2.json). Mesmo teto adicional de US$0,15.
 
 ## Arquivos prováveis
 
@@ -30,19 +30,12 @@ Nova versão do prompt Router e evidências. Código de estado somente se necess
 - [x] Nenhum encaminhamento duplicado, cálculo financeiro pelo modelo ou relaxamento de proteção.
 - [x] Cenário reservado e critérios preservados; revisão e revalidação real identificam o novo candidato.
 
-## Validação
+## Resultado
 
-R2 original preservado: FU02 falhou no terceiro turno como
-`acknowledgement`/`answered`. Router 5 corrigiu a continuidade. Na repetição
-HTTP real r3 sobre o candidato r6, **4/4 conversas passaram**; FU02 preservou
-`knowledge_and_support`, `handoff`, caso e protocolo nos turnos 2 e 3.
-Regressões de agradecimento/resolução passaram; critérios reservados não
-mudaram. Reviewer e QA independentes aptos, validação estrita **191 testes**.
-Acumulado da guarda: **US$0,14123583 / US$0,15**.
-[Resultado e limitações](../evidence/v030-resultado.md).
+`router.v5` mantém a rota de suporte e o sinal de falha depois do encaminhamento. Repetição HTTP real: 4/4 conversas; FU02 preserva `knowledge_and_support`, `handoff`, caso e protocolo nos turnos 2 e 3, e agradecimento e confirmação de resolução seguem distintos. Suíte estrita: 191 testes; gasto acumulado de US$0,14123583 de US$0,15. Evidência: [resultado da v0.3.0](../evidence/v030-resultado.md).
 
 ## Status
 
 ```text
-concluída e validada no candidato r6
+concluída (v0.3.0)
 ```

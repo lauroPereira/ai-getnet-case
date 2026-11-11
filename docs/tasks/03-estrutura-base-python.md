@@ -33,12 +33,12 @@ Criar o pacote `merchant_assistant` com configuração, lint, testes e uma aplic
 - [x] `python tools/scripts/lint_and_tests.py --strict` passa.
 - [x] Nenhum segredo nos arquivos.
 
-## Validação
+## Resultado
 
-2026-10-26: `pytest` (8 testes) e `ruff check` passaram; `python tools/scripts/lint_and_tests.py --strict` concluiu sem falhas. Ruff com linha de 120 caracteres. Revisão não independente (mesma sessão).
+Pacote `merchant_assistant` com configuração por ambiente, `GET /health` e `GET /ready`. Em 2026-10-26, `pytest` (8 testes), `ruff check` (linha de 120 caracteres) e `lint_and_tests.py --strict` sem falhas.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

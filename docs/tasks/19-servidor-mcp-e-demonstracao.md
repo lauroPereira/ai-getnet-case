@@ -33,12 +33,12 @@ Expor as ferramentas de suporte por um servidor MCP local sobre a camada de dom�
 - [x] Recurso de outro cliente é bloqueado e auditado também via MCP.
 - [x] Instruções de execução no README.
 
-## Validação
+## Resultado
 
-2026-10-26: `mcp_server.py` com o SDK oficial `mcp` 2.3 (servidor de baixo nível, stdio), schemas e execução pelo mesmo registro. `tests/integration/test_mcp.py` (cliente em processo): mesmas ferramentas, mesmo resultado da camada de domínio, `FORBIDDEN_RESOURCE` auditado, argumento inválido e cliente desconhecido. `merchant-assistant mcp-demo` com subprocesso stdio real: 5 ferramentas, 2 chamadas com dados, bloqueio do recebível de outro cliente. Instruções no README. Revisão não independente.
+Servidor MCP stdio com o SDK oficial `mcp` 2.3, schemas e execução pelo mesmo registro. `tests/integration/test_mcp.py` confirma as mesmas ferramentas e resultados, `FORBIDDEN_RESOURCE` auditado, argumento inválido e cliente desconhecido; `mcp-demo` em subprocesso real lista 5 ferramentas, faz 2 chamadas com dados e mostra o bloqueio do recebível de outro cliente.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.2.0)
 ```

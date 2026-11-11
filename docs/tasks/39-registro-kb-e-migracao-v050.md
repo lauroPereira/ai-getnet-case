@@ -1,4 +1,4 @@
-# Tarefa: registro da base e migração0007
+# Tarefa: registro da base e migração 0007
 
 ## Objetivo
 
@@ -10,7 +10,7 @@ Persistir documentos, rascunhos, versões, ponteiro e eventos sem alterar fontes
 
 ## Pré-condições
 
-Plano/API/migração aprovados. Base nos merges v0.4 registrados; dados sintéticos.
+Plano, API e migração aprovados; dados sintéticos.
 
 ## Arquivos prováveis
 
@@ -18,9 +18,9 @@ Plano/API/migração aprovados. Base nos merges v0.4 registrados; dados sintéti
 
 ## Passos
 
-1. Adicionar0007 e bootstrap idempotente da referência preservada.
+1. Adicionar 0007 e bootstrap idempotente da referência preservada.
 2. Registrar origem/hash imutáveis e conteúdo congelado por versão.
-3. Implementar revisão otimista/eventos e testar0006→0007→0006.
+3. Implementar revisão otimista/eventos e testar 0006→0007→0006.
 
 ## Critérios de conclusão
 
@@ -28,14 +28,12 @@ Plano/API/migração aprovados. Base nos merges v0.4 registrados; dados sintéti
 - [x] Oficial não vira editável; versão publicada imutável.
 - [x] Bootstrap não reconstrói/apaga coleção existente.
 
-## Validação e status
+## Resultado
 
-Implementada pelo Developer r1. Migração aditiva `0007_kb_versions`, bootstrap idempotente sem rebuild da coleção e downgrade/upgrade exercitados em SQLite sintético; preservação dos registros legados verificada. QA e revisão independentes pendentes.
+Migração aditiva `0007_kb_versions` e bootstrap idempotente sem reconstruir a coleção; descida e subida exercitadas em SQLite sintético, com os registros legados preservados. Suíte estrita do backend: 293 testes. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.5.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

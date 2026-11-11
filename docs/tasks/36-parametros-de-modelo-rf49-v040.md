@@ -10,7 +10,7 @@ docs/specs/perfis-interface-v040-plano.md; docs/specs/api-v040-proposta.md; docs
 
 ## Pré-condições
 
-A rodada de QA encontrou os seis editores por agente com parameters vazio e sem catálogo/opções documentadas. A solução r4 adota somente `max_output_tokens`, documentado no adaptador Responses da OpenAI e na API Responses da DeepSeek; limites e fontes estão registrados em `docs/evidence/v040-parametros-modelo-fontes.md`.
+Os seis editores por agente tinham `parameters` vazio, sem catálogo ou opções documentadas. A solução adota somente `max_output_tokens`, documentado no adaptador Responses da OpenAI e na API Responses da DeepSeek; limites e fontes estão registrados em `docs/evidence/v040-parametros-modelo-fontes.md`.
 
 ## Arquivos prováveis
 
@@ -34,14 +34,12 @@ Contrato/configuração de perfis, adaptadores, interface administrativa, snapsh
 - [x] Testes sintéticos cobrem payload do adaptador fake, reserva segura, publicação, snapshot e rejeições sem chamadas pagas.
 - [x] A documentação registra Evaluation reservado para v0.6.0, JEV sem suporte e a lacuna de CA-32 real.
 
-## Validação
+## Resultado
 
-Teste de integração API verificou configuração, publicação v2, digest/snapshot e rejeição de chave desconhecida, boolean, abaixo/acima dos limites e Evaluation. Teste unitário do adaptador OpenAI fake verificou que payload e reserva recebem o mesmo limite efetivo e que perfil não amplia limite menor da chamada. Backend strict r4: 214 testes, Ruff e skills passaram. Web: 12 testes, Ruff check/format e geração idempotente de 11 rotas passaram. Nenhuma inferência paga foi feita.
+`max_output_tokens` configurável, publicado e visível no snapshot por agente compatível; chave desconhecida, booleano, valor fora dos limites e Evaluation recusados sem criar versão. Suíte estrita do backend: 214 testes; web: 12 testes e geração idempotente de 11 rotas; nenhuma inferência paga. Evidência: [parâmetros](../evidence/v040-parametros-modelo-fontes.md) e [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
-Concluída no escopo implementado sem custo, com ajuste de metadados na tarefa
-37: revisão r5 e QA r5 confirmaram publicação,
-valor efetivo e rejeição preservando versão. Validação de provedores reais
-e parâmetros de Evaluation continuam fora desta evidência.
-
+```text
+concluída (v0.4.0)
+```

@@ -10,7 +10,7 @@ docs/specs/perfis-interface-v040-plano.md; docs/specs/incrementos-pos-nucleo.md;
 
 ## Pré-condições
 
-Reproduzir a divergência documentada em docs/evidence/v040-qa-r5.md com um perfil sintético publicado cujo Router LLM possua max_output_tokens configurado. Não chamar provedores reais.
+Reproduzir a divergência entre seleção e resumo com um perfil sintético publicado cujo Router LLM possua max_output_tokens configurado. Não chamar provedores reais.
 
 O contrato aprovado vincula o método ao `comparison_id` no ato da comparação.
 Esta correção não torna esse vínculo mutável. A interface pode invalidar a
@@ -44,13 +44,12 @@ Interface web da comparação, estado da seleção e testes funcionais de compar
 - [x] A escolha LLM continua reutilizando a decisão única e registrando o parâmetro efetivamente enviado pelo Router.
 - [x] Testes funcionais cobrem a seleção antes e após comparar, sem inferência paga.
 
-## Validação
+## Resultado
 
-`ai-getnet-case-web/tests/test_interface.py::test_changing_comparison_selection_invalidates_result_until_explicit_recompare` cobre as sequências LLM→JEV e JEV→LLM. Após mudança da seleção, o ID anterior é descartado, o resumo informa que é preciso comparar novamente e o botão de uso desaparece. Os reruns seguintes não chamam `compare`; o ID novo nasce somente após clique explícito em comparar. O uso envia uma única mensagem com o método e o ID novos, sem comparação adicional. A integração backend r5 documentada em `v040-developer-r5.md` verifica a reutilização JEV/LLM e os mapas efetivos no snapshot. Suíte web r6: 14 testes passaram; Ruff check e format passaram. `tools/scripts/lint_and_tests.py` padrão validou estrutura e saiu 0; informou que lint não é executado no modo padrão. Nenhuma chamada paga.
+Mudar a seleção depois de comparar descarta o ID anterior, pede nova comparação explícita e esconde o botão de uso; reruns não chamam `compare`, e o envio usa o método e o ID novos uma única vez. Suíte web: 14 testes, Ruff aprovado, nenhuma chamada paga. Evidência: [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
-Concluída: [Reviewer r6](../evidence/v040-reviewer-r6.md) e
-[QA r6](../evidence/v040-qa-r6.md) aptos nos dois sentidos, com hashes
-conferidos. O método permanece vinculado ao ID; troca exige nova comparação
-explícita e atendimento consome a decisão válida uma vez.
+```text
+concluída (v0.4.0)
+```

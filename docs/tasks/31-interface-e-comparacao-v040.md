@@ -18,7 +18,7 @@ Pacote Streamlit, cliente HTTP gerado, fixtures, dependências, testes AppTest e
 
 ## Passos
 
-1. Developer implementa cliente a partir do OpenAPI e modo simulado; credenciais de provedores ficam no backend.
+1. Implementar o cliente a partir do OpenAPI e o modo simulado; credenciais de provedores ficam no backend.
 2. Criar chat contínuo, seleção de perfil publicado, toggle LLM/JEV e inspeção saneada da execução.
 3. Implementar comparação isolada e uso único da decisão selecionada; publicação de perfil somente em modo admin.
 4. Expor no editor administrativo apenas parâmetros documentados que a API lista para o modelo e agente selecionados.
@@ -32,14 +32,12 @@ Pacote Streamlit, cliente HTTP gerado, fixtures, dependências, testes AppTest e
 - [x] Editor admin configura `max_output_tokens` apenas para os modelos/agentes compatíveis; JEV não aceita parâmetro e Evaluation permanece reservado para v0.6.0.
 - [x] AppTest e HTTP integrado passam; execução real de JEV ainda não foi validada apenas por mock. *JEV real na v0.5.0.*
 
-## Validação
+## Resultado
 
-Cliente gerado idempotentemente do OpenAPI atualizado, incluindo catálogo e parâmetros. Ruff check/format passou; venv web independente instalado e sem dependências quebradas; web pytest r4: 12 passed. AppTest Real(API) validou login demo, mensagem única, rerun e logout; AppTest admin expõe controle compatível. Integração backend publicou parâmetro positivo e verificou snapshot, reserva e payload do adaptador fake. HTTP verificou comparação/consumo único e 204 vazio seguido por 401 íntegro na mesma conexão. Streamlit normal serviu 200 no loopback. Nenhuma inferência de provedor ocorreu.
+Interface Streamlit com chat, perfis publicados, toggle LLM/JEV, comparação isolada com uso único e editor de `max_output_tokens` por agente compatível. Suíte web: 12 testes; AppTest validou login, mensagem única, rerun e logout, sem inferência de provedor. Evidência: [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.4.0)
 ```
-
-Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)). A chamada real ao JEV (CA-32) foi feita na v0.5.0.

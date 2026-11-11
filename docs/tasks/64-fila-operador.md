@@ -11,7 +11,7 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 ## Pré-condições
 
 - Tarefa 63 com o verificador de token pronto.
-- Migração 0009 (reservada à v0.7.0, Time A), acrescentada ao que a 63 criou.
+- Migração 0009 (reservada à v0.7.0), acrescentada ao que a 63 criou.
 
 ## Arquivos prováveis
 
@@ -34,24 +34,12 @@ O caso encaminhado entra numa fila com estado, operador e eventos; a reivindica�
 - [x] Migração 0009 sobe e desce com dados preservados no sentido de subida.
 - [x] Suíte estrita com código 0.
 
-## Validação
+## Resultado
 
-Developer, rodada 1 (2026-11-03). Passagem em v070-developer.md, seção "Tarefa 64, rodada 1". Os critérios ficam desmarcados até a revisão e o QA.
-
-| Critério | Evidência determinística |
-| --- | --- |
-| CA-47 (fila) | `tests/integration/test_v070_handoffs.py::test_escalated_case_enters_the_queue_open_with_protocol_summary_and_draft`: `POST /messages` → `GET /v1/handoffs` com `open`, `HO-AAAAMMDD-XXXXXX`, resumo, rascunho, pergunta pendente, `thread_id` = `request_id` (D6), conversa mascarada, `simulated` fora do payload |
-| CA-48 | `test_concurrent_actions_with_different_keys_resume_once` (três threads reais sobre SQLite, três rodadas: uma vence, duas `409 already_resumed`, `resume_count = 1`); `test_concurrent_actions_with_the_same_key_return_the_same_record`; `test_action_is_idempotent_and_a_second_resume_is_refused` (mesma chave → `200` e `replayed: true`; outra chave → `409`; o ponto de retomada é chamado uma vez) |
-| `claimed_by_other` e reivindicação idempotente | `test_claim_is_idempotent_and_conflicts_with_another_operator` |
-| CA-46 (fila) | `test_merchant_admin_and_anonymous_cannot_use_the_queue` (`403 insufficient_scope` para lojista e admin nas quatro rotas, `401` sem token); `test_queue_calls_are_audited_with_the_operator` |
-| Migração 0009 | `tests/unit/data/test_migrations.py::test_queue_part_of_0009_keeps_cases_and_messages` (caso e mensagens anteriores preservados nos dois sentidos, chave de idempotência única, `queue_state` verificado) e `test_identity_migration_0009_round_trip` |
-| CLI sobre o mesmo serviço | `test_cli_operator_uses_the_same_service_and_the_token_operator` (operador do token; a API vê o que a CLI fez; token de lojista recusado) |
-| Suíte estrita | `lint_and_tests.py --strict` → código 0, **422 passed**, Ruff ok, skills ok |
+Fila persistente com protocolo `HO-AAAAMMDD-XXXXXX`, reivindicação e ações idempotentes pela API e pela CLI sobre o mesmo serviço; com três threads concorrentes, uma retoma e duas recebem `409 already_resumed`. Suíte estrita: 422 testes. Evidência: [resultado da v0.7.0](../evidence/v070-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.7.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v070-resultado.md)).

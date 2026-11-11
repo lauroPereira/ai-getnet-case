@@ -33,12 +33,12 @@ Implementar o Router com decisão estruturada e os guardrails de entrada e de sa
 - [x] Logs sem dados sensíveis.
 - [x] Resposta com valor não suportado pelos fatos é bloqueada.
 
-## Validação
+## Resultado
 
-2026-10-26: testes determinísticos em `tests/integration/test_use_cases.py` e `tests/unit/` (110 testes no total, sem rede e sem custo) e execução real dos 10 exemplos registrada em [docs/evidence/2026-10-26-execucao-real-desenvolvimento.md](../evidence/2026-10-26-execucao-real-desenvolvimento.md). Revisão não independente (mesma sessão).
+Router com decisão estruturada, mascaramento e detecção de injeção antes do modelo, e conferência de valores e datas na saída. 110 testes determinísticos sem rede e sem custo (`tests/integration/test_use_cases.py` e `tests/unit/`) e execução real dos 10 exemplos em 2026-10-26. Evidência: [execução real](../evidence/2026-10-26-execucao-real-desenvolvimento.md).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

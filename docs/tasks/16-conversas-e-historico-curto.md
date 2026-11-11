@@ -34,12 +34,12 @@ Persistir conversas e mensagens por cliente, verificar o dono antes de ler ou gr
 - [x] `conversation_id` de outro cliente é recusado (UC-21).
 - [x] O prefixo não é repetido a cada mensagem e é refeito quando necessário.
 
-## Validação
+## Resultado
 
-2026-10-26: conversas e mensagens (migração 0002) com dono verificado, histórico curto de até 10 mensagens e 1.200 tokens para Router, Support e Personality, prefixo reaproveitado por 30 minutos no mesmo assunto. Testes em `tests/integration/test_conversations.py` e conversa real de 3 turnos. Ver [evidência](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md). Revisão não independente.
+Conversas e mensagens com dono verificado (migração 0002), histórico curto de até 10 mensagens e 1.200 tokens para Router, Support e Personality, e prefixo reaproveitado por 30 minutos no mesmo assunto. Testes em `tests/integration/test_conversations.py` e conversa real de 3 turnos. Evidência: [memória e acompanhamento](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.2.0)
 ```

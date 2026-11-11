@@ -2,24 +2,20 @@
 
 ## Objetivo
 
-Corrigir o defeito52 usando o payload real GET da conversa como referência,
+Corrigir a recuperação da tarefa 52 usando o payload real GET da conversa como referência,
 sem reenviar a pergunta paga.
 
 ## Especificação relacionada
 
-[Defeito52](52-recuperar-conversa-get-ui-v050.md), tarefa50 e
-QA r2. Correção no escopo de recuperação já
-aprovado, mesmos Developer → Reviewer → QA gpt-6-luna/high.
+[Tarefa 52](52-recuperar-conversa-get-ui-v050.md) e tarefa 50; dentro do escopo de
+recuperação já aprovado.
 
 ## Pré-condições
 
-- R6 preservado. UI18553 e proxy18855 parados; API6932/18853 e fixtures26544/
-  18854 preservados. Não chamar serviços reais na implementação.
-- Payload sintético sanitizado em
-  `.pytest_cache/v050-qa-real-runtime/recovery-get-r2-sanitized.json`, SHA256
+- Payload sintético sanitizado como referência, SHA-256
   `c43c8e2d273570be2587c05c82adb2333284da92448913ab8580c85572168b7f`.
-- Campanha existente33entradas/US$0,00532161, zero reservas abertas. Não abrir,
-  resetar ou criar guarda/ledger, não executar inferência.
+- Campanha existente com 33 entradas e US$0,00532161, zero reservas abertas. Não abrir,
+  resetar ou criar guarda/ledger, nem executar inferência.
 
 ## Arquivos prováveis
 
@@ -41,7 +37,6 @@ código de backend, API pública, autenticação, timeout, modelo ou guarda.
 4. Cobrir histórico anterior, resposta ausente/ambígua e GET repetido. Preservar
    compatibilidade do modo gravado e os controles/tetos já aprovados.
 5. Rodar regressão focal, suíte web e Ruff necessários; nenhuma chamada real.
-   Entregar passagem UI r4, parar escrita e retornar ao Reviewer no r7.
 
 ## Critérios de conclusão
 
@@ -51,19 +46,12 @@ código de backend, API pública, autenticação, timeout, modelo ou guarda.
 - [x] Atualização manual usa GET; AppTest verifica uma única POST original e nenhum reenvio em reruns/atualizações.
 - [x] Suíte web completa e Ruff externo passaram; nenhum código backend, serviço real, guarda ou ledger foi alterado/acessado.
 
-## Validação
+## Resultado
 
-Detalhes em passagem Developer UI r4.
-Payload de referência confirmado sem imprimir seus textos: SHA-256
-`c43c8e2d273570be2587c05c82adb2333284da92448913ab8580c85572168b7f`. A fixture
-versionada no web contém valores sintéticos com o esquema completo da resposta
-e mensagens `merchant`/`assistant`. A recuperação por cursor, erros GET,
-histórico anterior, ausência de resposta, reruns e renderização são cobertos por
-AppTest/MockTransport. Suite final: 20/20. `lint_and_tests.py --strict`
-retornou código2: estrutura, pytest e skills passaram; o script não encontrou
-Ruff no venv web. Ruff externo disponível no venv backend passou em
-`app.py src tests tools`. Nenhum teste contactou API, provedor ou fixture live.
+Fixture versionada só sintética, com as chaves e os papéis `merchant`/`assistant` do formato real; recuperação por cursor, erros GET, histórico anterior, ausência de resposta e reruns cobertos por AppTest. Suíte web: 20/20; Ruff aprovado; nenhum teste contactou API ou provedor. Recuperação comprovada no navegador sem POST repetido. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
-Concluída — [Reviewer UI r3](../evidence/v050-reviewer-ui-r3.md) apto e [QA r3](../evidence/v050-qa-r3.md) comprovou a recuperação no navegador; integrada na v0.5.0.
+```text
+concluída (v0.5.0)
+```
