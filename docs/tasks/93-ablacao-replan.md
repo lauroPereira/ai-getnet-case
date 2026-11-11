@@ -26,7 +26,7 @@ Medir o ganho do replanejamento no conjunto de casos, com e sem o nó `replan`, 
 
 ## Resultado
 
-`REPLAN=on|off` e `eval-compare` pareado. Em 4 casos pareados: 0 decisões de origem `model` com `REPLAN=off` e 8 com `REPLAN=on`.
+`REPLAN=on|off` e `eval-compare` pareado. Ablação com modelo real em 44 pares de desenvolvimento e 25 do holdout: [desenvolvimento](../evidence/v0120-comparacao.md), [holdout](../evidence/v0120-comparacao-holdout.md).
 Evidência: [resultado da v0.12.0](../evidence/v0120-resultado.md).
 
 ## Status

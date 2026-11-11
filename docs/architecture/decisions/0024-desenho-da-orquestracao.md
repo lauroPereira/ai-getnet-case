@@ -7,7 +7,7 @@ Manter a orquestração como um grafo com plano inicial do Router e um nó `repl
 ## Status
 
 ```text
-aceita
+aceita (v0.12.0, 2026-11-07); revista pela ablação em 2026-11-11 e mantida
 ```
 
 Aceita em 2026-11-07 (v0.12.0, tarefa 95, RF-118). Não substitui as ADRs [0002](0002-orquestracao-langgraph-estado-tipado.md) e [0019](0019-replanejamento.md): registra a comparação que elas citam em uma linha, com ganhos, perdas e a condição de revisão.
@@ -110,6 +110,30 @@ Na ordem:
 - **Rever no sentido de desligar** se a ablação não mostrar ganho em nenhum critério nem rota: o caminho é `REPLAN=off`, não um supervisor. Esta condição prevalece sobre a seguinte.
 - **Rever a favor de mais modelo** se o ganho (intervalo da diferença sem o zero) aparecer só nos casos com decisão `model` e não nos casos só com regra; ou se as decisões `model` passarem de um quarto das decisões do `replan`. O limiar de um quarto é escolha do projeto, revisável com o resultado da ablação; o ponto de partida medido é 4 de 77 decisões (cerca de 5%) no holdout da v0.8.0. O passo seguinte é um protótipo do supervisor atrás de configuração, comparado pelo mesmo `eval-compare` antes de substituir o grafo.
 - **Manter** se o ganho aparecer nos casos só com regra ou se distribuir entre os dois grupos.
+
+## Revisão pela ablação (v0.12.0)
+
+A ablação rodou com modelo real, uma execução por lado, pareada por caso: [desenvolvimento](../../evidence/v0120-comparacao.md), 44 pares com os cenários de replanejamento, e [holdout](../../evidence/v0120-comparacao-holdout.md), 25 pares.
+
+| Medida | Desenvolvimento (44 pares) | Holdout (25 pares) |
+| --- | --- | --- |
+| Aprovados, com − sem (IC 95%) | +0,045 (−0,045 a +0,136) | −0,080 (−0,240 a +0,080) |
+| Notas do juiz, com − sem, nos quatro critérios | +0,05 a +0,11 | −0,12 a +0,08 |
+| Pares em que o plano muda | 7: aprovados 7 de 7 com e 6 de 7 sem | 2: aprovados 0 de 2 com e 1 de 2 sem |
+| Decisões do `replan` por origem | 49: 47 por regra e 2 pelo modelo | 27: 25 por regra e 2 pelo modelo |
+
+Leitura pela condição:
+
+- Nenhum intervalo exclui o zero e os dois conjuntos têm sinais opostos: com uma execução por lado, a medida não distingue ganho de perda. A condição pede a revisão no sentido de desligar.
+- As decisões `model` são 4 de 76, abaixo do limiar de um quarto: não há caso para mais modelo nem para o supervisor.
+
+Decisão do responsável (2026-11-11): manter `REPLAN=on` como padrão e repetir a medição. Motivos:
+
+1. O resultado é inconclusivo nos dois sentidos, e desligar com base nele seria decidir pelo ruído de uma execução.
+2. O replanejamento quase não custa: 72 das 76 decisões são regras nomeadas, sem chamada de modelo.
+3. Os cenários que pedem um segundo salto (pergunta que depende da conta respondida por conhecimento e depois por suporte, busca web quando a base não cobre, ferramenta indisponível) só se completam com ele; as arestas fixas mantêm o plano inicial.
+
+`REPLAN=off` continua disponível por configuração. A ablação é repetida com três execuções por lado, e a decisão volta a esta condição com esse resultado.
 
 ## Data
 

@@ -410,8 +410,12 @@ Replanning can be switched off and compared on the same cases:
 - `REPLAN=off` (or `eval --replan off`) keeps the Router's initial plan and the fixed edges.
 - `eval-compare --a <off> --b <on>` pairs the two reports by case and repetition, per criterion and per route, with
   a bootstrap interval of the difference, the replanning decisions counted by origin and each model decision listed.
-- The v0.12.0 validation exercised the switch on 4 paired cases: no model-decided replan with `REPLAN=off` and 8
-  with `REPLAN=on` ([v0.12.0](docs/evidence/v0120-resultado.md)).
+- The v0.12.0 validation ran the comparison with real models, one run per side. On the 44 development pairs,
+  approval was 0.045 higher with replanning (95% CI −0.045 to +0.136) and the judge's four scores 0.05 to 0.11
+  higher; on the 25 holdout pairs the difference was −0.080 (−0.240 to +0.080). No interval excludes zero, and the
+  model took 4 of the 76 replanning decisions. The review recorded in ADR 0024 keeps replanning on and repeats the
+  measurement with three runs per side ([development](docs/evidence/v0120-comparacao.md),
+  [holdout](docs/evidence/v0120-comparacao-holdout.md)).
 
 Why a graph with rule-based replanning and not a supervisor calling the specialists as tools is in
 [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md), with the condition that would reopen it.
@@ -883,7 +887,7 @@ Each figure comes from the versioned evidence linked in its row; all data is syn
 
 | Area | Now | v0.10.0 baseline | Evidence |
 | --- | --- | --- | --- |
-| Attendance | A sale cancellation executes after the merchant's explicit yes, idempotent and audited; the merchant follows human-support tickets from any conversation; replanning can be switched off and compared case by case (`REPLAN`, `eval-compare`), exercised on 4 paired cases. v0.11.0 campaign, 44 cases × 3 runs: groundedness 4.73, factual correctness 4.73, relevance 4.80, usefulness 4.64; business journeys 39 of 39 under the combined check | Read-only journeys. v0.8.0 campaign (`judge.v3`): groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13 by the judge (literal check 13/13, 12/13, 12/13) | [v0.12.0](docs/evidence/v0120-resultado.md), [v1.1.0](docs/evidence/v110-resultado.md), [v0.11.0 campaign](docs/evidence/v0110-qa.md); [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md) |
+| Attendance | A sale cancellation executes after the merchant's explicit yes, idempotent and audited; the merchant follows human-support tickets from any conversation; replanning is measured with and without on 44 development and 25 holdout pairs (`REPLAN`, `eval-compare`). v0.11.0 campaign, 44 cases × 3 runs: groundedness 4.73, factual correctness 4.73, relevance 4.80, usefulness 4.64; business journeys 39 of 39 under the combined check | Read-only journeys. v0.8.0 campaign (`judge.v3`): groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13 by the judge (literal check 13/13, 12/13, 12/13) | [v0.12.0](docs/evidence/v0120-resultado.md), [v1.1.0](docs/evidence/v110-resultado.md), [v0.11.0 campaign](docs/evidence/v0110-qa.md); [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md) |
 | Evaluation (judge) | Default `judge.v5`, claim by claim, against reference labels (the owner's ratings and a two-model panel, with the adjudication approved by the owner) on 36 sealed answers: kappa 0.647 (95% CI 0.28–0.92), against 0.538 for `judge.v3` on the same answers and labels; ±1 agreement 0.972 / 0.972 / 1.000 / 1.000; US$0.000945 per judgement (`judge.v3`: US$0.000398); web answers are judged against the cited page text | Default `judge.v3` against one human rater (24 answers): unsupported-claim agreement 0.667, kappa −0.200 | [v0.11.0](docs/evidence/v0110-resultado.md); [v0.10.0 calibration](docs/evidence/v0100-juiz-v4.md) |
 | Retrieval | Hybrid with the reranker by default; same holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 (same-depth control `hybrid@36`: 0.907); 1,752 ms per query, against 501 ms for `hybrid` in the same run | Hybrid (BM25 + dense), no reranker; sealed holdout of 25 questions: Recall@6 1.000, MRR 0.920, nDCG@6 0.921 | [v0.11.0 retrieval](docs/evidence/v0110-retrieval.md); [v0.9.0 retrieval](docs/evidence/v090-retrieval.md) |
 | Memory | Rolling summary and a register of facts taken from tool results; a 27-turn conversation kept the exact amounts, dates and protocols | Recent turns only; multi-turn conversations 4/4 (2 to 3 turns each) | [v0.12.0](docs/evidence/v0120-resultado.md); [v0.8.0 conversations](docs/evidence/v080-conversations-r4.md) |
@@ -1023,7 +1027,7 @@ The next increments extend what is already measured, each with its own specifica
 | Next step | Value |
 | --- | --- |
 | A second human rater on the 60-answer calibration set | Narrows the confidence interval of the judge's agreement |
-| Replanning compared with and without on a larger paired case set (`eval --replan off`, `eval-compare`) | Quantifies its contribution per route |
+| The replanning comparison repeated with three runs per side (`eval --replan off`, `eval-compare`) | Narrows the interval of its contribution per route |
 | Scheduled refresh of the official-page snapshots through the knowledge-base cycle | Keeps product answers current under the same test-then-activate control |
 | A managed identity provider behind the OIDC configuration | Real merchant and attendant accounts without code changes |
 

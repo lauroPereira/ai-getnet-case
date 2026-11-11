@@ -123,6 +123,7 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 | --- | --- |
 | [v0120-resultado.md](v0120-resultado.md) | Resultado consolidado: resumo rolante e registro de fatos, conversa longa, replanejamento com e sem, cancelamento com confirmação explícita, suíte estrita e gasto da campanha |
 | [v0120-validacao.md](v0120-validacao.md) | Validação momento a momento (candidato integrado e modelo real, com a ablação do replanejamento) e revisão independente: re-derivações, testes e mutações |
+| [v0120-comparacao.md](v0120-comparacao.md), [v0120-comparacao-holdout.md](v0120-comparacao-holdout.md) | Replanejamento com × sem, pareado por caso, critério e rota, com intervalo por bootstrap e decisões por origem |
 
 ## v0.13.0 (identidade e operação)
 

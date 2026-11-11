@@ -119,7 +119,7 @@ Conversation memory, replanning controls, and sale cancellation with explicit co
 
 ### Validation
 - Strict suite: 2,698 tests passed, no failures or skips; the v0.11.0 CSVs and prompts are byte-identical and the holdouts match their hashes ([result](docs/evidence/v0120-resultado.md)).
-- A 27-turn conversation kept exact facts; cancellation was checked for confirmation, idempotency, refusal, expiry and isolation between merchants; on 4 paired cases replanning made 0 model-origin decisions with `REPLAN=off` and 8 with `REPLAN=on`.
+- A 27-turn conversation kept exact facts; cancellation was checked for confirmation, idempotency, refusal, expiry and isolation between merchants; the replanning comparison ran on 44 development and 25 holdout pairs with real models ([development](docs/evidence/v0120-comparacao.md), [holdout](docs/evidence/v0120-comparacao-holdout.md)).
 - Spend: real campaign US$0.471.
 
 ## [0.11.0] — 2026-11-09
