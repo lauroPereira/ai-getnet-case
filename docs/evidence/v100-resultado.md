@@ -20,4 +20,6 @@
 
 Gasto: campanha `v100-qa` US$0,0038 (teto US$0,10) e janela do túnel US$0,0033 (teto US$0,10).
 
+Validação momento a momento e revisão independente: [v100-validacao.md](v100-validacao.md).
+
 A decisão está registrada na [ADR 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md).

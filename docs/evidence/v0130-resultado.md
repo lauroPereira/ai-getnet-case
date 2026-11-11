@@ -22,4 +22,6 @@
 
 Gasto da campanha `v0130-qa`: US$0,064 (teto US$0,15). A validação final da interface e do candidato integrado não usou chamadas pagas.
 
+Validação momento a momento e revisão independente: [v0130-validacao.md](v0130-validacao.md).
+
 A decisão está registrada na [ADR 0025](../architecture/decisions/0025-identidade-e-operacao.md).

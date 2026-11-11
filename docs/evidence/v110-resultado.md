@@ -20,4 +20,6 @@
 
 Gasto: US$0,018 em três campanhas (tetos US$0,10, US$0,05 e US$0,03).
 
+Validação momento a momento e revisão independente: [v110-validacao.md](v110-validacao.md).
+
 As decisões estão na [especificação](../specs/tickets-retomada-v110.md) e na emenda da [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).

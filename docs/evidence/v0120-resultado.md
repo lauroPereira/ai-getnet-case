@@ -19,4 +19,6 @@
 
 Gasto da campanha real: US$0,471.
 
+Validação momento a momento e revisão independente: [v0120-validacao.md](v0120-validacao.md).
+
 A decisão está registrada na [ADR 0024](../architecture/decisions/0024-desenho-da-orquestracao.md).
