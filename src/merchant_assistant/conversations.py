@@ -65,8 +65,9 @@ class Conversation:
 
 
 def _public_turn(row: sqlite3.Row) -> dict:
-    """Turn as shown to clients: assistant turns carry `via`; operator turns also `operator_action` and `protocol`."""
-    turn = {k: row[k] for k in ("role", "text", "route", "status", "created_at")}
+    """Turn as shown to clients: `message_id` (stable, v1.1.0), role, text, route, status and date; assistant turns
+    carry `via`; operator turns also `operator_action` and `protocol`."""
+    turn = {"message_id": row["id"]} | {k: row[k] for k in ("role", "text", "route", "status", "created_at")}
     if row["role"] == "assistant":
         turn["via"] = row["via"] or "agent"
         if turn["via"] == "operator":
@@ -280,6 +281,24 @@ class ConversationStore:
             "UPDATE messages SET delivered_at=? WHERE id=? AND delivered_at IS NULL", (self._now(), message_id)
         )
 
+    def confirm_displayed(self, conversation_id: str, message_id: int) -> bool:
+        """The interface already showed the operator turn `message_id` of this conversation (v1.1.0, D2): when it is
+        still undelivered, it and the older undelivered operator turns of the conversation (shown above it in the same
+        history) count as delivered. Any other id (another turn, another conversation, already delivered) changes
+        nothing. Says whether anything was marked."""
+        shown = self.conn.execute(
+            "SELECT 1 FROM messages WHERE id=? AND conversation_id=? AND via='operator' AND delivered_at IS NULL",
+            (message_id, conversation_id),
+        ).fetchone()
+        if shown is None:
+            return False
+        self.conn.execute(
+            "UPDATE messages SET delivered_at=? WHERE conversation_id=? AND via='operator' AND delivered_at IS NULL "
+            "AND id <= ?",
+            (self._now(), conversation_id, message_id),
+        )
+        return True
+
     def cached_prefix(self, conv: Conversation, topic: str) -> dict | None:
         if not conv.prefix or conv.prefix_topic != topic or not conv.prefix_at:
             return None
@@ -339,12 +358,27 @@ class ConversationStore:
             [*fields.values(), conv.conversation_id],
         )
 
+    def recent(self, customer_id: str, limit: int) -> list[dict]:
+        """The merchant's conversations, latest activity first (v1.1.0, D2): no message text, only the state, the dates,
+        the protocol of the conversation's handoff case (its newest) and whether an attendant's reply still waits to be
+        delivered in a merchant request."""
+        rows = self.conn.execute(
+            "SELECT c.conversation_id, c.state, c.created_at, c.updated_at, "
+            "(SELECT h.protocol FROM handoff_cases h WHERE h.conversation_id = c.conversation_id "
+            "AND h.customer_id = c.customer_id ORDER BY h.created_at DESC, h.rowid DESC LIMIT 1) AS handoff_protocol, "
+            "EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = c.conversation_id AND m.via = 'operator' "
+            "AND m.delivered_at IS NULL) AS pending_operator_reply "
+            "FROM conversations c WHERE c.customer_id = ? ORDER BY c.updated_at DESC, c.rowid DESC LIMIT ?",
+            (customer_id, limit),
+        ).fetchall()
+        return [dict(r) | {"pending_operator_reply": bool(r["pending_operator_reply"])} for r in rows]
+
     def get(self, conversation_id: str) -> dict | None:
         row = self.conn.execute("SELECT * FROM conversations WHERE conversation_id = ?", (conversation_id,)).fetchone()
         if row is None:
             return None
         messages = self.conn.execute(
-            "SELECT role, text, route, status, created_at, via, meta FROM messages WHERE conversation_id = ? "
+            "SELECT id, role, text, route, status, created_at, via, meta FROM messages WHERE conversation_id = ? "
             "ORDER BY id",
             (conversation_id,),
         ).fetchall()

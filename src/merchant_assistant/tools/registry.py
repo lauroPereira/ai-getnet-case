@@ -125,6 +125,16 @@ TOOLS: dict[str, ToolSpec] = {
             SUPPORT_WRITE,
             "sale_id",
         ),
+        ToolSpec(
+            "get_handoff_cases",
+            "Read the merchant's human support tickets (handoff cases) opened in any conversation, newest first, at "
+            "most 5: protocol, queue state, reason, when it was opened, claimed, answered and closed, and the "
+            "attendant's reply when there is one. Filter by the full protocol or its last 4 or more characters.",
+            domain.HandoffCasesArgs,
+            domain.get_handoff_cases,
+            "specialist",
+            SUPPORT_READ,
+        ),
         # Run by code only (task 94): an explicit yes or no to a pending request, or a turn without an answer;
         # never offered to a model.
         ToolSpec(
@@ -186,6 +196,7 @@ AGENT_TOOLS: dict[str, tuple[str, ...]] = {
         "get_enablement_requests",
         "get_sale_cancellation_context",
         "request_sale_cancellation",
+        "get_handoff_cases",
     ),
 }
 # The MCP server stays read-only (decision 0010): a cancellation request can only be confirmed in a conversation.

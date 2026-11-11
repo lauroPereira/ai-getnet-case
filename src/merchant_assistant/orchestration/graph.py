@@ -15,8 +15,9 @@ stays the initial plan; each specialist runs at most once and the changes of pla
 Human review (ADR 0018, v0.7.0): when Escalation opens a case, the state at the end of the handed-off turn enters the
 review graph, compiled with a SQLite checkpointer, and stops in `human_review` with `interrupt()` under
 thread = the escalating request (D6). An operator's action resumes that thread with `Command(resume=...)`:
-approve/reply -> personality -> output_guard; reject -> support (operator instruction, one cycle) -> personality ->
-output_guard. The attendance graph has no checkpointer, so a turn without a handoff never touches checkpoints.
+approve -> personality -> output_guard; reply -> operator_reply (the operator's text as written, spec v1.1.0 D4);
+reject -> support (operator instruction, one cycle) -> personality -> output_guard. The attendance graph has no
+checkpointer, so a turn without a handoff never touches checkpoints.
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ from merchant_assistant.agents import summary as rolling_summary
 from merchant_assistant.agents.common import guess_language, policy
 from merchant_assistant.api.identity import Principal
 from merchant_assistant.api.schemas import Handoff, MessageRequest, MessageResponse, Resolution, Source
+from merchant_assistant.cases import Turn, next_state
 from merchant_assistant.config import Settings
 from merchant_assistant.conversations import PROMPT_HISTORY, Conversation, ConversationStore, facts_from_tool
 from merchant_assistant.data.clock import Clock
@@ -79,6 +81,7 @@ TOOL_TITLES = {
     "get_enablement_requests": "Card-scheme enablement requests (your account)",
     "get_sale_cancellation_context": "Sale cancellation status (your account)",
     "request_sale_cancellation": "Sale cancellation request (your account)",
+    "get_handoff_cases": "Human support tickets (your account)",
     "confirm_sale_cancellation": "Sale cancellation, confirmed by you (your account)",
     "decline_sale_cancellation": "Sale cancellation, declined by you (your account)",
 }
@@ -279,8 +282,28 @@ def human_review(state: GraphState, config: RunnableConfig) -> dict:
     }
 
 
+def operator_reply(state: GraphState, ctx: RunContext) -> dict:
+    """`reply` (spec v1.1.0 D4): the operator's own text is the reply, exactly as written; no model and no rewriting.
+    The case moves as after any operator turn."""
+    text = (state.operator or {}).get("text") or ""
+    signal = state.decision.case_signal if state.decision else "none"
+    case_state, evidence = next_state(
+        state.case.get("state", "in_progress"), state.case.get("evidence"), Turn("answered", signal, via_operator=True)
+    )
+    ctx.step_notes.update(source="operator", case_state=case_state, evidence=evidence)
+    return {
+        "draft_answer": text,
+        "answer": text,
+        "status": "answered",
+        "agents": [*state.agents, "operator_reply"],
+        "case_next": {"state": case_state, "evidence": evidence},
+        "output_violations": [],
+    }
+
+
 def _after_review(s: GraphState) -> str:
-    return "support" if (s.operator or {}).get("action") == "reject" else "personality"
+    action = (s.operator or {}).get("action")
+    return {"reject": "support", "reply": "operator_reply"}.get(action, "personality")
 
 
 def build_review_graph(checkpointer):
@@ -290,13 +313,15 @@ def build_review_graph(checkpointer):
         ("support", support.run),
         ("personality", personality.run),
         ("output_guard", personality.run_output_guard),
+        ("operator_reply", operator_reply),
     ]:
         g.add_node(name, _traced(name, fn))
     g.add_edge(START, "human_review")
-    g.add_conditional_edges("human_review", _after_review, ["support", "personality"])
+    g.add_conditional_edges("human_review", _after_review, ["support", "personality", "operator_reply"])
     g.add_edge("support", "personality")  # never back to escalation in the same cycle (D14)
     g.add_edge("personality", "output_guard")
     g.add_edge("output_guard", END)
+    g.add_edge("operator_reply", END)  # D4: the operator's words reach the merchant as written
     return g.compile(checkpointer=checkpointer)
 
 
@@ -411,8 +436,11 @@ class Orchestrator:
         principal: Principal | None = None,
         channel: str = "in_process",
         reservation_fence: ReservationFence | None = None,
+        displayed_operator_message_id: int | None = None,
     ) -> MessageResponse:
-        """`db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
+        """`displayed_operator_message_id` is the operator turn the interface already showed (v1.1.0, D2): it counts
+        as delivered, so this message is answered instead of repeating it.
+        `db_path` isolates domain effects (a comparison uses a temporary copy of the synthetic database),
         `knowledge` pins an already captured knowledge-base version and `trace_tags` mark the trace.
         `reservation_fence` verifies ownership before a comparison cell commits any paid reservation.
         `principal` is the authenticated caller (HTTP routes always pass it); in-process callers (CLI `ask`, offline
@@ -430,6 +458,8 @@ class Orchestrator:
         try:
             store = ConversationStore(conn, self.clock)
             conv = store.open(request.conversation_id, request.user_id)  # raises ConversationNotFound
+            if displayed_operator_message_id is not None and not conv.created:
+                store.confirm_displayed(conv.conversation_id, displayed_operator_message_id)
             pending = None if conv.created else store.pending_operator_turn(conv.conversation_id)
             if pending is not None:  # D8: a human reply waiting for this conversation is delivered first
                 return self._deliver(store, conv, pending, request, request_id, principal, trace_tags)

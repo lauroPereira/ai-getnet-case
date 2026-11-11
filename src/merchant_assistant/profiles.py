@@ -6,6 +6,7 @@ import hashlib
 import json
 import sqlite3
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -147,6 +148,13 @@ def validate_agents(value: dict) -> dict:
             if not spec["minimum"] <= raw_value <= maximum:
                 raise ValueError(f"{parameter} for agent {name} must be between {spec['minimum']} and {maximum}")
     return agents
+
+
+def missing_providers(agents: dict, has_key: Callable[[str], bool]) -> list[str]:
+    """Providers of the attendance agents with no key in the backend (v1.1.0, D3), sorted. The `evaluation` field is
+    kept in the schema but no run uses it, so it does not make a profile unavailable."""
+    providers = {config["provider"] for name, config in agents.items() if name != "evaluation"}
+    return sorted(provider for provider in providers if not has_key(provider))
 
 
 def list_profiles(conn: sqlite3.Connection, *, role: str) -> list[dict]:

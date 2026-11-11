@@ -5,13 +5,17 @@ over one HTTP endpoint, and hands the case to a human operator when it needs one
 questions, support operators working the hand-off queue (in a web screen or on Telegram) and the team that runs and
 measures it (judge, retrieval metrics, traces and a budget guard). A **Router** sends each message to a **Knowledge
 Agent** (RAG over Getnet's official website, or the web), a **Customer Support Agent** with tools over the merchant's
-synthetic account or an **Escalation Agent**, and a **Personality** step writes every reply in one voice.
+synthetic account or an **Escalation Agent**, and a **Personality** step writes every reply of the assistant in one voice; a reply written by a human operator
+reaches the merchant in the operator's own words.
 
-**Status:** v1.0.0 (not released). It publishes the image on GHCR per release tag with the dependencies pinned in
-`uv.lock`, opens the demonstration through a tunnel with the sign-in by redirect, and adds the
-[10-minute walkthrough](#10-minute-walkthrough) and the [before and after table](#what-changed-since-v0100). It builds
-on v0.13.0: sign-in by redirect, external OIDC issuers, two API workers, webhook resend, the operator on Telegram and
-OTLP spans; the campaign judge is `judge.v5` and hybrid retrieval reranks by default. What each version added is in
+**Status:** v1.1.0 (not released). The merchant asks about their human-support tickets in any conversation and gets
+the protocol, its state and the attendant's reply; the interface brings back the latest conversation after the page
+is reloaded; profiles and Router engines whose provider key the backend lacks show as unavailable. It builds on
+v1.0.0: the image on GHCR per release tag with the dependencies pinned in `uv.lock`, the demonstration through a
+tunnel with the sign-in by redirect, the [10-minute walkthrough](#10-minute-walkthrough) and the
+[before and after table](#what-changed-since-v0100). Since v0.13.0 it has sign-in by redirect, external OIDC issuers,
+two API workers, webhook resend, the operator on Telegram and OTLP spans; the campaign judge is `judge.v5` and hybrid
+retrieval reranks by default. What each version added is in
 [Beyond the challenge](#beyond-the-challenge), measured quality in [Testing and evaluation](#testing-and-evaluation),
 and what comes next in the [Roadmap](#roadmap).
 
@@ -92,7 +96,7 @@ cp .env.example .env               # set OPENAI_API_KEY; nothing else is require
 docker compose up -d --wait         # API on http://localhost:8000, ticketing on http://127.0.0.1:8002, plus Qdrant and mocks
 ```
 
-Compose uses `ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}`. Set `APP_VERSION=v1.0.0` to select a
+Compose uses `ghcr.io/lauropereira/ai-getnet-case:${APP_VERSION:-latest}`. Set `APP_VERSION=v1.1.0` to select a
 release tag. Compose checks the registry when the tag is missing locally and always checks for `latest`. If it
 cannot pull the image and has no local copy, it builds from the `Dockerfile`. Use `docker compose up --build` to
 build from your checkout. If the package is private, authenticate to GHCR to pull it. The application dependencies
@@ -230,7 +234,9 @@ message and the one evaluation, all under the budget guard (`BUDGET_LIMIT_USD`).
    **Enviar ação**. Expected: “Ação enviada e aceita pelo assistente.”
 6. **Read the reply as the merchant.** Back in the merchant's window send “Alguma novidade?”. Expected: the operator's
    text, marked `Atendente humano · rota human_reply` (no model call for this turn). With the optional
-   [Telegram profile](#operator-on-telegram) the operator can claim and reply from the bot chat instead.
+   [Telegram profile](#operator-on-telegram) the operator can claim and reply from the bot chat instead. Reloading
+   the page and signing in again brings this conversation back (**Conversa retomada**) with the operator's reply, and
+   after **Nova conversa** the question “Tenho algum ticket aberto?” returns the protocol, its state and that reply.
 7. **Evaluate an answer.** In **Resultados** choose, under **Execução**, the run of step 3 (the list starts with the
    most recent run, so it is the last one) and click
    **Estimar avaliação por IA (sem custo)**. Expected: method, rubric, evaluator and the estimated cost. Tick
@@ -293,7 +299,7 @@ All settings come from environment variables (or `.env`). Defaults are safe for 
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OPERATOR_CHAT_ID`, `TELEGRAM_WEBHOOK_URL`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_CLIENT_SECRET` | empty (off) | Operator on Telegram with `docker compose --profile telegram up`; see [Operator on Telegram](#operator-on-telegram) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | empty (off) | Base URL of an OTLP/HTTP collector for the request spans; see [Observability](#observability) |
 
-`DEEPSEEK_API_KEY` is required for the default `eval --judge` evaluator and optional for the DeepSeek model profiles (Hybrid: Router; Adjusted: Router and Support). `TYPESAFE_API_KEY` enables the alternative Router engine; neither key is needed for `POST /messages`. Every secret in `.env.example` is a fictitious demo value named as such; the API warns at startup when one of them is in use. The web app signs in on the API's login page (authorization code with PKCE) and never receives a provider key.
+`DEEPSEEK_API_KEY` is required for the default `eval --judge` evaluator and optional for the DeepSeek model profiles (Hybrid: Router; Adjusted: Router and Support). `TYPESAFE_API_KEY` enables the alternative Router engine; neither key is needed for `POST /messages`. `GET /v1/profiles` reports which profiles and Router engines the configured keys allow, never a key value, and the web app marks the others as unavailable and names the missing key. Every secret in `.env.example` is a fictitious demo value named as such; the API warns at startup when one of them is in use. The web app signs in on the API's login page (authorization code with PKCE) and never receives a provider key.
 
 ## Architecture
 
@@ -334,7 +340,7 @@ The reported route remains the Router's initial plan; the trace records the path
 | --- | --- | --- |
 | Router Agent | LLM, structured output | Picks one of the 8 routes below, the language, the support topic and a safety label |
 | Knowledge Agent | LLM + RAG / web search | Answers from retrieved official passages (with citations) or one web search; gives the official procedure on combined routes |
-| Customer Support Agent | LLM + function calling | Looks up the merchant's data with 10 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation; may ask for a sale cancellation, which waits for the merchant's yes |
+| Customer Support Agent | LLM + function calling | Looks up the merchant's data and human-support tickets with 11 tools (plus 2 run by code at case opening) and explains it; asks to choose when needed; flags escalation; may ask for a sale cancellation, which waits for the merchant's yes |
 | Replanner | Rules + LLM on ambiguity | Reviews specialist evidence after each step and selects the next action within a three-hop limit |
 | Cancellation confirmation | Deterministic code | While a sale cancellation waits, an explicit yes or no (the Router's label, validated in code) confirms or declines it; any other turn follows the Router's route and counts as unanswered |
 | Escalation Agent | LLM + persistence | Writes the handover summary, opens an idempotent case with an `HO-` protocol and pauses the graph until an operator acts on the ticket ([human in the loop](#identity-and-human-in-the-loop-v070)) |
@@ -454,6 +460,13 @@ Since v0.2.0 a conversation carries memory and a case state.
   a human keeps one protocol.
 - **Prefix reuse.** History and healthcheck run once per case and topic, refreshed after 30 minutes or when the
   topic changes.
+- **Latest conversations (v1.1.0).** `GET /v1/conversations` lists the token merchant's conversations, most recently
+  updated first (`limit` 1 to 20, default 5), with state, dates, the handoff protocol and whether an attendant's reply
+  is still undelivered, never message text; operator and service tokens get `403 insufficient_scope`. The web
+  interface uses it to bring back the latest conversation after a reload; it sends the `message_id` of the
+  attendant's reply it already showed (`displayed_operator_message_id` in `POST /v1/messages`), so the next message
+  gets its own answer instead of that reply again. In any conversation, the merchant can ask
+  about their human-support tickets (`get_handoff_cases`, [Support tools](#support-tools-and-synthetic-data)).
 
 ```bash
 curl -s localhost:8000/messages -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
@@ -508,7 +521,7 @@ English questions retrieve Portuguese content directly, so no query translation 
 
 ## Support tools and synthetic data
 
-The Support Agent has ten tools, plus two used by code at case opening.
+The Support Agent has eleven tools, plus two used by code at case opening.
 
 | Tool | Arguments from the model | Returns |
 | --- | --- | --- |
@@ -522,6 +535,7 @@ The Support Agent has ten tools, plus two used by code at case opening.
 | `get_enablement_requests` | `scheme` (optional) | Existing protocol, request/activation status and device availability |
 | `get_sale_cancellation_context` | `period`, `payment_type`, `installments`, `channel`, `sale_date`, `amount` (cents) | Each sale of the period (filtered by what the merchant named) with payment type, installments, channel, amount and date, its cancellation (or none) and its latest cancellation request; the cancellation records, each with its sale and the protocol of one confirmed in the conversation. The status the merchant reads is written by code from this result |
 | `request_sale_cancellation` | `sale_id` | A cancellation request for the sale, with amount and date, waiting for the merchant's explicit yes (scope `support:write`); nothing changes in the account yet |
+| `get_handoff_cases` | `protocol` (optional: the full protocol or its last 4+ letters or digits) | The merchant's human-support tickets from any conversation, newest first, at most 5: protocol, queue state, reason, when it was opened, claimed, answered and closed, and the attendant's reply; no operator id. Another merchant's protocol returns an empty list |
 | `get_complaint_history` *(prefix)* | `topic` | Previous cases and attempts |
 | `run_customer_healthcheck` *(prefix)* | `topic` | Predefined checks: ok, pending, attention, unknown, unavailable |
 
@@ -775,6 +789,7 @@ Later increments built on the same core (graph, agents, tools and guards), each 
 | v0.12.0 | Bounded rolling summary and fact register; `REPLAN=off` and `eval-compare`; sale cancellation with explicit confirmation, idempotency, and audit; [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md) | Long conversations keep a bounded context and disclose when older details are missing; replanning can be compared across cases; cancellation executes only after explicit confirmation |
 | v0.13.0 | Sign-in by redirect (authorization code with PKCE) and rotating refresh tokens; external OIDC issuers with roles mapped by groups or exact verified email (Dex in the compose); two API workers sharing a comparison lease in SQLite; recovery and resend for webhook deliveries and unannounced cases; [operator on Telegram](#operator-on-telegram); optional OTLP spans and a Grafana dashboard; [ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md) | Redirect login and configured identity providers; resumable comparisons across workers; recoverable webhook and handoff state; the same operator actions from Telegram; optional telemetry in an OTLP collector |
 | v1.0.0 | Image on GHCR per release tag, dependencies pinned in `uv.lock` and the strict suite inside the image with no network; `tunnel` profile with a single-origin proxy for the sign-in by redirect ([ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)); the [10-minute walkthrough](#10-minute-walkthrough) | Each release runs from one published image; a visitor on another network signs in to the demonstration without reaching the rest of the API |
+| v1.1.0 | `get_handoff_cases` in Customer Support: the merchant's human-support tickets with protocol, state and the attendant's reply; `GET /v1/conversations` and the interface bringing back the latest conversation after a reload, with **Nova conversa**; `GET /v1/profiles` reports which profiles and Router engines the backend's keys allow, and the interface disables the others and names the missing key ([spec](docs/specs/tickets-retomada-v110.md)) | A merchant follows a ticket without leaving the conversation; a reload, common on a phone, no longer hides the attendant's reply; the interface offers only what the backend can run |
 
 ### Identity and human in the loop (v0.7.0)
 
@@ -839,7 +854,7 @@ audit row                every tool call writes principal, tool, scope, result a
 The demo users and secrets in `.env.example` are fictitious and no private key is versioned (`JWT_PRIVATE_KEY_PATH`
 empty: the key is generated at startup).
 
-- **Pause and resume** ([ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md)). When the Escalation agent opens a case, the end-of-turn state goes to a review graph checkpointed in SQLite that stops at `human_review` with LangGraph `interrupt()`; the attendance path without a handoff reads no checkpoint. An operator's `approve`, `reply` or `reject` resumes it with `Command(resume)`: approve and reply go to Personality, reject re-runs Support once with the operator's instruction. The reply is a turn marked `via=operator`, delivered on the merchant's next message (route `human_reply`, no model call), in `GET /v1/conversations/{id}` and by webhook. It survives an API restart.
+- **Pause and resume** ([ADR 0018](docs/architecture/decisions/0018-interrupcao-retomada-webhooks.md)). When the Escalation agent opens a case, the end-of-turn state goes to a review graph checkpointed in SQLite that stops at `human_review` with LangGraph `interrupt()`; the attendance path without a handoff reads no checkpoint. An operator's `approve`, `reply` or `reject` resumes it with `Command(resume)`: approve (the AI draft the operator released) goes to Personality; reply reaches the merchant exactly as the operator wrote it, with no model and no rewriting (v1.1.0); reject re-runs Support once with the operator's instruction, then Personality. The reply is a turn marked `via=operator`, delivered on the merchant's next message (route `human_reply`, no model call), in `GET /v1/conversations/{id}` and by webhook; the webhook copy (`conversation.replied`) goes through the same masking of sensitive data as every outgoing event, so an e-mail, a CPF or CNPJ, a card number or a credential in the text arrives masked there. It survives an API restart.
 - **Queue.** States `open → claimed → answered | rejected → closed`; claim and actions are idempotent (`idempotency_key`), a second resume gets `409 already_resumed`, another operator's claim `409 claimed_by_other`. API (`GET /v1/handoffs`, `POST /v1/handoffs/{id}/claim`, `POST /v1/handoffs/{id}/actions`), CLI (`merchant-assistant operator list|show|act`) and the ticketing service go through the same service.
 - **Ticketing service.** A separate service in Compose with a Zendesk/Freshdesk-style contract (own database, published on `127.0.0.1:8002`), with the ticket cycle `new → open → pending → solved` and an operator screen in the web project. It talks to the assistant only through signed webhooks in both directions (HMAC-SHA256 over `timestamp.body`, 300 s window, one secret per direction) and a `client_credentials` token. Incoming events are idempotent by id and a repeated refused event gets the original `409`/`422` back.
 - **Durable delivery.** Each outgoing event and destination is written to an outbox (migration 0010) in the same transaction as the change it reports; a dispatcher delivers it with up to three attempts in total, recorded and visible in the case, and recovers pending deliveries when the API starts.
@@ -963,7 +978,8 @@ Current release and planned evolution, one version at a time, each with its own 
 | v0.11.0 — Delivered: judge and retrieval | `judge.v5` is selected by its sealed calibration; `RERANK=on` follows its comparison with `hybrid@36`; web citations are checked as evidence |
 | v0.12.0 — Built: orchestration, memory and actions ([results](docs/evidence/v0120-resultado.md)) | Rolling summary of long conversations with a fact register; replanning measured with and without; sale cancellation with explicit confirmation |
 | v0.13.0 — Built: identity and operation ([results](docs/evidence/v0130-resultado.md)) | Authorization code with PKCE, refresh tokens and an external OIDC issuer; operator channel on the phone (Telegram); multiple API workers with a shared comparison lease; resend of exhausted webhook deliveries and recovery of cases opened while the API stopped; OTLP export and a dashboard |
-| v1.0.0 — In progress: reading and access | Image published per tag and a lockfile; external access tested through a tunnel; a 10-minute walkthrough and the before and after table |
+| v1.0.0 — Built: reading and access | Image published per tag and a lockfile; external access tested through a tunnel; a 10-minute walkthrough and the before and after table |
+| v1.1.0 — In progress: tickets and resumed conversations ([specification](docs/specs/tickets-retomada-v110.md)) | The merchant's human-support tickets in any conversation; the latest conversation back after a reload; profiles and Router engines without a backend key shown as unavailable |
 
 ## Repository layout
 

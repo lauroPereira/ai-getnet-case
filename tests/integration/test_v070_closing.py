@@ -99,9 +99,9 @@ def test_a_request_runs_through_the_campaign_guard_and_both_ledgers_record_it(of
     assert primary.spent() == campaign.guard.spent() == 0  # the scripted model is free
 
 
-def test_package_version_is_1_0_0():
+def test_package_version_is_1_1_0():
     project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert project["version"] == __version__ == "1.0.0"
+    assert project["version"] == __version__ == "1.1.0"
 
 
 def test_compose_declares_api_ticketing_mocks_and_qdrant_with_the_webhook_contract():

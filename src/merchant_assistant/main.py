@@ -31,7 +31,7 @@ def openai_client(settings: Settings):
 def deepseek_client(settings: Settings):
     from openai import OpenAI
 
-    if not settings.deepseek_api_key:
+    if not settings.has_provider_key("deepseek"):
         raise RuntimeError("DEEPSEEK_API_KEY is not configured")
     return OpenAI(
         api_key=settings.deepseek_api_key.get_secret_value(),
@@ -44,10 +44,9 @@ def deepseek_client(settings: Settings):
 def anthropic_client(settings: Settings):
     from anthropic import Anthropic
 
-    key = settings.anthropic_api_key
-    if not (key and key.get_secret_value()):
+    if not settings.has_provider_key("anthropic"):
         raise RuntimeError("ANTHROPIC_API_KEY is not configured")
-    return Anthropic(api_key=key.get_secret_value(), max_retries=0)
+    return Anthropic(api_key=settings.anthropic_api_key.get_secret_value(), max_retries=0)
 
 
 def model_factory(settings: Settings):
@@ -65,7 +64,7 @@ def model_factory(settings: Settings):
 
             return AnthropicLLM(anthropic_client(settings), model)
         if provider == "typesafe" and model == "jev-1.14.0":
-            if not settings.typesafe_api_key:
+            if not settings.has_provider_key("typesafe"):
                 raise RuntimeError("TYPESAFE_API_KEY is not configured")
             return JevRouter(settings.typesafe_api_key.get_secret_value())
         raise RuntimeError("model provider or identifier is not available")

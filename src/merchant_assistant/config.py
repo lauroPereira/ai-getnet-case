@@ -175,7 +175,22 @@ class Settings(BaseSettings):
 
     @property
     def has_openai(self) -> bool:
-        return bool(self.openai_api_key and self.openai_api_key.get_secret_value())
+        return self.has_provider_key("openai")
+
+    def has_provider_key(self, provider: str) -> bool:
+        """A non-empty key is configured for the model provider: the rule the model clients are built with and the one
+        `GET /v1/profiles` reports (v1.1.0, D3). Never exposes the value."""
+        field = PROVIDER_KEY_FIELDS.get(provider)
+        key = getattr(self, field) if field else None
+        return bool(key and key.get_secret_value())
+
+
+PROVIDER_KEY_FIELDS = {
+    "openai": "openai_api_key",
+    "deepseek": "deepseek_api_key",
+    "typesafe": "typesafe_api_key",
+    "anthropic": "anthropic_api_key",
+}
 
 
 @lru_cache
