@@ -2,8 +2,7 @@
 
 ## Status
 
-Aceita pelo responsável em 2026-10-27 com o plano v0.5.0. Complementa ADR0009;
-não a substitui.
+Aceita (v0.5.0, 2026-10-27). Complementa a ADR 0009; não a substitui.
 
 ## Contexto e decisão
 
@@ -14,10 +13,10 @@ qualquer embedding. Estado `failed` torna falhas operacionais visíveis sem
 trocar a ativa. Retenção física não apaga coleções existentes automaticamente.
 
 Ativação usa comparação da ativa esperada e captura de índice por execução.
-Rodadas reais de QA usam guarda existente injetada no runtime sintético
+Validações com modelos reais usam a guarda existente injetada no runtime sintético
 isolado, com sublimite persistente e sem reset de ledger/configuração global.
 
-Complemento aceito em 2026-10-27 (revisão r2, R2-06): o teto de cada ledger
+Complemento (2026-10-27): o teto de cada ledger
 fica em arquivo `<ledger>.limit` criado uma vez, sem alterar o SQLite; ledger
 pré-existente recebe no máximo US$1 e nenhuma remontagem amplia o teto
 (máximo absoluto US$5). Ativação e retorno exigem coleção íntegra contra o
@@ -32,7 +31,7 @@ operação desnecessária para o corpus pequeno atual.
 ## Consequências e retorno
 
 Mais metadados e índices candidatos; espaço monitorado. Limpeza é decisão
-separada. Migração0007 reversível só em teste sintético; código anterior pode
+separada. Migração 0007 reversível só em teste sintético; código anterior pode
 usar a coleção de referência preservada. Nenhum arquivo oficial é sobrescrito.
 Elevar o teto de um ledger exige edição manual do arquivo pelo responsável;
 `bootstrap` mantém coleção existente defasada e só avisa, e conteúdo novo

@@ -4,7 +4,7 @@
 
 ## Especificação relacionada
 
-[Roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md). Este plano detalha as capacidades e decisões técnicas das versões relacionadas.
+[Roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md). Este plano detalha as capacidades e decisões técnicas das versões relacionadas. Estado: entregue da v0.11.0 à v1.0.0.
 
 A numeração de tarefas, migrações e decisões arquiteturais acompanha as versões descritas neste plano.
 
@@ -41,7 +41,7 @@ A numeração de tarefas, migrações e decisões arquiteturais acompanha as ver
 ### v1.0.0 — Leitura e acesso
 
 20. **Imagem e lockfile** (RF-127). `validate.yml` ganha o job `image` em tag: build e push para `ghcr.io/<owner>/ai-getnet-case:<tag>`; `docker-compose.yml` com `image:` e `build:` (a imagem publicada vence quando existe); `uv.lock` versionado; README "Run the tests inside the image".
-21. **README** (RF-129, RF-98). Tabela antes × depois por área; trilha de 10 minutos; capturas (aba Operador, ticketing, Telegram); túnel testado com evidência.
+21. **README** (RF-129, RF-98). Tabela antes × depois por área; trilha de 10 minutos; capturas (aba Operador, ticketing, Telegram); túnel com login por redirecionamento ([ADR 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)), testado por outra rede ([resultado](../evidence/v100-resultado.md)).
 
 ## Componentes afetados
 
@@ -64,7 +64,7 @@ A numeração de tarefas, migrações e decisões arquiteturais acompanha as ver
 | `docker-compose.yml`, `.env.example` | — | — | perfis `oidc`, `telegram`, `otel`; `--workers 2` | `image:` |
 | `.github/workflows/` | — | — | — | job `image` |
 | Projeto web | — | — | login por redirecionamento | capturas |
-| `docs/` | spec complementar, tarefas 87–91 e 91a, ADR 0023 | tarefas 92–96, ADR 0024 | tarefas 97–101, ADR 0025 | tarefas 102 e 104 |
+| `docs/` | spec complementar, tarefas 87–91 e 91a, ADR 0023 | tarefas 92–96, ADR 0024 | tarefas 97–102a, ADR 0025 | tarefas 105–108, ADR 0026 |
 
 Não alterar: `judge.v3`, `judge.v4`, holdouts selados da v0.8.0 e v0.9.0, snapshots públicos, regras financeiras das ferramentas, ledger. AGENTS.md, CLAUDE.md e `.claude/` só por PR aprovado.
 
@@ -127,7 +127,7 @@ Contrato `/v1` aditivo em tudo. Nenhuma mudança incompatível.
 
 ## Orçamento
 
-Chamadas a modelos com custo passam pela guarda de orçamento persistente da aplicação, que limita cada instalação conforme sua configuração. A avaliação de rubricas e o reranker de retrieval consomem esse limite; uma requisição sem reserva disponível é recusada antes da chamada. Os testes usam provedores simulados e não fazem chamadas pagas.
+Chamadas a modelos com custo passam pela guarda de orçamento persistente da aplicação, que limita cada instalação conforme sua configuração. A avaliação de rubricas e o reranker de retrieval consomem esse limite; uma requisição sem reserva disponível é recusada antes da chamada. Os testes usam o modelo programado e não fazem chamadas pagas. Cada campanha real tem teto próprio, registrado antes da execução, dentro do limite por provedor definido pelo responsável.
 
 ## Plano de implementação
 
@@ -155,8 +155,11 @@ Chamadas a modelos com custo passam pela guarda de orçamento persistente da apl
 99. Lease multi-worker, locks removidos, WAL, `--workers 2`, teste com dois processos; `exhausted` e resend; `recover_orphans`; migração 0016 (RF-123, RF-124, RF-125).
 100. Adaptador Telegram (RF-122).
 101. OTLP e dashboard (RF-126).
+102. Documentação e metadados da v0.13.0; 102a. mapeamento dos usuários estáticos do Dex.
 
 **v1.0.0 — Leitura e acesso**
 
-102. Imagem no GHCR por tag, `uv.lock`, compose com `image:`, suíte dentro da imagem (RF-127).
-104. README antes × depois por área, trilha de 10 minutos, capturas, túnel testado; CHANGELOG; fechamento e tag `v1.0.0` (RF-129, RF-98).
+105. Reorganização da documentação e verificador de links (RF-128).
+106. Imagem no GHCR por tag, `uv.lock`, compose com `image:`, suíte dentro da imagem (RF-127).
+107. README antes × depois por área, trilha de 10 minutos, capturas; CHANGELOG (RF-129).
+108. Túnel de demonstração com login por redirecionamento (RF-98).

@@ -4,14 +4,11 @@
 
 [Incrementos aprovados](incrementos-pos-nucleo.md): RF-35, RF-41–43 e
 RF-47–53; CA-28 e CA-32–37. Decisões aceitas 0007 e 0008.
-Base: v0.3.0, merge `bd549cc921ccffb37bd304a0959b8a4b690d6421` e
-[PR #4](https://github.com/lauroPereira/ai-getnet-case/pull/4) integrado.
-Branch de planejamento `codex/v0.4.0-perfis-interface`, criada após atualizar main.
+Base: v0.3.0 com o [PR #4](https://github.com/lauroPereira/ai-getnet-case/pull/4) integrado.
 
-**Estado:** plano completo aprovado pelo responsável em 2026-10-27, com a
-resposta “Aprovar plano completo sem chamadas pagas”. Implementação local
-autorizada nos contratos, autenticação, migração, base web e delegação abaixo.
-O aceite da sequência até v0.7.0 permanece preservado.
+**Estado:** entregue na v0.4.0 (2026-10-27; [resultado](../evidence/v040-resultado.md)).
+Plano aprovado pelo responsável em 2026-10-27, sem chamadas pagas na
+implementação: contratos, autenticação, migração e base web.
 
 ## Decisões técnicas
 
@@ -96,8 +93,8 @@ fazem parte desta implementação; apenas instruções de verificação antecipa
   real/simulado/gravado distintos e reruns sem chamada paga/reenvio.
 - Regressão: validação estrita, 40 casos e quatro conversas, história nova,
   Docker e MCP conforme escopo afetado; fontes e hashes Git fixados.
-- Rodada real JEV/DeepSeek/OpenAI: só depois de preços/capacidades verificados,
-  estimativa e nova autorização monetária. Sem evidência real, CA-32 fica pendente.
+- Validação real JEV/DeepSeek/OpenAI: depois de preços/capacidades verificados
+  e estimativa; o CA-32 foi comprovado com chamadas reais na v0.6.0.
 
 ## Riscos técnicos e recuperação
 
@@ -117,24 +114,17 @@ estiver ocupado, parar antes da escrita; não apagar nem sobrescrever por infer�
 31. [Interface e comparação](../tasks/31-interface-e-comparacao-v040.md).
 32. [Regressão e candidato](../tasks/32-regressao-candidato-v040.md).
 
-[História versão 1](../historias/perfis-interface-v040.md), fixada antes do
-Developer. Supervisor coordena; autorização explícita para esta versão:
-três subagentes em sequência Developer → Reviewer → QA, cada um explicitamente
-`gpt-6-luna/high`, contextos novos e nenhum agente adicional. Correções voltam
-ao mesmo Developer. Developer acionado após aprovação, com os parâmetros
-explícitos; Reviewer e QA entram em sequência após suas respectivas passagens.
+[História versão 1](../historias/perfis-interface-v040.md), fixada antes da
+implementação, com revisão independente e validação em sequência.
 
 ## Aprovação registrada e limites
 
 O conjunto aprovado inclui contratos `/v1`, autenticação/papéis, migração
-0006 e preparação/criação de arquivos novos em `C:\workspace\ai-getnet-case-web`,
-com governança proposta e identidade explicitadas na base web. Incluir rede
+0006 e a criação do projeto web `ai-getnet-case-web`, com governança proposta
+e identidade explicitadas na base web. Incluir rede
 para documentação oficial, metadados de modelos sem cobrança confirmada e
 dependências/builds de teste. Consultas que cobrem ou tenham custo desconhecido
-permanecem bloqueadas; não usar o saldo da validação v0.3.0 como autorização nova.
+permanecem bloqueadas.
 
-Não inclui commit/push/PR/tag da v0.4.0, criação de remoto web, abertura de portas,
-publicação, compra, alteração de credencial existente ou aumento do teto.
-Implementar e validar offline; pedir autorização paga somente com um candidato
-e estimativa. Se o destino web estiver ocupado, preservar seus arquivos e
-reconciliar antes da escrita.
+Não inclui abertura de portas, publicação, alteração de credencial existente
+ou aumento do teto. A validação paga parte de um candidato e de uma estimativa.

@@ -6,15 +6,11 @@ Usar Python 3.13 com FastAPI e Pydantic v2 para a API e os contratos.
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (v0.1.0, 2026-10-26).
 
 ## Contexto
 
-O desafio pede um endpoint HTTP `POST` com resposta JSON e aceita qualquer linguagem. O ecossistema de agentes e RAG (SDKs de modelos, LangGraph, clientes de bancos vetoriais) é mais maduro em Python, e a experiência anterior do responsável está nessa linguagem. Os contratos de entrada, das saídas dos agentes e das ferramentas precisam de validação estrita.
+O desafio pede um endpoint HTTP `POST` com resposta JSON e aceita qualquer linguagem. O ecossistema de agentes e RAG (SDKs de modelos, LangGraph, clientes de bancos vetoriais) é mais maduro em Python, e é a linguagem em que o projeto já tem experiência. Os contratos de entrada, das saídas dos agentes e das ferramentas precisam de validação estrita.
 
 ## Decisão
 
@@ -22,7 +18,7 @@ Python 3.13, FastAPI servido por uvicorn, Pydantic v2 para todos os contratos e 
 
 ## Alternativas consideradas
 
-- **Node.js/TypeScript:** viável, mas com menos bibliotecas maduras para RAG e avaliação e sem experiência anterior aproveitável.
+- **Node.js/TypeScript:** não adotado: viável, mas com menos bibliotecas maduras para RAG e avaliação.
 - **Flask:** exigiria validação e documentação OpenAPI manuais.
 - **Python 3.12:** mais conservador, mas a máquina de desenvolvimento já usa 3.13 e as dependências previstas o suportam.
 

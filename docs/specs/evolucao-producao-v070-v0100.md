@@ -2,25 +2,25 @@
 
 # Especificação: evolução para produção (v0.7.0 a v0.10.0)
 
-Versão 0.2 — 2026-11-03 — **aprovada pelo responsável** (Q14 a Q17, Q19 e Q20). Entregue de v0.7.0 a v0.10.0; a definição de v1.0.0 passou para o [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md). Reabre a expansão funcional encerrada pela [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md) por meio da [ADR 0016](../architecture/decisions/0016-reabertura-roadmap-producao.md). O plano técnico derivado está em [evolucao-producao-v070-v0100-plano.md](evolucao-producao-v070-v0100-plano.md).
+Versão 0.2, 2026-11-03. Estado: entregue da v0.7.0 à v0.10.0 (2026-11-04 a 2026-11-06); a definição de v1.0.0 passou para o [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md). Reabre a expansão funcional encerrada pela [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md) por meio da [ADR 0016](../architecture/decisions/0016-reabertura-roadmap-producao.md). O plano técnico derivado está em [evolucao-producao-v070-v0100-plano.md](evolucao-producao-v070-v0100-plano.md).
 
 ## Objetivo
 
-A v0.6.0 cobre o desafio com um encaminhamento humano simulado e um único plano de rota. Uma operação real exige mais seis coisas:
+A v0.6.0 cobre o desafio. Uma operação real exige mais seis capacidades:
 
 1. **Humano no circuito.** Fila de operador com identidade, resposta humana que volte ao agente, interrupção e retomada do fluxo, integração com ticketing nos dois sentidos. Entregue na v0.7.0.
 2. **Identidade.** Cadeia credencial → principal autenticado → autorização → lojista, com cada tool call autorizado; `user_id` sem autoridade. Entregue na v0.7.0.
 3. **Orquestração adaptativa.** Observar o resultado de um especialista, reconsiderar e acionar outro, com limite de saltos. Entregue na v0.8.0.
 4. **Qualidade semântica medida.** Groundedness, correção, relevância e utilidade agregadas, juiz independente, execuções repetidas, calibração humana e holdout; jornadas de negócio medidas sem recusar respostas certas. Entregue na v0.8.0.
 5. **Retrieval com holdout.** Híbrido BM25 + denso com RRF, reranker medido e um holdout de retrieval separado do desenvolvimento. Entregue na v0.9.0.
-6. **Engenharia de produção.** `/messages` autenticado, handoff integrado, comparação que sobrevive a reinício, métricas e alertas, CI, credenciais de demonstração prontas no `.env.example`. Entregue de v0.7.0 a v0.10.0; o teste de acesso externo segue no [roadmap](roadmap-v0110-v100.md).
+6. **Engenharia de produção.** `/messages` autenticado, handoff integrado, comparação que sobrevive a reinício, métricas e alertas, CI, credenciais de demonstração prontas no `.env.example`. Entregue de v0.7.0 a v0.10.0; o acesso externo por túnel entrou na v1.0.0 ([roadmap](roadmap-v0110-v100.md)).
 
 ## Usuário afetado
 
 - **Operador humano** (novo papel): recebe casos encaminhados, responde, aprova ou rejeita o rascunho do agente.
 - **Lojista** (demo): autentica-se com credencial própria; recebe a resposta humana dentro da mesma conversa, por consulta ou por webhook.
 - **Sistema de ticketing** (demo): recebe o caso encaminhado por webhook e devolve a resposta pela API.
-- **Responsável** (Lauro): decide escopo, orçamento e ordem; calibra a avaliação semântica com notas humanas.
+- **Responsável**: decide escopo, orçamento e ordem; calibra a avaliação semântica com notas humanas.
 
 ## Resultado desejado
 
@@ -28,20 +28,20 @@ Cada objetivo acima com uma mudança de código, um teste determinístico, uma v
 
 ## Escopo
 
-Cinco entregas curtas e um fechamento, cada uma com spec complementar curta, tarefas, revisão independente e QA real, como nas versões anteriores. O responsável prefere mais versões a versões maiores (Q17).
+Quatro entregas curtas e um fechamento, cada uma com especificação complementar, revisão independente e validação com modelos reais, como nas versões anteriores. Versões curtas por escolha do responsável (Q17).
 
 | Versão | Entrega | Objetivos |
 | --- | --- | --- |
 | **v0.7.0 — Identidade e HITL real** | Credenciais por lojista e por operador; principal autenticado e escopo em todo tool call; `user_id` sem autoridade; fila persistente de operador; interrupção e retomada do grafo; `approve`/`reply`/`reject`; idempotência e proteção contra retomada dupla; webhooks assinados (caso criado, resposta pronta) e receptor de ticketing na demo | 1, 2, 6 |
 | **v0.8.0 — Orquestração adaptativa e avaliação semântica** | Nó de replanejamento com orçamento de saltos; rubrica de quatro critérios com juiz independente, três execuções, calibração humana e holdout de respostas; correção das jornadas | 3, 4 |
 | **v0.9.0 — Retrieval híbrido** | BM25 + denso com RRF; reranker medido; holdout de retrieval; nDCG | 5 |
-| **v0.10.0 — Operação e resiliência** | `/metrics`, OTLP, regras de alerta e painel versionados; CI; comparação retomável após reinício; resumo rolante de conversas longas. Entregues `/metrics`, regras de alerta, CI e comparação retomável; OTLP, painel e resumo rolante seguem no roadmap (RF-126, RF-116) | 6 e margem |
+| **v0.10.0 — Operação e resiliência** | `/metrics`, OTLP, regras de alerta e painel versionados; CI; comparação retomável após reinício; resumo rolante de conversas longas. Entregues `/metrics`, regras de alerta, CI e comparação retomável; o resumo rolante entrou na v0.12.0 (RF-116) e OTLP e painel na v0.13.0 (RF-126) | 6 e margem |
 | **v1.0.0 — Fechamento** | Redefinida no [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100.md) | — |
 
 ## Fora do escopo
 
 - Ticketing comercial (Zendesk, Jira, Teams): o contrato de webhook é documentado e demonstrado contra um receptor próprio; um adaptador real é configuração de URL e segredo.
-- Provedor de identidade externo (OIDC): o ponto de troca fica isolado na criação de sessão; a credencial da demo é chave por lojista com sessão.
+- Provedor de identidade externo (OIDC): o ponto de troca fica isolado na criação de sessão; emissores OIDC externos entraram na v0.13.0 ([ADR 0025](../architecture/decisions/0025-identidade-e-operacao.md)).
 - Evaluation Agent autônomo e ciclo de propostas (mantido fora, ADR 0015).
 - Novas jornadas de negócio ou novas ferramentas de Support.
 - Treinamento ou ajuste fino de modelos.
@@ -100,10 +100,10 @@ Cinco entregas curtas e um fechamento, cada uma com spec complementar curta, tar
 ## Requisitos não funcionais
 
 - **RNF-11** Nenhum teste automatizado faz chamada paga; validação real por campanha com teto fixo, como hoje.
-- **RNF-12** As validações reais respeitam o teto acumulado de US$5,00, os tetos de campanha e as autorizações por etapa. A reserva aprovada e os limites operacionais estão no [plano de orçamento](evolucao-producao-v070-v0100-plano.md#decisão-aprovada-em-2026-11-04).
+- **RNF-12** As validações reais respeitam o teto de gasto definido pelo responsável (US$5,00 acumulado nesta fase; por provedor desde 2026-11-07) e os tetos de campanha. A reserva aprovada e os limites operacionais estão no [plano de orçamento](evolucao-producao-v070-v0100-plano.md#decisão-aprovada-em-2026-11-04).
 - **RNF-13** Migrações reversíveis e aditivas; contrato `/v1` aditivo; a quebra de `POST /messages` (sessão obrigatória) é a única mudança incompatível e vem documentada no CHANGELOG.
 - **RNF-14** Toda nova decisão estrutural (identidade, retomada do grafo, webhooks, híbrido) tem ADR.
-- **RNF-15** O fluxo de execução segue a seção "Eficiência de execução" abaixo, depois de aprovada.
+- **RNF-15** O fluxo de execução segue a seção "Eficiência de execução" abaixo.
 
 ## Casos de uso
 
@@ -118,32 +118,25 @@ Cinco entregas curtas e um fechamento, cada uma com spec complementar curta, tar
 | ID | Critério | Como comprovar |
 | --- | --- | --- |
 | CA-46 | Sem sessão, `POST /messages` responde `401`; com sessão de outro lojista, `403`; dado de outro lojista nunca aparece; todo tool call tem auditoria com principal | Testes de integração e caso real na campanha |
-| CA-47 | Caso encaminhado aparece na fila e no receptor de ticketing; `approve`, `reply` e `reject` produzem turno na conversa com a marca de atendente e entrega por webhook registrada | Testes com modelo programado; QA real na interface e no receptor |
+| CA-47 | Caso encaminhado aparece na fila e no receptor de ticketing; `approve`, `reply` e `reject` produzem turno na conversa com a marca de atendente e entrega por webhook registrada | Testes com modelo programado; validação real na interface e no receptor |
 | CA-48 | Retomada dupla recusada com `409`; ação repetida com a mesma chave devolve o registro existente; retomada funciona após reinício da API | Teste de unidade com transação concorrente; teste de integração com reinício |
 | CA-49 | Quatro cenários de replanejamento passam com modelo programado e com modelos reais; nenhum caso ultrapassa 3 saltos; trace mostra cada decisão | Suíte estrita e campanha real |
 | CA-50 | Relatório de avaliação com quatro critérios, juiz independente, 3 execuções, concordância humano × juiz e holdout separado | `docs/evidence/v080-*.md` e README |
 | CA-51 | Jornadas de negócio ≥ 12/13 pela rubrica | Campanha real |
 | CA-52 | Tabela denso × híbrido × híbrido+reranker em dev e holdout (Recall@6, MRR, nDCG@6), com a decisão registrada | `merchant-assistant eval-retrieval` |
 | CA-53 | `/metrics` lido por um scrape de teste; regras de alerta validadas por `promtool`; CI verde na `main`; comparação retomada após reinício; conversa de 30 turnos mantém o contexto pelo resumo | Evidência com captura e testes |
-| CA-54 | README mapeia cada área à evidência; túnel testado (redefinido no roadmap, CA-74) | Revisão do responsável |
+| CA-54 | README mapeia cada área à evidência; túnel testado (redefinido no roadmap, CA-74) | Conferência do responsável |
 
 ## Eficiência de execução
 
-Práticas de fluxo adotadas na etapa 0, vindas de outro projeto do mesmo template:
+Práticas de fluxo adotadas na preparação (Q19, tarefa 62):
 
-| Prática | Efeito aqui | Precisa de |
-| --- | --- | --- |
-| **Autorização por versão**: o ciclo avança sem esperar o responsável até a entrega de uma versão: implementar, revisar, corrigir, QA real dentro do teto, evidência, merge local. Ficam com ele: tag, push da `main`, mudança de AGENTS.md/CLAUDE.md/credenciais, calibração humana e publicação | Elimina a espera entre cada passagem | Aprovação de uma emenda ao AGENTS.md (texto proposto no plano) |
-| **Subagentes nativos em `.claude/agents/`** com modelo, esforço, ferramentas e limites no frontmatter (Developer com Edit/Write; Reviewer sem; QA com navegador) | Despacho sem reescrever limites a cada vez; limites impostos pela ferramenta, não só pelo texto | Aprovação (AGENTS.md pede autorização para subagentes e para `.claude/`) |
-| **Modelo por papel medido** | Escolha com número; `medir-agentes.py` portado com o caminho do projeto | Copiar o script |
-| **Dois escritores em paralelo** quando os arquivos não se tocam (backend e projeto web; `replan` e avaliação) | Trabalho independente corre em paralelo | Já permitido pelo protocolo |
-| **CI (`validate.yml`)** rodando Ruff e suítes estritas | Reviewer e QA param de repetir a suíte inteira; evidência automática | RF-103 |
-| **Despertador de 20 minutos** do Supervisor | Nenhuma passagem fica sem tratamento | Agendamento na sessão |
-| **Relatório do Supervisor por blocos de horário** | O responsável acompanha de manhã o que rodou à noite, com "Falta" e "Depende de você" | Copiar o modelo |
-| `checar-memoria.ps1` e `limpar-ambiente.ps1` | Docker + Qdrant + dois agentes no notebook de 8 GB sem travar; limpeza após cada QA | Copiar e adaptar os alvos |
-| Corpo de PR por arquivo (`--body-file`) | Evita corrupção de `|` e `&` no Windows | Hábito |
-
-Não se aplica: GitHub Apps por papel (`as-app.py`), rulesets da `main` (repositório de uma pessoa, merge local), pontos Fibonacci e planning poker (custo de cerimônia sem ganho neste prazo).
+| Prática | Efeito |
+| --- | --- |
+| **Autorização por versão**: cada versão segue da implementação à validação real dentro do teto; tag, publicação, credenciais e calibração humana ficam com o responsável | Sem espera entre etapas de uma versão |
+| **Trabalho paralelo** quando os arquivos não se tocam (backend e projeto web; `replan` e avaliação) | Trabalho independente corre em paralelo |
+| **CI (`validate.yml`)** rodando Ruff e suítes estritas (RF-103) | Evidência automática em cada PR e push na `main` |
+| Scripts de ambiente em `tools/scripts/` (`checar-memoria.ps1`, `limpar-ambiente.ps1`) | Pilha Docker com Qdrant estável durante as validações reais |
 
 ## Riscos
 
@@ -153,9 +146,7 @@ Não se aplica: GitHub Apps por papel (`as-app.py`), rulesets da `main` (reposit
 | Exigir sessão em `POST /messages` quebrar o smoke e os exemplos do README | Quem segue o README não consegue rodar | Chaves sintéticas no `.env.example`; smoke faz login sozinho; `/docs` com o exemplo de sessão; README com duas chamadas |
 | Webhook para fora do compose expor dado | Vazamento | URLs vazias por padrão fora do compose; payload mascarado; HMAC; receptor interno na demo |
 | Replanejador aumentar custo e latência | Estouro de limites | Esforço `none`, saída curta, orçamento de 3 saltos, regra determinística antes do modelo |
-| Calibração humana depender do tempo do responsável | Atraso da v0.8.0 | Amostra mínima de 24, CSV com instruções, ~1 h |
 | Holdout contaminado por ajuste de prompt | Métrica sem valor | Holdout congelado por hash antes da campanha; ajuste posterior reabre o conjunto |
-| Fluxo contínuo noturno sem o responsável | Decisão errada tomada por padrão | Toda decisão de produto tomada por padrão fica listada no relatório como reversível; limites da autorização por versão |
 
 ## Questões
 
@@ -165,5 +156,4 @@ Não se aplica: GitHub Apps por papel (`as-app.py`), rulesets da `main` (reposit
 | Q15 | HITL por interrupção nativa do LangGraph | **Sim** (2026-11-03) |
 | Q16 | `POST /messages` com sessão obrigatória | **Sim, sem modo aberto**: a identidade vem sempre do token. Escopos por tool call e auditoria completa entram no mesmo item (2026-11-03) |
 | Q17 | Fundir v0.9.0 na v0.8.0 | **Não**; preferência por mais versões curtas: v0.10.0 criada (2026-11-03) |
-| Q19 | Aprovar a seção "Eficiência de execução": emenda ao AGENTS.md, `.claude/agents/`, CI, scripts e relatórios | **Aprovada**; etapa 0 concluída (tarefa 62) |
-| Q20 | Modelo e esforço por papel | **Decidido**: matriz em [docs/wiki/agents/README.md](../wiki/agents/README.md) |
+| Q19 | Aprovar a seção "Eficiência de execução": autorização por versão, CI e scripts | **Aprovada**; preparação concluída (tarefa 62) |

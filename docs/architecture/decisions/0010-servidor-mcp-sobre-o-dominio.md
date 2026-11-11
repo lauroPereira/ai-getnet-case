@@ -6,11 +6,7 @@ Expor as ferramentas de suporte por um servidor MCP local com o SDK oficial `mcp
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (v0.2.0, 2026-10-26). Desde a v0.7.0 o lojista vem do token ([ADR 0017](0017-identidade-principal-escopos.md)).
 
 ## Contexto
 

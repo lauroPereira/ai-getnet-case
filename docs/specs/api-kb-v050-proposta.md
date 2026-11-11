@@ -1,7 +1,7 @@
 # Proposta de API KB v0.5.0
 
-**Contrato aprovado pelo responsável em 2026-10-27 com o plano v0.5.0 e
-implementado na v0.5.0, com revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).**
+**Estado: entregue na v0.5.0 (2026-10-27; [resultado](../evidence/v050-resultado.md)).**
+Contrato aprovado pelo responsável com o plano v0.5.0, com revisão independente e validação real.
 
 ## Papéis e contratos preservados
 

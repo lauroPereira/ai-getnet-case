@@ -6,15 +6,11 @@ Guardar perfis de modelos por agente, prompts e rubricas como versões imutávei
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (2026-10-26); entregue na v0.4.0. A tabela de rubricas saiu do escopo pela [ADR 0015](0015-recorte-final-v060.md).
 
 ## Contexto
 
-Os incrementos pedem perfis de modelos por agente, comparação entre perfis, avaliação com rubricas versionadas e um ciclo de melhoria que propõe mudanças em prompts e configurações. Hoje prompts são arquivos e o modelo é único por configuração de ambiente.
+Os incrementos pedem perfis de modelos por agente, comparação entre perfis, avaliação com rubricas versionadas e um ciclo de melhoria que propõe mudanças em prompts e configurações. Até então prompts eram arquivos e o modelo era único por configuração de ambiente.
 
 ## Decisão
 

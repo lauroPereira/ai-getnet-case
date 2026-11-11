@@ -6,11 +6,7 @@ Orquestrar os agentes com LangGraph, comunicando-se por chamadas diretas sobre u
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (v0.1.0, 2026-10-26). Complementada pelas ADRs [0019](0019-replanejamento.md) e [0024](0024-desenho-da-orquestracao.md).
 
 ## Contexto
 

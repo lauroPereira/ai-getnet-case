@@ -6,11 +6,11 @@ Um lojista sintético (`cliente1988`) pede atendimento humano pelo celular, reca
 
 ## Critérios e candidato
 
-CA-76, CA-77 e CA-78 da [spec da v1.1.0](../specs/tickets-retomada-v110.md); tarefas 109 a 112. Candidato: SHAs do backend e da web fixados pelo Supervisor no briefing do QA.
+CA-76 a CA-79 da [spec da v1.1.0](../specs/tickets-retomada-v110.md); tarefas 109 a 113. Candidato do backend e da interface identificado por hash.
 
 ## Condições iniciais
 
-Pilha do compose do candidato com `.env` gerado do `.env.example`, só `OPENAI_API_KEY` e `BUDGET_LIMIT_USD=0.10`; interface da branch web no host; navegador local (janela do lojista em largura de celular e janela privada da operadora). Dados sintéticos. Campanha `v110-qa`, teto US$0,10.
+Pilha do compose do candidato com `.env` gerado do `.env.example`, só `OPENAI_API_KEY` e `BUDGET_LIMIT_USD=0.10`; interface do candidato no host; navegador local (janela do lojista em largura de celular e janela privada da operadora). Dados sintéticos. Campanha `v110-qa`, teto US$0,10.
 
 ## Momentos da história
 
@@ -24,7 +24,7 @@ Pilha do compose do candidato com `.env` gerado do `.env.example`, só `OPENAI_A
 | 6 | **Nova conversa**; "Tenho algum ticket aberto?" | Protocolo, estado e a resposta da atendente, vindos de `get_handoff_cases` (ferramenta visível em Resultados) | CA-76 | captura e trace | não se aplica |
 | 7 | Nova conversa; "Qual o status do ticket que termina em <6 últimos caracteres>?" | O mesmo caso, pelo final do protocolo | CA-76 | trace | não se aplica |
 | 8 | Outro lojista (`cliente_demo_002`) pergunta pelo mesmo final de protocolo | Nenhum dado do caso de `cliente1988` | CA-76 | trace e auditoria | não se aplica |
-| 9 | Com `TYPESAFE_API_KEY` acrescentada ao `.env` do QA e a API recriada: JEV habilitado, uma mensagem pelo JEV | Resposta com Router `typesafe:jev-1.14.0` | CA-78 | Resultados e ledger | remover a chave ao fim |
+| 9 | Com `TYPESAFE_API_KEY` acrescentada ao `.env` da validação e a API recriada: JEV habilitado, uma mensagem pelo JEV | Resposta com Router `typesafe:jev-1.14.0` | CA-78 | Resultados e ledger | remover a chave ao fim |
 | 10 | `GET /v1/conversations` com o token da operadora e com `limit=50` | `403 insufficient_scope`; `422` | CA-77 | saída HTTP | não se aplica |
 
 Percorra a tarefa completa. Inspecione cada evidência relevante antes de seguir. Não antecipe atalhos que a pessoa não teria.
@@ -35,8 +35,21 @@ Lista de conversas indisponível não bloqueia o atendimento (aviso curto e conv
 
 ## Resultado da rodada
 
-(preenchido pelo QA)
+Validação com modelo real, Docker e navegador em largura de celular, registrada em [v110-resultado.md](../evidence/v110-resultado.md).
+
+| Momento | Resultado |
+| --- | --- |
+| 1 | Perfis que dependem do DeepSeek indisponíveis; JEV desabilitado com o nome da chave que falta |
+| 2 e 3 | Atendimento encaminhado e respondido pela operadora pelo Ticketing; a resposta aparece nos momentos 4 e 6 |
+| 4 | Conversa retomada com o histórico e a resposta da atendente, marcada `Atendente humano` |
+| 5 | A mensagem seguinte recebe resposta própria, na mesma conversa, sem repetir a da atendente |
+| 6 e 7 | Três formas de perguntar pelo ticket atendidas pelo suporte com `get_handoff_cases`, inclusive a busca pelo final do protocolo |
+| 8 | Outro lojista não recebe dado do ticket; uma linha de auditoria por chamada, cada uma com o próprio lojista |
+| 9 | Com a chave configurada, a mensagem é atendida pelo JEV |
+| 10 | `GET /v1/conversations` responde `403` à operadora e `422` fora do limite |
+
+Resposta da atendente (CA-79): texto idêntico na interface, em `GET /v1/conversations/{id}` e na ferramenta, com valor e data intactos; a retomada não chama modelo, e aprovar o rascunho segue pela Personality e pela guarda de saída. Suíte estrita: 3.059 testes aprovados; interface: 203 testes e 6 de integração contra a API em processo. Gasto: US$0,018 em três campanhas (tetos US$0,10, US$0,05 e US$0,03).
 
 ## Como terminou
 
-(preenchido pelo QA)
+O lojista recarregou a página no celular e encontrou a conversa com a resposta da atendente, nas palavras dela. Numa conversa nova, perguntou pelo ticket de três jeitos, inclusive pelo final do protocolo, e recebeu o estado e a resposta; outro lojista não viu nada do caso. Quem roda o backend só com a chave da OpenAI viu as opções indisponíveis com o nome da chave que falta, e o JEV atendeu assim que a chave foi configurada.

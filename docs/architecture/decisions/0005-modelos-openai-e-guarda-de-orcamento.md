@@ -6,15 +6,11 @@ Usar OpenAI como provedor baseline dos agentes, embeddings e busca web, com uma 
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26. Os identificadores de modelo são configuração; a tarefa 02 confirmou disponibilidade e preços ([evidência](../../evidence/2026-10-26-acesso-e-precos-dos-modelos.md)).
+Aceita (v0.1.0, 2026-10-26). Os identificadores de modelo são configuração; disponibilidade e preços conferidos na [evidência](../../evidence/2026-10-26-acesso-e-precos-dos-modelos.md).
 
 ## Contexto
 
-O responsável tem créditos em OpenAI e DeepSeek e um teto total de US$5. O desafio pede busca web para perguntas gerais. Quem roda o sistema precisa subi-lo com o mínimo de credenciais. O seletor LLM/Jev no Router foi pedido pelo responsável para demonstração e comparação, sem alterar o restante do fluxo.
+O projeto usa OpenAI e DeepSeek sob um teto de gasto definido pelo responsável (US$5 no início; desde 2026-11-07, um teto por provedor, com o teto de cada campanha registrado antes da execução). O desafio pede busca web para perguntas gerais. Quem roda o sistema precisa subi-lo com o mínimo de credenciais. O seletor LLM/Jev no Router foi pedido pelo responsável para demonstração e comparação, sem alterar o restante do fluxo.
 
 ## Decisão
 
@@ -31,7 +27,7 @@ O responsável tem créditos em OpenAI e DeepSeek e um teto total de US$5. O des
 
 ## Consequências
 
-Rodar o sistema exige apenas `OPENAI_API_KEY`. O custo é controlado antes de gastar. A comparação Jev/LLM não bloqueia o núcleo; foi exercitada com chamadas reais na v0.5.0. O controle local não enxerga o uso das mesmas contas por outros projetos.
+Rodar o sistema exige apenas `OPENAI_API_KEY`. O custo é controlado antes de gastar. A comparação Jev/LLM não bloqueia o núcleo; foi exercitada com chamadas reais na v0.5.0. A guarda controla o gasto da instalação (ledger local); o teto por provedor é conferido antes de cada campanha.
 
 ## Data
 

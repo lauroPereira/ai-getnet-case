@@ -4,19 +4,17 @@
 
 ## Especificação relacionada
 
-[evolucao-producao-v070-v0100.md](evolucao-producao-v070-v0100.md) (versão 0.2) e [ADR 0016](../architecture/decisions/0016-reabertura-roadmap-producao.md). **Estado: aprovado em 2026-11-03** (Q14 a Q17, Q19; Q20 decidida por padrão, `opus`/`high`) e entregue de v0.7.0 a v0.10.0; a v1.0.0 seguiu para o [roadmap](roadmap-v0110-v100-plano.md). Dois times decididos pelo responsável em 2026-11-03 (seção "Sequência e dois times"). Base: `main` com a v0.6.0 (`2867ea7`).
+[evolucao-producao-v070-v0100.md](evolucao-producao-v070-v0100.md) (versão 0.2) e [ADR 0016](../architecture/decisions/0016-reabertura-roadmap-producao.md). Estado: entregue da v0.7.0 à v0.10.0 (2026-11-04 a 2026-11-06); a v1.0.0 seguiu para o [roadmap](roadmap-v0110-v100-plano.md). Trabalho em duas frentes paralelas, decididas pelo responsável em 2026-11-03 (seção "Sequência e dois times").
 
-Cada versão segue o ciclo já usado: spec complementar curta → tarefas → Developer → Reviewer independente → candidato fixado → QA real com campanha de teto fixo → `docs/evidence/vXYZ-resultado.md` → merge local com a identidade do projeto → tag. Com a autorização por versão (seção "Preparação do fluxo"), tudo isso corre sem espera; o responsável entra na tag, no push e na calibração.
+Cada versão tem especificação complementar, tarefas, revisão independente, candidato identificado por hash, validação com modelos reais sob teto fixo e o registro `docs/evidence/vXYZ-resultado.md`. Tag, publicação e calibração humana ficam com o responsável.
 
 ## Preparação do fluxo (etapa 0, antes da v0.7.0)
 
-Adoções do `ampeli-sdd`, aplicadas uma vez, em uma tarefa de documentação e ferramentas (sem produto):
+Aplicada uma vez, numa tarefa de documentação e ferramentas, sem produto (tarefa 62):
 
-1. **Emenda ao AGENTS.md** (proposta por PR, conforme a regra do próprio arquivo): a "Autorização por versão", aprovada e incorporada à seção "Sobre este projeto" do AGENTS.md. Substitui, para o escopo desta evolução, a autorização caso a caso da regra "Delegação (RNF-12)": a autorização passa a ser dada por versão, com modelo e esforço fixados em `.claude/agents/`.
-2. **`.claude/agents/{developer,reviewer,qa}.md`** adaptados do Ampeli: frontmatter com `model`, `effort` e `tools` (Reviewer sem Edit/Write; QA com o navegador embutido), corpo curto apontando para `docs/wiki/agents/<papel>.md`, limites deste projeto (nenhuma chamada paga fora da campanha; sem acesso a `data/runtime/`, `.env`, `discovery/`; sem Git destrutivo; corpo de PR por arquivo; encerrar processos antes de relatar). Modelo e esforço conforme Q20.
-3. **`.github/workflows/validate.yml`**: Ruff e `python tools/scripts/lint_and_tests.py --strict` em PR e push na `main`; sem segredos; o `.env` de teste é o do `conftest`.
-4. **Scripts portados** para `tools/scripts/`: `medir-agentes.py` (parâmetro `--projeto`), `checar-memoria.ps1` (alvos `python.exe`, `qdrant`, `vmmemWSL`, `uvicorn`), `limpar-ambiente.ps1` (alvos `.pytest_cache/*-runtime`, `_tmp/`, volumes anônimos do Docker).
-5. **`docs/templates/relatorio-do-supervisor.md`**; despertador de 20 minutos na sessão do Supervisor; `docs/wiki/agents/README.md` ganha a matriz "modelo e esforço por papel".
+1. **Autorização por versão**, incorporada ao AGENTS.md por PR: cada versão segue da implementação à validação real dentro do teto, sem espera entre etapas.
+2. **`.github/workflows/validate.yml`**: Ruff e `python tools/scripts/lint_and_tests.py --strict` em PR e push na `main`; sem segredos; o `.env` de teste é o do `conftest`.
+3. **Scripts de ambiente** em `tools/scripts/`: `checar-memoria.ps1` e `limpar-ambiente.ps1` (alvos `.pytest_cache/*-runtime`, `_tmp/`, volumes anônimos do Docker).
 
 ## Decisões técnicas
 
@@ -141,7 +139,6 @@ Contrato `/v1` aditivo em tudo, exceto os papéis novos em `/sessions`.
 | Holdout escrito pelo autor dos prompts | Paráfrases das páginas oficiais e do FAQ, não dos prompts; hash antes de rodar |
 | BM25 em português sem stemming | Tokenização simples; medir; stemming só se o holdout pedir |
 | Reranker piorar ou custar | Configurável; padrão decidido pela medição; registrado |
-| Fluxo noturno sem o responsável | Decisões por padrão listadas como reversíveis no relatório; limites da autorização por versão |
 
 Retorno por versão: tag anterior + migração descendente + remoção de `checkpoints.sqlite3`/`bm25.pkl`.
 
@@ -149,78 +146,65 @@ Retorno por versão: tag anterior + migração descendente + remoção de `check
 
 ### Decisão aprovada em 2026-11-04
 
-O responsável aprovou a reserva de planejamento de **US$2,50** para concluir o QA e demonstrar as versões até a v1.0.0. Esta é a referência de orçamento para a retomada em qualquer sessão. O teto acumulado do projeto é **US$5,00**. Os saldos informados na decisão eram US$2,66 na OpenAI, US$1,99 na DeepSeek e US$4,99 na TypeSafe. A distribuição proposta da mesma reserva é US$1,85 para OpenAI, US$0,60 para DeepSeek e US$0,05 para TypeSafe. Reconcilie os saldos e o consumo acumulado antes de cada etapa paga.
+Reserva de planejamento de **US$2,50** para as validações reais até a v1.0.0, aprovada pelo responsável, dentro do teto acumulado de **US$5,00** vigente na época (desde 2026-11-07, o limite é definido por provedor). Cada campanha tem teto próprio, registrado antes da execução:
 
-| Etapa | Reserva | Limite operacional |
-| --- | ---: | --- |
-| Complemento da amostra de desenvolvimento da v0.8.0 | US$0,10 | **Despesa adicional autorizada**, cumulativa para todas as novas chamadas e tentativas da amostra. |
-| Campanha `v080-qa` | US$1,00 | US$0,50 por padrão. US$1,00 ou, após a revisão abaixo, até US$1,10 em montagem única se a estimativa válida justificar e houver saldo no ledger primário. |
-| QA v0.9.0 e v0.10.0 | US$0,40 | US$0,10 para cada rodada prevista e US$0,10 reservado para eventual repetição de cada versão. |
-| Smoke v1.0.0 | US$0,10 | US$0,05 para o smoke previsto e US$0,05 reservado para eventual repetição. |
-| Correções e revalidações | US$0,35 | Priorizar os cenários afetados. Ampliar a rodada quando a alteração atingir o fluxo compartilhado. |
-| Ensaio e gravação da demonstração | US$0,25 | Ensaiar com dados sintéticos e gravar uma execução real no candidato final, com os resultados gravados de QA identificados como tais. |
-| Contingência | US$0,30 | Reserva para variação de custo ou nova rodada mediante decisão do responsável. |
-| **Total** | **US$2,50** | **Reserva de planejamento**, sujeita aos tetos vigentes e à autorização por versão. |
+| Etapa | Teto da campanha |
+| --- | --- |
+| Complemento da amostra de desenvolvimento da v0.8.0 | US$0,10 |
+| Campanha `v080-qa` | US$0,50 por padrão; até US$1,10 em montagem única (2026-11-04, ledger primário a US$1,70), mais US$0,30 de contingência (2026-11-05) |
+| Validações da v0.9.0 e da v0.10.0 | US$0,10 cada |
 
-- **Próxima despesa autorizada.** Reaproveitar a amostra da v0.8.0 já medida e complementar apenas rotas sub-representadas do split `dev`. Antes da primeira chamada, registrar no controle do QA o total já comprometido no ledger primário, incluindo gastos liquidados e reservas abertas. O limite efetivo no processo deve ser o menor entre o limite vigente do ledger e esse total mais US$0,10. Reusar esse mesmo valor em todas as tentativas. Se faltar saldo ou a guarda recusar, parar. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
-- **Portões para a campanha.** A estimativa revisada deve caber ao mesmo tempo no teto aprovado da campanha, no saldo do ledger primário, nos saldos por provedor e na margem restante do teto global. Preservar o ledger e o histórico, usar a montagem única de `v080-qa` e manter o holdout da v0.8.0 para o último passo técnico. A autorização desta decisão cobre o complemento da amostra. Alterações dos limites vigentes, rodadas adicionais que os ultrapassem e redução de critérios de aceite dependem de nova decisão do responsável.
-- **Provedores e demonstração.** Usar OpenAI para o assistente, embeddings e busca web, DeepSeek como juiz independente e TypeSafe para demonstrar o Router Jev. Gravar o percurso no candidato final, mostrando o encaminhamento e o retorno humano, o replanejamento e a avaliação, a comparação de retrieval e a retomada após reinício com resumo e métricas. Ensaios programados e testes automatizados têm custo zero de API.
-
-**Ampliação confirmada pelo responsável em 2026-11-04.** Autoriza a transição local do teto persistido do ledger primário para **US$1,70**, com o histórico preservado, e uma faixa excepcional de **US$1,10** para `v080-qa` somente quando o artefato revalidado comprovar estimativa acima de US$1,00 e até US$1,10. A revisão e a validação precedem a transição. O teto global de US$5,00 e a reserva de planejamento de US$2,50 continuam vigentes. A margem da campanha acima de US$1,00 sai da contingência da mesma reserva. Antes das chamadas, confirmar os saldos, o serviço sintético de preços e a montagem única.
-
-**Contingência autorizada pelo responsável em 2026-11-05.** Na retomada da v0.8.0 no Claude Code, com o reteste r4 em curso e o saldo do cap de US$1,10 igual à soma das fases restantes (reteste US$0,25, juiz repetido US$0,07709880, holdout US$0,36062993, smoke e margem US$0,02943366), o responsável autorizou até **US$0,30 adicionais** para `v080-qa`, debitados da linha "Contingência" desta reserva. Condições: usar só se a guarda bloquear uma fase prevista ou um único reteste após correção revisada; aplicar pelo mesmo rito da ampliação de 2026-11-04 (Developer, Reviewer, suíte estrita, transição validada); registrar motivo e valor liberado na evidência e no relatório. Teto global de US$5,00 inalterado. [Roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais)
+Provedores: OpenAI para o assistente, embeddings e busca web; DeepSeek como juiz independente; TypeSafe para o Router Jev. Testes automatizados e ensaios programados têm custo zero de API. O gasto de cada versão está no [índice de evidências](../evidence/README.md); as regras da campanha da v0.8.0 estão no [roteiro da v0.8.0](orquestracao-avaliacao-v080.md#requisitos-não-funcionais).
 
 ## Plano de implementação
 
 Cada item vira um arquivo em `docs/tasks/` quando a versão for aberta.
 
-**Etapa 0 — preparação do fluxo** (após Q19 e Q20)
+**Etapa 0 — preparação do fluxo** (após Q19)
 
-62. Emenda ao AGENTS.md por PR; `.claude/agents/`; `validate.yml`; scripts portados; modelo de relatório; matriz de modelos; despertador. Sem produto.
+62. Autorização por versão no AGENTS.md (por PR); `validate.yml`; scripts de ambiente. Sem produto.
 
 **v0.7.0 — Identidade e HITL real**
 
-Revisto pelo responsável em 2026-11-03, na abertura da versão: credencial por **JWT com emissor próprio** (RS256, JWKS) em vez de chave com sessão opaca, e **serviço de ticketing próprio** com tela no projeto web, integrado por webhooks assinados nos dois sentidos, em vez do receptor passivo. Detalhe, contrato entre os times e nova tarefa **66b** (serviço de ticketing, Time B) em [identidade-hitl-v070.md](identidade-hitl-v070.md), versão 2; prevalece sobre as decisões técnicas 1, 2, 3 e 6 deste plano onde divergirem.
-
-Pré-condição de toda versão a partir daqui: o Supervisor roda numa sessão do Claude Code aberta em `C:\workspace\ai-getnet-case` (não numa pasta acima) e iniciada depois da etapa 0. Antes do primeiro despacho, confirma que `developer`, `reviewer` e `qa` aparecem na lista de tipos de agente; se não aparecerem, não despacha (o despacho cairia num agente genérico sem os limites do frontmatter) e avisa o responsável.
+Revisto pelo responsável em 2026-11-03, na abertura da versão: credencial por **JWT com emissor próprio** (RS256, JWKS) em vez de chave com sessão opaca, e **serviço de ticketing próprio** com tela no projeto web, integrado por webhooks assinados nos dois sentidos, em vez do receptor passivo. Detalhe e tarefa **66b** (serviço de ticketing) em [identidade-hitl-v070.md](identidade-hitl-v070.md), versão 2; prevalece sobre as decisões técnicas 1, 2, 3 e 6 deste plano onde divergirem.
 
 63. Identidade: papéis e escopos, `identity.py`, chaves sintéticas no `.env.example`, sessão obrigatória em `POST /messages`, `identity_mismatch`, auditoria em todo tool call, rate limit, MCP com chave, smoke e `/docs`.
 64. Fila de operador: migração 0009, `handoff_events`, rotas `GET/claim/actions` com idempotência e `409`, CLI `operator`.
 65. Interrupção e retomada: `langgraph-checkpoint-sqlite`, nó `human_review`, `Command(resume)`, arestas `approve/reply/reject`, turno `via=operator`, entrega na próxima mensagem e no GET, estado do caso, retomada após reinício.
 66. Webhooks: `webhooks.py`, assinatura, tentativas, `webhook_deliveries`, receptor de ticketing no `mocks`, compose.
-67. Interface web: login por papel e aba Operador (Time B, depois da 64; projeto irmão).
-68. Regressão, candidato, revisão, QA real (UC-20 a UC-22), evidência, ADRs 0017 e 0018, README/CHANGELOG, tag.
+67. Interface web: login por papel e aba Operador (projeto web, depois da 64).
+68. Regressão, candidato, validação real (UC-20 a UC-22), evidência, ADRs 0017 e 0018, README/CHANGELOG, tag.
 
 **v0.8.0 — Orquestração adaptativa e avaliação semântica**
 
 69. `replan`: nó, regras, `replan.v1`, orçamento de saltos, trace; quatro cenários.
-70. Rubrica `judge` v3 com evidências; juiz independente; `eval --repeat`; agregação; migração 0011 (Time B, paralelo a 69).
+70. Rubrica `judge` v3 com evidências; juiz independente; `eval --repeat`; agregação; migração 0011 (em paralelo à 69).
 71. Calibração humana: `eval-calibrate`, CSV, concordância; formulário na interface.
-72a. Holdout de respostas (≥ 20 casos, metade pt), escrito e lacrado por hash antes de qualquer ajuste de prompt da v0.8.0 (Time B, durante a v0.7.0).
-72b. Correções das jornadas de negócio; `router.v6` (Time A).
-73. Regressão, candidato, revisão, QA real com 3 execuções e holdout, calibração pelo responsável, evidência, ADR 0019, README/CHANGELOG, tag.
+72a. Holdout de respostas (≥ 20 casos, metade pt), escrito e lacrado por hash antes de qualquer ajuste de prompt da v0.8.0 (durante a v0.7.0).
+72b. Correções das jornadas de negócio; `router.v6`.
+73. Regressão, candidato, validação real com 3 execuções e holdout, calibração pelo responsável, evidência, ADR 0019, README/CHANGELOG, tag.
 
-**v0.9.0 — Retrieval híbrido** (Time A, em paralelo com a v0.10.0)
+**v0.9.0 — Retrieval híbrido** (em paralelo com a v0.10.0)
 
-> **Reescopo de 2026-11-05 (responsável):** a v0.9.0 passa a ser "Juiz Claude e retrieval híbrido", um time só, tarefas 79 a 82, spec em [juiz-retrieval-v090.md](juiz-retrieval-v090.md). O experimento do juiz (`claude-opus-5-5` sobre a amostra de calibração da v0.8.0) entra antes do retrieval; o provedor Anthropic nos agentes fica fora da entrega de 2026-11-06. Os itens 74 a 76 abaixo correspondem a 80 e 81; v0.10.0 passa a 83 a 85 e v1.0.0 a 86 a 88.
+> **Reescopo de 2026-11-05 (responsável):** a v0.9.0 passa a ser "Juiz Claude e retrieval híbrido", tarefas 79 a 82, spec em [juiz-retrieval-v090.md](juiz-retrieval-v090.md). O experimento do juiz (`claude-opus-5-5` sobre a amostra de calibração da v0.8.0) entra antes do retrieval; o provedor Anthropic nos agentes fica fora da entrega de 2026-11-06. Os itens 74 a 76 abaixo correspondem às tarefas 80 e 81; a v0.10.0, às tarefas 83 a 86.
 
 74. BM25 + RRF, `RETRIEVAL_MODE`, persistência por hash, `search(mode)`.
 75. Reranker configurável; holdout de retrieval; `eval-retrieval --mode --split`; nDCG; decisão registrada.
-76. Regressão, candidato, revisão, QA real, evidência, ADR 0020, tag.
+76. Regressão, candidato, validação real, evidência, ADR 0020, tag.
 
-**v0.10.0 — Operação e resiliência** (Time B, em paralelo com a v0.9.0)
+**v0.10.0 — Operação e resiliência** (em paralelo com a v0.9.0)
 
 77. `/metrics`, OTLP opcional, regras de alerta e painel, `/ready` ampliado.
 78. Comparação retomável (migração 0012) e resumo rolante de conversas.
-79. Regressão, candidato, revisão, QA real, evidência, tag.
+79. Regressão, candidato, validação real, evidência, tag.
 
 **v1.0.0 — Fechamento**
 
-Redefinido no [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100-plano.md) (tarefas 102 a 104).
+Redefinido no [roadmap v0.11.0 a v1.0.0](roadmap-v0110-v100-plano.md) (tarefas 105 a 108).
 
 ## Sequência e dois times
 
-Decidido pelo responsável em 2026-11-03: dois times, cada um com um Developer e um Reviewer, coordenados pelo mesmo Supervisor. O **Time A** fica no caminho crítico; o **Time B** adianta trabalho que não compartilha arquivos com o A. QA, merge e tag continuam um por vez e em ordem de versão.
+Decidido pelo responsável em 2026-11-03: duas frentes de trabalho. O **Time A** fica no caminho crítico; o **Time B** adianta trabalho que não compartilha arquivos com o A. Validação real, integração e tag seguem uma versão por vez, em ordem.
 
 ### Distribuição
 
@@ -236,36 +220,12 @@ A tarefa 72 do plano se divide em **72a** (holdout, Time B, durante a v0.7.0) e 
 
 ### Donos de arquivo por período
 
-Um arquivo compartilhado tem um dono por período; o outro time não o edita. Arquivos novos pertencem a quem os cria.
-
-| Arquivo ou área | v0.7.0 | v0.8.0 | v0.9.0 e v0.10.0 |
-| --- | --- | --- | --- |
-| `orchestration/graph.py`, `state.py`, `run.py` | A | A | ninguém (B pede ao Supervisor se precisar) |
-| `api/v1.py`, `api/app.py`, `api/schemas.py` | A | A | B (v0.10.0: `/metrics`, `/ready`) |
-| `data/migrations.py` | A (0009, 0010) | B (0011) | B (0012) |
-| `agents/` | A | A (`replanner.py`, `support.py`) | A (`knowledge.py`, se o híbrido exigir) |
-| `rag/` | — | — | A |
-| `evaluation/` | — | B (`runner.py`, `calibration.py`) | A (`retrieval.py`) |
-| `conversations.py`, `comparisons.py` | A | — | B |
-| `prompts/` | A | A (`replan`, `router`, `support`); B (`judge.v3`) | A (`rerank`); B (`summary`) |
-| `cli.py`, `config.py`, `pyproject.toml`, `docker-compose.yml`, `.env.example` | A | compartilhados só por acréscimo | compartilhados só por acréscimo |
-| `tests/scenarios/` | B (holdout, 72a) | A (rótulos das jornadas) | A (holdout de retrieval) |
-| Projeto web | B | B (formulário de calibração) | — |
-| README, CHANGELOG, `docs/evidence/vXYZ-resultado.md` | Supervisor, no fechamento | Supervisor | Supervisor |
-
-"Só por acréscimo": cada time acrescenta linhas no fim do bloco correspondente e não altera linhas existentes; o conflito, se houver, é resolvido na atualização com a `main`.
+Um arquivo compartilhado tem um dono por período; o outro time não o edita, e arquivos novos pertencem a quem os cria. `cli.py`, `config.py`, `pyproject.toml`, `docker-compose.yml` e `.env.example` recebem só acréscimos no fim do bloco correspondente. README, CHANGELOG e `docs/evidence/vXYZ-resultado.md` são atualizados no fechamento de cada versão.
 
 ### Migrações reservadas
 
-0009 e 0010 → v0.7.0 (A); 0011 → v0.8.0 (B); 0012 → v0.10.0 (B). A v0.9.0 não cria migração. Em 2026-11-03 a v0.7.0 precisou da 0010 (outbox durável dos webhooks, autorizada pelo responsável); as reservas seguintes avançaram um número. Um número reservado não é reutilizado nem antecipado; se uma versão precisar de outra migração, o Supervisor reserva o número seguinte livre e atualiza esta lista.
+0009 e 0010 → v0.7.0 (A); 0011 → v0.8.0 (B); 0012 → v0.10.0 (B). A v0.9.0 não cria migração. Em 2026-11-03 a v0.7.0 precisou da 0010 (outbox durável dos webhooks, autorizada pelo responsável); as reservas seguintes avançaram um número. Um número reservado não é reutilizado nem antecipado; uma migração a mais recebe o número seguinte livre, registrado nesta lista.
 
 ### Regras de execução
 
-1. **Worktree por time.** O Time A trabalha no checkout principal (`C:\workspace\ai-getnet-case`). O Time B trabalha num `git worktree` **fora** da pasta do repositório (`C:\workspace\ai-getnet-case-wt\time-b`), para o validador e o pytest de um não varrerem o outro.
-2. **Ambiente Python próprio no worktree.** O `.venv` do checkout principal tem o pacote instalado em modo editável apontando para o `src/` principal; usado no worktree, os testes do Time B importariam o código do Time A. O worktree do B cria seu próprio ambiente (`uv venv .venv -p 3.13 && uv pip install -e ".[ingest,dev]"`) e o Supervisor confere, antes do primeiro despacho, que `python -c "import merchant_assistant; print(merchant_assistant.__file__)"` aponta para o `src/` do worktree.
-3. **Branches.** Cada time tem a branch da sua versão (`codex/v0.8.0-avaliacao` para o B durante a v0.7.0, por exemplo). Quando a versão anterior entra na `main`, o time que adiantou trabalho atualiza a branch com a `main` antes de pedir revisão; o Reviewer revisa sobre a base atualizada.
-4. **Contexto frio entre e dentro dos times.** Cada Reviewer é um despacho novo, sem a passagem do Developer e sem diagnóstico do Supervisor. O mesmo Reviewer revalida as rodadas de correção do seu time. O Supervisor não repassa a um time conclusões do outro, só contratos já integrados.
-5. **Capacidade.** Até dois Developers e dois Reviewers ao mesmo tempo, desde que `checar-memoria.ps1` responda "cabe" antes de cada despacho. Docker, Qdrant em serviço e QA real: um por vez, sempre.
-6. **Ordem de entrega.** QA, merge e tag na ordem v0.7.0 → v0.8.0 → v0.9.0 → v0.10.0 → v1.0.0. No período paralelo, a v0.10.0 só entra em QA depois do merge da v0.9.0 e da atualização da sua branch com a `main`.
-7. **Despacho e medição.** A descrição de todo despacho cita o time e uma tarefa (`Time B, tarefa 70`), para `medir-agentes.py` ratear custo e o relatório separar os dois times.
-8. **Limpeza sem atingir o outro time.** A limpeza é do Supervisor, depois de cada QA apto, sempre rodada no checkout principal: o script não toca o worktree do B (fica fora do scratchpad), os ledgers de campanha, `data/runtime/` nem os volumes com nome do Docker. O único ponto compartilhado são os scratchpads das sessões, onde os subagentes dos dois times escrevem. Com nenhum agente rodando nos dois times, a limpeza é completa (`limpar-ambiente.ps1`, simulação e depois `-Aplicar`). Com agente do outro time rodando, ela roda com `-Aplicar -SemScratchpad`, e a limpeza completa fica para quando os dois times pararem. O Supervisor nunca encerra processo nem remove worktree do outro time.
+Cada time trabalha num checkout próprio, com ambiente Python próprio, para que os testes de um não importem o código do outro. A revisão de cada time é independente da implementação. Docker, Qdrant em serviço e validação real rodam um por vez, e a integração segue a ordem v0.7.0 → v0.8.0 → v0.9.0 → v0.10.0: no período paralelo, a v0.10.0 entra em validação depois da integração da v0.9.0.

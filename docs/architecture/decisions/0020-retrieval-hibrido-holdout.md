@@ -6,7 +6,7 @@ Acrescentar busca lexical ao índice de conhecimento, fundi-la com a busca densa
 
 ## Status
 
-**Aceita** (v0.9.0, 2026-11-06; implementada nas tarefas 80 e 81, QA real em [v090-qa-retrieval-r1.md](../../evidence/v090-qa-retrieval-r1.md)). Spec: [juiz-retrieval-v090.md](../../specs/juiz-retrieval-v090.md), D7 e D8.
+Aceita (v0.9.0, 2026-11-06). Emendada pela [ADR 0023](0023-juiz-por-afirmacao-evidencia-web.md) (v0.11.0): `RERANK=on` é o padrão depois do controle `hybrid@36`. Spec: [juiz-retrieval-v090.md](../../specs/juiz-retrieval-v090.md), D7 e D8.
 
 ## Contexto
 
@@ -18,12 +18,12 @@ Restrições: o modo denso atual é o que todas as respostas avaliadas da v0.8.0
 
 - **Lexical:** BM25 em processo (`rank-bm25`) sobre os mesmos chunks do índice denso ativo; tokenização com minúsculas, sem acentos, stopwords curtas pt/en versionadas, códigos e siglas preservados. O índice é persistido por `sha256` do corpo (`bm25-<hash>.pkl`, só ids e tokens; payload, URL e tipo de fonte vêm sempre do índice ativo) e reconstruído só quando o hash muda; construção concorrente protegida por trava e arquivo temporário único.
 - **Fusão:** RRF com `k=60` sobre os `3×k` primeiros de cada lista, desempate pelo denso, `origin` por item (`dense`, `bm25`, `both`). `min_score` vale só para a lista densa.
-- **Modo:** `RETRIEVAL_MODE=dense|hybrid`; `search()` sem modo usa a configuração; `mode="dense"` é idêntico à v0.8.0 (175/175 resultados iguais na revisão).
+- **Modo:** `RETRIEVAL_MODE=dense|hybrid`; `search()` sem modo usa a configuração; `mode="dense"` é idêntico à v0.8.0 (175/175 resultados iguais).
 - **Reranker:** `rerank.v1` (prompt versionado) no modelo do agente sobre os 12 primeiros de uma fusão a 36, saída estruturada com a ordem; `RERANK=on|off`, padrão `off`, só com `hybrid`; qualquer falha devolve exatamente o resultado de `off`; medido pelo `Meter` da requisição e contado em `max_model_calls`.
-- **Holdout de retrieval:** `tests/scenarios/retrieval_holdout_v090.jsonl`, 25 perguntas (13 pt), passagem correta por `chunk_id` com grau 2 e vizinhas com grau 1, escrito antes de medir qualquer modo e lacrado por `sha256` antes de qualquer medição (relacrado uma vez após a revisão dos rótulos, ainda sem medição). Medido uma vez por configuração, por último; depois disso é "já visto".
+- **Holdout de retrieval:** `tests/scenarios/retrieval_holdout_v090.jsonl`, 25 perguntas (13 pt), passagem correta por `chunk_id` com grau 2 e vizinhas com grau 1, escrito antes de medir qualquer modo e lacrado por `sha256` antes de qualquer medição (relacrado uma vez após a conferência dos rótulos, ainda sem medição). Medido uma vez por configuração, por último; depois disso é "já visto".
 - **Métricas:** Recall@6, MRR e nDCG@6 (ganho linear no holdout; alvo único em `dev`), tempo por consulta, falhas do reranker.
 - **Regra do padrão (D7, escrita antes da medição):** `hybrid` vira padrão se o nDCG@6 for estritamente maior que o denso em `dev` e no holdout. A linha "modo padrão sugerido" do relatório aplica a regra; a decisão é registrada aqui com os números.
-- **Reranker nesta versão (P3-16 da revisão r2 da tarefa 81):** a comparação híbrido+reranker × híbrido mistura o efeito do modelo com o da profundidade da fusão (36 contra 18): sem reordenar nada, a profundidade sozinha muda o top 6 em 29 de 64 perguntas com `min_score` 0. Por isso `RERANK` permanece `off` nesta versão **independentemente da medição**, que é reportada como diagnóstico; ligar o reranker exige, em versão futura, uma linha de controle `hybrid@36` sem modelo e a regra comparando contra ela.
+- **Reranker nesta versão:** a comparação híbrido+reranker × híbrido mistura o efeito do modelo com o da profundidade da fusão (36 contra 18): sem reordenar nada, a profundidade sozinha muda o top 6 em 29 de 64 perguntas com `min_score` 0. Por isso `RERANK` permanece `off` nesta versão **independentemente da medição**, que é reportada como diagnóstico; ligar o reranker exige uma linha de controle `hybrid@36` sem modelo e a regra comparando contra ela, medidas na v0.11.0 ([ADR 0023](0023-juiz-por-afirmacao-evidencia-web.md)).
 
 ## Alternativas consideradas
 
@@ -35,8 +35,8 @@ Restrições: o modo denso atual é o que todas as respostas avaliadas da v0.8.0
 ## Consequências
 
 - Positivas: termo exato passa a ser encontrado (com embeddings de hash, 5/5 contra 0/5 do denso); decisão do padrão com holdout e regra prévia; modo denso preservado byte a byte.
-- Negativas: no modo híbrido o atalho "sem evidência" do Knowledge só dispara quando o BM25 também não acha nada, e o `score` do trace muda de escala (RRF); itens achados só pelo BM25 não têm piso de score; os rótulos do holdout foram escritos pelo Developer (IA) e revisados em contexto frio, não por pessoa; 25 perguntas é um conjunto pequeno; o "já visto" é contado dentro do mesmo arquivo de relatório.
-- Resultado da medição real ([relatório](../../evidence/v090-retrieval.md)): nDCG@6 denso 0,868 / híbrido 0,974 / híbrido+reranker 0,981 em `dev`; 0,880 / 0,921 / 0,961 no holdout; MRR no holdout 0,871 / 0,920 / 0,980; tempo por consulta 584 / 534 / 2.392 ms. Pela regra D7, `RETRIEVAL_MODE=hybrid` é o padrão; `RERANK=off` pela limitação acima. Custo das seis medições US$0,016.
+- Custos assumidos: no modo híbrido o atalho "sem evidência" do Knowledge só dispara quando o BM25 também não acha nada, e o `score` do trace passa à escala do RRF; o holdout tem 25 perguntas, rotuladas por modelo e conferidas em contexto separado antes de qualquer medição, e o estado "já visto" fica registrado no relatório. O piso de score para itens achados só pelo BM25 (`RETRIEVAL_BM25_MIN_SCORE`) entrou na v0.11.0.
+- Resultado da medição real ([relatório](../../evidence/v090-retrieval.md)): nDCG@6 denso 0,868 / híbrido 0,974 / híbrido+reranker 0,981 em `dev`; 0,880 / 0,921 / 0,961 no holdout; MRR no holdout 0,871 / 0,920 / 0,980; tempo por consulta 584 / 534 / 2.392 ms. Pela regra D7, `RETRIEVAL_MODE=hybrid` é o padrão; `RERANK=off` pelo motivo acima, até a v0.11.0. Custo das seis medições US$0,016.
 
 ## Data
 

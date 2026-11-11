@@ -49,4 +49,4 @@ Confundir condições contratuais com divergência; comparar fontes com identifi
 23. [Bandeiras e cancelamento de venda](../tasks/23-bandeiras-e-cancelamento.md).
 24. [Regressão e candidato da v0.3.0](../tasks/24-regressao-candidato-v030.md).
 
-História: [jornadas-v030](../historias/jornadas-v030.md). A sessão principal exerce Supervisor. Autorização nesta sessão: três subagentes sequenciais, Developer → Reviewer → QA, todos `gpt-6-luna`, esforço `high`, com contexto novo e parâmetros explícitos. Correções retornam ao mesmo Developer. Commit, push, merge, tag, chamadas pagas e publicação dependem de autorização aplicável.
+História: [jornadas-v030](../historias/jornadas-v030.md). Estado: entregue na v0.3.0 (2026-10-27; [resultado](../evidence/v030-resultado.md)), com revisão independente e validação real.

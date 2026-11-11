@@ -6,7 +6,7 @@ Emitir e validar JWT (RS256, JWKS) no assistente, derivar o lojista do principal
 
 ## Status
 
-**Aceita** (v0.7.0, 2026-11-04, depois do QA real apto; proposta em 2026-11-03, versão 2 no mesmo dia com a decisão do responsável por JWT com emissor próprio).
+Aceita (v0.7.0, 2026-11-04). Atualizada pela [ADR 0025](0025-identidade-e-operacao.md) (v0.13.0).
 
 ## Contexto
 
@@ -24,7 +24,7 @@ Até a v0.6.0, `POST /messages` aceitava o `user_id` do payload como autoridade;
 
 ```mermaid
 flowchart LR
-    C["Credencial: usuário e senha ou client credentials (provedor OIDC no futuro)"] --> E["Emissor: /v1/auth/token"]
+    C["Credencial: usuário e senha ou client credentials (emissor OIDC externo desde a v0.13.0)"] --> E["Emissor: /v1/auth/token"]
     E --> J["JWT RS256 (iss, sub, aud, exp, jti, role, scope, customer_id)"]
     K["JWKS /.well-known/jwks.json"] --> V
     J --> V["Verificador único: resolve_credential"]
@@ -37,11 +37,11 @@ flowchart LR
 
 ## Alternativas consideradas
 
-- **Chave sintética trocada por sessão opaca** (versão 1 desta ADR): atendia a cadeia pedida, mas é menos reconhecível como autenticação e não demonstra a troca por um provedor externo.
-- **Keycloak (OIDC real) no compose:** cerca de 1 GB de RAM a mais, subida lenta e mais um ponto de falha para quem sobe a demonstração; o verificador por emissor e JWKS já permite usá-lo por configuração.
-- **HS256 com segredo compartilhado:** sem JWKS, o ticketing precisaria do segredo de assinatura para validar tokens.
-- **Authorization code + PKCE na demo:** exige redirecionamento e tela de login do provedor; é o caminho de produção, documentado.
-- **Escopo só por rota:** não atende "autorizar cada tool call".
+- **Chave sintética trocada por sessão opaca** (proposta inicial): não adotada: atendia a cadeia pedida, mas é menos reconhecível como autenticação e não demonstra a troca por um provedor externo.
+- **Keycloak (OIDC real) no compose:** não adotado: cerca de 1 GB de RAM a mais, subida lenta e mais um serviço para quem sobe a demonstração; o verificador por emissor e JWKS permite usá-lo por configuração.
+- **HS256 com segredo compartilhado:** não adotado: sem JWKS, o ticketing precisaria do segredo de assinatura para validar tokens.
+- **Authorization code + PKCE na demo:** não adotado nesta versão, por exigir redirecionamento e tela de login; adotado na v0.13.0 ([ADR 0025](0025-identidade-e-operacao.md)).
+- **Escopo só por rota:** não adotado: não atende "autorizar cada tool call".
 
 ## Consequências
 

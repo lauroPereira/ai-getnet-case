@@ -6,11 +6,11 @@ Um lojista sintético entende uma cobrança, acompanha uma bandeira e consulta c
 
 ## Critérios e candidato
 
-CA-21, CA-22, CA-23, CA-28 e CA-31; tarefas 21 a 24. Manifesto e hashes serão fixados pelo Supervisor após implementação e revisão.
+CA-21, CA-22, CA-23, CA-28 e CA-31; tarefas 21 a 24. Candidato identificado por manifesto e hashes após implementação e revisão.
 
 ## Condições iniciais
 
-Banco e runtime sintéticos isolados, relógio fixo, fixtures independentes de pricing e cobrança, modelo programado e índice local para testes sem custo. A validação com modelo real é uma rodada separada, sujeita a autorização e à guarda de orçamento. API sem interface gráfica nesta versão.
+Banco e runtime sintéticos isolados, relógio fixo, fixtures independentes de pricing e cobrança, modelo programado e índice local para testes sem custo. A validação com modelo real é uma etapa separada, sujeita a autorização e à guarda de orçamento. API sem interface gráfica nesta versão.
 
 ## Momentos da história
 
@@ -30,12 +30,12 @@ Banco e runtime sintéticos isolados, relógio fixo, fixtures independentes de p
 
 ## Experiência e exceções
 
-Respostas no idioma da mensagem; exercitar português e inglês. Fontes fictícias identificadas como tais; dinheiro, datas e estados têm suporte nas ferramentas. Falta de dados difere de falha de dependência. Não há tela nesta entrega. QA usa a entrada HTTP e o cliente MCP; não altera critérios ou produto.
+Respostas no idioma da mensagem; exercitar português e inglês. Fontes fictícias identificadas como tais; dinheiro, datas e estados têm suporte nas ferramentas. Falta de dados difere de falha de dependência. Não há tela nesta entrega. A validação usa a entrada HTTP e o cliente MCP; não altera critérios ou produto.
 
 ## Resultado da rodada
 
-Executada no QA funcional do candidato r6: candidato, ambiente, esperado e observado, limitações e defeitos estão no [QA r6](../evidence/v030-qa-r6.md).
+Executada na validação funcional do candidato r6: candidato, ambiente, esperado e observado estão no [registro da validação](../evidence/v030-qa-r6.md).
 
 ## Como terminou
 
-Apto; o que o lojista conseguiu realizar está no [QA r6](../evidence/v030-qa-r6.md) e no [resultado da v0.3.0](../evidence/v030-resultado.md).
+Apto; o que o lojista conseguiu realizar está no [registro da validação](../evidence/v030-qa-r6.md) e no [resultado da v0.3.0](../evidence/v030-resultado.md).

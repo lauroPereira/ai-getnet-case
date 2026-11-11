@@ -1,13 +1,13 @@
 # Base proposta para ai-getnet-case-web
 
-Proposta aprovada no plano completo em 2026-10-27. Base criada e validada na
-tarefa 30. A criação do
+Estado: entregue na v0.4.0 (2026-10-27); base criada e validada na tarefa 30.
+Proposta aprovada no plano em 2026-10-27. A criação do
 projeto separado e o template foram decididos na especificação/decisão 0007;
 o texto abaixo preserva o conjunto apresentado antes da execução.
 
 ## Destino e fonte
 
-- Destino: `C:\workspace\ai-getnet-case-web`, ausente na conferência inicial.
+- Destino: pasta irmã `ai-getnet-case-web`, ausente na conferência inicial.
   Reconferir ausência/vazio e resolução absoluta antes de qualquer escrita.
 - Fonte: snapshot local `ai-dev-template`, versão **0.2.0** no manifesto.
   A origem deve registrar hashes de todos os componentes efetivamente copiados, sem
@@ -26,7 +26,7 @@ sincronização do destino e verificar equivalência.
 Criar README próprio em inglês, `.gitignore`, `.agent-template.json` e
 `docs/wiki/origem-template.md` com versão/hashes/omissões/adaptações. SDD
 ativo, com especificação/tarefas/história próprias da interface, vinculadas
-ao contrato backend. Produto será implementado depois pelo Developer:
+ao contrato backend. O produto vem na implementação:
 `pyproject.toml`, pacote Streamlit, cliente HTTP, fixtures sintéticas,
 testes e execução local/Docker apropriada.
 
@@ -50,8 +50,8 @@ Inserir após o título, preservando as regras canônicas do template:
   SQLite, Qdrant, arquivos ou credenciais de provedores do backend.
 - **Idioma:** documentação de trabalho em português; código, prompts e README
   em inglês. Textos da interface coerentes com o idioma da pessoa usuária.
-- **Fluxo:** SDD ativo e papéis Supervisor, Developer, Reviewer e QA. Revisão
-  independente e história de uso antes da integração.
+- **Fluxo:** SDD ativo, com revisão independente e história de uso antes
+  da integração.
 - **Git:** enquanto não inicializado, identificar candidatos por hashes.
   Depois, main é a base; criar repositório/commit/push exige autorização.
 - **Privacidade:** somente dados sintéticos e fontes públicas; não copiar
@@ -77,13 +77,12 @@ condição para Git ainda não inicializado. Não instalar configuração global
 
 ## Validação e recuperação
 
-Supervisor prepara somente a base e registra a origem; Developer implementa
-o produto. Validar estrutura, skills sincronizadas, caminhos/links e ausência
+A preparação cria somente a base e registra a origem; o produto vem na
+implementação. Validar estrutura, skills sincronizadas, caminhos/links e ausência
 de conteúdo de origem proibido; depois testes do cliente e AppTest sem APIs.
 Manifesto final identifica backend por SHA e frontend por hashes até Git.
-Identidade sugerida para futura inicialização Git é
-`lauroPereira <lauro.s.pereira@gmail.com>`, a confirmar na autorização dessa
-integração; nenhuma identidade é configurada silenciosamente.
+A identidade Git é a do projeto, confirmada na autorização da integração
+inicial; nenhuma identidade é configurada silenciosamente.
 
 Se destino estiver ocupado, interromper sem sobrescrever. Recuperação segura:
 manter a nova pasta local sem executar a interface; eventual remoção exige

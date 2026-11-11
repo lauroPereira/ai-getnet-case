@@ -6,7 +6,7 @@ Substituir as arestas fixas que saem de `knowledge` e de `support` por um nó `r
 
 ## Status
 
-**Aceita** (v0.8.0, 2026-11-05, depois da revisão e do QA real apto da campanha `v080-qa`; proposta em 2026-11-04 e implementada na tarefa 69).
+Aceita (v0.8.0, 2026-11-05). Complementada pela [ADR 0024](0024-desenho-da-orquestracao.md) (v0.12.0).
 
 ## Contexto
 
@@ -46,18 +46,18 @@ Restrições: o grafo de retomada do operador (ADR 0018) acaba de ser validado e
 - **Modelo em toda decisão:** mais flexível, mas dobra a latência e acrescenta uma chamada a toda pergunta, inclusive as simples; o requisito é não gastar mais no caminho claro; não adotado.
 - **Reescrever o Router para planejar a sequência inteira:** o Router decide sem ver resultado; não resolve o problema de reagir ao que voltou, e reabre o prompt avaliado.
 - **Laço ReAct livre (o modelo chama especialistas como ferramentas):** dificulta o limite de custo e a explicação por regra; o orçamento de saltos e "uma vez por especialista" ficariam por conta do modelo.
-- **Manter as arestas fixas:** é o estado da v0.7.0 e o motivo do apontamento.
-- **Replanejar também no grafo de retomada:** reabriria o HITL recém-validado (D3); fica para depois.
+- **Manter as arestas fixas:** não adotado: é o estado da v0.7.0, que não reage ao resultado de um especialista.
+- **Replanejar também no grafo de retomada:** não adotado: reabriria o HITL recém-validado (D3).
 - **Contar também o seguimento do plano como salto:** bloquearia o plano do próprio Router com orçamento baixo, e `MAX_PLAN_HOPS=3` nunca seria o limite real.
 
 ## Consequências
 
 - Perguntas com resposta fora da rota inicial passam a ter uma segunda tentativa visível no trace, com motivo e origem; a lacuna que sobra é declarada à Personality (`unconfirmed`); o `personality.v5` manda dizê-la com clareza e o texto de reserva (`deterministic_answer`) a carrega com uma frase fixa. Só o `finish` do modelo com revisão incompleta e razão não vazia declara a `reason` como lacuna (`replan.v2` pede, nesse caso, o fato que faltou); razão vazia ou só espaços não vira lacuna vazia.
-- O caminho claro (pergunta simples) não ganha chamada: o passo `replan` é uma função pura que roda em milissegundos. O modelo entra nas ambiguidades; a QA mede a taxa de `origin=model`.
+- O caminho claro (pergunta simples) não ganha chamada: o passo `replan` é uma função pura que roda em milissegundos. O modelo entra nas ambiguidades: 4 de 77 decisões no holdout da v0.8.0 ([ADR 0024](0024-desenho-da-orquestracao.md)).
 - Mais um nó e mais um conceito no estado (`plan`, um dicionário simples, para não ampliar os tipos registrados nos checkpoints). A fila de revisão e o formato dos checkpoints não mudam.
-- Duas regras usam marcadores lexicais da mensagem (plano, contrato, conta, taxas do lojista; "como faço") e do `missing` do Knowledge. Servem para os casos claros; ambiguidade fica com o modelo. Falso positivo custa um especialista a mais e é limitado pelo orçamento; falso negativo mantém o comportamento da v0.7.0. Os marcadores não cobrem outros idiomas além de português e inglês.
+- Duas regras usam marcadores lexicais da mensagem (plano, contrato, conta, taxas do lojista; "como faço") e do `missing` do Knowledge. Servem para os casos claros; ambiguidade fica com o modelo. Falso positivo custa um especialista a mais e é limitado pelo orçamento; falso negativo mantém o comportamento da v0.7.0. Os marcadores cobrem português e inglês.
 - `evidence_insufficient_web` busca informação fora das páginas oficiais da Getnet para uma pergunta sobre produto Getnet; a resposta mostra a fonte web. O índice fora do ar (`knowledge_unavailable`) não aciona a web, para não mascarar uma falha de infraestrutura com fonte não oficial.
-- Comportamento: quando o Router manda o cenário "suporte com lacuna de procedimento" direto para `knowledge_and_support`, o replanejamento não roda nesse caso; o rótulo aceita as duas rotas.
+- Quando o Router manda o cenário "suporte com lacuna de procedimento" direto para `knowledge_and_support`, o replanejamento não roda nesse caso; o rótulo aceita as duas rotas.
 - Retorno: o nó é isolado (`agents/replanner.py`, o nó e três arestas em `graph.py`); voltar às arestas `_after_knowledge` e `_after_support` da v0.7.0 desliga o replanejamento sem tocar na fila, nos checkpoints ou nos contratos. `MAX_PLAN_HOPS=0` impede qualquer especialista extra mantendo o resumo no trace.
 
 ## Data

@@ -2,9 +2,9 @@
 
 # Especificação: Assistente multiagente de suporte ao lojista
 
-Versão 0.2 — 2026-10-26 — **aprovada pelo responsável em 2026-10-26**. A 0.2 acrescenta a etapa Personality (RF-37, CA-26), identificada na imagem do enunciado pela tarefa 01.
+Versão 0.2, 2026-10-26. Estado: entregue na v0.1.0 (2026-10-26). Aprovada pelo responsável. A 0.2 acrescenta a etapa Personality (RF-37, CA-26), identificada na imagem do enunciado pela tarefa 01.
 
-Origem: enunciado do desafio "AI Hardcore Engineer — Multi-Agent Support System" e material de discovery local (`discovery/`, não versionado). A solução técnica está no [plano](assistente-multiagente-lojista-plano.md) e nas [decisões propostas](../architecture/decisions/).
+Origem: enunciado do desafio "AI Hardcore Engineer — Multi-Agent Support System" e levantamento inicial do domínio. A solução técnica está no [plano](assistente-multiagente-lojista-plano.md) e nas [decisões propostas](../architecture/decisions/).
 
 ## Problema
 
@@ -173,7 +173,7 @@ A entrega é organizada em fatias. Cada fatia preserva uma versão utilizável. 
 
 Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipeline RAG, execução real, avaliação do núcleo e smoke do Docker.
 
-- [x] **CA-01** Os 10 exemplos, enviados exatamente como no enunciado, retornam HTTP 200 com a rota esperada ou uma rota equivalente aceita no conjunto rotulado, resposta no idioma da mensagem e fontes ou fatos verificáveis. Comprovado por teste de integração determinístico e por uma rodada real limitada.
+- [x] **CA-01** Os 10 exemplos, enviados exatamente como no enunciado, retornam HTTP 200 com a rota esperada ou uma rota equivalente aceita no conjunto rotulado, resposta no idioma da mensagem e fontes ou fatos verificáveis. Comprovado por teste de integração determinístico e por uma validação real limitada.
 - [x] **CA-02** As variantes em português (UC-11) atendem os mesmos critérios.
 - [x] **CA-03** UC-05 e UC-08 mostram Knowledge e Customer Support contribuindo na mesma requisição.
 - [x] **CA-04** A ingestão indexa `https://www.getnet.net/en` e as páginas brasileiras verificadas; cada fragmento mantém seus metadados; Recall@k medido no conjunto rotulado e relatado com o tamanho da amostra.
@@ -214,14 +214,14 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 | Recuperação fraca de inglês para português | Respostas sem evidência nos exemplos | Medir cedo; consulta reescrita ou bilíngue |
 | Execução em outra data | "Ontem" sem dados | Seed relativo ao dia da execução |
 | Busca web paga com a chave de quem executa | Custo inesperado | Limites por requisição e aviso no README |
-| Contexto privado no repositório público | Exposição indevida | `discovery/` ignorado; revisão antes do primeiro push |
+| Contexto privado no repositório público | Exposição indevida | Material privado fora do versionamento; conferência antes do primeiro push |
 
 ## Questões em aberto
 
 | ID | Questão | Responsável | Bloqueia |
 | --- | --- | --- | --- |
-| Q1 | Prazo de entrega | Empresa / responsável | Calendário das versões 0.2.0 a 0.7.0 (sem corte de escopo) |
-| Q2 | Idioma do README final e do vídeo (proposta: inglês) | Responsável | Fatia 4 |
+| Q1 | ~~Prazo de entrega~~ Versões entregues de 2026-10-26 (v0.1.0) a 2026-11-11 (v1.1.0) | Responsável | — |
+| Q2 | ~~Idioma do README final e do vídeo~~ README em inglês; vídeo fora do escopo desde 2026-11-06 | Responsável | — |
 | Q3 | Visibilidade final do repositório (criado como privado em 2026-10-26) | Responsável | Entrega |
 | Q4 | ~~Acesso e crédito no Jev~~ Acesso confirmado na tarefa 02 (`jev-latest` → `jev-1.14.0`) | Tarefa 02 | — |
 | Q5 | ~~Conteúdo da imagem incorporada ao enunciado~~ Resolvida em 2026-10-26: diagrama com etapa Personality antes da saída (RF-37) | Tarefa 01 | — |

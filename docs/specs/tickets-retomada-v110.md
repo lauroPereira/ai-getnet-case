@@ -2,13 +2,11 @@
 
 # Tickets e retomada — v1.1.0
 
-Versão 0.4 — 2026-11-11 — CA-76 descreve a lista mista como validada com modelo real (escolha do responsável). Versão 0.3 — 2026-11-11 — D4 (a resposta escrita pela operadora chega ao lojista com as palavras dela), decidida pelo responsável; tarefa 113. Versão 0.2 — 2026-11-10 — D2 ganha a confirmação de exibição da resposta da atendente em `POST /v1/messages` (campo opcional, aprovado pelo responsável). Versão 0.1 — 2026-11-10 — escrita pelo Supervisor a partir do teste da demonstração por outra rede (v1.0.0). O responsável aprovou a versão com os três itens abaixo, inclusive a rota nova de listagem de conversas (contrato aditivo apresentado antes da aprovação). Vale a "Autorização por versão" do AGENTS.md.
-
-**Base:** a branch `codex/v1.1.0-tickets-retomada` parte da `main` em `ed5f02e` (v1.0.0 integrada). A parte web vai na branch `codex/v1.1.0-web-retomada` do `ai-getnet-case-web`, criada da `main` dele em `04ac328`.
+Versão 0.4, 2026-11-11. Estado: entregue na v1.1.0 (2026-11-11; [resultado](../evidence/v110-resultado.md)). Nasce do uso da demonstração por outra rede (v1.0.0); a D4, decidida pelo responsável, emenda a [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md). A parte da interface fica no projeto `ai-getnet-case-web`.
 
 **Requisitos:** RF-130 (o lojista consulta seus tickets de atendimento humano em qualquer conversa), RF-131 (a interface retoma a última conversa depois de recarregar a página), RF-132 (motor de Router e perfis sem chave do provedor aparecem como indisponíveis).
 
-**Orçamento:** dentro dos saldos dos provedores geridos pelo Supervisor (AGENTS.md). Única campanha paga: o QA (`v110-qa`), teto **US$0,10** (estimativa ≈ US$0,02: índice, cerca de dez mensagens com modelo, uma resposta de operadora e uma mensagem pelo JEV).
+**Orçamento:** tetos de US$0,10, US$0,05 e US$0,03 nas três campanhas da versão.
 
 ## Resultado desejado
 
@@ -28,7 +26,7 @@ Versão 0.4 — 2026-11-11 — CA-76 descreve a lista mista como validada com mo
 
 ## Critérios de aceitação
 
-- **CA-76 (D1)** Em conversa nova, "Tenho algum ticket aberto?" e "Qual o status do ticket que termina em <final do protocolo>?" devolvem protocolo e estado do caso do próprio lojista e, quando existe, a resposta da atendente; numa lista com tickets abertos e respondidos, a pergunta pelos abertos traz cada ticket com protocolo e estado, e a resposta da atendente vem com certeza quando o lojista pergunta por aquele ticket ou por novidades dos atendimentos; outro lojista nunca vê o caso; cada chamada fica auditada. Testes com modelo roteirizado e conferência com modelo real no QA.
+- **CA-76 (D1)** Em conversa nova, "Tenho algum ticket aberto?" e "Qual o status do ticket que termina em <final do protocolo>?" devolvem protocolo e estado do caso do próprio lojista e, quando existe, a resposta da atendente; numa lista com tickets abertos e respondidos, a pergunta pelos abertos traz cada ticket com protocolo e estado, e a resposta da atendente vem com certeza quando o lojista pergunta por aquele ticket ou por novidades dos atendimentos; outro lojista nunca vê o caso; cada chamada fica auditada. Testes com modelo roteirizado e conferência com modelo real na validação.
 - **CA-77 (D2)** Recarregar a página e entrar de novo retoma a última conversa com o histórico e a resposta da atendente; a mensagem seguinte recebe resposta à própria pergunta, sem repetir a da atendente; **Nova conversa** começa outra; a rota lista só conversas do dono, sem texto, com limite; operador e serviço recebem `403`.
 - **CA-78 (D3)** Sem `TYPESAFE_API_KEY` e sem `DEEPSEEK_API_KEY`, a interface não deixa enviar pelo JEV nem pelos perfis que dependem do DeepSeek e diz qual chave falta; com as chaves, tudo como antes; nenhum valor de chave sai da API.
 
@@ -42,4 +40,4 @@ Versão 0.4 — 2026-11-11 — CA-76 descreve a lista mista como validada com mo
 112. Fechamento: versão 1.1.0, CHANGELOG, README (status, roadmap, tabela de versões, ferramentas do suporte, trilha) e contrato.
 113. Resposta da operadora sem reescrita (D4) e ajustes da validação: estado do ticket no idioma do lojista, query do login fora do log de acesso, teste do turno de atendente mais recente na confirmação de exibição.
 
-Ordem: 109, 110, 111 e 112; depois revisão, QA pela [história](../historias/tickets-retomada-v110.md) com modelo real e Docker, fechamento e tag `v1.1.0` pelo responsável. Nenhuma migração: as tabelas `handoff_cases`, `conversations` e `messages` já têm o que as rotas e a ferramenta leem.
+Ordem: 109 a 113; validação pela [história](../historias/tickets-retomada-v110.md) com modelo real e Docker. Nenhuma migração: as tabelas `handoff_cases`, `conversations` e `messages` já têm o que as rotas e a ferramenta leem.
