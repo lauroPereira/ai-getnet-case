@@ -468,7 +468,7 @@ def test_support_and_personality_see_the_facts_once_they_left_their_own_recent_t
         "personality@7"  # personality.v7 keeps the rules of personality.v6 on facts and summary
     }
     assert {s["detail"]["prompt"] for t in turns[2:] for s in t["trace"]["steps"] if s["step"] == "support"} == {
-        "support@10"  # support.v9 (task 94) and support.v10 keep the rules of support.v8 on facts
+        "support@11"  # support.v9 (task 94), support.v10 and support.v11 keep the rules of support.v8 on facts
     }
     assert all(FACTS_BLOCK not in c.spec.input for c in llm.calls if c.spec.agent == "router")
 

@@ -58,6 +58,7 @@ from merchant_assistant.profiles import (
     digest,
     get_profile,
     list_profiles,
+    missing_providers,
     publish,
     update_draft,
 )
@@ -96,6 +97,13 @@ class V1MessageRequest(BaseModel):
     router_mechanism: str = Field(pattern=r"^(llm|jev)$")
     comparison_id: str | None = None
     scenario_id: str | None = Field(default=None, min_length=1, max_length=64)
+    displayed_operator_message_id: int | None = Field(
+        default=None,
+        ge=1,
+        description="Optional (v1.1.0). `message_id` of the attendant's turn the interface already showed from "
+        "`GET /v1/conversations/{conversation_id}`. When it is an undelivered attendant turn of this conversation, it "
+        "counts as delivered and this message is answered normally; any other id changes nothing.",
+    )
 
 
 class EvaluationRequest(BaseModel):
@@ -752,15 +760,55 @@ def model_catalog(request: Request, principal=READER):
     return {"models": models, "verified_at": price_data["verified_at"], "sources": price_data["sources"]}
 
 
-@router.get("/profiles")
+PROFILES_EXAMPLE = {
+    "profiles": [
+        {
+            "profile_id": "hybrid",
+            "name": "Hybrid",
+            "version": 1,
+            "state": "published",
+            "agents": {
+                agent: (
+                    {"provider": "deepseek", "model": "deepseek-flash", "parameters": {}}
+                    if agent == "router"
+                    else {"provider": "openai", "model": "gpt-6-luna", "parameters": {}}
+                )
+                for agent in ("router", "knowledge", "support", "escalation", "personality", "evaluation")
+            },
+            "digest": "9c1e0f4b2a7d6e5f8a3b1c2d4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f",
+            "demo_allowed": True,
+            "available": False,
+            "missing_providers": ["deepseek"],
+        }
+    ],
+    "router_mechanisms": {"llm": True, "jev": False},
+}
+
+
+@router.get(
+    "/profiles",
+    responses={200: {"content": {"application/json": {"example": PROFILES_EXAMPLE}}}},
+)
 def profiles(request: Request, principal=READER):
+    """Profiles visible to the role. Since v1.1.0 (D3) each profile has `available` (every provider of its attendance
+    agents has a key configured in the backend) and `missing_providers` (the providers without one, empty when
+    available), and the answer has `router_mechanisms` (`llm` always true; `jev` true only with `TYPESAFE_API_KEY`). No
+    key value is returned. Sending an unavailable choice still gets `503 provider_unavailable`."""
     if _ensure_not_error(principal):
         return principal
+    settings: Settings = request.app.state.settings
     conn = _db(request)
     try:
-        return {"profiles": list_profiles(conn, role=profile_role(principal))}
+        items = list_profiles(conn, role=profile_role(principal))
     finally:
         conn.close()
+    for item in items:
+        missing = missing_providers(item["agents"], settings.has_provider_key)
+        item["available"], item["missing_providers"] = not missing, missing
+    return {
+        "profiles": items,
+        "router_mechanisms": {"llm": True, "jev": settings.has_provider_key("typesafe")},
+    }
 
 
 def _kb(request: Request):
@@ -1304,6 +1352,7 @@ def execute_run(
     knowledge=None,
     history_turns: int = 0,
     reservation_fence: ReservationFence | None = None,
+    displayed_operator_message_id: int | None = None,
 ) -> dict:
     """Run one attendance with a published profile and store its snapshot (shared by messages and comparisons)."""
     from merchant_assistant.llm.prompts import prompt_versions
@@ -1371,6 +1420,11 @@ def execute_run(
         principal=Principal.from_session(principal),
         channel="web",
         **({"reservation_fence": reservation_fence} if reservation_fence is not None else {}),
+        **(
+            {"displayed_operator_message_id": displayed_operator_message_id}
+            if displayed_operator_message_id is not None
+            else {}
+        ),
     )
     webhooks = getattr(app_state, "webhooks", None)
     if response.status == "handoff" and domain_db_path is None and webhooks is not None:
@@ -1505,6 +1559,7 @@ def messages_v1(payload: V1MessageRequest, request: Request, principal=READER):
                 router_comparison_id=payload.comparison_id,
                 scenario_id=payload.scenario_id,
                 history_turns=len(history),
+                displayed_operator_message_id=payload.displayed_operator_message_id,
             )
         except RunFailure as exc:
             return _error(exc.status, exc.code, exc.message, request)
@@ -1738,6 +1793,75 @@ def comparison_read(comparison_id: str, request: Request, principal=READER):
         return comparisons.read(request.app.state, conn, principal, comparison_id)
     except comparisons.ComparisonError as exc:
         return _error(exc.status, exc.code, exc.message, request)
+    finally:
+        conn.close()
+
+
+CONVERSATIONS_LIMIT_DEFAULT, CONVERSATIONS_LIMIT_MAX = 5, 20
+
+
+class ConversationSummary(BaseModel):
+    conversation_id: str
+    state: str
+    created_at: str
+    updated_at: str
+    handoff_protocol: str | None = Field(description="Protocol of the conversation's handoff case, or null.")
+    pending_operator_reply: bool = Field(
+        description="An attendant's reply is recorded and not yet delivered in a merchant request."
+    )
+
+
+class ConversationList(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "conversations": [
+                        {
+                            "conversation_id": "conv_3f9a1c2b7d4e5f60a1b2",
+                            "state": "handoff",
+                            "created_at": "2026-11-10T09:12:04-03:00",
+                            "updated_at": "2026-11-10T09:14:31-03:00",
+                            "handoff_protocol": "HO-20261110-7C21D4",
+                            "pending_operator_reply": True,
+                        },
+                        {
+                            "conversation_id": "conv_8b0e6d5c4a3f2e1d0c9b",
+                            "state": "resolved",
+                            "created_at": "2026-11-09T16:40:00-03:00",
+                            "updated_at": "2026-11-09T16:42:18-03:00",
+                            "handoff_protocol": None,
+                            "pending_operator_reply": False,
+                        },
+                    ]
+                }
+            ]
+        }
+    )
+    conversations: list[ConversationSummary]
+
+
+@router.get(
+    "/conversations",
+    response_model=ConversationList,
+    responses={status: {"model": ErrorBody} for status in (401, 403, 422)},
+)
+def conversations_list(
+    request: Request,
+    limit: int = Query(CONVERSATIONS_LIMIT_DEFAULT, ge=1, le=CONVERSATIONS_LIMIT_MAX),
+    principal=AUTH,
+):
+    """The token's merchant's conversations, latest activity first (v1.1.0, D2), without message text; the whole
+    conversation is `GET /v1/conversations/{conversation_id}`. Tokens with no merchant (operator, service) get `403`."""
+    if _ensure_not_error(principal):
+        return principal
+    principal = acting_merchant(request, principal)
+    if not principal["customer_id"]:
+        return insufficient_scope(request, "Conversations are outside this token's scope.")
+    conn = _db(request)
+    try:
+        store = ConversationStore(conn, SystemClock(request.app.state.settings.timezone))
+        return {"conversations": store.recent(principal["customer_id"], limit)}
     finally:
         conn.close()
 

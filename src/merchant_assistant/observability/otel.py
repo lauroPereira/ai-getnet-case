@@ -38,7 +38,7 @@ MAX_QUEUE_SIZE = 2048  # spans waiting for export; beyond it the processor drops
 NODE_STEPS = frozenset(
     {
         "input_guard", "router", "confirmation", "knowledge", "web", "support_prefix", "support", "replan",
-        "escalation", "personality", "output_guard", "human_review", "human_reply", "summary",
+        "escalation", "personality", "output_guard", "human_review", "human_reply", "summary", "operator_reply",
     }
 )  # fmt: skip
 STEPS = NODE_STEPS | {f"tool:{name}" for name in (*TOOLS, "other")}  # a model may ask for an unregistered tool

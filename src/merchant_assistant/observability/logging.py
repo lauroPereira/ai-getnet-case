@@ -25,6 +25,22 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
+AUTHORIZE_PATH = "/v1/auth/authorize"
+
+
+class AuthorizeQueryFilter(logging.Filter):
+    """The access line of `/v1/auth/authorize` keeps the path and drops the query, which carries `state` and
+    `code_challenge` (uvicorn logs `client - "METHOD path?query HTTP/x" status`, the path as the third argument)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) >= 3 and isinstance(args[2], str):
+            path, _, query = args[2].partition("?")
+            if query and path.endswith(AUTHORIZE_PATH):
+                record.args = (*args[:2], path, *args[3:])
+        return True
+
+
 def configure_logging(level: str = "INFO") -> None:
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
@@ -32,3 +48,6 @@ def configure_logging(level: str = "INFO") -> None:
     root.handlers = [handler]
     root.setLevel(level.upper())
     root.propagate = False
+    access = logging.getLogger("uvicorn.access")  # the factory runs in each worker, after uvicorn set up its logging
+    if not any(isinstance(f, AuthorizeQueryFilter) for f in access.filters):
+        access.addFilter(AuthorizeQueryFilter())

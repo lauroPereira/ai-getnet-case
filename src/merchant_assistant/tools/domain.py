@@ -7,6 +7,7 @@ Resources of another customer are never returned: the call fails with FORBIDDEN_
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import uuid
 from datetime import date, datetime
@@ -14,7 +15,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from merchant_assistant.data.clock import Period, resolve_period
 from merchant_assistant.tools.base import ToolEnv, ToolError, money, note_resource
@@ -851,6 +852,82 @@ def count_unanswered_turn(env: ToolEnv, args: CancellationRequestArgs) -> dict:
         (waited, state, _observed(env), request_id),
     )
     return _request_view(env, _request_row(env, request_id))
+
+
+# --- get_handoff_cases (spec v1.1.0 D1) -----------------------------------------------------------------------------
+
+HANDOFF_CASES_LIMIT = 5
+
+
+class HandoffCasesArgs(_Args):
+    protocol: str | None = Field(
+        default=None,
+        min_length=4,
+        max_length=32,
+        description="Full protocol (HO-20261110-7F3A9C) or its last characters, at least 4 letters or digits; any "
+        "case. Omit to list the merchant's latest tickets.",
+    )
+
+    @field_validator("protocol")
+    @classmethod
+    def _protocol_or_its_end(cls, value: str | None) -> str | None:
+        if value is not None and (
+            not re.fullmatch(r"[A-Za-z0-9-]+", value) or sum(ch.isalnum() for ch in value) < 4
+        ):
+            raise ValueError("protocol must be the full protocol or its last 4 or more letters or digits")
+        return value
+
+
+def _alnum(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]", "", text).upper()
+
+
+def get_handoff_cases(env: ToolEnv, args: HandoffCasesArgs) -> dict:
+    """The merchant's human support tickets (handoff cases), newest first, at most HANDOFF_CASES_LIMIT, opened in any
+    of their conversations. The attendant's reply is the newest operator turn of the case in its conversation, shown
+    whether or not it was already delivered there. No operator identifier and no case of another merchant is ever
+    returned."""
+    rows = env.conn.execute(
+        "SELECT case_id, protocol, reason, queue_state, created_at, claimed_at, answered_at, closed_at, "
+        "conversation_id FROM handoff_cases WHERE customer_id = ? ORDER BY created_at DESC, rowid DESC",
+        (env.customer.customer_id,),
+    ).fetchall()
+    if args.protocol:
+        wanted = _alnum(args.protocol)
+        rows = [r for r in rows if _alnum(r["protocol"]).endswith(wanted)]
+    rows = rows[:HANDOFF_CASES_LIMIT]
+    if args.protocol and len(rows) == 1:
+        note_resource(env, rows[0]["case_id"])
+    cases = []
+    for r in rows:
+        reply = None
+        if r["conversation_id"]:
+            reply = env.conn.execute(
+                "SELECT text FROM messages WHERE conversation_id = ? AND via = 'operator' "
+                "AND json_extract(meta, '$.case_id') = ? ORDER BY id DESC LIMIT 1",
+                (r["conversation_id"], r["case_id"]),
+            ).fetchone()
+        cases.append(
+            {
+                "protocol": r["protocol"],
+                "state": r["queue_state"],
+                "reason": r["reason"],
+                "opened_at": r["created_at"],
+                "claimed_at": r["claimed_at"],
+                "answered_at": r["answered_at"],
+                "closed_at": r["closed_at"],
+                "operator_reply": reply["text"] if reply else None,
+            }
+        )
+    return {
+        "protocol_filter": args.protocol,
+        "count": len(cases),
+        "cases": cases,
+        "note": "Read-only. States: open (waiting for an attendant), claimed (an attendant is handling it), answered "
+        "or rejected (the attendant already replied; the reply is operator_reply), closed. No deadline is recorded.",
+        "source": "HandoffCases",
+        "observed_at": _observed(env),
+    }
 
 
 # --- support prefix: history and healthcheck ----------------------------------------------------------------------

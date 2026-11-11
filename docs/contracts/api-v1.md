@@ -19,7 +19,7 @@ A interface web usa somente esta API HTTP. O projeto irmão [ai-getnet-case-web]
 | `POST /v1/auth/token` | público | emite JWT pelas concessões `authorization_code` e `refresh_token` (com refresh rotativo), `password` (demonstração) e `client_credentials` |
 | `POST /v1/auth/revoke` | Bearer | revoga o token atual e, com `token`, a família de um refresh do mesmo principal |
 | `GET /v1/catalog/models` | Bearer | catálogo datado com preço, capacidades, parâmetros por agente e links para documentação oficial |
-| `GET /v1/profiles` | Bearer | perfis publicados visíveis ao papel |
+| `GET /v1/profiles` | Bearer | perfis publicados visíveis ao papel; desde a v1.1.0, com a disponibilidade de cada perfil e dos motores de Router (abaixo) |
 | `POST /v1/profiles` | admin | cria rascunho compatível |
 | `PUT /v1/profiles/{profile_id}/draft` | admin | atualiza versão de rascunho por controle otimista de versão |
 | `POST /v1/profiles/{profile_id}/publish` | admin | publica uma versão imutável |
@@ -27,6 +27,7 @@ A interface web usa somente esta API HTTP. O projeto irmão [ai-getnet-case-web]
 | `POST /v1/messages` | Bearer | atende usando o método escolhido; pode consumir uma comparação vinculada |
 | `GET /v1/runs/{request_id}` | Bearer/dono | consulta snapshot saneado de execução |
 | `GET /v1/conversations/{conversation_id}` | Bearer/dono | consulta conversa do cliente vinculado; operadores leem conversas com caso |
+| `GET /v1/conversations` | Bearer/dono | conversas do lojista do token, sem texto de mensagem (v1.1.0, abaixo) |
 | `GET /v1/handoffs`, `GET /v1/handoffs/{case_id}` | operador (`handoff:operate`) | fila de casos encaminhados e detalhe, com eventos e entregas de webhook (v0.7.0) |
 | `POST /v1/handoffs/{case_id}/claim`, `POST /v1/handoffs/{case_id}/actions` | operador (`handoff:operate`) | reivindicação e ações `approve`, `reply`, `reject`, idempotentes por `idempotency_key`; `409 claimed_by_other`, `409 already_resumed` (v0.7.0) |
 | `POST /v1/integrations/ticketing/events` | serviço (`handoff:integrate`) com assinatura HMAC | eventos `ticket.assigned`, `ticket.action` e `ticket.solved`, idempotentes por `id` (v0.7.0) |
@@ -159,3 +160,29 @@ Dados: migração **0016** (reversível): `comparisons.worker_id`, `comparisons.
 - **Adaptador** (`python -m merchant_assistant.integrations.telegram`, perfil `telegram` do compose). Recebe em `POST /webhooks/assistant` (`200 accepted|replayed`; `401 invalid_signature`, assinatura ausente, inválida ou fora da janela; `400 invalid_event`, corpo que não é um envelope de evento com `id` e `data`; `422 unsupported_event`, evento diferente de `handoff.created`; `422 invalid_event`, sem `case_id` ou protocolo válidos; `503 telegram_unavailable`, Telegram indisponível, que o despachante repete); envia ao chat `TELEGRAM_OPERATOR_CHAT_ID` o protocolo e o resumo; lê `/claim`, `/approve`, `/reply <texto>` e `/reject <instrução>` por long polling, só desse chat, sem sufixo ou com o `username` do próprio bot (`/approve@<bot>`, lido por `getMe` antes da primeira leitura); comando com o sufixo de outro bot é ignorado. Sem `TELEGRAM_BOT_TOKEN` não sobe.
 
 Dados: migração 0015 reversível acrescenta `auth_codes`, `refresh_tokens` e `api_principals.issuer`; migração 0016 acrescenta leases em `comparisons` e o reenvio em `webhook_outbox`. Schema 16 é reportado em `/ready`. O downgrade de 0015 remove os códigos e as famílias de refresh, então clientes web fazem novo login; o downgrade de 0016 converte `exhausted` em `failed` e remove os campos de lease e reenvio.
+
+## Acréscimos da v1.1.0: lista de conversas
+
+[Especificação v1.1.0](../specs/tickets-retomada-v110.md), D2, CA-77; tarefa 110. Uma rota nova e dois campos aditivos; as demais rotas mantêm o contrato.
+
+| Rota | Acesso | Efeito |
+| --- | --- | --- |
+| `GET /v1/conversations?limit=5` | Bearer/dono | `200 {conversations: [...]}`: conversas do lojista do token (o mesmo lojista da rota por id: `merchant` e `demo` pelo token, `admin` pelo lojista sintético da demonstração), da atividade mais recente para a mais antiga (`updated_at` decrescente). `limit` de 1 a 20, padrão 5; fora disso, `422 invalid_request`. Cada item traz `conversation_id`, `state`, `created_at`, `updated_at`, `handoff_protocol` (protocolo do caso de encaminhamento mais recente da conversa, ou `null`) e `pending_operator_reply` (há resposta de atendente gravada e ainda não entregue numa mensagem do lojista). Nenhum texto de mensagem: a conversa completa continua em `GET /v1/conversations/{conversation_id}`. Token sem lojista vinculado (operador, serviço): `403 insufficient_scope`; sem token, `401` |
+| `GET /v1/conversations/{conversation_id}` e `GET /conversations/{conversation_id}` | Bearer/dono | aditivo: cada turno de `messages` traz `message_id`, inteiro estável e crescente na ordem da conversa |
+| `POST /v1/messages` + `displayed_operator_message_id?` | Bearer | campo opcional, inteiro a partir de 1 (fora disso, `422 invalid_request`): o `message_id` do turno de atendente que a interface já exibiu. Se for um turno de atendente desta conversa ainda não entregue, ele e os turnos de atendente anteriores ainda não entregues da mesma conversa (exibidos acima dele no mesmo histórico) passam a contar como entregues, e a mensagem é atendida normalmente pelo Router e pelos agentes, sem repetir a resposta. Turno de outra conversa ou de outro lojista, turno que não é de atendente, já entregue ou inexistente não muda nada e não gera erro. Uma resposta de atendente mais nova que a exibida continua sendo entregue como resposta desta mensagem (`route=human_reply`). Sem o campo, a entrega é a de antes |
+
+A interface web usa a rota para retomar a última conversa depois de um novo login: lê a mais recente, carrega o histórico pela rota por id e continua na mesma `conversation_id`. Quando a conversa retomada tem resposta de atendente pendente, a primeira mensagem seguinte leva o `message_id` do último turno de atendente exibido.
+
+Dados: sem migração; a rota lê `conversations`, `messages` e `handoff_cases`.
+
+## Acréscimos da v1.1.0: disponibilidade de perfis e motores
+
+[Especificação v1.1.0](../specs/tickets-retomada-v110.md), D3, CA-78; tarefa 111. Campos aditivos; as rotas mantêm o comportamento.
+
+| Rota | Acesso | Efeito |
+| --- | --- | --- |
+| `GET /v1/profiles` | Bearer | cada perfil ganha `available` (o provedor de cada agente do atendimento tem chave configurada no backend) e `missing_providers` (nomes dos provedores sem chave, em ordem alfabética; vazio quando disponível); a resposta ganha `router_mechanisms: {"llm": true, "jev": <TYPESAFE_API_KEY configurada>}`. A chave conta como configurada quando não está vazia, a mesma regra usada para construir os clientes de modelo. O campo `evaluation` do perfil, que o atendimento não usa, não torna o perfil indisponível. Nenhum valor de chave sai da API |
+
+A interface web marca o perfil indisponível, desabilita o JEV indisponível no atendimento e nas comparações, diz qual chave falta no backend (`DEEPSEEK_API_KEY`, `TYPESAFE_API_KEY`) e escolhe por padrão um perfil e um motor disponíveis. Uma escolha indisponível enviada mesmo assim continua recusada com `503 provider_unavailable`. Uma resposta sem os campos novos (backend anterior à v1.1.0) é tratada como tudo disponível.
+
+Dados: sem migração.

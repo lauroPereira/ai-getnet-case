@@ -1,5 +1,6 @@
 """v0.7.0 task 65 (CA-47, CA-48, CA-46): the handoff interrupts the flow in a SQLite checkpoint; the operator's action
-resumes it (approve/reply -> Personality, reject -> Support with the instruction, one cycle), writes an operator
+resumes it (approve -> Personality, reply -> the operator's text as written since v1.1.0, reject -> Support with the
+instruction, one cycle), writes an operator
 turn and delivers it on the next message without any model call. Scripted model, no network, no cost."""
 
 from __future__ import annotations
@@ -145,7 +146,11 @@ def test_approve_and_reply_write_an_operator_turn(offline, settings, action, tex
     )
     trace = orchestrator.trace(resume_id)
     assert trace["detail"]["purpose"] == "operator_resume" and trace["detail"]["resumes"]
-    assert [s["step"] for s in trace["steps"]] == ["human_review", "personality", "output_guard"]
+    # v1.1.0 D4: the operator's own reply is delivered as written, without the Personality
+    expected_steps = ["human_review", "personality", "output_guard"] if action == "approve" else [
+        "human_review", "operator_reply"
+    ]
+    assert [s["step"] for s in trace["steps"]] == expected_steps
     assert any(c.spec.agent == "personality" for c in llm.calls)
 
 

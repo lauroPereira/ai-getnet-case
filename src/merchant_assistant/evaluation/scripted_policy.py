@@ -35,6 +35,15 @@ CANCEL_REQUEST = (
 # then checks that it is nothing but that answer, so "Sim, mas..." still ends as `other`).
 SCRIPTED_YES = r"^\W*(?:sim|yes|confirmo|pode cancelar)\b"
 SCRIPTED_NO = r"^\W*(?:n[aã]o|no|pode deixar)\b"
+# Spec v1.1.0 D1: asking about the merchant's own human support tickets ("Tenho algum ticket aberto?", "status do
+# ticket que termina em 7F3A", a full `HO-` protocol) is support, never a new handoff.
+TICKET_QUESTION = r"\b(?:tickets?|chamados?)\b|\bHO-\d{8}-[A-Z0-9]{4,}\b"
+# The end of a protocol the merchant named: "termina em 7F3A", "ending in 7f3a", "final 7F3A", or a full protocol.
+PROTOCOL_END = (
+    r"\b(HO-\d{8}-[A-Z0-9]{4,})\b|"
+    r"(?:termina(?:do)?\s+(?:em|com)|final(?:\s+(?:em|de))?|ends?\s+(?:in|with)|ending\s+(?:in|with))\s+"
+    r"([A-Z0-9-]{4,32})\b"
+)
 
 ROUTE_RULES: list[tuple[str, str, str | None]] = [
     (
@@ -42,6 +51,7 @@ ROUTE_RULES: list[tuple[str, str, str | None]] = [
         "human_handoff",
         None,
     ),
+    (TICKET_QUESTION, "support", "general"),
     (r"\b(?:atendente|humano|human|attendant|real person|falar com algu[eé]m)\b", "human_handoff", None),
     (r"card number|n[uú]mero (?:do|de) cart[aã]o|\bfraud|fraude|burlar|bypass|antifraud", "out_of_scope", None),
     (r"weather|previs[aã]o do tempo|\bclima\b|forecast", "general_web", None),
@@ -194,6 +204,8 @@ def _support(call: ScriptedCall) -> ToolPlan:
             }
         return None
 
+    if re.search(TICKET_QUESTION, message, flags=re.IGNORECASE):
+        return _ticket_lookup(message, pt, failed)
     if "rcv_002" in message:
         return ToolPlan(
             [("get_payout_status", {"receivable_ids": ["rcv_002_0001"]})],
@@ -509,6 +521,48 @@ def _cancellation_request(message: str, pt: bool, failed) -> ToolPlan:
         }
 
     return ToolPlan([("get_sale_cancellation_context", cancellation_filters(message))], final=final, follow_up=follow)
+
+
+TICKET_STATES = {
+    "open": ("aguardando uma atendente", "waiting for an attendant"),
+    "claimed": ("em atendimento por uma atendente", "being handled by an attendant"),
+    "answered": ("respondido pela atendente", "answered by the attendant"),
+    "rejected": ("respondido pela atendente", "answered by the attendant"),
+    "closed": ("encerrado", "closed"),
+}
+
+
+def ticket_filter(message: str) -> dict:
+    """What a model passes to `get_handoff_cases` under support.v11: the protocol or its end, when the merchant named
+    one; nothing to list the latest tickets."""
+    found = re.search(PROTOCOL_END, message, flags=re.IGNORECASE)
+    return {"protocol": found.group(1) or found.group(2)} if found else {}
+
+
+def _ticket_lookup(message: str, pt: bool, failed) -> ToolPlan:
+    """Spec v1.1.0 D1, support.v11: the merchant's tickets, each with its protocol, state and the attendant's reply."""
+
+    def final(results: list[str]) -> dict:
+        if (bad := failed(results)) is not None:
+            return bad
+        cases = _load(results, 0).get("cases", [])
+        if not cases:
+            points = ["Não encontrei ticket de atendimento humano." if pt else "I found no human support ticket."]
+        else:
+            points = []
+            for case in cases:
+                state = TICKET_STATES.get(case["state"], (case["state"], case["state"]))[0 if pt else 1]
+                points.append(f"Ticket {case['protocol']}: {state}.")
+                if case.get("operator_reply"):
+                    points.append(
+                        f"Resposta da atendente: {case['operator_reply']}"
+                        if pt
+                        else f"The attendant's reply: {case['operator_reply']}"
+                    )
+        return {"points": points, "needs_selection": False, "missing": [], "escalate": False,
+                "escalation_reason": None}
+
+    return ToolPlan([("get_handoff_cases", ticket_filter(message))], final=final)
 
 
 def _web(call: ScriptedCall) -> dict | Exception:

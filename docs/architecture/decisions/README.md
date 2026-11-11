@@ -21,7 +21,7 @@
 | [0015](0015-recorte-final-v060.md) | Recorte final: v0.6.0 única, sem Evaluation Agent nem propostas |
 | [0016](0016-reabertura-roadmap-producao.md) | Reabertura do escopo: roadmap de produção |
 | [0017](0017-identidade-principal-escopos.md) | Identidade: credencial → JWT → principal → escopos → lojista |
-| [0018](0018-interrupcao-retomada-webhooks.md) | HITL: interrupção do grafo, fila idempotente e ticketing por webhooks assinados |
+| [0018](0018-interrupcao-retomada-webhooks.md) | HITL: interrupção do grafo, fila idempotente e ticketing por webhooks assinados (emendada na v1.1.0: `reply` chega ao lojista sem reescrita) |
 | [0019](0019-replanejamento.md) | Replanejamento: um nó que observa o resultado de cada especialista e decide o próximo passo |
 | [0020](0020-retrieval-hibrido-holdout.md) | Retrieval híbrido (BM25 + denso com RRF), reranker opcional e holdout de retrieval lacrado |
 | [0021](0021-juiz-modelo-e-regua.md) | Juiz da avaliação: modelo padrão por experimento pré-registrado, régua literal como piso |
