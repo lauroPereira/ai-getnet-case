@@ -8,7 +8,7 @@ the case calls for one.
 | --- | --- |
 | Merchants | Answers in Portuguese or English with the amounts, dates and protocols of their own account, the official source of each product answer, and a protocol to follow when a person takes over |
 | Support operators | A queue on a web screen or on Telegram with each case summarized; they claim, reply, approve or reject, and their reply reaches the merchant as written |
-| The platform team | Every decision traced, every tool call authorized and audited, spend reserved before each paid call, and answer quality measured by a calibrated independent judge |
+| The platform team | Every decision traced, every tool call authorized and audited, spend reserved before each paid call, and answer quality measured by an independent judge that is itself calibrated against reference labels |
 
 **Release:** v1.1.0 (2026-11-11) · [what each version added](#beyond-the-challenge) · [changelog](CHANGELOG.md) · [results by version](docs/evidence/README.md)
 
@@ -18,15 +18,15 @@ Each figure links to its versioned record. All data is synthetic.
 
 | Area | Measured result | Record |
 | --- | --- | --- |
-| Challenge fit | 10 of 10 challenge examples answered over HTTP on the Docker stack; 13 of 13 business journeys approved by the independent judge | [v0.8.0 validation](docs/evidence/v080-d12-pre-holdout-r6.md) |
-| Answer quality | Sealed holdout, 25 cases × 3 runs, scored 1 to 5 by a judge from another provider: groundedness 4.67, factual correctness 4.61, relevance 4.83, usefulness 4.64 | [holdout](docs/evidence/v080-holdout-r7.md) |
+| Challenge fit | 10 of 10 challenge examples answered over HTTP on the Docker stack; the 13 business journeys passed 13/13, 12/13 and 12/13 by the deterministic check in three runs, and 13/13 by the judge in each | [v0.8.0 validation](docs/evidence/v080-d12-pre-holdout-r6.md) |
+| Answer quality | Sealed holdout of the v0.8.0 campaign, 25 cases × 3 runs, scored 1 to 5 under `judge.v3` by a judge from another provider: groundedness 4.67, factual correctness 4.61, relevance 4.83, usefulness 4.64 | [holdout](docs/evidence/v080-holdout-r7.md) |
 | Evaluation method | The judge is chosen by a rule written before each run: `judge.v5` reaches kappa 0.647 (95% CI 0.28–0.92) against gold labels on 36 sealed answers, with 0.97 to 1.00 agreement within one point | [v0.11.0](docs/evidence/v0110-resultado.md) |
-| Retrieval | Hybrid search with reranking on a sealed 25-question holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 | [retrieval](docs/evidence/v0110-retrieval.md) |
-| Orchestration | 400 replanning decisions in validation: 382 taken by a named rule, 18 by the model, each with its origin in the trace and a three-hop limit in code | [replanning, as it ran](#replanning-as-it-ran) |
+| Retrieval | Hybrid search with reranking on the 25-question retrieval holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972, against 0.907 for the same-depth control without the reranker | [retrieval](docs/evidence/v0110-retrieval.md) |
+| Orchestration | 77 replanning decisions on the sealed holdout: 73 taken by a named rule and 4 by the model, every one with its origin in the trace, under a three-hop limit in code | [holdout](docs/evidence/v080-holdout-r7.md), [replanning, as it ran](#replanning-as-it-ran) |
 | Security and identity | OAuth 2.0 authorization code with PKCE and rotating refresh tokens; every tool call checks scope and merchant and writes an audit row (4 calls, 4 rows); 10 browser logins, 10 sessions | [v0.7.0](docs/evidence/v070-resultado.md), [v0.13.0](docs/evidence/v0130-resultado.md) |
 | Human oversight | A handoff pauses the conversation, an attendant answers from the queue and the reply reaches the merchant in the attendant's words; the merchant follows the ticket from any conversation | [v0.7.0 story](docs/evidence/v070-qa.md), [v1.1.0](docs/evidence/v110-resultado.md) |
 | Memory and resilience | A 27-turn conversation kept the exact amounts, dates and protocols; a comparison stopped after 1 of 6 cells resumed the other 5 and paid each cell once; two API workers share the work | [v0.12.0](docs/evidence/v0120-resultado.md), [v0.10.0](docs/evidence/v0100-qa-ops-r1.md), [v0.13.0](docs/evidence/v0130-resultado.md) |
-| Cost and latency | US$0.0024 per answer on average over 132 validation answers, p50 7.4 s; a US$0.05 cap per request and a ledger per installation, reserved before each paid call | [campaign](docs/evidence/v080-all-r3.md) |
+| Cost and latency | US$0.0024 per answer on average over the 132 answers of the v0.8.0 campaign, p50 7.4 s; a US$0.05 cap per request and a ledger per installation, reserved before each paid call | [campaign](docs/evidence/v080-all-r3.md) |
 | Production engineering | One image per release tag built from a lockfile; the strict suite runs inside the image with no network; external access through a tunnel that exposes only the login page and the interface | [v1.0.0](docs/evidence/v100-resultado.md) |
 | Automated tests | 3,060 test cases from 1,447 test functions (607 unit, 840 integration), run offline with a scripted model at zero cost; 93.8% of the statements and 88.0% of the branches covered | [coverage](docs/evidence/v110-cobertura.md), [testing and evaluation](#testing-and-evaluation) |
 
@@ -114,7 +114,7 @@ docker compose up -d --wait         # API on http://localhost:8000, ticketing on
   `docker compose pull --policy always` and then `docker compose up -d --wait` to switch to the published image.
 - **First start.** The container seeds the synthetic data (dates relative to *today*) and builds the vector index
   from the versioned snapshots (about 37k embedding tokens, ≈ US$0.001). Later starts reuse the index. Startup to
-  healthy: about 20 s.
+  healthy: about 40 s on the first start ([v1.0.0](docs/evidence/v100-resultado.md)).
 
 Try it (two calls: a token, then the message):
 
@@ -434,8 +434,9 @@ added the official procedure and then the web):
 15 personality     2691 ms
 ```
 
-Across the v0.8.0 validation (400 `replan` steps), 382 decisions came from rules and 18 from the model, all of them
-in ambiguous cases (9 → `support`, 8 → `web`, 1 → `finish`). Rules first is a design choice: deterministic, free and
+On the sealed holdout of the v0.8.0 validation, all 77 `replan` decisions carry an origin: 73 came from rules and 4
+from the model, in ambiguous cases (2 → `support`, 1 → `web`, 1 → `finish`)
+([holdout](docs/evidence/v080-holdout-r7.md)). Rules first is a design choice: deterministic, free and
 auditable by name. The four replanning scenarios passed 3/3 each with real models (`REPLAN-ACCOUNT` 2 hops,
 `REPLAN-WEB` 1, `REPLAN-PROCEDURE` 0 extra, `REPLAN-TOOL-DOWN` 1 with an `HO-` protocol instead of an invented
 number) ([pre-holdout validation](docs/evidence/v080-d12-pre-holdout-r6.md)).
@@ -445,8 +446,8 @@ Replanning can be switched off and compared on the same cases:
 - `REPLAN=off` (or `eval --replan off`) keeps the Router's initial plan and the fixed edges.
 - `eval-compare --a <off> --b <on>` pairs the two reports by case and repetition, per criterion and per route, with
   a bootstrap interval of the difference, the replanning decisions counted by origin and each model decision listed.
-- On the 4 paired cases of the v0.12.0 validation, the model decided 0 replans with `REPLAN=off` and 8 with
-  `REPLAN=on` ([v0.12.0](docs/evidence/v0120-resultado.md)).
+- The v0.12.0 validation exercised the switch on 4 paired cases: no model-decided replan with `REPLAN=off` and 8
+  with `REPLAN=on` ([v0.12.0](docs/evidence/v0120-resultado.md)).
 
 Why a graph with rule-based replanning and not a supervisor calling the specialists as tools is in
 [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md), with the condition that would reopen it.
@@ -846,7 +847,7 @@ share of repeated runs within one point.
 | Set (agent runs × judge) | groundedness | factual_correctness | relevance | usefulness | unsupported_claim rate |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Development, 44 cases × 3 runs | 4.56 (±1 0.93) | 4.62 (±1 0.96) | 4.77 (±1 1.00) | 4.53 (±1 0.97) | 0.14 |
-| Sealed holdout `holdout_v080`, 25 cases × 3 runs, run once | 4.67 (±1 0.96) | 4.61 (±1 0.93) | 4.83 (±1 0.96) | 4.64 (±1 0.93) | 0.08 |
+| Sealed holdout `holdout_v080`, 25 cases × 3 runs, measured as the last step | 4.67 (±1 0.96) | 4.61 (±1 0.93) | 4.83 (±1 0.96) | 4.64 (±1 0.93) | 0.08 |
 | Judge repeated 3× on the holdout answers (judge variation) | 4.61 (±1 0.99) | 4.59 (±1 0.97) | 4.80 (±1 1.00) | 4.60 (±1 1.00) | 0.11 |
 
 On the same runs:
@@ -911,13 +912,13 @@ Each figure comes from the versioned evidence linked in its row; all data is syn
 
 | Area | Now | v0.10.0 baseline | Evidence |
 | --- | --- | --- | --- |
-| Attendance | A sale cancellation executes after the merchant's explicit yes, idempotent and audited; the merchant follows human-support tickets from any conversation; replanning is compared with and without (4 paired cases: 0 model-decided replans with `REPLAN=off`, 8 with `REPLAN=on`). Last full campaign: v0.8.0, 44 cases × 3 runs | Read-only journeys. v0.8.0 campaign (`judge.v3`): groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13 by the judge (literal check 13/13, 12/13, 12/13) | [v0.12.0](docs/evidence/v0120-resultado.md), [v1.1.0](docs/evidence/v110-resultado.md); [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md) |
+| Attendance | A sale cancellation executes after the merchant's explicit yes, idempotent and audited; the merchant follows human-support tickets from any conversation; replanning can be switched off and compared case by case (`REPLAN`, `eval-compare`), exercised on 4 paired cases. Last full campaign: v0.8.0, 44 cases × 3 runs | Read-only journeys. v0.8.0 campaign (`judge.v3`): groundedness 4.56, factual correctness 4.62, relevance 4.77, usefulness 4.53; business journeys 13/13 by the judge (literal check 13/13, 12/13, 12/13) | [v0.12.0](docs/evidence/v0120-resultado.md), [v1.1.0](docs/evidence/v110-resultado.md); [v0.8.0 campaign](docs/evidence/v080-all-r3.md), [v0.8.0 journeys](docs/evidence/v080-d12-pre-holdout-r6.md) |
 | Evaluation (judge) | Default `judge.v5`, claim by claim, against adjudicated gold labels on 36 sealed answers: kappa 0.647 (95% CI 0.28–0.92), against 0.538 for `judge.v3` on the same answers and labels; ±1 agreement 0.972 / 0.972 / 1.000 / 1.000; US$0.000945 per judgement (`judge.v3`: US$0.000398); web answers are judged against the cited page text | Default `judge.v3` against one human rater (24 answers): unsupported-claim agreement 0.667, kappa −0.200 | [v0.11.0](docs/evidence/v0110-resultado.md); [v0.10.0 calibration](docs/evidence/v0100-juiz-v4.md) |
 | Retrieval | Hybrid with the reranker by default; same holdout: Recall@6 1.000, MRR 1.000, nDCG@6 0.972 (same-depth control `hybrid@36`: 0.907); 1,752 ms per query, against 501 ms for `hybrid` in the same run | Hybrid (BM25 + dense), no reranker; sealed holdout of 25 questions: Recall@6 1.000, MRR 0.920, nDCG@6 0.921 | [v0.11.0 retrieval](docs/evidence/v0110-retrieval.md); [v0.9.0 retrieval](docs/evidence/v090-retrieval.md) |
 | Memory | Rolling summary and a register of facts taken from tool results; a 27-turn conversation kept the exact amounts, dates and protocols | Recent turns only; multi-turn conversations 4/4 (2 to 3 turns each) | [v0.12.0](docs/evidence/v0120-resultado.md); [v0.8.0 conversations](docs/evidence/v080-conversations-r4.md) |
 | Identity | Sign-in by redirect on the issuer's page (authorization code with PKCE, rotating refresh) and external OIDC issuers; 10 logins in a real browser opened 10 sessions, with a code issued on one worker exchanged on the other | Own issuer, every tool call audited (4 tool calls, 4 audit rows); password grant from the web client | [v0.13.0](docs/evidence/v0130-resultado.md); [v0.7.0](docs/evidence/v070-resultado.md) |
 | Operation | Two API workers sharing a comparison lease: owner suspended before and after a paid reservation, no cell paid twice; exhausted webhooks resent; operator on Telegram; OTLP spans and a dashboard; one image per release tag from `uv.lock`, and the tunnel profile used from a phone on a mobile network | One API worker; a comparison stopped after 1 of 6 cells resumed the other 5 to `completed`, each cell paid once; `/metrics` and 4 alert rules | [v0.13.0](docs/evidence/v0130-resultado.md), [v1.0.0](docs/evidence/v100-resultado.md); [v0.10.0 operation](docs/evidence/v0100-qa-ops-r1.md) |
-| Automated tests | Strict suite: 3,060 test cases from 1,447 test functions, 93.8% statement coverage, also run inside the image with no network | Strict suite: 2,148 passed | [v1.1.0](docs/evidence/v110-resultado.md), [v1.0.0](docs/evidence/v100-resultado.md); [v0.10.0 build](docs/evidence/v0100-candidato-r1.json) |
+| Automated tests | Strict suite: 3,060 test cases from 1,447 test functions, 93.8% statement coverage; the v1.0.0 suite (2,982 cases) also ran inside the image with no network | Strict suite: 2,148 passed | [coverage](docs/evidence/v110-cobertura.md), [v1.1.0](docs/evidence/v110-resultado.md), [v1.0.0](docs/evidence/v100-resultado.md); [v0.10.0 build](docs/evidence/v0100-candidato-r1.json) |
 
 The judge row compares against different references: one human rater on 24 answers at v0.10.0, gold labels on 36
 sealed answers now. The like-for-like comparison is `judge.v3` 0.538 against `judge.v5` 0.647 on the same answers

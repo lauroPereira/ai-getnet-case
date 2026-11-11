@@ -11,7 +11,7 @@
 
 | Verificação | Resultado |
 | --- | --- |
-| Suíte estrita | 3.059 testes aprovados no ambiente de desenvolvimento, sem falhas; o teste do exportador OTLP roda com o extra `otel`, na imagem e na CI. Ruff, links e caminhos pessoais limpos |
+| Suíte estrita | 3.060 casos de teste: 3.059 aprovados no ambiente de desenvolvimento, sem falhas, e o caso do exportador OTLP, que roda com o extra `otel` na imagem e na CI. Cobertura de 93,8% das instruções ([registro](v110-cobertura.md)). Ruff, links e caminhos pessoais limpos |
 | Interface | 203 testes aprovados e 6 de integração contra a API em processo |
 | História com modelo real | Dez momentos pela interface, com Docker e navegador em largura de celular: disponibilidade com o nome da chave, retomada com a resposta da atendente, resposta própria à pergunta seguinte, três formas de perguntar pelo ticket atendidas pelo suporte com a ferramenta, busca pelo final do protocolo e o JEV com a chave configurada |
 | Isolamento | Outro lojista não recebe dado do ticket; uma linha de auditoria por chamada, cada uma com o próprio lojista; `GET /v1/conversations` responde `403` a operador e `422` fora do limite |
