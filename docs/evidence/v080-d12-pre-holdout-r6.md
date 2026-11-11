@@ -1,8 +1,8 @@
-# QA D12 pré-holdout — v0.8.0 r6 (reteste das seis jornadas, juiz repetido e Docker, candidato r11)
+# Validação pré-holdout da v0.8.0 (seis jornadas, juiz repetido e Docker, candidato r11)
 
 Data: 2026-11-05 (America/Sao_Paulo)  
-Tarefa: [74](../tasks/74-correcao-qa-pre-holdout-v080.md), com [78](../tasks/78-regua-literal-ca51-recusa-respostas-corretas-v080.md) (decisão do Supervisor: CA-51 continua medido pela checagem determinística `passed`). História: [orquestracao-avaliacao-v080.md](../historias/orquestracao-avaliacao-v080.md), versão 1, momentos 7, 8 e 9.  
-Resultado: **apto para o holdout.** Fase A: CA-51 composto deu **13/13, 12/13 e 12/13**, acima do portão de 12/13 em cada repetição. As duas falhas são só `content_ok`, em respostas corretas recusadas pela redação (falsas recusas da mesma classe P3-7). Fase B: `--judge-repeat 3` sobre as 44 respostas da primeira execução, com 132 julgamentos e nenhuma falha do juiz. Fase C: o smoke Docker passou 10/10, e a pergunta mista replanejou de support para knowledge, com origem `rule:procedure_gap` no trace. Nenhuma tarefa de defeito foi aberta. O holdout não foi lido nem executado.
+Tarefa: [74](../tasks/74-correcao-qa-pre-holdout-v080.md), com [78](../tasks/78-regua-literal-ca51-recusa-respostas-corretas-v080.md) (o CA-51 é medido pela checagem determinística `passed`). História: [orquestracao-avaliacao-v080.md](../historias/orquestracao-avaliacao-v080.md), versão 1, momentos 7, 8 e 9.  
+Resultado: **apto para o holdout.** Fase A: CA-51 composto deu **13/13, 12/13 e 12/13**, acima do portão de 12/13 em cada repetição. As duas falhas são só `content_ok`, em respostas corretas recusadas pela redação (falsas recusas de redação). Fase B: `--judge-repeat 3` sobre as 44 respostas da primeira execução, com 132 julgamentos e nenhuma falha do juiz. Fase C: o smoke Docker passou 10/10, e a pergunta mista replanejou de support para knowledge, com origem `rule:procedure_gap` no trace. Nenhuma tarefa de defeito foi aberta. O holdout não foi lido nem executado.
 
 ## Candidato
 
@@ -211,7 +211,7 @@ Na pasta de evidência, nos logs da rodada e nos logs do compose, a varredura po
 
 ## Limitações
 
-- O CA-51 é medido pela checagem determinística (decisão do Supervisor). A leitura pelo juiz (13/13 ×3) aparece só como referência.
+- O CA-51 é medido pela checagem determinística. A leitura pelo juiz (13/13 ×3) aparece só como referência.
 - Os 22 IDs da r3, os 9 da r4, os 7 da r5 e as 4 conversas da r4 não foram reexecutados no candidato r11. Valem pela análise de impacto: o delta só toca rótulos de jornada.
 - Na fase B, as respostas r3 foram julgadas com o `judge_input` gravado na r3 (antes da T74, sem o protocolo de escalada verificável). As respostas `general_web` não têm o texto da busca no input do juiz.
 - A interface Streamlit não foi exercida nesta rodada. O Docker cobriu a API, o smoke e o trace por `curl`/HTTP.

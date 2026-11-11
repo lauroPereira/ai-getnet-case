@@ -9,7 +9,7 @@
 
 ## Decisões medidas
 
-O responsável avaliou 36 respostas seladas. O segundo rotulador declarado foi um painel de modelos. As 130 propostas de adjudicação foram geradas por `gpt-6.1-sol` ultra e aceitas pelo responsável em lote.
+Os rótulos de referência das 36 respostas seladas combinam as notas do responsável e as de um painel de dois modelos (`claude-opus-5-5` e `gpt-6-luna`); as divergências foram adjudicadas a partir de propostas de um terceiro modelo (`gpt-6.1-sol`), aprovadas pelo responsável. A regra de decisão foi escrita antes da medição: κ ≥ 0,6 e nenhum critério caindo mais de 0,05 no acordo ±1.
 
 | Candidato | κ do veredito (36 respostas; IC 95%) | Acordo ±1: groundedness / factual correctness / relevance / usefulness | Custo por julgamento |
 | --- | ---: | --- | ---: |

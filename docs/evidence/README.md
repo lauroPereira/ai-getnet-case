@@ -130,3 +130,4 @@ Cada parecer de revisão ou de validação abre com o parecer final e o candidat
 | Arquivo | Conteúdo |
 | --- | --- |
 | [v110-resultado.md](v110-resultado.md) | Resultado consolidado: tickets do lojista em qualquer conversa, retomada da última conversa, resposta da atendente com as palavras dela, perfis disponíveis, isolamento entre lojistas, suíte estrita e gasto das campanhas |
+| [v110-cobertura.md](v110-cobertura.md) | Cobertura dos testes automatizados: 93,8% das instruções e 88,0% dos ramos, com a tabela por pacote e o comando da medição |
