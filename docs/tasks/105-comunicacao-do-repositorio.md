@@ -18,7 +18,7 @@ v0.10.0 integrada. Nenhuma chamada paga; código só em dois comentários e uma 
 
 ## Passos
 
-1. **README.** Documento de produto: a tabela de versões conta a evolução como roadmap (o que cada versão trouxe e por quê, em termos de operação real); "Operating notes" com os fatos que o operador precisa (perfil do compose, credenciais de demonstração, snapshots datados, orçamento), uma frase cada; "Roadmap" com as próximas versões (identidade por provedor externo, canal do operador no celular, múltiplos workers, OTLP, cancelamento com confirmação, resumo de conversas longas); cada tema em um lugar; links de evidência apontando para resultados.
+1. **README.** Documento de produto: a tabela de versões conta a evolução como roadmap (o que cada versão trouxe e por quê, em termos de operação real); uma seção de operação com os fatos que o operador precisa (perfil do compose, credenciais de demonstração, snapshots datados, orçamento), uma frase cada; uma seção com as próximas versões (identidade por provedor externo, canal do operador no celular, múltiplos workers, OTLP, cancelamento com confirmação, resumo de conversas longas); cada tema em um lugar; links de evidência apontando para resultados.
 2. **CHANGELOG** (versões publicadas): notas de configuração no lugar de listas de limites, com "superseded in vX" onde a versão seguinte fechou o item; correções em uma linha cada.
 3. **ADRs.** Status atual em cada uma (0019 aceita; 0013 e 0015 com nota de supersessão); 0016 como reabertura do escopo para o roadmap de produção; alternativas como "não adotado", com o motivo.
 4. **Specs.** As specs de evolução recebem nomes por versão (`evolucao-producao-v070-v0100.md`, `roadmap-v0110-v100.md` e seus planos); objetivos escritos como requisitos de produto; questões decididas fechadas; estado atual nas demais. Links atualizados em todo o repositório.
@@ -30,7 +30,7 @@ v0.10.0 integrada. Nenhuma chamada paga; código só em dois comentários e uma 
 
 ## Critérios de conclusão
 
-- README com "Operating notes" e "Roadmap"; cada tema em um lugar.
+- README com seção de operação e de próximos passos; cada tema em um lugar.
 - `docs/evidence/` com resultados e índice; nenhum link quebrado.
 - Specs com nomes por versão; ADRs com status e voz corretos; histórias e tarefas com estado real.
 - Verificador de links no `lint_and_tests.py`; suíte estrita verde; caminhos pessoais limpos.
