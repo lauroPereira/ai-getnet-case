@@ -10,7 +10,7 @@ the case calls for one.
 | Support operators | A queue on a web screen or on Telegram with each case summarized; they claim, reply, approve or reject, and their reply reaches the merchant as written |
 | The platform team | Every decision traced, every tool call authorized and audited, spend reserved before each paid call, and answer quality scored by a judge from another provider |
 
-**Release:** v1.1.0 (2026-11-11) · [what each version added](#beyond-the-challenge) · [changelog](CHANGELOG.md) · [results by version](docs/evidence/README.md)
+**Release:** v1.1.0 (2026-11-11) · [walkthrough video](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0) (architecture, decisions and a demonstration, recorded on v0.6.0) · [what each version added](#beyond-the-challenge) · [changelog](CHANGELOG.md) · [results by version](docs/evidence/README.md)
 
 ## Results at a glance
 
@@ -948,7 +948,7 @@ version added and why:
 | v0.3.0 | Read-only journeys: pricing disputes with an independent pricing service, card-scheme enablement, sale-cancellation status | The questions where a wrong answer becomes a financial promise |
 | v0.4.0 | Authenticated `/v1` API, per-agent model profiles (Reference: all `gpt-6-luna`; Hybrid: Router on DeepSeek; Adjusted: Router and Support on DeepSeek), per-request Router engine (LLM or TypeSafe JEV), Streamlit interface | Controlled configuration and comparison; the same validated Router contract for every engine |
 | v0.5.0 | Versioned knowledge base: draft, candidate collection, test, activation and rollback by an administrator | Documentation changes are tested before they apply and can be undone |
-| v0.6.0 | Interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
+| v0.6.0 | [Walkthrough video](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0) of the architecture, the decisions and the code; interface with Attendance, Results and Administration; labeled scenarios; deterministic checks and on-demand model evaluation of stored replies; small profile comparison | A demonstrable, auditable closing of the case |
 | v0.7.0 | [JWT identity](#identity-and-authorization) with scopes checked on every tool call; [human in the loop](#human-in-the-loop): the graph pauses on a handoff, a separate ticketing service and its operator screen work the ticket, and the operator's action resumes the graph | The merchant comes from a verified token, and a human answer reaches the merchant in the same conversation |
 | v0.8.0 | Replanning after each specialist (rules first, model on ambiguity, three-hop budget, origin in the trace); four-criterion `judge.v3` by an independent judge, repeated runs and a human calibration sample; sealed v0.8.0 holdout | The assistant reacts to what a specialist returned, and answer quality is measured by meaning as well as by literal labels |
 | v0.9.0 | Hybrid retrieval (BM25 + dense, RRF) chosen on a sealed retrieval holdout by a pre-registered rule; optional reranker; Anthropic judge and a pre-registered judge-model experiment against the human calibration | Retrieval chosen by a rule written before measuring it on unseen questions, and the judge chosen by experiment rather than preference |

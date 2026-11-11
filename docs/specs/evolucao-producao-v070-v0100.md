@@ -95,7 +95,7 @@ Quatro entregas curtas e um fechamento, cada uma com especificação complementa
 ### Fechamento (v1.0.0)
 
 - **RF-98** Acesso externo testado por túnel documentado, com evidência.
-- **RF-99** README com uma linha por área → o que mudou → evidência; CHANGELOG. Redefinido no roadmap (RF-129); o vídeo saiu do escopo em 2026-11-06.
+- **RF-99** README com uma linha por área → o que mudou → evidência; CHANGELOG. Redefinido no roadmap (RF-129); o vídeo de referência é o da v0.6.0 ([release](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0)).
 
 ## Requisitos não funcionais
 

@@ -201,7 +201,7 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 - [x] **CA-22** Habilitação em andamento com protocolo existente e habilitação ativa com divergência no dispositivo são distinguidas, sem duplicar solicitação.
 - [x] **CA-23** Pedido de encerramento contratual não aciona ferramentas de venda.
 - [x] **CA-24** O seletor alterna LLM e Jev por requisição sem reiniciar, registra o mecanismo usado e a comparação não duplica ferramentas nem encaminhamentos. CA-21 a CA-23 comprovados na v0.3.0 ([resultado](../evidence/v030-resultado.md)) e preservados na regressão da v0.6.0; CA-24 comprovado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
-- [ ] ~~**CA-25**~~ Vídeo com raciocínio, arquitetura, um caso resolvido, uma exceção encaminhada e limitações. — *Fora do escopo desde 2026-11-06 (decisão do responsável); o roteiro da v0.6.0 está no [histórico](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md).*
+- [x] **CA-25** Vídeo com raciocínio, arquitetura, um caso resolvido, uma exceção encaminhada e limitações. — *Entregue na v0.6.0: [vídeo de apresentação](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0), gravado sobre o código da tag v0.6.0; o roteiro está no [histórico](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md).*
 
 ## Riscos
 
@@ -221,7 +221,7 @@ Comprovação em `docs/evidence/` (2026-10-26): verificação de fontes, pipelin
 | ID | Questão | Responsável | Bloqueia |
 | --- | --- | --- | --- |
 | Q1 | ~~Prazo de entrega~~ Versões entregues de 2026-10-26 (v0.1.0) a 2026-11-11 (v1.1.0) | Responsável | — |
-| Q2 | ~~Idioma do README final e do vídeo~~ README em inglês; vídeo fora do escopo desde 2026-11-06 | Responsável | — |
+| Q2 | ~~Idioma do README final e do vídeo~~ README em inglês; vídeo da v0.6.0 na [release](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0) | Responsável | — |
 | Q3 | Visibilidade final do repositório (criado como privado em 2026-10-26) | Responsável | Entrega |
 | Q4 | ~~Acesso e crédito no Jev~~ Acesso confirmado na tarefa 02 (`jev-latest` → `jev-1.14.0`) | Tarefa 02 | — |
 | Q5 | ~~Conteúdo da imagem incorporada ao enunciado~~ Resolvida em 2026-10-26: diagrama com etapa Personality antes da saída (RF-37) | Tarefa 01 | — |

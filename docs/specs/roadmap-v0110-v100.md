@@ -2,7 +2,7 @@
 
 # Especificação: roadmap v0.11.0 a v1.0.0
 
-Versão 0.1, 2026-11-06. Estado: entregue da v0.11.0 à v1.0.0 (2026-11-09 a 2026-11-10). Sucede a [evolução para produção](evolucao-producao-v070-v0100.md) (v0.7.0 a v0.10.0) e substitui a definição de v1.0.0 daquela especificação: o vídeo (RF-99) saiu do escopo por decisão do responsável em 2026-11-06. Plano técnico: [roadmap-v0110-v100-plano.md](roadmap-v0110-v100-plano.md).
+Versão 0.1, 2026-11-06. Estado: entregue da v0.11.0 à v1.0.0 (2026-11-09 a 2026-11-10). Sucede a [evolução para produção](evolucao-producao-v070-v0100.md) (v0.7.0 a v0.10.0) e substitui a definição de v1.0.0 daquela especificação: o vídeo de apresentação entregue na v0.6.0 ([release](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0)) segue como referência, e um vídeo novo (RF-99) não entra nestas versões, por decisão do responsável em 2026-11-06. Plano técnico: [roadmap-v0110-v100-plano.md](roadmap-v0110-v100-plano.md).
 
 ## Objetivo
 
