@@ -29,14 +29,12 @@ Plano aprovado e snapshots/revisões disponíveis; preços conhecidos.
 - [x] Falha não altera ativa; candidata incompleta não é pronta.
 - [x] Manifesto/modelo/dimensão conferidos; fontes tratadas como evidência.
 
-## Validação e status
+## Resultado
 
-Implementada pelo Developer r1. Build cria coleção inédita, estado incompleto não ativa, estimativa é local e guarda reserva cada lote antes do provedor. Testes verificam negação antes da rede, liquidação única, persistência do sublimite de campanha e colisão sem substituir coleção. Apenas transportes/fakes sintéticos; QA real permanece na tarefa44.
+Build cria coleção inédita com estimativa local e reserva por lote antes do provedor; candidata incompleta não ativa. Testes cobrem negação antes da rede, liquidação única, sublimite de campanha persistido e colisão sem substituir coleção. Suíte estrita do backend: 293 testes. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.5.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

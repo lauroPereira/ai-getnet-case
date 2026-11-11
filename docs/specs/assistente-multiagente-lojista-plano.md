@@ -2,7 +2,7 @@
 
 # Plano: Assistente multiagente de suporte ao lojista
 
-Versão 0.2 — 2026-10-26 — **aprovado pelo responsável em 2026-10-26**, junto com as decisões 0001 a 0005. A 0.2 acrescenta a etapa Personality (RF-37).
+Versão 0.2, 2026-10-26. Estado: entregue na v0.1.0 (2026-10-26). Aprovado pelo responsável junto com as decisões 0001 a 0005. A 0.2 acrescenta a etapa Personality (RF-37).
 
 ## Especificação relacionada
 
@@ -42,7 +42,7 @@ prompts/          router, knowledge, support, escalation (versionados)
 data/
   sources/        lista versionada de fontes públicas
   snapshots/      conteúdo coletado e versionado
-  knowledge-demo/ base operacional fictícia (promovida de discovery/, sem contexto privado)
+  knowledge-demo/ base operacional fictícia (sintética, sem contexto privado)
   runtime/        banco, índice local, traces e casos simulados (ignorado pelo Git)
 tests/
   unit/  integration/  scenarios/

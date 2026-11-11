@@ -4,11 +4,11 @@ Versão 1, 2026-10-27; roteiro fixado antes de implementar.
 
 ## Pessoa e objetivo
 
-Um recrutador recebe o endereço público e uma credencial demo e quer entender, em poucos minutos, como o assistente atende, o que custa e por que dá para confiar no resultado. O responsável, como administrador, demonstra que mudar a documentação fictícia muda o comportamento e que dá para voltar atrás.
+Um visitante recebe o endereço público e uma credencial demo e quer entender, em poucos minutos, como o assistente atende, o que custa e por que dá para confiar no resultado. O responsável, como administrador, demonstra que mudar a documentação fictícia muda o comportamento e que dá para voltar atrás.
 
 ## Condições iniciais
 
-Mains com a v0.5.0 integrada; candidato v0.6.0 fixado por hashes dos dois repositórios. Três perfis publicados (Referência, Híbrido, Ajustado), catálogo de cenários sintéticos, base ativa identificada. QA real autorizado sob a campanha `v060-qa` (US$0,50) combinada com o ledger primário.
+v0.5.0 integrada nos dois repositórios; candidato v0.6.0 identificado por hash. Três perfis publicados (Referência, Híbrido, Ajustado), catálogo de cenários sintéticos, base ativa identificada. Validação real sob a campanha `v060-qa` (US$0,50) combinada com o ledger primário.
 
 ## Momentos
 
@@ -30,4 +30,4 @@ Mains com a v0.5.0 integrada; candidato v0.6.0 fixado por hashes dos dois reposi
 
 ## Evidência e limites
 
-QA usa a interface normal, HTTP, traces, snapshots e ledgers. Resultados reais, simulados e gravados ficam separados. Regressão real limitada e reuso explícito de evidências anteriores válidas. Executada no QA real da v0.6.0 ([QA](../evidence/v060-qa.md), [resultado](../evidence/v060-resultado.md)).
+A validação usa a interface normal, HTTP, traces, snapshots e ledgers. Resultados reais, simulados e gravados ficam separados. Regressão real limitada e reuso explícito de evidências anteriores válidas. Executada na validação real da v0.6.0 ([validação](../evidence/v060-qa.md), [resultado](../evidence/v060-resultado.md)).

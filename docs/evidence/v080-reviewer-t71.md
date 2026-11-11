@@ -1,8 +1,10 @@
-# Revisão independente da T71 (e P3 da T70, rodada 2) — rodada 1
+# Revisão independente da tarefa 71 (calibração humana) e dos ajustes da tarefa 70, v0.8.0
 
-- **Candidato:** `31aac33b3335ac193cf5cb35c9dbcc5e9ed58f61`, branch `codex/v0.8.0-avaliacao`, worktree destacado `review-a`; HEAD e status iguais antes e depois. Diff `69f2fca..31aac33` (P3 da 70 em `3598a48`; tarefa 71 em `31aac33`).
-- **Independência:** subagente `reviewer` (sonnet/xhigh) em contexto frio; leu a tarefa até "Validação"; não leu a passagem do Developer; não abriu o holdout (lacre conferido). Gravado pelo Supervisor a partir do relatório do Reviewer.
-- **Parecer:** **apto para QA** — nenhum P1 nem P2; 9 P3.
+**Parecer final: apto**, no candidato `af16869a20971a9003c894d55becc0d4b610b052` (segunda revisão, no fim). A primeira revisão, registrada logo abaixo, no candidato `31aac33`, também foi apta, com pontos menores.
+
+- **Candidato da primeira revisão:** `31aac33b3335ac193cf5cb35c9dbcc5e9ed58f61`; HEAD e status iguais antes e depois. Diff `69f2fca..31aac33` (ajustes da tarefa 70 em `3598a48`; tarefa 71 em `31aac33`).
+- **Independência:** contexto novo (sonnet/xhigh); leu a tarefa até "Validação", sem o relato da implementação; não abriu o holdout (lacre conferido).
+- **Parecer da primeira revisão:** apto, sem achado bloqueante; nove pontos menores.
 
 ## Comprovado por execução
 

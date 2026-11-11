@@ -32,18 +32,12 @@ Backend: `api/v1.py`, `data/migrations.py` (`comparisons`), orquestração da co
 - [x] Qualidade só com os mesmos rótulos e rubrica; sem nota fictícia.
 - [x] Validação estrita backend e web com código 0; nenhuma chamada paga.
 
-## Validação
+## Resultado
 
-- Tabela `comparisons` (migração 0008); `POST /v1/comparisons/estimate`, `POST /v1/comparisons` (202, thread do processo da API) e `GET /v1/comparisons/{id}`.
-- `test_comparison_limits_and_estimate_have_no_side_effects` (limites 2–3/3/2, 18 células, exploratória, estimativa sem chamada nem linha gravada), `test_comparison_runs_outside_the_request_isolated_and_traceable` (contagens de conversas, mensagens, tentativas, encaminhamentos, casos e auditoria inalteradas; `purpose=comparison` no trace e no snapshot; uma versão da base; reuso integral como gravadas na segunda comparação), `test_model_quality_appears_only_when_every_run_of_a_profile_was_judged`, `test_budget_denial_stops_the_remaining_cells_and_is_recorded`, `test_comparison_requires_confirmation_and_fresh_estimate_and_lost_threads_fail`, `test_demo_comparison_new_executions_count_against_the_session_limit`.
-- Interface: `test_comparison_estimate_confirm_run_refresh_and_bar_selection` (dois gráficos Vega-Lite, tabela com "não avaliado" e falha da célula, seleção de barra sem chamada, abrir execuções só por GET) e `test_changed_comparison_selection_invalidates_the_estimate`.
-
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md (na tag `v0.6.0`).
+Comparação de dois ou três perfis em até 18 células, executada fora da requisição sobre cópia do domínio, com dois gráficos e uma tabela que abrem as execuções; contagens do domínio original inalteradas e negação de orçamento registrada. Suíte estrita: backend 326 testes, web 30. Evidência: [resultado da v0.6.0](../evidence/v060-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.6.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

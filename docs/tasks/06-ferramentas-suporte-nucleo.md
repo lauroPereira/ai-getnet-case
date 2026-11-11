@@ -34,12 +34,12 @@ Implementar as sete ferramentas do núcleo como funções de domínio com víncu
 - [x] O schema exposto ao modelo não contém `customer_id`.
 - [x] Cliente desconhecido recebe resultado conforme RF-21.
 
-## Validação
+## Resultado
 
-2026-10-26: `tests/unit/tools/test_tools.py` (14 testes) cobre caminho feliz, período vazio, argumento inválido, recurso de outro cliente (bloqueado e auditado), seleção de dispositivo, cliente desconhecido, falha injetada, lista de permissões e ausência de identificador do cliente nos schemas. As sete ferramentas ficaram num único módulo de domínio (`tools/domain.py`) em vez de um arquivo por ferramenta. Revisão não independente.
+Sete ferramentas num módulo de domínio único (`tools/domain.py`), com vínculo cliente-recurso, erros estruturados e permissões por agente. `tests/unit/tools/test_tools.py` (14 testes) cobre caminho feliz, período vazio, argumento inválido, recurso de outro cliente bloqueado e auditado, seleção de dispositivo, cliente desconhecido, falha injetada e schemas sem identificador do cliente.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

@@ -1,12 +1,12 @@
-# Passagem de papel: revisão da tarefa 83 (rubrica `judge.v4` e remedição), rodada 1
+# Revisão independente da tarefa 83 (rubrica `judge.v4` e remedição), v0.10.0
 
-- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
+**Parecer final: apto**, no candidato `34d7f6a` (2026-11-05), sem achado bloqueante. A primeira revisão, registrada logo abaixo, examinou o candidato `9e66d20` e pediu correções; a segunda, mais abaixo, confirma que foram fechadas.
+
 - **Objetivo e critérios:** tarefa 83, lida só até "## Validação"; spec `rubrica-operacao-v0100.md` D1, D2 e CA-57; história `rubrica-operacao-v0100.md`, momentos 1 a 3; ADR 0021.
 - **Escopo:** `1655e80` (`prompts/judge.v4.md`, `evaluation/judge.py`, `evaluation/scripted_judge.py`) e `9e66d20` (`evaluation/calibration.py`, `cli.py` nos blocos `eval` e `eval-calibrate`). Testes: `tests/unit/evaluation/test_judge_v4.py` (novo), `tests/integration/test_v0100_rubric.py` (novo) e `tests/unit/evaluation/test_judge_v3.py` (ajustado).
-- **Estado:** **correções necessárias**. Nenhum P1, 2 P2 (lacunas de teste, uma delas com fonte duplicada do padrão da rubrica) e 4 P3.
-- **Branch e PR:** `codex/v0.10.0-rubrica-operacao`, sem PR.
-- **Base e versão final:** base `0266652`; candidato `9e66d20`, revisado sobre o export de `f4dfb97` (árvore `0d40239`). `3b180ff` e `f4dfb97` só mexem em documentação: `git diff 9e66d20 f4dfb97 -- src tests prompts` sai vazio. Não há manifesto `v0100-candidato-*.json`, então fixei o candidato pelos blobs: `judge.v3.md 7375786`, `judge.v4.md 2c0f2c9`, `cli.py b78866a`, `calibration.py 67404f7`, `judge.py 9b48a14`, `scripted_judge.py 73105e2`, `test_v0100_rubric.py 758fcb5`, `test_judge_v4.py e88ecd0` e `test_judge_v3.py 70f22bd`. Durante a revisão, o HEAD da branch avançou de `f4dfb97` para `023dc61` com os commits da tarefa 84 (`4b6891b`, `b6f7e19`, `ee7774a`, `023dc61`). `git diff --stat f4dfb97 023dc61` restrito a `prompts`, `evaluation/`, `cli.py`, `tests/unit/evaluation` e `test_v0100_rubric.py` sai vazio, então este parecer continua valendo para o candidato. O export ficou igual a `f4dfb97` no fim (`diff -rq` contra um novo `git archive`, desconsiderando só caches).
-- **Independência:** independente. Não implementei nada e não li `v0100-developer.md` nem a Validação ou o Status da tarefa 83.
+- **Estado na primeira revisão:** correções necessárias (duas lacunas de teste, uma delas com fonte duplicada do padrão da rubrica, e quatro pontos menores).
+- **Base e versão final:** base `0266652`; candidato `9e66d20`, revisado sobre o export de `f4dfb97` (árvore `0d40239`). `3b180ff` e `f4dfb97` só mexem em documentação: `git diff 9e66d20 f4dfb97 -- src tests prompts` sai vazio. Não há manifesto `v0100-candidato-*.json`, então fixei o candidato pelos blobs: `judge.v3.md 7375786`, `judge.v4.md 2c0f2c9`, `cli.py b78866a`, `calibration.py 67404f7`, `judge.py 9b48a14`, `scripted_judge.py 73105e2`, `test_v0100_rubric.py 758fcb5`, `test_judge_v4.py e88ecd0` e `test_judge_v3.py 70f22bd`. Durante a revisão, o HEAD avançou de `f4dfb97` para `023dc61` com os commits da tarefa 84 (`4b6891b`, `b6f7e19`, `ee7774a`, `023dc61`). `git diff --stat f4dfb97 023dc61` restrito a `prompts`, `evaluation/`, `cli.py`, `tests/unit/evaluation` e `test_v0100_rubric.py` sai vazio, então este parecer continua valendo para o candidato. O export ficou igual a `f4dfb97` no fim (`diff -rq` contra um novo `git archive`, desconsiderando só caches).
+- **Independência:** independente. Não implementei nada e não li o relato da implementação nem a Validação ou o Status da tarefa 83.
 
 ## Comandos e números
 

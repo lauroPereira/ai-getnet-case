@@ -31,19 +31,12 @@ Migrações, seed, ferramentas/registro, prompts novos, política programada, te
 - [x] Isolamento e auditoria preservados também no MCP.
 - [x] Migração reversível validada sobre banco sintético isolado.
 
-## Validação
+## Resultado
 
-Validação final: **191 testes**, incluindo migração 0004→0005→0004 em banco
-sintético isolado, habilitação/cancelamento e MCP. Revisão independente
-confirmou o isolamento, inclusive vínculo da venda. QA por HTTP e MCP
-confirmou protocolo existente, cadastro/dispositivo e consulta sem executar
-cancelamento; respostas reais foram inspecionadas. Evidências e limitações
-no [resultado](../evidence/v030-resultado.md).
+Habilitação de bandeiras e consulta de cancelamento de venda com checagem de vínculo, sem executar ação sobre venda ou contrato. Suíte estrita: 191 testes, com migração 0004→0005→0004 em banco sintético e MCP; protocolo existente reutilizado e cancelamento só consultado, por HTTP e MCP. Evidência: [resultado da v0.3.0](../evidence/v030-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.3.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v030-resultado.md)).

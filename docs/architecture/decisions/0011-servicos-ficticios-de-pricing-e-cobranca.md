@@ -6,15 +6,11 @@ Implementar o PRaaS fictício e a fonte de cobrança como uma app HTTP separada 
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (2026-10-26); entregue na v0.3.0.
 
 ## Contexto
 
-A jornada de preço exige que o PRaaS fictício seja a autoridade do preço esperado e que a cobrança venha de fonte independente, para que uma divergência não desapareça por recalcular as duas com a mesma função. O discovery previu um backend local de mocks com rotas separadas e chamada HTTP real para exercitar contrato, timeout e erros.
+A jornada de preço exige que o PRaaS fictício seja a autoridade do preço esperado e que a cobrança venha de fonte independente, para que uma divergência não desapareça por recalcular as duas com a mesma função. O levantamento inicial previu um backend local de mocks com rotas separadas e chamada HTTP real para exercitar contrato, timeout e erros.
 
 ## Decisão
 

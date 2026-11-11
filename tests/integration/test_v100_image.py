@@ -242,7 +242,7 @@ def test_build_context_keeps_what_the_test_target_needs_and_drops_secrets_and_ru
         ".env", ".env.*", "**/.env", "**/.env.*", "!.env.example", "**/*.key", "**/*.pem", "**/*.p12", "**/*.secret",
         "discovery", "docs/raw", "docs/relatorios", "docs/apresentacao", "data/runtime", ".git", ".venv", ".codex",
     } <= ignored
-    assert not ignored & {"docs", "tests", "tools", "skills", "evals", "AGENTS.md", "CLAUDE.md", "uv.lock"}
+    assert not ignored & {"docs", "tests", "tools", "uv.lock"}
     # no word-wide rule that would drop a future module (`private.py`, `credentials.py`, a package `env`) in silence
     assert not ignored & {"**/private*", "**/credential*", "**/credentials*", "env", "**/env"}
 
@@ -274,9 +274,9 @@ def test_build_context_filters_nested_worktrees_and_preserves_required_files(tmp
         ".env.example", "Dockerfile", "README.md", "pyproject.toml", "uv.lock", "src/app.py",
         "prompts/router.md", "data/snapshots/source.json", "data/sources/list.json", "data/knowledge-demo/a.json",
         "data/mock-services/a.json", "data/scenarios/a.json", "docker/entrypoint.sh", "tests/test_app.py",
-        "tools/scripts/check.py", "docs/specs/spec.md", "skills/example/SKILL.md", "evals/cases.json",
+        "tools/scripts/check.py", "docs/specs/spec.md",
         "docs/images/screen.png",  # the README screenshots: the link check of the test target needs them
-        ".agent-template.json", ".gitattributes", ".gitignore", ".dockerignore", "AGENTS.md", "CLAUDE.md",
+        ".gitattributes", ".gitignore", ".dockerignore",
         "CHANGELOG.md", "docker-compose.yml", ".github/workflows/validate.yml", "alerts/rules.yml",
         "observability/grafana/dashboard.json",
         # modules whose names only resemble secrets stay in: the rules name secret files, not words
@@ -301,10 +301,15 @@ def test_build_context_filters_nested_worktrees_and_preserves_required_files(tmp
         "docs/relatorios/notes.md", "docs/apresentacao/notes.md", "docs/drafts/notes.md", "data/cache/notes.md",
         "tests/__pycache__/notes.pyc",
         "data/sources/list.bak", "data/sources/cache.tmp", "src/config/example.bak", "application.tmp",
+        # local development tooling, outside version control: only the allowlist keeps a root entry in
+        "AGENTS.md", "CLAUDE.md", ".agent-template.json", "skills/example/SKILL.md", "evals/cases.json",
     }
     # Exercise recursive exclusions inside an allowed tree, not just at the blocked top level.
     # (`*`, `data/*` and `docs/*` hold at the root only)
-    root_only = {"notes/notes.md", "docs/drafts/notes.md", "data/cache/notes.md"}
+    root_only = {
+        "notes/notes.md", "docs/drafts/notes.md", "data/cache/notes.md",
+        "AGENTS.md", "CLAUDE.md", ".agent-template.json", "skills/example/SKILL.md", "evals/cases.json",
+    }
     excluded |= {f"src/{name}" for name in excluded if not name.startswith("src/") and name not in root_only}
     for name in retained | excluded:
         path = tmp_path / name

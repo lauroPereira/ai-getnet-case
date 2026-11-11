@@ -1,12 +1,12 @@
-# Passagem de papel: Reviewer, tarefa 84 (comparação retomável), rodada 1
+# Revisão independente da tarefa 84 (comparação retomável), v0.10.0
 
-- Papel e responsável: Reviewer (subagente, contexto frio). Não li `docs/evidence/v0100-developer.md` nem a tarefa depois de "## Validação".
+**Parecer final: apto**, no export de `5005d81`. A primeira revisão, registrada logo abaixo, examinou o export de `023dc61` e pediu correções; a segunda, mais abaixo, confirma que foram fechadas.
+
 - Objetivo e critérios: spec `docs/specs/rubrica-operacao-v0100.md` D3, D6, CA-58; tarefa 84 (passos 1 a 6 e critérios de conclusão); história `docs/historias/rubrica-operacao-v0100.md`, momentos 4 e 5; contrato `docs/contracts/api-v040.md`, "Acréscimos da v0.10.0".
 - Escopo: `src/merchant_assistant/comparisons.py`, `src/merchant_assistant/data/migrations.py`, `src/merchant_assistant/api/app.py`, `src/merchant_assistant/api/v1.py`, `tests/integration/test_v0100_comparison_resume.py`, `tests/unit/data/test_migrations.py`, ajustes de versão de esquema em quatro testes, contrato.
-- Estado: **correções necessárias**.
-- Branch e PR: `codex/v0.10.0-rubrica-operacao`, sem PR.
+- Estado na primeira revisão: correções necessárias.
 - Base e versão final: base `f4dfb97`; candidato `4b6891b`, `b6f7e19`, `ee7774a`; revisado o export limpo de `023dc61` (`git archive`, fora da raiz do repositório), nunca a árvore de trabalho. Impressão digital (sha256 da lista de sha256 de `src/**/*.py` e `tests/**/*.py` do export): `541065d83631ca21…ff4a0ecb`, igual no início e no fim da revisão. Os arquivos do escopo em `HEAD` (`34d7f6a`) não diferem de `023dc61`.
-- Independência: independente (contexto novo, sem a passagem do Developer nem diagnóstico do Supervisor).
+- Independência: independente (contexto novo, sem o relato da implementação; tarefa lida só até "## Validação").
 
 ## Comandos e números
 

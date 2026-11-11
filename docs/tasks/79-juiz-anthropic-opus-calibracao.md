@@ -10,7 +10,7 @@ Permitir que a campanha de avaliação use um modelo Claude como juiz independen
 
 ## Pré-condições
 
-Branch `codex/v0.9.0-juiz-retrieval` criada da `main` com a v0.8.0. Nenhuma chamada paga: o adaptador é testado com um provedor programado. `pip install anthropic` na venv é permitido (dependência nova em `pyproject.toml`).
+Nenhuma chamada paga: o adaptador é testado com um provedor programado. `pip install anthropic` na venv é permitido (dependência nova em `pyproject.toml`).
 
 ## Arquivos prováveis
 
@@ -33,36 +33,12 @@ Branch `codex/v0.9.0-juiz-retrieval` criada da `main` com a v0.8.0. Nenhuma cham
 - `refusal` e `max_tokens` nunca viram nota; aparecem como falha contada.
 - Nenhum teste chama rede; `lint_and_tests.py --strict` verde; `checar-caminhos-pessoais.py` limpo.
 
-## Validação
+## Resultado
 
-Developer, 2026-11-05, commits `ffe9803` e `c0045a5` na `codex/v0.9.0-juiz-retrieval`. Passagem: v090-developer.md.
-
-- SDK conferido no pacote instalado (`anthropic 2.5.0`): `messages.create(..., output_config={"format": {"type": "json_schema", "schema": ...}})`; `JSONOutputFormatParam` não tem campo `strict`, e o esquema estrito vem de `anthropic.transform_schema` (`additionalProperties: false`, todos os campos em `required`). `thinking` e `effort` omitidos.
-- Provedor programado: o cliente real do SDK sobre `httpx2.MockTransport` (`llm/scripted_anthropic.py`); nenhuma rede, nenhuma chamada paga, `.env` não lido.
-- Testes novos: 15 passed (`tests/unit/llm/test_anthropic_judge.py`, 10; `tests/integration/test_v090_judge.py`, 5). Cobrem esquema estrito no corpo enviado, `refusal`, `max_tokens`, erro de rede, resposta fora do esquema ou da escala, `run_tools`/`web_search` recusados, preço com cache lido e criado, independência e chave, fábrica, `--only-sample` (72 julgamentos na ordem do CSV; recusa de ID ausente), `--limit 3` (3 julgamentos), falhas contadas no relatório, ledger Anthropic separado, `--judge` com os dois juízes, consistência e custo por julgamento, recusas de `--judge` (sem julgamento do juiz, campanha original, formato, nota divergente) e relatório sem `--judge` idêntico ao anterior.
-- `lint_and_tests.py --strict` no HEAD `c0045a5`: **2012 passed** (1997 + 15), ruff sem achados, skills válidas, exit 0.
-- `checar-caminhos-pessoais.py`: nenhuma ocorrência (722 arquivos, dentro da suíte estrita).
-- Decisões além do texto e limites (cap `v090-juiz-opus` sem opção de CLI; teto pelo ledger Anthropic novo com `BUDGET_LIMIT_USD=4.00`): na passagem.
-
-### Rodada 2 (correções da revisão)
-
-Developer, 2026-11-05, commits `820c270` e `7d1039f` sobre `fee7a78`, a partir do [parecer da rodada 1](../evidence/v090-reviewer-t79.md) e das decisões do Supervisor. Passagem: v090-developer.md, seção "Tarefa 79 — rodada 2".
-
-- **P2-1:** testes com julgamento válido no texto sob `refusal`, `max_tokens` e `model_context_window_exceeded` (adaptador, `Judge.evaluate` e fluxo da CLI); tirar qualquer um dos três de `FAILED_STOPS` derruba a suíte (mutação conferida numa cópia).
-- **P2-2:** cada julgamento gravado leva o nome da execução (`--name` do `eval`, ou o nome padrão do relatório) em `evaluator.run`, sem migração. `eval-calibrate --import --judge <par>` ganhou `--judge-run <nome>`: o juiz A é lido só nessa execução (concordância, consistência, custo e tokens); sem `--judge-run`, mais de uma execução do juiz sobre os 24 pedidos é erro que lista as execuções. O juiz B é lido nas execuções dos julgamentos ligados às notas (`legado` para os gravados sem nome). O relatório diz, por juiz, as execuções e quantos julgamentos entraram em cada bloco. O teste do momento 3 roda a sonda antes das 3 repetições e uma rodada extra do juiz original.
-- **P2-3:** tokens de entrada, cache lido, cache criado e saída de cada julgamento em `run_evaluations.result.usage` (e no JSON do relatório), também quando uma recusa ou um corte foi cobrado; total e média por julgamento no relatório do `eval` e no relatório dos dois juízes, ao lado do custo.
-- **P3-3:** aviso em stderr quando `--only-sample` vem sem `--judge-repeat`. Demais P3 registrados na passagem.
-- Testes da tarefa: 22 passed (`tests/unit/llm/test_anthropic_judge.py`, 17, sendo 7 novos; `tests/integration/test_v090_judge.py`, 5, com o momento 3 e o de falhas reescritos); suítes focadas de avaliação e LLM: 1011 passed; mutações: 11 de 11 mortas.
-- `lint_and_tests.py --strict` no HEAD `94df63c` (meus commits mais os da tarefa 80), com `PYTEST_ADDOPTS="--basetemp=.pytest_cache/t79r2-suite -p no:cacheprovider"`: **2036 passed** em 1069 s, ruff `All checks passed!`, caminhos pessoais limpos (727 arquivos), skills válidas, exit 0. Log em `.pytest_cache/t79r2-suite.log`, SHA-256 `f98f8d35…56cc`.
+Adaptador `AnthropicLLM` com saída JSON estrita (`anthropic.transform_schema`), preços com cache, fábrica, `--only-sample` e `eval-calibrate --judge`/`--judge-run` com os dois juízes lado a lado; `refusal` e `max_tokens` contam como falha. 22 testes da tarefa; suíte estrita: 2.036 testes. Validação real: 72/72 julgamentos, US$1,34; decisão D2 na [ADR 0021](../architecture/decisions/0021-juiz-modelo-e-regua.md). Evidência: [validação do juiz](../evidence/v090-qa-juiz-r2.md).
 
 ## Status
 
 ```text
 concluída (v0.9.0)
 ```
-
-Revisão independente e QA real aptos ([QA](../evidence/v090-qa-juiz-r2.md)).
-
-## Fechamento (Supervisor, 2026-11-06)
-
-Concluída: revisão r2 apta (P2-4 virou regra operacional), QA r2 apto (72/72 julgamentos, US$1,34), decisão D2 registrada no ADR 0021 e confirmada pelo responsável.

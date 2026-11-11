@@ -2,15 +2,15 @@
 
 ## Status
 
-**Aceita pelo responsável em 2026-11-03** (respostas Q14, Q15 e Q17 da [especificação](../../specs/evolucao-producao-v070-v0100.md)). Revoga, da [decisão 0015](0015-recorte-final-v060.md), apenas a cláusula "após o aceite da v0.6.0 a expansão funcional termina e pendências não originam uma v0.7.0". Mantém o restante da 0015 (sem Evaluation Agent, sem workflow de propostas). As adoções de fluxo (Q19) e o modelo por papel (Q20) ficaram para decisão própria, registrada na etapa 0 do plano.
+Aceita (2026-11-03; [especificação](../../specs/evolucao-producao-v070-v0100.md)); entregue da v0.7.0 à v0.10.0. Revoga, da [decisão 0015](0015-recorte-final-v060.md), só a cláusula "após o aceite da v0.6.0 a expansão funcional termina e pendências não originam uma v0.7.0"; o restante da 0015 continua (sem Evaluation Agent, sem workflow de propostas).
 
 ## Contexto
 
-A v0.6.0 cobre o desafio, mas uma operação real exige o que o recorte da 0015 deixou de fora: o encaminhamento humano era simulado (caso local, sem fila, sem resposta humana de volta ao agente); o `user_id` do payload era a autoridade do lojista; a rota era um plano fixo, sem observar o resultado de um especialista; a qualidade das respostas não tinha métricas semânticas agregadas, juiz independente, calibração humana nem holdout; o retrieval era só denso e medido num conjunto usado no desenvolvimento.
+A v0.6.0 cobre o desafio. Uma operação real pede, além disso, humano no circuito com a resposta de volta ao agente, lojista derivado de identidade autenticada, orquestração que observa o resultado de cada especialista, qualidade medida por juiz independente com calibração humana e holdout, e retrieval medido fora do conjunto de desenvolvimento.
 
 ## Decisão
 
-- Reabrir a expansão funcional em quatro entregas curtas (v0.7.0, v0.8.0, v0.9.0, v0.10.0) e um fechamento (v1.0.0), conforme a especificação e o plano. O responsável prefere mais versões curtas a versões maiores.
+- Reabrir a expansão funcional em quatro entregas curtas (v0.7.0, v0.8.0, v0.9.0, v0.10.0) e um fechamento (v1.0.0), conforme a especificação e o plano, em versões curtas por escolha do responsável.
 - **Identidade:** o lojista passa a ser derivado de um principal autenticado por sessão, com credenciais sintéticas por lojista e por operador e escopos verificados em cada tool call; `user_id` deixa de ter autoridade e **não existe modo sem autenticação**. O ponto de troca por um provedor de identidade externo fica isolado na criação de sessão. A [decisão 0017](0017-identidade-principal-escopos.md) trocou a sessão por JWT com emissor próprio.
 - **HITL:** o encaminhamento interrompe o grafo (interrupção nativa do LangGraph com checkpointer em SQLite) e a ação do operador (`approve`, `reply`, `reject`) retoma o mesmo fluxo; a fila é própria, persistente e idempotente; webhooks assinados levam o caso a um ticketing e a resposta ao lojista, com um receptor de ticketing na demonstração. Ticketing comercial continua fora. A [decisão 0018](0018-interrupcao-retomada-webhooks.md) trocou o receptor por um serviço de ticketing próprio.
 - **Orquestração:** um nó de replanejamento observa e revisa o resultado de cada especialista e decide o próximo passo dentro de um orçamento de saltos; o grafo pré-definido permanece como plano inicial do Router.

@@ -33,21 +33,12 @@ Backend: `data/scenarios/`, `api/v1.py`, `evaluation/runner.py`, `orchestration/
 - [x] Demo não vê nem consegue usar Administração (backend `403`).
 - [x] Migração 0008 sobe e desce em banco sintético; validação estrita backend e web com código 0.
 
-## Validação
+## Resultado
 
-- Catálogo `data/scenarios/catalog.json` (8 cenários, um por jornada essencial + D), `GET /v1/scenarios`, `scenario_id` validado e gravado no snapshot: `test_scenario_catalog_requires_a_session_and_lists_labeled_scenarios`, `test_scenario_id_is_validated_and_recorded_in_the_run`.
-- `GET /v1/runs/{id}` com etapas, trechos, verificações e avaliações: `test_free_message_only_gets_label_independent_checks`, `test_persisted_checks_list_critical_failures_individually`.
-- Avaliação sob demanda: `test_evaluation_grades_the_persisted_reply_once_and_repeats_only_on_request` (uma chamada `judge`, atendimento não repetido, reuso e `repeat=true`, ledger `eval:<id>`), `test_evaluation_requires_confirmation_fresh_estimate_ownership_and_budget`, `test_unknown_evaluator_price_blocks_the_estimate`, `test_failed_evaluation_is_recorded_without_inventing_scores`, `test_evaluation_of_a_run_stored_before_v060_uses_the_conversation_text`.
-- Migração 0007 → 0008 → 0007 → 0008 em SQLite sintético: `test_migration_0008_round_trip_on_a_synthetic_database` (sessões e snapshots preservados) e testes de migração existentes atualizados.
-- Interface: `test_demo_sees_attendance_and_results_and_admin_also_sees_administration`, `test_catalog_scenario_is_sent_once_with_its_id_and_reruns_do_not_post`, `test_results_show_checks_unevaluated_and_evaluation_needs_explicit_confirmation`, `test_backend_errors_explain_the_recovery_action`; testes existentes de recuperação, comparação de Routers e KB continuam passando. Cliente e `openapi-v1.json` regenerados (31 caminhos, 28 operações).
-- Bancos novos publicam Referência, Híbrido e Ajustado; bancos anteriores mantêm o Ajustado como rascunho até a publicação pelo admin (documentado no guia).
-
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md (na tag `v0.6.0`).
+Interface em Atendimento, Resultados e Administração; catálogo de 8 cenários com `GET /v1/scenarios`; avaliação sob demanda de execuções persistidas com estimativa, reserva, custo separado e repetição só explícita; migração 0008 nos dois sentidos. Suíte estrita: backend 326 testes, web 30. OpenAPI com 31 caminhos e 28 operações. Evidência: [resultado da v0.6.0](../evidence/v060-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.6.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

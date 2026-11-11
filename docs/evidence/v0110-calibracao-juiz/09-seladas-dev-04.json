@@ -1,0 +1,2631 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v0110-qa.json",
+  "recorded_answers": 44,
+  "only_sample": "seladas-dev-04.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.6,
+   "deterministic": 1.0,
+   "content": 0.6,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 8714,
+   "latency_p95_ms": 14238,
+   "cost_usd": 0,
+   "judge_failed": 1,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 0,
+    "unsupported": 0
+   },
+   "judge_means": {
+    "groundedness": 4.21,
+    "factual_correctness": 4.21,
+    "relevance": 4.36,
+    "usefulness": 4.07
+   },
+   "unsupported_claim_rate": 0.357,
+   "claim_verdicts": {
+    "claims": 69,
+    "supported": 55,
+    "partial": 1,
+    "generic": 6,
+    "not_found": 7,
+    "standard": 6
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 4,
+    "passed": 0.75,
+    "deterministic": 1.0,
+    "content": 0.75,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 7582,
+    "latency_p95_ms": 14238,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 4,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.91,
+     "factual_correctness": 4.91,
+     "relevance": 4.73,
+     "usefulness": 4.45
+    },
+    "unsupported_claim_rate": 0.182,
+    "claim_verdicts": {
+     "claims": 54,
+     "supported": 52,
+     "partial": 0,
+     "generic": 2,
+     "not_found": 0,
+     "standard": 6
+    }
+   },
+   "holdout": {
+    "n": 1,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9863,
+    "latency_p95_ms": 9863,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 1,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 1.67,
+     "factual_correctness": 1.67,
+     "relevance": 3.0,
+     "usefulness": 2.67
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 15,
+     "supported": 3,
+     "partial": 1,
+     "generic": 4,
+     "not_found": 7,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 1.0,
+    "content": 0.5,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6208,
+    "latency_p95_ms": 6450,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 4.8,
+     "factual_correctness": 4.8,
+     "relevance": 4.6,
+     "usefulness": 4.0
+    },
+    "unsupported_claim_rate": 0.4,
+    "claim_verdicts": {
+     "claims": 15,
+     "supported": 13,
+     "partial": 0,
+     "generic": 2,
+     "not_found": 0,
+     "standard": 6
+    }
+   },
+   "pt": {
+    "n": 3,
+    "passed": 0.667,
+    "deterministic": 1.0,
+    "content": 0.667,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9863,
+    "latency_p95_ms": 14238,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 3.89,
+     "factual_correctness": 3.89,
+     "relevance": 4.22,
+     "usefulness": 4.11
+    },
+    "unsupported_claim_rate": 0.333,
+    "claim_verdicts": {
+     "claims": 54,
+     "supported": 42,
+     "partial": 1,
+     "generic": 4,
+     "not_found": 7,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "human_handoff": {
+    "escalation": 1
+   },
+   "knowledge": {
+    "knowledge": 1,
+    "knowledge → customer_support": 1,
+    "knowledge → web": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:20:49+00:00",
+  "judge_cost_usd": 0.01146,
+  "judge_usage": {
+   "judgements": 14,
+   "total": {
+    "input_tokens": 49814,
+    "cache_read_tokens": 42876,
+    "cache_creation_tokens": 0,
+    "output_tokens": 4715
+   },
+   "mean": {
+    "input_tokens": 3558.1,
+    "cache_read_tokens": 3062.6,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 336.8
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 1,
+   "web_summary": 0,
+   "no_url": 0
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 14,
+    "failed": 1,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.21,
+      "std": 0.26,
+      "exact": 0.769,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "factual_correctness": {
+      "mean": 4.21,
+      "std": 0.26,
+      "exact": 0.769,
+      "within_one": 1.0,
+      "pairs": 13
+     },
+     "relevance": {
+      "mean": 4.36,
+      "std": 0.43,
+      "exact": 0.462,
+      "within_one": 0.923,
+      "pairs": 13
+     },
+     "usefulness": {
+      "mean": 4.07,
+      "std": 0.23,
+      "exact": 0.692,
+      "within_one": 1.0,
+      "pairs": 13
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.357,
+     "exact": 1.0,
+     "pairs": 13
+    }
+   },
+   "by_route": {
+    "human_handoff": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "knowledge": {
+     "cases": 3,
+     "judgements": 8,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.62,
+       "std": 0.43,
+       "exact": 0.571,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "factual_correctness": {
+       "mean": 3.62,
+       "std": 0.43,
+       "exact": 0.571,
+       "within_one": 1.0,
+       "pairs": 7
+      },
+      "relevance": {
+       "mean": 4.12,
+       "std": 0.53,
+       "exact": 0.286,
+       "within_one": 0.857,
+       "pairs": 7
+      },
+      "usefulness": {
+       "mean": 3.75,
+       "std": 0.38,
+       "exact": 0.429,
+       "within_one": 1.0,
+       "pairs": 7
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.625,
+      "exact": 1.0,
+      "pairs": 7
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 4,
+     "judgements": 11,
+     "failed": 1,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.91,
+       "std": 0.18,
+       "exact": 0.9,
+       "within_one": 1.0,
+       "pairs": 10
+      },
+      "factual_correctness": {
+       "mean": 4.91,
+       "std": 0.18,
+       "exact": 0.9,
+       "within_one": 1.0,
+       "pairs": 10
+      },
+      "relevance": {
+       "mean": 4.73,
+       "std": 0.29,
+       "exact": 0.6,
+       "within_one": 1.0,
+       "pairs": 10
+      },
+      "usefulness": {
+       "mean": 4.45,
+       "std": 0.14,
+       "exact": 0.8,
+       "within_one": 1.0,
+       "pairs": 10
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.182,
+      "exact": 1.0,
+      "pairs": 10
+     }
+    },
+    "holdout": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 1.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 1.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 3.0,
+       "std": 1.0,
+       "exact": 0.0,
+       "within_one": 0.667,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 2.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT04",
+   "repetition": 1,
+   "request_id": "req_evalb28a989c813a",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Preciso de conta bancária para receber minhas vendas via Pix?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → web",
+   "answer": "Para contratar o Pix na Getnet, use a mesma chave Pix cadastrada no domicílio bancário onde receberá os valores. Você precisa ter uma conta em uma instituição participante do Pix, mas não necessariamente uma conta bancária tradicional: pode ser conta corrente, poupança ou conta de pagamento pré-paga. Para receber vendas, você pode informar sua chave Pix ou os dados da conta.",
+   "sources": [
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "FAQs"
+   ],
+   "duration_ms": 9863,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Preciso de conta bancária para receber minhas vendas via Pix?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "FAQs"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nComo faço para contratar o Pix na Getnet?\nComo faço para contratar o Pix na Getnet?\nA partir de 16/11/20, você pode acessar um dos canais digitais Getnet (Portal Minha Conta ou Aplicativo Getnet) e fazer a contratação por lá, digitando a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix.\n*Consulte a disponibilidade dos PSP já integrados a Getnet na nossa Central de Atendimento. Em breve a solução para os demais domicílios estará disponível!\nVocê pode saber mais sobre a contratação no e-book Pix disponível na página principal\nhttps://site.getnet.com.br/pix/\n.\nComo funciona o Pix na Getnet?\nComo funciona o Pix na Getnet?\nNa Getnet é possível receber pagamentos com Pix gerando QR Code direto nos nossos meios de captura. A funcionalidade Pix está disponível nos terminais físicos, no TEF Auttar e no Ecommerce. Ou seja, em qualquer canal, você terá mais uma forma de pagamento para oferecer a seus clientes!\nver mais\nPlano Light\nComo funciona o Plano Light?\nComo funciona o Plano Light?\nAo contratar o Plano Light, você pagará 12 parcelas completas e, após este período, terá 100% de desconto;"
+     },
+     {
+      "kind": "web_page",
+      "label": "FAQs",
+      "title": "FAQs",
+      "url": "https://www.bcb.gov.br/meubc/faqs/s/pix?utm_source=openai",
+      "text": "[third-party page text omitted from the versioned record; see url]",
+      "text_sha256": "267c309f4011ce367575114082f7c9a423e9818db1eca27c7e125b364d208ab7",
+      "text_chars": 90
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1257,
+     "kept_chars": 1257,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search. Each evidence item of kind \"web_page\" is the text of a page the search cited (its title and url are given), fetched when the reply was evaluated, masked and cut like the other items: judge the reply against it as you would a passage. The page may have changed since the reply was written."
+    ],
+    "reply": "Para contratar o Pix na Getnet, use a mesma chave Pix cadastrada no domicílio bancário onde receberá os valores. Você precisa ter uma conta em uma instituição participante do Pix, mas não necessariamente uma conta bancária tradicional: pode ser conta corrente, poupança ou conta de pagamento pré-paga. Para receber vendas, você pode informar sua chave Pix ou os dados da conta."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1257,
+    "kept_chars": 1257,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.01100542,
+   "judge": {
+    "evaluation_id": "eval_59bae5b9460f4e74b8f1",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Para contratar o Pix na Getnet, use a mesma chave Pix cadastrada no domicílio bancário onde receberá os valores.",
+       "kind": "guidance"
+      },
+      {
+       "n": 2,
+       "text": "Você precisa ter uma conta em uma instituição participante do Pix.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Não é necessariamente uma conta bancária tradicional.",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "Pode ser conta corrente, poupança ou conta de pagamento pré-paga.",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Para receber vendas, você pode informar sua chave Pix ou os dados da conta.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "digitando a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix."
+      },
+      {
+       "n": 2,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 3,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 4,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 5,
+       "verdict": "partial",
+       "support": "digitando a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 2,
+     "factual_correctness": 2,
+     "relevance": 4,
+     "usefulness": 3
+    },
+    "reasons": {
+     "groundedness": "Only the key step is in the passage; the account-type claims and 'dados da conta' lack any support.",
+     "factual_correctness": "The account-type statements about Pix institutions are not in the evidence and go beyond the source.",
+     "relevance": "It addresses whether a bank account is needed, though partly with unsupported details.",
+     "usefulness": "It is clear and in Portuguese, but mixes supported steps with details the evidence does not confirm."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00068689,
+    "usage": {
+     "input_tokens": 3469,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 301
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_59bae5b9460f4e74b8f1",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Para contratar o Pix na Getnet, use a mesma chave Pix cadastrada no domicílio bancário onde receberá os valores.",
+        "kind": "guidance"
+       },
+       {
+        "n": 2,
+        "text": "Você precisa ter uma conta em uma instituição participante do Pix.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Não é necessariamente uma conta bancária tradicional.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Pode ser conta corrente, poupança ou conta de pagamento pré-paga.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Para receber vendas, você pode informar sua chave Pix ou os dados da conta.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "digitando a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix."
+       },
+       {
+        "n": 2,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 5,
+        "verdict": "partial",
+        "support": "digitando a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 2,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Only the key step is in the passage; the account-type claims and 'dados da conta' lack any support.",
+      "factual_correctness": "The account-type statements about Pix institutions are not in the evidence and go beyond the source.",
+      "relevance": "It addresses whether a bank account is needed, though partly with unsupported details.",
+      "usefulness": "It is clear and in Portuguese, but mixes supported steps with details the evidence does not confirm."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00068689,
+     "usage": {
+      "input_tokens": 3469,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 301
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_8c52bae0f57d474ca3dc",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Para contratar o Pix na Getnet, use a mesma chave Pix cadastrada no domicílio bancário onde receberá os valores.",
+        "kind": "guidance"
+       },
+       {
+        "n": 2,
+        "text": "Você precisa ter uma conta em uma instituição participante do Pix.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Não é necessariamente uma conta bancária tradicional.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Pode ser conta corrente, poupança ou conta de pagamento pré-paga.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Para receber vendas, você pode informar sua chave Pix ou os dados da conta.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "digitando a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix."
+       },
+       {
+        "n": 2,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 5,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 2,
+      "relevance": 3,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Only claim 1 is traceable; the account-type and Pix institution statements rest on no item.",
+      "factual_correctness": "Reply adds Pix account details not present in the evidence, though claim 1 agrees with the page.",
+      "relevance": "Reply touches Pix contracting but does not clearly answer whether a bank account is needed.",
+      "usefulness": "Reply is clear and polite in Portuguese but gives unsupported generalities instead of a direct answer."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00038267,
+     "usage": {
+      "input_tokens": 3469,
+      "cache_read_tokens": 3328,
+      "cache_creation_tokens": 0,
+      "output_tokens": 267
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_eddf807fee714bbb896c",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Para contratar o Pix na Getnet, use a mesma chave Pix cadastrada no domicílio bancário onde receberá os valores.",
+        "kind": "guidance"
+       },
+       {
+        "n": 2,
+        "text": "Você precisa ter uma conta em uma instituição participante do Pix.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Não é necessariamente uma conta bancária tradicional.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Pode ser conta corrente, poupança ou conta de pagamento pré-paga.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Para receber vendas, você pode informar sua chave Pix ou os dados da conta.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "digitar a mesma chave que você cadastrou no seu domicílio bancário* onde receberá o Pix"
+       },
+       {
+        "n": 2,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 5,
+        "verdict": "not_found",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 1,
+      "factual_correctness": 1,
+      "relevance": 2,
+      "usefulness": 2
+     },
+     "reasons": {
+      "groundedness": "Only claim 1 traces to the evidence; the account types and receiving options are invented.",
+      "factual_correctness": "Reply states account types and Pix key options that no evidence item contains.",
+      "relevance": "Merchant asked whether a bank account is needed; reply replies with contracting steps and unbacked account details.",
+      "usefulness": "Polite and in Portuguese but adds unsupported facts the merchant cannot rely on."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00038507,
+     "usage": {
+      "input_tokens": 3469,
+      "cache_read_tokens": 3328,
+      "cache_creation_tokens": 0,
+      "output_tokens": 269
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "REPLAN-ACCOUNT",
+   "repetition": 1,
+   "request_id": "req_evale6df83e04cdb",
+   "split": "dev",
+   "language": "pt",
+   "message": "A antecipação de recebíveis está disponível no meu plano?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Seu contrato está no plano de liquidação débito D+1 e crédito D+2, mas isso não confirma se a antecipação está disponível. A disponibilidade da Antecipação Automática depende de uma avaliação individual do contrato, e não foi possível confirmar se ela está habilitada no seu plano nem quais condições se aplicam.\n\nPara consultar a antecipação de vendas no crédito, à vista ou parceladas, acesse o app Getnet Brasil. Ele mostra o valor disponível e permite simular as condições.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Contracted products (your account)"
+   ],
+   "duration_ms": 14238,
+   "cost_usd": 0.0,
+   "model_calls": 7,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_contract_snapshot"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A antecipação de recebíveis está disponível no meu plano?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Contracted products (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_contract_snapshot",
+      "text": "{\"arguments\": {}, \"result\": {\"effective_from\": \"2025-10-03\", \"observed_at\": \"2026-11-07T00:18:33-03:00\", \"pricing_context\": {\"plan\": \"demo_standard\", \"source\": \"ContractPricingContextMock\", \"version\": \"pricing_mock_v1\"}, \"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\", \"source\": \"ContractsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nSim, você pode solicitar a alteração das taxas nos canais da Getnet:\nAplicativo da Getnet;\nPortal do Cliente\n– para contratação de máquina adicional (aluguel ou compra);\nCentral de Relacionamento Getnet, por meio do telefone 4002-4000 e realizar a solicitação.\nQual a taxa para Antecipação Automática?\nQual a taxa para Antecipação Automática?\nA Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’. Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática.\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nInformações de taxas\npara venda no débito e crédito\nPara maior transparência disponibilizamos todas as taxas cobradas em suas transações de vendas.\nPlano de recebimento:\n2 dias úteis*\nReceba conforme\nsuas vendas\nDébito:\n1,89%\n1,95%\nCrédito à vista:\n3,99%"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 2533,
+     "kept_chars": 2533,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Seu contrato está no plano de liquidação débito D+1 e crédito D+2, mas isso não confirma se a antecipação está disponível. A disponibilidade da Antecipação Automática depende de uma avaliação individual do contrato, e não foi possível confirmar se ela está habilitada no seu plano nem quais condições se aplicam.\n\nPara consultar a antecipação de vendas no crédito, à vista ou parceladas, acesse o app Getnet Brasil. Ele mostra o valor disponível e permite simular as condições."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 2533,
+    "kept_chars": 2533,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.0011021,
+   "judge": {
+    "evaluation_id": "eval_1d95cbf0ab0e4736833d",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Seu contrato está no plano de liquidação débito D+1 e crédito D+2",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Isso não confirma se a antecipação está disponível",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "A disponibilidade da Antecipação Automática depende de uma avaliação individual do contrato",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "Não foi possível confirmar se ela está habilitada no seu plano",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Não foi possível confirmar quais condições se aplicam",
+       "kind": "fact"
+      },
+      {
+       "n": 6,
+       "text": "Para consultar a antecipação de vendas no crédito, à vista ou parceladas, acesse o app Getnet Brasil",
+       "kind": "guidance"
+      },
+      {
+       "n": 7,
+       "text": "Ele mostra o valor disponível",
+       "kind": "fact"
+      },
+      {
+       "n": 8,
+       "text": "Ele permite simular as condições",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"settlement_plan\": \"debit_d1_credit_d2\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_plan\": \"debit_d1_credit_d2\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_plan\": \"debit_d1_credit_d2\""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas."
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts trace to the contract tool_result and the two official passages.",
+     "factual_correctness": "Reply agrees with evidence: settlement plan correct, availability unconfirmed, app steps accurate.",
+     "relevance": "Answers the availability question for receivables anticipation, though it discusses Automatic Anticipation specifically.",
+     "usefulness": "Clear, polite Portuguese, states the gap plainly and points to the app to check and simulate."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00115579,
+    "usage": {
+     "input_tokens": 3972,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 566
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_1d95cbf0ab0e4736833d",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Seu contrato está no plano de liquidação débito D+1 e crédito D+2",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Isso não confirma se a antecipação está disponível",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A disponibilidade da Antecipação Automática depende de uma avaliação individual do contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Não foi possível confirmar se ela está habilitada no seu plano",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Não foi possível confirmar quais condições se aplicam",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Para consultar a antecipação de vendas no crédito, à vista ou parceladas, acesse o app Getnet Brasil",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Ele mostra o valor disponível",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "Ele permite simular as condições",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts trace to the contract tool_result and the two official passages.",
+      "factual_correctness": "Reply agrees with evidence: settlement plan correct, availability unconfirmed, app steps accurate.",
+      "relevance": "Answers the availability question for receivables anticipation, though it discusses Automatic Anticipation specifically.",
+      "usefulness": "Clear, polite Portuguese, states the gap plainly and points to the app to check and simulate."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00115579,
+     "usage": {
+      "input_tokens": 3972,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 566
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_6b9f7619fdb642cea6e3",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Seu contrato está no plano de liquidação débito D+1 e crédito D+2",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Isso não confirma se a antecipação está disponível",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A disponibilidade da Antecipação Automática depende de uma avaliação individual do contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Não foi possível confirmar se ela está habilitada no seu plano",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Não foi possível confirmar quais condições se aplicam",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Para consultar a antecipação de vendas no crédito, à vista ou parceladas, acesse o app Getnet Brasil",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Ele mostra o valor disponível",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "Ele permite simular as condições",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "A Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’. Por tratar-se de um processo de aprovação de crédito, a "
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "A Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS."
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts and guidance trace to the contract snapshot or the app anticipation passages.",
+      "factual_correctness": "Settlement plan, individual credit analysis and app steps agree with the evidence and are consistent.",
+      "relevance": "Directly addresses whether anticipation is available in the merchant's plan and how to check it.",
+      "usefulness": "Clear, concise Portuguese stating the gap plainly and pointing to the app to check availability."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00069683,
+     "usage": {
+      "input_tokens": 3972,
+      "cache_read_tokens": 3838,
+      "cache_creation_tokens": 0,
+      "output_tokens": 528
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_dc5fffa1427242a382e2",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Seu contrato está no plano de liquidação débito D+1 e crédito D+2",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Isso não confirma se a antecipação está disponível",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A disponibilidade da Antecipação Automática depende de uma avaliação individual do contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Não foi possível confirmar se ela está habilitada no seu plano",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Não foi possível confirmar quais condições se aplicam",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "Para consultar a antecipação de vendas no crédito, à vista ou parceladas, acesse o app Getnet Brasil",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Ele mostra o valor disponível",
+        "kind": "fact"
+       },
+       {
+        "n": 8,
+        "text": "Ele permite simular as condições",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas."
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All facts trace to the contract tool result and the app anticipation passage.",
+      "factual_correctness": "Settlement plan matches the tool result; availability gap and app steps agree with evidence.",
+      "relevance": "Directly answers availability question, stating the gap and pointing to the app to check.",
+      "usefulness": "Clear, polite Portuguese; states the gap plainly and gives a concrete next step in the app."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00072803,
+     "usage": {
+      "input_tokens": 3972,
+      "cache_read_tokens": 3838,
+      "cache_creation_tokens": 0,
+      "output_tokens": 554
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "V030-PT-PRICE-INSUFFICIENT",
+   "repetition": 1,
+   "request_id": "req_evalad5c6dec0064",
+   "split": "dev",
+   "language": "pt",
+   "message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "A venda mais recente no crédito, em 2 parcelas, foi em 05/11/2026, no valor bruto de R$ 200,00. Não foi possível confirmar se a taxa cobrada está correta ou divergente: não há uma taxa esperada disponível para essas condições, e a cobrança não foi registrada nos dados consultados.",
+   "sources": [
+    "Synthetic pricing and independent charge comparison"
+   ],
+   "duration_ms": 8714,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "simulate_pricing"
+   ],
+   "passed": true,
+   "expected_claims": [
+    [
+     "evidência aplicável suficiente",
+     "evidência insuficiente",
+     "não há evidência suficiente para comparar",
+     "não foi possível confirmar se a taxa está correta ou incorreta",
+     "não há taxa esperada para comparar",
+     "não há cobrança registrada para comparar",
+     "não há regra de preço aplicável",
+     "não há uma regra de preço aplicável",
+     "não foi possível comparar",
+     "não é possível comparar",
+     "não encontrei uma tarifa aplicável nem uma cobrança registrada",
+     "não havia uma taxa prevista disponível nem uma cobrança registrada para comparar",
+     "não há uma taxa esperada disponível",
+     "não havia uma regra de preço aplicável",
+     "taxa esperada calculável nem uma cobrança registrada",
+     "não há evidências suficientes para comparar"
+    ]
+   ],
+   "judge_input": {
+    "merchant_message": "Há evidência insuficiente para comparar a taxa de crédito em duas parcelas?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Synthetic pricing and independent charge comparison"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:24:59-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"pricing\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-07T00:24:59-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"pricing\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "simulate_pricing",
+      "text": "{\"arguments\": {\"installments\": 2, \"payment_type\": \"credit\", \"period\": \"latest\", \"sale_date\": null}, \"result\": {\"charge\": {\"charged_fee_minor\": null, \"components\": [], \"conditions\": {\"channel\": \"payment_link\", \"installments\": 2, \"payment_type\": \"credit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"installments\": [], \"recorded\": false, \"transaction_id\": \"sale_1988_0005\"}, \"comparison\": {\"charged_fee_display\": null, \"charged_fee_minor\": null, \"comparison_method\": \"integer_minor_units\", \"currency\": \"BRL\", \"difference_display\": null, \"difference_minor\": null, \"expected_fee_display\": null, \"expected_fee_minor\": null, \"result\": \"insufficient_evidence\"}, \"financial_evidence\": {\"charge\": null, \"pricing\": null, \"sale\": {\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 200,00\", \"minor\": 20000}}}, \"note\": \"A comparison does not execute a correction, refund, or financial action.\", \"observed_at\": \"2026-11-07T00:25:02-03:00\", \"pricing\": {\"applicable\": false, \"components\": [], \"conditions\": {\"channel\": \"payment_link\", \"installments\": 2, \"payment_type\": \"credit\", \"pricing_plan\": \"demo_standard\"}, \"currency\": \"BRL\", \"customer_id\": \"cliente1988\", \"expected_fee_minor\": null, \"installments\": [], \"rule_id\": \"pricing_mock_v1_unavailable\", \"rule_version\": \"1.0.0\", \"transaction_id\": \"sale_1988_0005\"}, \"sale\": {\"channel\": \"payment_link\", \"gross_amount_minor\": 20000, \"installments\": 2, \"payment_type\": \"credit\", \"pricing_plan\": \"demo_standard\", \"sale_date\": \"2026-11-05\"}, \"source\": \"independent_synthetic_pricing_and_charge_services\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1881,
+     "kept_chars": 1881,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "A venda mais recente no crédito, em 2 parcelas, foi em 05/11/2026, no valor bruto de R$ 200,00. Não foi possível confirmar se a taxa cobrada está correta ou divergente: não há uma taxa esperada disponível para essas condições, e a cobrança não foi registrada nos dados consultados."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1881,
+    "kept_chars": 1881,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00034728,
+   "judge": {
+    "evaluation_id": "eval_ddf8b4462ec84ccca505",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "A venda mais recente no crédito, em 2 parcelas, foi em 05/11/2026",
+       "kind": "date"
+      },
+      {
+       "n": 2,
+       "text": "no valor bruto de R$ 200,00",
+       "kind": "value"
+      },
+      {
+       "n": 3,
+       "text": "Não foi possível confirmar se a taxa cobrada está correta ou divergente",
+       "kind": "status"
+      },
+      {
+       "n": 4,
+       "text": "não há uma taxa esperada disponível para essas condições",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "a cobrança não foi registrada nos dados consultados",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"sale_date\": \"2026-11-05\", \"installments\": 2, \"payment_type\": \"credit\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 200,00\", \"minor\": 20000}"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"comparison\": {... \"result\": \"insufficient_evidence\"}"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"expected_fee_minor\": null ... \"rule_id\": \"pricing_mock_v1_unavailable\""
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"recorded\": false"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts—date, amount, unavailable rate and unrecorded charge—come from the simulate_pricing tool result.",
+     "factual_correctness": "Reply matches the tool output: sale on 05/11/2026, R$ 200,00, expected fee null, charge not recorded.",
+     "relevance": "Directly answers whether evidence suffices by explaining the expected rate is unavailable.",
+     "usefulness": "Clear, concise, polite Portuguese that plainly states the gap and the confirmed sale details."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00080059,
+    "usage": {
+     "input_tokens": 3628,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 356
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_ddf8b4462ec84ccca505",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A venda mais recente no crédito, em 2 parcelas, foi em 05/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "no valor bruto de R$ 200,00",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "Não foi possível confirmar se a taxa cobrada está correta ou divergente",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "não há uma taxa esperada disponível para essas condições",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "a cobrança não foi registrada nos dados consultados",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"sale_date\": \"2026-11-05\", \"installments\": 2, \"payment_type\": \"credit\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 200,00\", \"minor\": 20000}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"comparison\": {... \"result\": \"insufficient_evidence\"}"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"expected_fee_minor\": null ... \"rule_id\": \"pricing_mock_v1_unavailable\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"recorded\": false"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts—date, amount, unavailable rate and unrecorded charge—come from the simulate_pricing tool result.",
+      "factual_correctness": "Reply matches the tool output: sale on 05/11/2026, R$ 200,00, expected fee null, charge not recorded.",
+      "relevance": "Directly answers whether evidence suffices by explaining the expected rate is unavailable.",
+      "usefulness": "Clear, concise, polite Portuguese that plainly states the gap and the confirmed sale details."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00080059,
+     "usage": {
+      "input_tokens": 3628,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 356
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_e7058ddb4b644bfdb4d1",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A venda mais recente no crédito, em 2 parcelas, foi em 05/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "no valor bruto de R$ 200,00",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "Não foi possível confirmar se a taxa cobrada está correta ou divergente",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "não há uma taxa esperada disponível para essas condições",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "a cobrança não foi registrada nos dados consultados",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"sale_date\": \"2026-11-05\", ... \"installments\": 2, \"payment_type\": \"credit\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 200,00\", \"minor\": 20000}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"comparison\": {... \"result\": \"insufficient_evidence\"}, ... \"expected_fee_minor\": null, \"charged_fee_minor\": null"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"pricing\": {\"applicable\": false, ... \"expected_fee_minor\": null, \"rule_id\": \"pricing_mock_v1_unavailable\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"charge\": {\"charged_fee_minor\": null, \"components\": [], ... \"recorded\": false ...}"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, date, amount and statuses trace directly to the simulate_pricing tool result.",
+      "factual_correctness": "Reply matches the evidence: sale date, gross amount, and insufficient_evidence comparison are consistent.",
+      "relevance": "Directly answers the merchant's question about insufficient evidence to compare the two-installment credit rate.",
+      "usefulness": "Clear, concise, in Portuguese, plainly states the data gap and what could not be confirmed."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00054874,
+     "usage": {
+      "input_tokens": 3628,
+      "cache_read_tokens": 3456,
+      "cache_creation_tokens": 0,
+      "output_tokens": 397
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_07188eb6c66b4d498348",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A venda mais recente no crédito, em 2 parcelas, foi em 05/11/2026",
+        "kind": "date"
+       },
+       {
+        "n": 2,
+        "text": "no valor bruto de R$ 200,00",
+        "kind": "value"
+       },
+       {
+        "n": 3,
+        "text": "Não foi possível confirmar se a taxa cobrada está correta ou divergente",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "não há uma taxa esperada disponível para essas condições",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "a cobrança não foi registrada nos dados consultados",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"sale_date\": \"2026-11-05\", \"installments\": 2, \"payment_type\": \"credit\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"gross_amount\": {\"currency\": \"BRL\", \"display\": \"R$ 200,00\", \"minor\": 20000}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"result\": \"insufficient_evidence\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"expected_fee_minor\": null"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"recorded\": false"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every fact, date and amount in the reply traces directly to the simulate_pricing tool result.",
+      "factual_correctness": "The reply matches the tool result: insufficient evidence, null expected fee, unrecorded charge, correct date and amount.",
+      "relevance": "It directly answers whether there is insufficient evidence to compare the 2-installment credit rate.",
+      "usefulness": "Clear, concise, in Portuguese, and states the gap plainly so the merchant understands the limitation."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00046714,
+     "usage": {
+      "input_tokens": 3628,
+      "cache_read_tokens": 3456,
+      "cache_creation_tokens": 0,
+      "output_tokens": 329
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "EX09",
+   "repetition": 1,
+   "request_id": "req_evalab91d48895ef",
+   "split": "dev",
+   "language": "en",
+   "message": "How many installments can I split a sale into with the crediário?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments. The maximum and available options depend on the card issuer’s policies, and your conditions depend on your contract.",
+   "sources": [
+    "Crediário - Getnet"
+   ],
+   "duration_ms": 6450,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "How many installments can I split a sale into with the crediário?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Crediário - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-crediario",
+      "text": "Crediário - Getnet\nCrediário\nUma opção de pagamento diferenciado com possibilidade de parcelamento em até\n48x\n* para seus clientes.\nFaça uma Simulação:\ncom o valor de todas as parcelas e encargos antes da venda para oferecer transparência ao seu cliente\nAumente o Movimento:\nno seu estabelecimento oferecendo mais opções de pagamento aos seus clientes\nMaior poder de compra:\npara o seu cliente\nReceba o valor total de suas vendas:\nem até 2 dias úteis com taxa única e sem custo de antecipação\nOfereça parcelamento:\nem até 48x* para o seu cliente.\n*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão\nmais vendas para você,\nmais vantagens para o seu cliente\npara o seu negócio\npara o seu negócio\nO Crediário é mais uma opção de pagamento que você pode oferecer para vender mais. E você recebe o valor da venda em até 2 dias úteis e com taxa única¹, aumentando seu capital de giro!\npara o seu cliente\npara o seu cliente\nCom o Crediário, ele pode parcelar em até 48 vezes² no cartão de crédito com taxas que cabem no bolso.\nVocê oferece mais comodidade e poder de compra.\n¹ Consulte a taxa de desconto (MDR) no Aplicativo Getnet Brasil ou no\nPortal do cliente\n."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1196,
+     "kept_chars": 1196,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments. The maximum and available options depend on the card issuer’s policies, and your conditions depend on your contract."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1196,
+    "kept_chars": 1196,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.00047497,
+   "judge": {
+    "evaluation_id": "eval_9294f4ff6f3b4918962f",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments.",
+       "kind": "value"
+      },
+      {
+       "n": 2,
+       "text": "The maximum and available options depend on the card issuer’s policies.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Your conditions depend on your contract.",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "Ofereça parcelamento: em até 48x* para o seu cliente."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+      },
+      {
+       "n": 3,
+       "verdict": "generic",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 4,
+     "factual_correctness": 4,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "The 48x and issuer statements are in the passage; the contract-dependence claim has no evidence backing.",
+     "factual_correctness": "Installment facts match the source; the unsubstantiated contract claim is a minor blemish.",
+     "relevance": "Directly answers how many installments Crediário allows.",
+     "usefulness": "Clear, concise and in the merchant's language, though the contract remark is unhelpful filler."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00053749,
+    "usage": {
+     "input_tokens": 3199,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 244
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_9294f4ff6f3b4918962f",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments.",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "The maximum and available options depend on the card issuer’s policies.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Your conditions depend on your contract.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Ofereça parcelamento: em até 48x* para o seu cliente."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The 48x and issuer statements are in the passage; the contract-dependence claim has no evidence backing.",
+      "factual_correctness": "Installment facts match the source; the unsubstantiated contract claim is a minor blemish.",
+      "relevance": "Directly answers how many installments Crediário allows.",
+      "usefulness": "Clear, concise and in the merchant's language, though the contract remark is unhelpful filler."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00053749,
+     "usage": {
+      "input_tokens": 3199,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 244
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_d05cc6e068014ef7a961",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Getnet’s public offer for Crediário allows customers to pay in up to 48 installments.",
+        "kind": "value"
+       },
+       {
+        "n": 2,
+        "text": "The maximum and available options depend on the card issuer’s policies.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Your conditions depend on your contract.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Uma opção de pagamento diferenciado com possibilidade de parcelamento em até 48x* para seus clientes."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "*O prazo máximo e a taxa de juros do parcelamento variam de acordo com o emissor do cartão"
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The 48x figure and issuer dependence come from the passage; only the contract-dependence sentence lacks support.",
+      "factual_correctness": "The 48x maximum and issuer-based variation agree with the source passage.",
+      "relevance": "Answers the merchant's question about the number of installments for Crediário.",
+      "usefulness": "Clear, concise English answer with the key figure, though the contract remark adds little."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00039296,
+     "usage": {
+      "input_tokens": 3199,
+      "cache_read_tokens": 2944,
+      "cache_creation_tokens": 0,
+      "output_tokens": 249
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_896cbbb1b2ae4c9682dc",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0034587,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\"claim..."
+    }
+   ]
+  },
+  {
+   "id": "V030-CONTRACT-TERMINATION",
+   "repetition": 1,
+   "request_id": "req_eval8715a8ed8a9c",
+   "split": "dev",
+   "language": "en",
+   "message": "I want to close my contract.",
+   "route": "human_handoff",
+   "status": "handoff",
+   "agents": [
+    "router",
+    "escalation",
+    "personality"
+   ],
+   "executed_path": "escalation",
+   "answer": "I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261107-BEFCC9.",
+   "sources": [],
+   "duration_ms": 5967,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck"
+   ],
+   "passed": true,
+   "expected_claims": [
+    [
+     "human"
+    ]
+   ],
+   "judge_input": {
+    "merchant_message": "I want to close my contract.",
+    "status": "handoff",
+    "route": "human_handoff",
+    "sources": [],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"cases\": [{\"attempts\": [{\"result\": \"resolveu\", \"step\": \"Reconfigurar o Wi-Fi da maquininha\"}], \"case_id\": \"case_1988_001\", \"closed_at\": \"2026-09-08T10:25:00-03:00\", \"created_at\": \"2026-09-08T10:00:00-03:00\", \"status\": \"closed\", \"summary\": \"Maquininha sem conexão Wi-Fi; reconfigurar a rede resolveu.\", \"topic\": \"device\"}], \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"general\"}, \"result\": {\"checks\": [{\"check\": \"receivables_service\", \"note\": \"Schedule source reachable.\", \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"status\": \"ok\"}, {\"check\": \"scheduled_payouts\", \"note\": \"2 payout(s) scheduled; pending is normal before the expected date.\", \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"status\": \"pending\"}, {\"check\": \"device:dev_1988_gs01\", \"note\": \"Get Smart reported offline.\", \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"status\": \"attention\"}, {\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"0 declined transaction(s) today.\", \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"status\": \"ok\"}, {\"check\": \"contracts_service\", \"note\": \"Contract source reachable.\", \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-07T00:24:20-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"general\"}}"
+     },
+     {
+      "kind": "trace",
+      "label": "escalation protocol",
+      "text": "HO-20261107-BEFCC9"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1490,
+     "kept_chars": 1490,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "I've handed your case to a human agent on our support team, who will reply here. Protocol: HO-20261107-BEFCC9."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1490,
+    "kept_chars": 1490,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00033587,
+   "judge": {
+    "evaluation_id": "eval_3cdfb124d4ea4c29bfe7",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "I've handed your case to a human agent on our support team",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "who will reply here",
+       "kind": "promise"
+      },
+      {
+       "n": 3,
+       "text": "Protocol: HO-20261107-BEFCC9",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "HO-20261107-BEFCC9"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "HO-20261107-BEFCC9"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "HO-20261107-BEFCC9"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "All statements trace to the handoff trace and status; no invented facts.",
+     "factual_correctness": "Reply agrees with handoff status and protocol code HO-20261107-BEFCC9.",
+     "relevance": "Correctly hands contract closure to a human, though no closure detail is given.",
+     "usefulness": "Clear, polite, concise handoff with protocol number in the merchant's language."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00053586,
+    "usage": {
+     "input_tokens": 3403,
+     "cache_read_tokens": 2560,
+     "cache_creation_tokens": 0,
+     "output_tokens": 223
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_3cdfb124d4ea4c29bfe7",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I've handed your case to a human agent on our support team",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "who will reply here",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocol: HO-20261107-BEFCC9",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the handoff trace and status; no invented facts.",
+      "factual_correctness": "Reply agrees with handoff status and protocol code HO-20261107-BEFCC9.",
+      "relevance": "Correctly hands contract closure to a human, though no closure detail is given.",
+      "usefulness": "Clear, polite, concise handoff with protocol number in the merchant's language."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00053586,
+     "usage": {
+      "input_tokens": 3403,
+      "cache_read_tokens": 2560,
+      "cache_creation_tokens": 0,
+      "output_tokens": 223
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_378f8285a53c4e5baae7",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I've handed your case to a human agent on our support team",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "who will reply here",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocol: HO-20261107-BEFCC9",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All statements restate the handoff status and protocol code from the trace.",
+      "factual_correctness": "Reply agrees with the handoff status and protocol identifier in evidence.",
+      "relevance": "Merchant asked to close the contract; the case is correctly handed to a human.",
+      "usefulness": "Clear, concise and in English, but does not mention the contract closure topic explicitly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003081,
+     "usage": {
+      "input_tokens": 3403,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 190
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_e6d71063516544a6906b",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "I've handed your case to a human agent on our support team",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "who will reply here",
+        "kind": "promise"
+       },
+       {
+        "n": 3,
+        "text": "Protocol: HO-20261107-BEFCC9",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "escalation protocol: HO-20261107-BEFCC9"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "escalation protocol: HO-20261107-BEFCC9"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "HO-20261107-BEFCC9"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "The handoff statement, reply promise and protocol code all trace to the handoff status and trace.",
+      "factual_correctness": "The reply agrees with the handoff status and protocol code, with no contradictions.",
+      "relevance": "It confirms the handoff for the contract closure request, though it does not address the closure itself.",
+      "usefulness": "Clear, concise and polite in English, but gives the merchant little beyond the handoff confirmation."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0003705,
+     "usage": {
+      "input_tokens": 3403,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 242
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

@@ -1,8 +1,8 @@
-# Revisão independente do teto de QA da v0.8.0 após correção
+# Revisão independente do teto da campanha `v080-qa` após correção
 
 **Candidato** `f8daab03c9c33a204edd7d38a009dd6345a93723`, base `27add608d611fd2b8459cac83547d67714bf44a7`.
 
-**Parecer** apto. O Reviewer, em contexto independente com `gpt-6-luna/xhigh`, conferiu os hashes do pacote isolado e revisou o delta por leitura. A CLI verifica as entradas do SQLite e do arquivo de teto com `lstat`, incluindo links pendentes. Com o teto excepcional de US$1,10, a presença de qualquer uma delas exige o registro e o teto persistidos exatos antes da montagem.
+**Parecer final: apto.** A revisão, em contexto independente com `gpt-6-luna/xhigh`, conferiu os hashes do pacote isolado e revisou o delta por leitura. A CLI verifica as entradas do SQLite e do arquivo de teto com `lstat`, incluindo links pendentes. Com o teto excepcional de US$1,10, a presença de qualquer uma delas exige o registro e o teto persistidos exatos antes da montagem.
 
 Os testes novos usam saldo primário de US$1,70 e cobrem arquivo de teto órfão em US$1,10 e US$1,15 e banco inválido com arquivo de teto. Eles verificam que a recusa preserva os arquivos e o saldo. A prova anterior continua cobrindo saldo insuficiente, reabertura após consumo, reservas em ambos os ledgers e as faixas de US$0,50 e US$1,00. O Reviewer não abriu o holdout, executou testes ou acessou o ledger real.
 

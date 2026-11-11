@@ -1,6 +1,6 @@
-# Reviewer v0.7.0 (Time B)
+# Revisão independente do serviço de ticketing (tarefa 66b), v0.7.0
 
-Pareceres do Reviewer independente do Time B sobre as tarefas da v0.7.0. Gravado pelo Supervisor a partir do relatório do Reviewer (que não tem escrita).
+**Parecer final: apto**, no HEAD `2c727f3` (quarta revisão, no fim). A primeira revisão pediu uma correção de configuração; as seguintes confirmaram a correção e mantiveram o parecer apto.
 
 ## Tarefa 66b, rodada 1 — correções necessárias
 

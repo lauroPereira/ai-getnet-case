@@ -32,12 +32,12 @@ Conduzir problemas técnicos em até dois ciclos de orientação, sem repetir pa
 - [x] No limite de dois ciclos, encaminha com o histórico completo.
 - [x] Pedido de atendente a qualquer momento encaminha sem esperar o limite.
 
-## Validação
+## Resultado
 
-2026-10-26: passos registrados por ciclo (`steps_given`), resultado marcado pelo retorno do lojista, sem repetição, limite de dois ciclos e encaminhamento com as tentativas; caso encaminhado reaproveita o protocolo (migração 0004). O identificador estável dos passos é o rótulo curto dado pelo modelo, não um id do procedimento. Rodada real registrada. Ver [evidência](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md). Revisão não independente.
+Passos registrados por ciclo (`steps_given`), sem repetição, com limite de dois ciclos e encaminhamento com as tentativas; caso já encaminhado reaproveita o protocolo (migração 0004). Cada passo é identificado pelo rótulo curto dado pelo modelo. Execução real registrada em [memória e acompanhamento](../evidence/2026-10-26-v020-memoria-e-acompanhamento.md).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.2.0)
 ```

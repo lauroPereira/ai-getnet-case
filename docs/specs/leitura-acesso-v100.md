@@ -2,13 +2,9 @@
 
 # Leitura e acesso — v1.0.0
 
-Versão 0.2 — 2026-11-10 — D6 refeita após o login por redirecionamento da v0.13.0 ([decisão 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), escolhida pelo responsável). Versão 0.1 — 2026-11-08 — escrita pelo Supervisor; o responsável autorizou adiantar as próximas versões enquanto a calibração da v0.11.0 aguarda a rotulagem. Deriva do [roadmap](roadmap-v0110-v100.md) (RF-127 a RF-129, RF-98) e do [plano](roadmap-v0110-v100-plano.md) (decisões 20 a 22). Vale a "Autorização por versão" do AGENTS.md.
+Versão 0.2, 2026-11-10. Estado: entregue na v1.0.0 (2026-11-10; [resultado](../evidence/v100-resultado.md)). Deriva do [roadmap](roadmap-v0110-v100.md) (RF-127 a RF-129, RF-98) e do [plano](roadmap-v0110-v100-plano.md) (decisões 20 e 21). A D6 segue a [decisão 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), que leva ao túnel o login por redirecionamento da v0.13.0. Os registros de processo (RF-128) foram entregues na tarefa 105.
 
-**Base:** a branch `codex/v1.0.0-final` parte da `main` em `2bf3b59`, com a v0.11.0, a v0.12.0 e a v0.13.0 já integradas.
-
-**Numeração:** o plano reservava 102 a 104 para esta versão; o fechamento da v0.13.0 ficou com o 102 e a comunicação do repositório com o 105. As tarefas desta versão são 106 a 108. A decisão 21 (registros de processo) foi entregue na tarefa 105.
-
-**Orçamento:** dentro dos saldos dos provedores geridos pelo Supervisor (AGENTS.md); a única campanha paga é o smoke pela imagem e pelo túnel (≈ US$0,05).
+**Orçamento:** teto de US$0,10 para a campanha `v100-qa` e US$0,10 para a janela do túnel.
 
 ## Resultado desejado
 
@@ -25,7 +21,7 @@ Versão 0.2 — 2026-11-10 — D6 refeita após o login por redirecionamento da 
 | D3 | `docker-compose.yml` com `image: ghcr.io/<owner>/ai-getnet-case:${APP_VERSION:-latest}` e `build:` no mesmo serviço; `pull_policy: missing` | Usa a imagem publicada quando existe |
 | D4 | Seção "Run the tests inside the image" no README: a suíte estrita dentro do contêiner, sem rede (`--network none`), com o basetemp em diretório temporário | Prova de que a imagem é autossuficiente |
 | D5 | README com tabela antes × depois por área (número da v0.10.0, número atual, link da evidência), trilha de 10 minutos (rodar, perguntar, encaminhar, responder, avaliar) e capturas da aba Operador, do ticketing e do Telegram; CHANGELOG e notas de operação atualizados | Leitura rápida |
-| D6 | Túnel (Cloudflare Tunnel rápido, sem conta) para um proxy local no perfil `tunnel` do compose, que publica numa única origem a interface e só `GET`/`POST /v1/auth/authorize` da API; a interface monta o login com a URL pública e fala com a API pela URL interna; testado pelo QA com evidência (URL efêmera não versionada) | Acesso externo comprovado com o login da v0.13.0 e sem expor o resto da API (decisão 0026, emenda à 0012) |
+| D6 | Túnel (Cloudflare Tunnel rápido, sem conta) para um proxy local no perfil `tunnel` do compose, que publica numa única origem a interface e só `GET`/`POST /v1/auth/authorize` da API; a interface monta o login com a URL pública e fala com a API pela URL interna; testado por outra rede com evidência (URL efêmera não versionada) | Acesso externo comprovado com o login da v0.13.0 e sem expor o resto da API (decisão 0026, emenda à 0012) |
 
 ## Critérios de aceitação
 
@@ -38,4 +34,4 @@ Versão 0.2 — 2026-11-10 — D6 refeita após o login por redirecionamento da 
 107. README antes × depois, trilha de 10 minutos, capturas, índice de `docs/evidence/`, CHANGELOG (D5).
 108. Túnel com proxy de origem única e URL pública do login na interface; guia de abertura e fechamento (D6).
 
-Ordem: 106, 108 e 107 (o README descreve o túnel pronto); depois revisão, QA (imagem, suíte sem rede, túnel por outra rede com o responsável), fechamento e tag `v1.0.0` pelo responsável.
+Ordem: 106, 108 e 107 (o README descreve o túnel pronto); depois a validação real (imagem, suíte sem rede, túnel por outra rede), registrada em [v100-resultado.md](../evidence/v100-resultado.md).

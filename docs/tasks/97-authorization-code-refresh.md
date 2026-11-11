@@ -27,3 +27,14 @@ Emissor próprio e migração 0014 da v0.12.0 disponíveis. A migração 0015 es
 ## Critérios de conclusão
 
 - CA-68 (parte do emissor próprio) coberto por testes; suíte estrita verde.
+
+## Resultado
+
+Authorization code com PKCE S256 e refresh token rotativo, com revogação da família no reuso. Validado com 10 logins num navegador real: 10 sessões abertas, nenhum login órfão, código emitido num worker e trocado no outro.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```

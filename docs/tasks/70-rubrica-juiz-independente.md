@@ -10,7 +10,7 @@ A avaliação real passa a usar quatro critérios com evidência e um veredito d
 
 ## Pré-condições
 
-Spec v0.8.0 aprovada; a branch `codex/v0.8.0-avaliacao` (worktree `time-b`, `.venv` próprio) atualizada com a `main` que contém a v0.7.0, com o lacre do holdout reconferido depois do merge. Time B: não editar `orchestration/`, `agents/`, `api/`, `evaluation/scripted_policy.py`, `data/scenarios/catalog.json` nem `prompts/` além de `prompts/judge.v3.md` (D18). Não abrir o conteúdo de `tests/scenarios/holdout_v080.jsonl`.
+Spec v0.8.0 aprovada; lacre do holdout reconferido depois da integração da v0.7.0. Não editar `orchestration/`, `agents/`, `api/`, `evaluation/scripted_policy.py`, `data/scenarios/catalog.json` nem `prompts/` além de `prompts/judge.v3.md` (D18). Não abrir o conteúdo de `tests/scenarios/holdout_v080.jsonl`.
 
 ## Arquivos prováveis
 
@@ -22,7 +22,7 @@ Spec v0.8.0 aprovada; a branch `codex/v0.8.0-avaliacao` (worktree `time-b`, `.ve
 2. `judge.v3` (D9): quatro critérios 1–5 com justificativa e `unsupported_claim`; entrada com o conteúdo mascarado das evidências, até 6 000 caracteres, truncamento registrado. `judge.v2` continua carregável.
 3. Juiz independente (D11): `EVALUATOR_MODEL` e provedor configuráveis, diferentes do agente; provedor e modelo gravados em cada avaliação; sem chave do provedor configurado, a avaliação paga recusa com mensagem clara (sem trocar de juiz por conta própria).
 4. Repetições sem misturar variações (D12): `eval --repeat N` repete o agente (juiz uma vez por resposta); `eval --judge-repeat N` repete só o juiz sobre respostas já gravadas. Agregação de cada lado por critério, rota e split com média, desvio, concordância exata e ±1; relatório JSON e Markdown em `docs/evidence/`.
-5. Substituto programado do `judge.v3` num módulo novo do Time B; `evaluation/scripted_policy.py` é do Time A neste período (D18).
+5. Substituto programado do `judge.v3` num módulo novo; `evaluation/scripted_policy.py` fica intocado (D18).
 6. `--split holdout_v080` reportado à parte (D14).
 
 ## Critérios de conclusão
@@ -31,32 +31,14 @@ Spec v0.8.0 aprovada; a branch `codex/v0.8.0-avaliacao` (worktree `time-b`, `.ve
 - [x] `judge.v3` com modelo programado devolve os quatro critérios e o veredito; evidência longa é truncada e o truncamento aparece.
 - [x] Juiz igual ao agente ou sem chave → recusa clara antes de qualquer chamada.
 - [x] Migração 0011 sobe e desce com dados sintéticos.
-- [x] Suíte estrita com código 0 no worktree; nenhuma chamada paga; lacre do holdout verde.
+- [x] Suíte estrita com código 0; nenhuma chamada paga; lacre do holdout verde.
 
-## Validação
+## Resultado
 
-Developer, rodada 1 (2026-11-04), worktree do Time B, branch `codex/v0.8.0-avaliacao`, base `8f2baa6` (a `main` com a v0.7.0). Commits: `75edaf2` (migração), `dbb9d5b` (`judge.v3`, evidência e juiz independente), `8897809` (repetições, agregação e caminho executado), `c974e2c` (afirmações sem suporte listadas). Passagem em v080-developer.md, seção "Tarefa 70".
-
-- **Migração 0011 (D13):** `run_evaluations.scores`, `repetition`, `unsupported_claim` e a tabela `calibrations`. `rubric_version` e o provedor/modelo do avaliador (`evaluator`) já existiam desde a 0008. A descida mantém todas as avaliações (o `result` guarda o julgamento inteiro) e recusa enquanto houver nota humana em `calibrations`. `tests/unit/data/test_migrations.py` (22 testes, 5 novos): subida e descida com dados sintéticos, defaults das linhas antigas, `CHECK` do veredito, avaliador único por amostra, recusa da descida sem alterar nada e pelo `migrate` da CLI.
-- **`judge.v3` (D9):** `prompts/judge.v3.md`; quatro critérios 1-5 com justificativa e `unsupported_claim`. Evidência mascarada (trechos citados e resultados de ferramenta), até 6 000 caracteres: os itens longos dividem o limite e os curtos ficam inteiros; o registro de truncamento (`limit_chars`, `original_chars`, `kept_chars`, `items_cut`, `truncated`) vai na entrada do juiz e na linha do relatório. `judge.v2` carrega por `load_prompt(dir, "judge", "2")` e a avaliação sob demanda de `/v1` continua nele.
-- **Juiz independente (D11):** `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` na rodada 1, `JUDGE_PROVIDER`/`JUDGE_MODEL` desde a rodada 2 (o `/v1` voltou ao padrão `openai`/`gpt-6-luna`), padrão do juiz `deepseek`/`deepseek-flash`; cliente DeepSeek do projeto (`OpenAILLM` com `deepseek_client`). Recusa antes de construir qualquer cliente: par igual ao do agente, sem chave, sem preço ou provedor sem saída estruturada. Provedor, modelo e independência vão em cada julgamento e em `run_evaluations.evaluator`.
-- **Repetições (D12):** `eval --repeat N` repete o agente e julga cada resposta uma vez; `eval --judge-repeat N --answers-from <relatório>` julga N vezes as respostas da primeira execução sem rodar o agente; as duas opções juntas são recusadas. Agregação (`evaluation/aggregate.py`) com média, desvio, concordância exata e ±1 por critério, rota e split; relatório JSON e Markdown, com a ressalva de amostra pequena (D19).
-- **D16:** `executed_path` em cada linha, derivado de `agents`; `route_ok` inalterado. **D14:** `--split holdout_v080` carrega o arquivo só quando pedido, fora do `all` e sem as conversas de dev.
-- **Testes novos (sem chamada paga, sem rede):** `tests/unit/evaluation/` (34 testes: `judge.v3`, evidência, truncamento, independência, persistência, agregação com números fixos) e `tests/integration/test_eval_campaign.py` (14 testes: caminho executado, evidência por resposta, `--repeat`, `--judge-repeat`, split sintético, recusas na CLI).
-- **Contagens:** `tests/unit` 294 aprovados em 84 s; `tests/integration`, 24 arquivos em quatro grupos e um pytest por vez, 407 aprovados (80, 88, 97 e 142), sem falha; total 701. Depois só mudou o teto de saída do juiz (400 tokens): `tests/unit/evaluation`, `test_eval_campaign.py` e `test_holdout_v080.py` reexecutados, 56 aprovados. ruff (`check src tests`) sem achados. Lacre do holdout: `tests/scenarios/holdout_v080.jsonl` com SHA-256 `91aa5158…4f1bac`, inalterado; `test_holdout_v080.py` com 8 testes verdes.
-- **Correção do que o merge da v0.7.0 quebrou:** `test_tool_backed_amounts_come_from_the_calls_of_each_case` (72a) montava `CustomerContext(MAIN_CUSTOMER, True)` sem escopos e falhava fechado; agora usa `CustomerContext.for_principal(Principal.merchant(...))`. O holdout e o lacre não foram tocados.
-- A suíte estrita completa (`lint_and_tests.py --strict`) fica com o Supervisor. Nenhum teste usou rede ou chave; `.env` não foi lido (não existe no worktree).
-
-Developer, rodada 2 (2026-11-04), sobre o [parecer da revisão](../evidence/v080-reviewer-t70.md) (base `0ebcda2`):
-
-- **P2-01:** o avaliador sob demanda do `/v1` volta a `EVALUATOR_PROVIDER`/`EVALUATOR_MODEL` = `openai`/`gpt-6-luna`; o juiz da campanha usa `JUDGE_PROVIDER`/`JUDGE_MODEL` = `deepseek`/`deepseek-flash`, com a checagem de independência. Teste com a fábrica real de modelos e cliente simulado: instalação só com `OPENAI_API_KEY` estima e confirma a avaliação; `eval --judge` sem a chave da DeepSeek recusa antes de qualquer chamada.
-- **P3-01 a P3-07:** `repetition` no `result` e colunas reconstruídas na subida da 0011; observadores de ferramenta por `ContextVar`, sem contaminação entre execuções e sem exceção atravessando `execute()`; par provedor/modelo conferido na tabela de preços; erro do provedor curto e mascarado; testes para M11, M12, M28, M32 e M34; `judge.v3` com as notas de evidência (efeito a medir na campanha); tabelas com escape, nomes de relatório que não se sobrescrevem e aviso de `--split` ignorado.
-- **Contagens:** `tests/unit` 304 aprovados; `tests/integration` 414 aprovados nos 25 arquivos (161 + 21 + 88 + 144); total 718, sem falha. ruff sem achados; lacre do holdout `91aa5158…` intacto. Passagem: seção "Tarefa 70, rodada 2" de v080-developer.md.
+Migração 0011, `judge.v3` com quatro critérios e veredito, juiz independente configurável (`JUDGE_PROVIDER`/`JUDGE_MODEL`, padrão `deepseek`/`deepseek-flash`) com recusa antes de qualquer chamada, e `eval --repeat`/`--judge-repeat` com agregação e concordância. 718 testes de unidade e integração aprovados; lacre do holdout intacto. Evidência: [validação pré-holdout](../evidence/v080-d12-pre-holdout-r6.md).
 
 ## Status
 
 ```text
 concluída (v0.8.0)
 ```
-
-Revisão independente e QA real aptos ([QA](../evidence/v080-d12-pre-holdout-r6.md)).

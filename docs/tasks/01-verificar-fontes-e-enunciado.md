@@ -11,7 +11,7 @@ Confirmar as páginas oficiais que fundamentam os exemplos de conhecimento e se 
 ## Pré-condições
 
 - Autorização do responsável para acesso à rede.
-- Lista inicial de fontes em `discovery/base-conhecimento-ficticia/fontes-publicas.json` (local).
+- Lista inicial de fontes públicas, mantida localmente.
 
 ## Arquivos prováveis
 
@@ -20,7 +20,7 @@ Confirmar as páginas oficiais que fundamentam os exemplos de conhecimento e se 
 
 ## Passos
 
-1. Partir da lista do discovery e de `https://www.getnet.net/en`, exigida pelo enunciado.
+1. Partir da lista inicial de fontes e de `https://www.getnet.net/en`, exigida pelo enunciado.
 2. Navegar pelo site oficial e localizar páginas sobre maquininhas (Get Smart, Get Clássica ou equivalentes), Pix, crediário, antecipação de recebíveis e Link de Pagamento. Registrar somente URLs efetivamente visitadas; não deduzir endereços.
 3. Para cada página, comparar o texto visível no navegador com o texto obtido por requisição HTTP simples e classificar a extração como `static`, `dynamic` ou `empty`.
 4. Registrar os produtos citados nos exemplos que não têm página oficial; eles viram casos de "sem evidência" no conjunto rotulado.
@@ -34,12 +34,12 @@ Confirmar as páginas oficiais que fundamentam os exemplos de conhecimento e se 
 - [x] Imagem do enunciado verificada, ou impossibilidade registrada.
 - [x] Evidência gravada com data e método.
 
-## Validação
+## Resultado
 
-Verificação manual no navegador e automatizada por cliente HTTP em 2026-10-26: 32 URLs com `robots.txt` permitido, 30 com extração estática e 2 dinâmicas capturadas renderizadas. Detalhes em [docs/evidence/2026-10-26-verificacao-de-fontes.md](../evidence/2026-10-26-verificacao-de-fontes.md). A imagem do enunciado revelou a etapa Personality, incorporada como RF-37.
+32 URLs verificadas em 2026-10-26 no navegador e por cliente HTTP, todas com `robots.txt` permitido: 30 com extração estática e 2 dinâmicas, capturadas renderizadas. A imagem do enunciado revelou a etapa Personality, incorporada como RF-37. Evidência: [verificação de fontes](../evidence/2026-10-26-verificacao-de-fontes.md).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

@@ -1,4 +1,4 @@
-# Tarefa: Regressões encontradas na validação real da v0.3.0
+# Tarefa: Consulta por histórico recente, fatos de pricing e verificação semântica das jornadas da v0.3.0
 
 ## Objetivo
 
@@ -6,11 +6,11 @@ Corrigir falhas observadas com o modelo real e tornar as verificações de conte
 
 ## Especificação relacionada
 
-RF-08, RF-15, RF-16, RF-32 e RF-46; CA-21, CA-28 e CA-31. Complementa a tarefa 24. Evidência original preservada em v030-real-r1.json (na tag `v0.3.0`), candidato de origem r1.
+RF-08, RF-15, RF-16, RF-32 e RF-46; CA-21, CA-28 e CA-31. Complementa a tarefa 24. Evidência original preservada em v030-real-r1.json (na tag `v0.3.0`).
 
 ## Pré-condições
 
-Rodada real autorizada com teto adicional persistente de US$0,15. Correção P2 de isolamento já implementada pelo Developer, aguardando revisão do candidato final.
+Validação real com teto adicional persistente de US$0,15.
 
 ## Arquivos prováveis
 
@@ -33,19 +33,12 @@ Prompts novos versionados, ferramentas de pricing, testes financeiros/integraç�
 - [x] Cenários aceitam equivalência semântica sustentada por fatos, sem reduzir verificações críticas.
 - [x] Nova revisão e revalidação identificam hashes e o escopo afetado; custo acumulado da validação <= US$0,15.
 
-## Validação
+## Resultado
 
-Rodada original preservada: 31/40, com cinco falsos negativos de redação e
-falhas reais de consulta/roteamento/apresentação financeira em quatro casos.
-Após correções, a rodada HTTP r2 aprovou todos os checks não semânticos dos
-40 casos. O replay r6 das mesmas respostas aprovou **40/40**, preservando os
-17 holdouts e todos os checks não semânticos. Reviewer verificou positivos,
-contradições, dúvidas qualificadas e ban literal de privacidade; QA inspecionou
-as respostas e as jornadas. Validação estrita: **191 testes**. Acumulado da
-guarda: **US$0,14123583 / US$0,15**. [Resultado e limitações](../evidence/v030-resultado.md).
+Consulta sem período usa o histórico recente, fatos de pricing são normalizados para a guarda existente, consulta com filtros vem antes de pedir dado e os cenários novos aceitam equivalências semânticas. Reavaliação das respostas HTTP reais: 40/40, com os 17 casos reservados e todas as verificações não semânticas preservadas. Suíte estrita: 191 testes; gasto acumulado de US$0,14123583 de US$0,15. Evidência: [resultado da v0.3.0](../evidence/v030-resultado.md).
 
 ## Status
 
 ```text
-concluída e validada no candidato r6
+concluída (v0.3.0)
 ```

@@ -30,3 +30,14 @@ Funcionalidades das tarefas 97 a 101 e o mapeamento de usuários estáticos da t
 - `/ready` informa aplicativo 0.13.0 e schema 16; os testes preservam a cadeia de migração desde schema 14.
 - Links e caminhos versionados são válidos e os hashes dos arquivos selados permanecem idênticos à base v0.12.0.
 - Verificações focalizadas e suíte estrita cobrem os contratos e as regressões existentes.
+
+## Resultado
+
+`/ready` informa aplicação 0.13.0 e esquema 16; migrações 0015 e 0016 em sequência após a 0014, nos dois sentidos. Suíte estrita com 2.944 aprovados.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md) e [ADR 0025](../architecture/decisions/0025-identidade-e-operacao.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```

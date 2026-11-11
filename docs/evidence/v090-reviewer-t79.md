@@ -1,4 +1,6 @@
-# Passagem de papel: revisão independente da tarefa 79 (juiz Anthropic e experimento de calibração), v0.9.0
+# Revisão independente da tarefa 79 (juiz Anthropic e experimento de calibração), v0.9.0
+
+**Parecer final: apto**, no candidato `216c66cd32fa7cf7cb3580380cd084d65d0e0d38` (segunda revisão, mais abaixo), com a regra operacional de rejulgamento: cada rejulgamento com `--out` separado, sem repetir o nome de uma execução completa. A primeira revisão, no candidato `c0045a5`, pediu correções, fechadas na segunda.
 
 ## Rodada 1 — candidato `c0045a5` (2026-11-05)
 

@@ -6,7 +6,7 @@ Levar a identidade da demonstração ao fluxo padrão de login web (authorizatio
 
 ## Status
 
-**Aceita** (v0.13.0). Complementa as ADRs [0017](0017-identidade-principal-escopos.md) (identidade), [0018](0018-interrupcao-retomada-webhooks.md) (fila, webhooks e outbox) e [0022](0022-rubrica-v4-operacao-retomavel.md) (comparação retomável, métricas). Spec: [identidade-operacao-v0130.md](../../specs/identidade-operacao-v0130.md); plano: [decisões 14 a 19](../../specs/roadmap-v0110-v100-plano.md).
+Aceita em 2026-11-07; entregue na v0.13.0 (2026-11-10). Complementa as ADRs [0017](0017-identidade-principal-escopos.md) (identidade), [0018](0018-interrupcao-retomada-webhooks.md) (fila, webhooks e outbox) e [0022](0022-rubrica-v4-operacao-retomavel.md) (comparação retomável, métricas). Spec: [identidade-operacao-v0130.md](../../specs/identidade-operacao-v0130.md); plano: [decisões 14 a 19](../../specs/roadmap-v0110-v100-plano.md).
 
 ## Contexto
 
@@ -59,7 +59,7 @@ Levar a identidade da demonstração ao fluxo padrão de login web (authorizatio
 - **Keycloak como emissor externo da demonstração:** cerca de 1 GB de memória e subida lenta (ADR 0017). O Dex é leve e atende OIDC padrão; o verificador aceita qualquer emissor por configuração.
 - **Refresh com janela de tolerância para renovações simultâneas:** a reapresentação de um refresh já usado é o sinal de roubo que o refresh rotativo existe para detectar, então revoga a família na hora. A interface renova do lado do servidor, num só lugar.
 - **Só `JWT_JWKS_URL` para emissores externos:** exigiria do provedor o formato de claims do assistente. `OIDC_ISSUERS` mapeia grupos para papéis e mantém os escopos no código.
-- **Telegram por `setWebhook`:** exige URL pública com HTTPS. O long polling funciona atrás de NAT, no notebook, sem expor a API.
+- **Telegram por `setWebhook`:** exige URL pública com HTTPS. O long polling funciona atrás de NAT, num host sem endereço público, sem expor a API.
 - **Adaptador dentro do processo da API:** misturaria o token do bot com as chaves dos provedores e criaria um caminho de operador fora da fila. Como serviço à parte, ele usa as rotas de qualquer operador e sai do ar sem afetar a API.
 - **Fila ou cache externo (Redis) para coordenar workers:** mais um serviço para a mesma garantia que o SQLite em `BEGIN IMMEDIATE` já dá num host.
 - **Instrumentação automática do FastAPI e do httpx:** exportaria caminhos, parâmetros e endereços. Os spans saem do trace já gravado, com atributos de conjuntos fechados.

@@ -2,7 +2,7 @@
 
 All notable changes to this project. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/). Entries summarize product behavior, contract and data changes.
 
-## [1.1.0] — not released
+## [1.1.0] — 2026-11-11
 
 The merchant's human-support tickets in any conversation, the latest conversation back after a reload, the profiles and Router engines the backend can run, and the operator's reply delivered in the operator's own words ([spec](docs/specs/tickets-retomada-v110.md), tasks 109–111 and 113). Builds on v1.0.0 and schema 16; no new migration.
 
@@ -22,7 +22,12 @@ The merchant's human-support tickets in any conversation, the latest conversatio
 - New route `GET /v1/conversations`; new fields `available`, `missing_providers` and `router_mechanisms` in `GET /v1/profiles`; `message_id` on each turn of `GET /v1/conversations/{id}` and the optional `displayed_operator_message_id` in `POST /v1/messages`. All additive ([api-v1](docs/contracts/api-v1.md), v1.1.0 sections). `/health` and `/ready` report version `1.1.0`.
 - No migration: the tool and the route read `handoff_cases`, `conversations` and `messages` as they are. Schema version 16.
 
-## [1.0.0] — not released
+### Validation
+- Strict suite: 3,059 tests passed, no failures; interface: 203 tests passed and 6 integration tests against the in-process API ([result](docs/evidence/v110-resultado.md)).
+- Ten-moment story with real models through the interface, with Docker and a phone-width browser: tickets found by the protocol or its end, the resumed conversation, the operator's reply identical in the interface, `GET /v1/conversations/{id}` and the tool, and one audit row per call with its own merchant.
+- Spend: US$0.018 across three campaigns (caps US$0.10, US$0.05 and US$0.03).
+
+## [1.0.0] — 2026-11-10
 
 Published image, pinned dependencies, the demonstration through a tunnel and a README for a quick reading ([spec](docs/specs/leitura-acesso-v100.md), [ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), tasks 106–108). Builds on v0.13.0 and schema 16; no new migration.
 
@@ -30,7 +35,7 @@ Published image, pinned dependencies, the demonstration through a tunnel and a R
 - **Image on GHCR per tag** (spec D1; task 106). A `v*` tag runs the `image` job after the strict validation: it fails when the tag is not `v` plus the version in `pyproject.toml`, builds the `runtime` target and pushes `ghcr.io/<owner>/ai-getnet-case:<tag>`, plus `:latest` only for a final version (`X.Y.Z`, no pre-release suffix), with the OCI source and version labels, using `GITHUB_TOKEN` with `contents: read` and `packages: write` only.
 - **`uv.lock`** (spec D2; task 106). The application dependencies are pinned in a versioned lockfile; the image installs them with `uv sync --frozen` (extras `ingest` and `otel`), and the CI fails when `uv lock --check` finds the lockfile out of date.
 - **Strict suite inside the image** (spec D4; task 106). The `test` target of the `Dockerfile` adds the `dev` extra of the same lockfile and the repository files; `docker run --rm --network none` runs the strict suite with no access to PyPI or a model provider ([README](README.md#run-the-tests-inside-the-image)).
-- **Demonstration tunnel** (spec D6; task 108; [ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), amending 0012). The compose profile `tunnel` runs a pinned Caddy proxy (`docker/tunnel/Caddyfile`) on `127.0.0.1:8080` that sends only `GET` and `POST /v1/auth/authorize` to the API and everything else, the Streamlit websocket included, to the interface on the host (`STREAMLIT_UPSTREAM`, default `host.docker.internal:8501`); no other API route is reachable through it. A Cloudflare quick tunnel (`cloudflared tunnel --url http://localhost:8080`) publishes that port; the README guide opens and closes an announced window with one-off credentials ([Open the demonstration through a tunnel](README.md#open-the-demonstration-through-a-tunnel)). The interface (sibling project `ai-getnet-case-web`) adds `AUTH_AUTHORIZE_URL`: the browser opens the login at the public address, and the interface's server exchanges, renews and revokes tokens only at `BACKEND_API_URL`.
+- **Demonstration tunnel** (spec D6; task 108; [ADR 0026](docs/architecture/decisions/0026-tunel-com-login-por-redirecionamento.md), amending 0012). The compose profile `tunnel` runs a pinned Caddy proxy (`docker/tunnel/Caddyfile`) on `127.0.0.1:8080` that sends only `GET` and `POST /v1/auth/authorize` to the API and everything else, the Streamlit websocket included, to the interface on the host (`STREAMLIT_UPSTREAM`, default `host.docker.internal:8501`); no other API route is reachable through it. A Cloudflare quick tunnel (`cloudflared tunnel --url http://localhost:8080`) publishes that port; the tunnel guide opens and closes an announced window with one-off credentials ([Open the demonstration through a tunnel](docs/wiki/guides/interface-and-tunnel.md#open-the-demonstration-through-a-tunnel)). The interface (sibling project `ai-getnet-case-web`) adds `AUTH_AUTHORIZE_URL`: the browser opens the login at the public address, and the interface's server exchanges, renews and revokes tokens only at `BACKEND_API_URL`.
 - **README for a quick reading** (spec D5; task 107). What the assistant is and for whom, the status and two ways to run it at the top; a [before and after table](README.md#what-changed-since-v0100) per area (attendance, judge, retrieval, memory, identity, operation, tests) with the v0.10.0 figure, the current one and the evidence of each; a [10-minute walkthrough](README.md#10-minute-walkthrough) in the interface (start, ask as the merchant, hand off, answer from the ticketing screen as the operator, evaluate one answer); [docs/evidence](docs/evidence/README.md) indexes the v0.12.0 and v0.13.0 results.
 
 ### Changed
@@ -51,9 +56,14 @@ Published image, pinned dependencies, the demonstration through a tunnel and a R
 ### Notes
 - The compose runs the API with two workers (`API_WORKERS`, default 2), which need Qdrant as a service; outside the compose, with the embedded store, run one worker.
 - Without a published image the compose builds it locally; with a fixed `APP_VERSION`, run `docker compose pull --policy always` after publication to replace that build. A private package needs a GHCR login.
-- A quick tunnel has no uptime guarantee and serves an announced window: register its address and one-off credentials for that opening only, never share `admin`, and close it with the guide's last step.
+- The quick tunnel serves an announced demonstration window: register its address and one-off credentials for that opening only, never share `admin`, and close it with the guide's last step. The same proxy works behind another tunnel or a forwarded port for continuous use.
 
-## [0.13.0] — not released
+### Validation
+- Strict suite: 2,982 tests passed on the host and inside the image with no network (`docker run --network none`); without a published image the compose builds it and the stack is healthy in 40 s ([result](docs/evidence/v100-resultado.md)).
+- The 10-minute walkthrough ran through the interface with a real model; behind the tunnel proxy only `GET` and `POST /v1/auth/authorize` reach the API, and a phone on a mobile network signed in, asked, handed off and got the operator's reply through the public address.
+- Spend: validation campaign US$0.0038 (cap US$0.10) and tunnel window US$0.0033 (cap US$0.10).
+
+## [0.13.0] — 2026-11-10
 
 Identity and operation: sign-in by redirect with rotating refresh tokens, external OIDC issuers, two API workers, webhook resend and recovery of unannounced cases, the operator on Telegram, OTLP spans and a dashboard ([spec](docs/specs/identidade-operacao-v0130.md), [ADR 0025](docs/architecture/decisions/0025-identidade-e-operacao.md)). Adds migrations 0015 and 0016 after v0.12.0's conversation-memory migration 0014.
 
@@ -81,7 +91,12 @@ Identity and operation: sign-in by redirect with rotating refresh tokens, extern
 - New routes `GET /v1/auth/authorize` (and its form post) and `POST /v1/webhooks/deliveries/{delivery_id}/resend`; new grants `authorization_code` and `refresh_token`; `401 invalid_issuer`; the `telegram` webhook destination. All additive ([api-v1](docs/contracts/api-v1.md), v0.13.0 sections).
 - New settings: `OAUTH_REDIRECT_URIS`, `OIDC_ISSUERS`, `API_WORKERS`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OPERATOR_CHAT_ID`, `TELEGRAM_WEBHOOK_URL`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_CLIENT_SECRET`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `GRAFANA_ADMIN_PASSWORD`; compose profiles `oidc`, `telegram` and `otel`. New optional dependency group `[otel]` (`opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`).
 
-## [0.12.0] — not released
+### Validation
+- Strict suite: 2,944 tests passed, no failures or skips; interface: 158 tests passed and 5 integration tests against the in-process API; migrations 0015 and 0016 in both directions without data loss ([result](docs/evidence/v0130-resultado.md)).
+- Two workers with a comparison owner suspended before and after the paid reservation: no cell paid twice. 10 sign-ins in a real browser opened 10 sessions; with Docker, Dex, two workers, resend and orphan recovery, OTLP and the dashboard ran, and a synthetic case was claimed and answered by the operator on Telegram.
+- Spend: campaign US$0.064 (cap US$0.15).
+
+## [0.12.0] — 2026-11-09
 
 Conversation memory, replanning controls, and sale cancellation with explicit confirmation ([spec](docs/specs/memoria-escrita-v0120.md), [ADR 0024](docs/architecture/decisions/0024-desenho-da-orquestracao.md)). Builds on v0.11.0 and migration 0013.
 
@@ -102,6 +117,11 @@ Conversation memory, replanning controls, and sale cancellation with explicit co
 - **Migration 0014** adds conversation summaries, registered facts, and cancellation requests. It is reversible unless a cancellation has been confirmed, since its delivered protocol must be retained. Schema version is 14.
 - Conversation endpoints add `summary` and `facts`; run details may include `summary` and `confirmation` steps. The scenario catalog adds `SC-CANCEL-CONFIRM`; OpenAPI changes are additive.
 
+### Validation
+- Strict suite: 2,698 tests passed, no failures or skips; the v0.11.0 CSVs and prompts are byte-identical and the holdouts match their hashes ([result](docs/evidence/v0120-resultado.md)).
+- A 27-turn scripted conversation and a 29-turn conversation with the real model kept the exact facts; cancellation was checked for confirmation, idempotency, refusal, expiry and isolation between merchants; the replanning comparison ran on 44 development and 25 holdout pairs with real models, with approval +0.045 (95% CI −0.045 to +0.136) and −0.080 (−0.240 to +0.080) and no interval excluding zero ([development](docs/evidence/v0120-comparacao.md), [holdout](docs/evidence/v0120-comparacao-holdout.md)).
+- Spend: real campaign US$0.471.
+
 ## [0.11.0] — 2026-11-09
 
 ### Added
@@ -110,18 +130,22 @@ Conversation memory, replanning controls, and sale cancellation with explicit co
 - **Reranker control and BM25 floor** (spec v0.11.0 D7; task 90). `eval-retrieval --mode hybrid@36` measures the fusion the reranker reads (dense and BM25 top 36, width 12) cut to k by the RRF order, without a model, in `dev` and in the sealed retrieval holdout (`--fake` still refused on the real holdout). `RETRIEVAL_BM25_MIN_SCORE` (0 to 1, default `0`, off) drops before the fusion the hits that only BM25 found whose BM25 score over the best BM25 score of the query is below the floor (hybrid modes only); `eval-retrieval --bm25-min-score X` measures it as a configuration of its own (`eval-retrieval` reads the floor from the flag only, never from the setting), and the search notes the dropped chunk ids as `bm25_dropped` (also in the `knowledge` trace step, with `RERANK` on or off). The table shows `dense`, `hybrid`, `hybrid@36` and `hybrid+rerank` with a BM25 floor column, the dropped hits and the reranker's own gain (`hybrid+rerank` minus `hybrid@36` in Recall@6, MRR and nDCG@6). The D7 comparison adds the same-depth control to the original retrieval decision in ADR 0020; promoting `RERANK=on` as the v0.11.0 default is recorded in ADR 0023.
 - **Combined ruler for the journeys** (spec v0.11.0 D8; task 90). With a judge, `eval` decides `passed` by two halves: `deterministic` (route, status, language, tools, amounts, forbidden phrases and assertions, sources, no guard violation: every check but the required phrases) and `content` (the first judgement: at least 4 in factual correctness and relevance, no unsupported claim). An answer without a completed judgement does not pass. The report states the ruler with the literal count beside it, shows both halves per slice and per case, and adds a journeys section with the judge's scores and the expected claims. `eval --rubric literal` (and every run without a judge) keeps the earlier ruler with the default rubric, and its rows carry no `expected_claims`; `eval --judge-repeat` applies the same ruler to the recorded answers.
 - **Calibration sample and sealed artifacts** (spec v0.11.0 D4–D6; task 89). `eval-calibrate --sample` supports repeatable `--from`, `--exclude` and `--enrich`, `--split all`, and `--packets` to produce response and claim CSVs plus one evidence packet per answer. Claims use the recorded `judge.v5` list or a budget-guarded `judge_claims.v1` call when none exists. `--seal` hashes the sample identity, both CSVs and every packet; import rejects changed or incomplete sealed files. Sealed or enriched draws shorter than requested are rejected before output.
-- **Human and model raters.** `--import --rater <name>:human` derives the human verdict from claim marks (or reads `unsupported_claim` from the legacy response-only CSV); `--rater <name>:model:<models>` uses the panel's `unsupported_claim` column, leaving blanks unrated rather than deriving a verdict from marks. `--merge-panel` combines exactly two members of the same sample, retaining consensus and leaving disagreements blank. Two-rater calibration uses one human and one two-model panel; `--adjudication` supplies gold labels for divergences. Reports include agreement and kappa per answer and claim, comparisons with judges, and D6(g) for sealed answers rated by a human with gold labels. The instruction is shared with human and panel members, and the legacy one-rater CSV import and report remain byte-identical. `eval --judge-repeat --rubric v5 --claims-from <sample-claims.csv>` can reuse supplied claims and record their origin without another listing call.
+- **Human and model raters.** `--import --rater <name>:human` derives the human verdict from claim marks (or reads `unsupported_claim` from the legacy response-only CSV); `--rater <name>:model:<models>` uses the panel's `unsupported_claim` column, leaving blanks unrated rather than deriving a verdict from marks. `--merge-panel` combines exactly two members of the same sample, retaining consensus and leaving disagreements blank. Two-rater calibration uses one human and one two-model panel; `--adjudication` supplies reference labels for divergences. Reports include agreement and kappa per answer and claim, comparisons with judges, and D6(g) for sealed answers rated by a human with reference labels. The instruction is shared with human and panel members, and the legacy one-rater CSV import and report remain byte-identical. `eval --judge-repeat --rubric v5 --claims-from <sample-claims.csv>` can reuse supplied claims and record their origin without another listing call.
 
 ### Changed
 - **Default judge.** `judge.v5` is now the default campaign rubric, selected by the prewritten D6(g) rule on the 36 sealed answers. The `--rubric v3` and `--rubric v4` options remain available.
 - **Retrieval default.** `RERANK=on` after the v0.11.0 `hybrid@36` control showed higher nDCG@6 on both splits; `RERANK=off` remains an explicit opt-out (ADR 0023).
 - **`401 token_required` says how to get a token.** The challenge's literal payload (`message` + `user_id`, no header) now gets a message that names `POST /v1/auth/token` with the password grant and the demo users of `.env.example`, then the `Authorization: Bearer` header; code, status and `WWW-Authenticate` are unchanged. Covered by `tests/integration/test_token_required_hint.py`.
-- **`.env.example` ships `DEMO_MODE=true`** so `GET /traces/{request_id}` works on the documented Compose path (Compose interpolates the copied `.env`; a clean-clone smoke of the README found the 404). The code default stays `false`.
+- **`.env.example` ships `DEMO_MODE=true`** so `GET /traces/{request_id}` works on the documented Compose path (Compose interpolates the copied `.env`). The code default stays `false`.
 - README: the `/metrics` paragraph, the version table order, the `judge.v4` result table in the human review section and the `DEMO_MODE` rows.
 
 ### Contract and data
 - `tests/scenarios/business_journeys.jsonl`: the required phrases of the 13 journeys are named `expected_claims` (was `must_include_any`; same content). The loader gives them to the literal ruler as before; other label files are unchanged.
 - **Migration 0013** (reversible, `0013_evaluation_claims`): `run_evaluations.claims` (JSON, `{"claims": [...], "claim_verdicts": [...]}`) for `judge.v5` judgements; the same lists are kept in `result`, so the downgrade drops the column without loss and the upgrade rebuilds it. Schema version 13.
+
+### Validation
+- Judge calibration on 36 sealed answers against reference labels (the owner's ratings and a two-model panel; divergences adjudicated from a third model's proposal and approved by the owner): `judge.v5` reached kappa 0.647 (95% CI 0.28–0.92) against 0.538 for `judge.v3`, with no criterion losing more than 0.05 in within-one-point agreement, which meets the rule written before the run ([result](docs/evidence/v0110-resultado.md)).
+- Retrieval on the sealed holdout: `hybrid+rerank` nDCG@6 0.972 against 0.907 for the same-depth `hybrid@36` control; on dev, 0.981 against 0.974 ([report](docs/evidence/v0110-retrieval.md)).
 
 ## [0.10.0] — 2026-11-06
 
@@ -142,12 +166,12 @@ Judge rubric `judge.v4`, resumable profile comparison, `/metrics` and alert rule
 - New route `POST /v1/comparisons/{comparison_id}/resume`; `GET /v1/comparisons/{id}` may return `interrupted`, `interrupted_attempts` and `previous_request_ids`. New public endpoint `GET /metrics` (same policy as `/ready`). Judgement records gain the rubric used; no other schema change.
 
 ### Validation
-- Backend strict script **2,148 tests passed**, Ruff and skill checks passed; independent review per task in two rounds ([83](docs/evidence/v0100-reviewer-t83.md), [84](docs/evidence/v0100-reviewer-t84.md), [85](docs/evidence/v0100-reviewer-t85.md)); candidate [r1](docs/evidence/v0100-candidato-r1.json).
-- **Rubric experiment** ([report](docs/evidence/v0100-juiz-v4.md), [QA](docs/evidence/v0100-qa-juiz-r1.md)): the same 24 human-rated answers re-judged 3× under `judge.v4` by DeepSeek (US$0.025) and by `claude-opus-5-5` (US$1.37 on the separate Anthropic ledger), 144/144 valid. Decision rule written beforehand (spec D2): DeepSeek v4 vs v3: `unsupported_claim` agreement 0.667 → 0.792, criteria within 0.05, but 0 of 4 generic claims flagged, so v4 is **not** promoted; Opus v4 vs v3: 0.875 → 0.917 and 2 of 4 generic claims flagged (S01, S21) with no criterion worse than 0.05. The gap is rubric and model together.
-- **Operation** ([QA](docs/evidence/v0100-qa-ops-r1.md)): real comparison of 2 profiles × 3 scenarios; the API process killed with `taskkill` after 1 of 6 cells; after restart the comparison read `interrupted` with the finished cell intact and the in-flight attempt's reserved cost recorded; `resume` answered `202 {resumed_cells: 5}` and the comparison reached `completed` with one ledger line per cell and `cost_usd` equal to the sum of cells plus the attempt; a second `resume` got `409 comparison_completed`. `/metrics` matched the traces and the ledger (6 requests, 24 model calls, `+Inf` = `_count`, costs per provider equal to the settled ledger, `budget_remaining_usd` equal to `/ready`); no label carried an identifier. Cost US$0.006 in an isolated ledger.
+- Backend strict script **2,148 tests passed**, Ruff and skill checks passed; independent review per task ([83](docs/evidence/v0100-reviewer-t83.md), [84](docs/evidence/v0100-reviewer-t84.md), [85](docs/evidence/v0100-reviewer-t85.md)); candidate [r1](docs/evidence/v0100-candidato-r1.json).
+- **Rubric experiment** ([report](docs/evidence/v0100-juiz-v4.md), [validation](docs/evidence/v0100-qa-juiz-r1.md)): the same 24 human-rated answers re-judged 3× under `judge.v4` by DeepSeek (US$0.025) and by `claude-opus-5-5` (US$1.37 on the separate Anthropic ledger), 144/144 valid. Decision rule written beforehand (spec D2): DeepSeek v4 vs v3: `unsupported_claim` agreement 0.667 → 0.792, criteria within 0.05, but 0 of 4 generic claims flagged, so v4 is **not** promoted; Opus v4 vs v3: 0.875 → 0.917 and 2 of 4 generic claims flagged (S01, S21) with no criterion worse than 0.05. The gap is rubric and model together (superseded in 0.11.0: `judge.v5`, claim by claim, is the default).
+- **Operation** ([validation](docs/evidence/v0100-qa-ops-r1.md)): real comparison of 2 profiles × 3 scenarios; the API process killed with `taskkill` after 1 of 6 cells; after restart the comparison read `interrupted` with the finished cell intact and the in-flight attempt's reserved cost recorded; `resume` answered `202 {resumed_cells: 5}` and the comparison reached `completed` with one ledger line per cell and `cost_usd` equal to the sum of cells plus the attempt; a second `resume` got `409 comparison_completed`. `/metrics` matched the traces and the ledger (6 requests, 24 model calls, `+Inf` = `_count`, costs per provider equal to the settled ledger, `budget_remaining_usd` equal to `/ready`); no label carried an identifier. Cost US$0.006 in an isolated ledger.
 
 ### Notes
-- Run the API with one worker (the compose does): the comparison thread registry is per process.
+- Run the API with one worker (the compose does): the comparison thread registry is per process (superseded in 0.13.0: two workers share comparisons by lease).
 - `/metrics` is public like `/ready` (counts only); restrict it by network or token in production.
 
 ### Return to 0.9.0
@@ -173,9 +197,9 @@ Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v0
 - New settings: `ANTHROPIC_API_KEY` (only with `JUDGE_PROVIDER=anthropic`), `RETRIEVAL_MODE`, `RERANK`. New dependencies: `anthropic`, `rank-bm25`.
 
 ### Validation
-- Backend strict script **2,107 tests passed** (1 environment-dependent skip), Ruff and skill checks passed. Independent review per task, two rounds each ([79](docs/evidence/v090-reviewer-t79.md), [80](docs/evidence/v090-reviewer-t80.md), [81](docs/evidence/v090-reviewer-t81.md)); final candidate [r2](docs/evidence/v090-candidato-r2.json).
-- **Judge experiment** ([report](docs/evidence/v090-juiz-opus.md), [QA](docs/evidence/v090-qa-juiz-r2.md)): `claude-opus-5-5` judged the same 24 calibrated answers 3× (72/72 valid, US$1.34 on a separate Anthropic ledger, cap US$4.00). Against the human: within one point 0.958 / 0.958 / 1.000 / 0.958 (DeepSeek 0.833 / 0.833 / 1.000 / 0.917); `unsupported_claim` agreement 0.875 (0.667); self-consistency 0.81–1.00; but only 1 of the 4 generic claims the human flagged. Under the pre-registered rule (D2) this is a rubric gap, not a model gap: DeepSeek stays the default judge.
-- **Retrieval** ([report](docs/evidence/v090-retrieval.md), [QA](docs/evidence/v090-qa-retrieval-r1.md)), real embeddings, holdout measured once per configuration, last:
+- Backend strict script **2,107 tests passed** (1 environment-dependent skip), Ruff and skill checks passed. Independent review per task ([79](docs/evidence/v090-reviewer-t79.md), [80](docs/evidence/v090-reviewer-t80.md), [81](docs/evidence/v090-reviewer-t81.md)); final candidate [r2](docs/evidence/v090-candidato-r2.json).
+- **Judge experiment** ([report](docs/evidence/v090-juiz-opus.md), [validation](docs/evidence/v090-qa-juiz-r2.md)): `claude-opus-5-5` judged the same 24 calibrated answers 3× (72/72 valid, US$1.34 on a separate Anthropic ledger, cap US$4.00). Against the human: within one point 0.958 / 0.958 / 1.000 / 0.958 (DeepSeek 0.833 / 0.833 / 1.000 / 0.917); `unsupported_claim` agreement 0.875 (0.667); self-consistency 0.81–1.00; but only 1 of the 4 generic claims the human flagged. Under the pre-registered rule (D2) this is a rubric gap, not a model gap: DeepSeek stays the default judge.
+- **Retrieval** ([report](docs/evidence/v090-retrieval.md), [validation](docs/evidence/v090-qa-retrieval-r1.md)), real embeddings, holdout measured once per configuration, last:
 
   | Split | dense | hybrid | hybrid + reranker |
   | --- | --- | --- | --- |
@@ -187,10 +211,10 @@ Judge model experiment and hybrid retrieval ([spec](docs/specs/juiz-retrieval-v0
   Hybrid is strictly better on both splits, so it became the default. Cost of the six measurements: US$0.016.
 
 ### Notes
-- `RERANK` stays `off` by default (ADR 0020): the measured gain includes the effect of the deeper fusion (36 instead of 18 candidates), and the reranker quadruples the time per query.
+- `RERANK` stays `off` by default (ADR 0020): the measured gain includes the effect of the deeper fusion (36 instead of 18 candidates), and the reranker quadruples the time per query (superseded in 0.11.0: `RERANK=on` after the same-depth `hybrid@36` control, ADR 0023).
 - In hybrid mode the trace `score` is on the RRF scale, and the Knowledge agent's "no evidence" shortcut fires only when BM25 also finds nothing.
-- The retrieval holdout (25 questions) was labeled by the Developer, checked by an independent reviewer and sealed before any measurement (re-sealed once after the label review); it has now been measured: later runs must be marked as seen, and the CLI counts runs within the same report file.
-- Use a new execution name for each `eval --judge-repeat` round: a repeated name overwrites its report.
+- The retrieval holdout (25 questions) was labeled during development, checked by an independent review and sealed before any measurement (re-sealed once after the label review); it has now been measured: later runs must be marked as seen, and the CLI counts runs within the same report file.
+- Use a new execution name for each `eval --judge-repeat` run: a repeated name overwrites its report.
 - The Opus judge costs 54× more per judgement than DeepSeek (US$0.0178 vs US$0.00033).
 
 ### Return to 0.8.0
@@ -220,23 +244,23 @@ Adaptive orchestration and semantic evaluation ([spec](docs/specs/orquestracao-a
 ### Contract and data
 - Migration 0011 (reversible): `run_evaluations.rubric_version`, `scores` (JSON), `repetition` and `unsupported_claim`, rebuilt from existing rows; table `calibrations` for the human scores. Schema version 11. Rolling back refuses while `calibrations` holds human scores.
 - New report fields: `executed_path`, `plan_hops`, the assistant-variation and judge-variation blocks, judge provider, model and independence, and a note on answers that used web search. `GET /v1/runs/{id}` shows the `replan` fields only on that step; other steps are unchanged. `POST /messages` keeps `route` as the initial plan.
-- New settings: `MAX_PLAN_HOPS`, `JUDGE_PROVIDER`, `JUDGE_MODEL`, `BUDGET_RUNTIME_DIR` (persistent budget ledgers when `RUNTIME_DIR` is isolated for QA).
+- New settings: `MAX_PLAN_HOPS`, `JUDGE_PROVIDER`, `JUDGE_MODEL`, `BUDGET_RUNTIME_DIR` (persistent budget ledgers when `RUNTIME_DIR` is isolated for a validation run).
 
 ### Validation
-- Backend strict script **1,997 tests passed**, Ruff and skill checks passed. Independent reviews per task, several in multiple rounds.
-- Real QA on the final candidate, campaign `v080-qa` ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)): **CA-49** replanning 4/4 scenarios (3/3 each), every decision with its origin, at most 2 hops. **CA-51** business journeys **13/13, 12/13 and 12/13** by the deterministic rubric (gate 12/13; the two misses are correct answers refused by the literal wording) and 13/13 in all three repetitions by the judge. Follow-up conversations 4/4.
+- Backend strict script **1,997 tests passed**, Ruff and skill checks passed. Independent review per task.
+- Validation with real models on the final candidate, campaign `v080-qa` ([pre-holdout](docs/evidence/v080-d12-pre-holdout-r6.md), [holdout](docs/evidence/v080-holdout-r7.md)): **CA-49** replanning 4/4 scenarios (3/3 each), every decision with its origin, at most 2 hops. **CA-51** business journeys **13/13, 12/13 and 12/13** by the deterministic rubric (gate 12/13; the two misses are correct answers refused by the literal wording) and 13/13 in all three repetitions by the judge. Follow-up conversations 4/4.
 - Repeated judge: 44 development answers × 3, 132 judgments, no judge failure; ±1 agreement 0.985–0.992 per criterion, stable outside `general_web`.
 - Docker smoke 10/10; a mixed account-and-procedure question replanned from Support to Knowledge by `rule:procedure_gap`, visible in the trace.
-- `holdout_v080`, run once as the last technical step and reported separately (it does not decide approval): **62/75 (0.827)** by the deterministic rubric, judge means 4.6–4.8, judge repeated 3× with no failure. The 24-answer calibration CSV is ready.
+- `holdout_v080`, run once as the last technical step and reported separately (it does not decide approval): **62/75 (0.827)** by the deterministic rubric, judge means 4.6–4.8, judge repeated 3× with no failure.
 - **Human calibration** ([report](docs/evidence/v080-calibracao.md)): the owner rated 24 answers (balanced by route and split) with the judge's rubric and imported them with `eval-calibrate --import`. Exact agreement per criterion 0.58–0.75, within one point 0.83–1.00; the judge is the stricter rater (bias −0.17 to −0.42). `unsupported_claim`: exact agreement 0.67. Evidence localization per claim was AI-assisted in unversioned support material; every score is human.
 - Campaign cost **US$0.84** in the campaign ledger (cap US$1.40 after the approved US$0.30 contingency, which was not consumed), plus **US$0.03** in the Docker volume ledger.
 
 ### Notes
-- The deterministic journey rubric is literal: it refuses some correct paraphrases and can accept a wrong one outside the registered list; the independent judge is the extra control.
-- `holdout_v080` has now been seen: any later QA run must be marked as seen, and no change may be guided by its result.
-- Human calibration rests on 24 answers rated by one person; the quadratic kappa is near zero because almost every human score is 5 (ceiling), so the within-one-point agreement is the usable figure.
+- The deterministic journey rubric is literal: it refuses some correct paraphrases and can accept a wrong one outside the registered list; the independent judge is the extra control (superseded in 0.11.0: the combined ruler of deterministic checks and the judge's content decides `passed`).
+- `holdout_v080` has now been seen: any later run must be marked as seen, and no change may be guided by its result.
+- Human calibration rests on 24 answers rated by one person; the quadratic kappa is near zero because almost every human score is 5 (ceiling), so the within-one-point agreement is the usable figure (superseded in 0.11.0: 36 sealed answers against reference labels from two raters).
 - Replanning does not run in the operator resume graph.
-- The seed dates "yesterday" by the day it runs: run `bootstrap` the same local day before a paid QA run.
+- The seed dates "yesterday" by the day it runs: run `bootstrap` the same local day before a paid validation run.
 
 ### Return to 0.7.0
 - Stop the stack, make sure `calibrations` holds no human scores (or recreate the runtime), run `merchant-assistant migrate --to 10` against the runtime and check out the 0.7.0 release. The prompt loader takes the latest file of each prompt, so 0.7.0 uses `router.v5`, `personality.v4` and `judge.v2` again; `MAX_PLAN_HOPS` and the judge settings are ignored. The budget ledgers stay as they are.
@@ -267,12 +291,12 @@ Identity and real human in the loop ([spec](docs/specs/identidade-hitl-v070.md),
 - The audit table survives the seed that runs on every container start.
 
 ### Validation
-- Backend strict script **640 tests passed**, web **92 tests passed**, Ruff and skill checks passed. Independent reviews per task, with mutation runs and real cross-process and crash probes. Real QA (candidate r1) apt on the 18 moments of the story through `curl`, the CLI, the web interface, two abrupt API restarts and Docker (smoke with token, ticket cycle and container restart between handoff and action). Real regression: challenge and core cases 27/27, conversations 4/4, business journeys 6/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). QA campaign cost **US$0.10140195** of its US$0.20 cap; project total about US$0.79 of US$5. See the [result record](docs/evidence/v070-resultado.md).
+- Backend strict script **640 tests passed**, web **92 tests passed**, Ruff and skill checks passed. Independent review per task, with mutation runs and real cross-process and crash probes. Validation with real models (candidate r1) apt on the 18 moments of the story through `curl`, the CLI, the web interface, two abrupt API restarts and Docker (smoke with token, ticket cycle and container restart between handoff and action). Real regression: challenge and core cases 27/27, conversations 4/4, business journeys 6/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). Validation campaign cost **US$0.10140195** of its US$0.20 cap; project total about US$0.79 of US$5. See the [result record](docs/evidence/v070-resultado.md).
 
 ### Notes
-- A delivery that exhausts its three attempts or is refused holds the later events of the same case and destination.
+- A delivery that exhausts its three attempts or is refused holds the later events of the same case and destination (since 0.13.0 an exhausted delivery can be resent).
 - The case shows `ticket_id` after the first operator event from the ticketing.
-- Identity uses the assistant's own issuer and synthetic demo users.
+- Identity uses the assistant's own issuer and synthetic demo users (external OIDC issuers since 0.13.0).
 
 ### Return to 0.6.0
 - Stop the stack, make sure the outbox has no undelivered events (or recreate the runtime), run `merchant-assistant migrate --to 8` against the runtime and check out `v0.6.0`; remove `checkpoints.sqlite3`, the lock files and the ticketing database.
@@ -290,6 +314,7 @@ Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md)
 - Demo session limit of paid actions (`DEMO_SESSION_MESSAGE_LIMIT`, default 20), enforced by the backend with `429 demo_message_limit_reached`: messages, new comparison executions, Router comparisons and AI evaluations count; refusals without a model call (for example a stale comparison `409`, a budget refusal before the first call, or comparison cells skipped by a knowledge-base change, the confirmed cap or a budget refusal) do not count or are given back.
 - Web: three areas (Atendimento, Resultados, Administração only for admin), catalog scenarios, Results with checks, evaluations and the two comparison charts plus a table, error messages with the recovery action, optional `LOCK_BACKEND_URL` for a shared interface. Reference, Hybrid and Adjusted are published on new databases.
 - Single [demonstration guide](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/guia-demonstracao.md), [manual test script](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-teste-manual.md) and [video script](https://github.com/lauroPereira/ai-getnet-case/blob/67736304ef948db41b082aea9b1b1b20c3f912b5/docs/roteiro-video.md). The links point to the version integrated in v0.6.0.
+- Walkthrough video for the evaluators (architecture, decisions, code, RAG, prompts, merchant isolation, Docker and a demonstration), published with the [v0.6.0 release](https://github.com/lauroPereira/ai-getnet-case/releases/tag/v0.6.0).
 
 ### Fixed
 - Budget ceiling written with an exact round-trip value and published atomically; readiness and per-request capture read-only once the knowledge-base registry exists; explicit timeouts (CLI OpenAI client 30 s; web 105 s for paid work, 20 s for reads); `BudgetMeter` accepts `effective_parameters`; strict scripts skip `.pytest_cache` and `_tmp` (task 54).
@@ -300,11 +325,11 @@ Simplification, demonstration and closing ([spec](docs/specs/fechamento-v060.md)
 - Additive `/v1` routes above; the OpenAPI snapshot in the web project is regenerated (31 paths, 28 client operations). Legacy `POST /messages`, MCP and existing `/v1` behaviour are unchanged.
 - Reversible migration 0008 adds `run_evaluations`, `comparisons` and `api_sessions.message_count`; schema version 8. Trace detail gains `purpose`, `scenario_id`, `citations` and passage excerpts; run snapshots gain `scenario_id`, `purpose`, the masked `message` and the `prompt_set`.
 - Compose publishes the API only on `127.0.0.1:8000`.
-- The approved v0.6.0 QA campaign cap is US$0.50: `FixedBudgetGuard` accepts up to US$0.50 (was US$0.25).
-- R2-04 (Qdrant I/O inside `BEGIN IMMEDIATE` during activation) is an accepted risk, without code change.
+- The approved v0.6.0 validation campaign cap is US$0.50: `FixedBudgetGuard` accepts up to US$0.50 (was US$0.25).
+- Activation keeps the Qdrant integrity check inside its `BEGIN IMMEDIATE` transaction, by decision; no contention was observed.
 
 ### Validation
-- Backend strict script: **349 tests passed**, Ruff and skill checks passed. Web: **42 tests passed**, Ruff passed, strict script exit 0. Migration 0007 → 0008 → 0007 tested on a synthetic SQLite database. Independent review and real QA (candidate r5) apt on the ten acceptance items through the real UI, ledgers and the packaged Docker stack (API only on loopback, schema 8). Highlights: the edited document changed tool use with a real model (V2 retrieved the new passage first and called `get_contract_snapshot`; the restored V1 did not); JEV toggle confirmed by `jev-1.14.0` ledger rows; recovery with one POST and one GET; on-demand evaluation reused without cost. Real regression: core and challenge cases 27/27, conversations 4/4, business journeys 7/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). QA campaign cost **US$0.08800487** of its US$0.50 cap; project total US$0.68637953 of US$5. See the [result record](docs/evidence/v060-resultado.md).
+- Backend strict script: **349 tests passed**, Ruff and skill checks passed. Web: **42 tests passed**, Ruff passed, strict script exit 0. Migration 0007 → 0008 → 0007 tested on a synthetic SQLite database. Independent review and validation with real models (candidate r5) apt on the ten acceptance items through the real UI, ledgers and the packaged Docker stack (API only on loopback, schema 8). Highlights: the edited document changed tool use with a real model (V2 retrieved the new passage first and called `get_contract_snapshot`; the restored V1 did not); JEV toggle confirmed by `jev-1.14.0` ledger rows; recovery with one POST and one GET; on-demand evaluation reused without cost. Real regression: core and challenge cases 27/27, conversations 4/4, business journeys 7/13 by the literal rubric (13/13, 12/13 and 12/13 in v0.8.0). Validation campaign cost **US$0.08800487** of its US$0.50 cap; project total US$0.68637953 of US$5. See the [result record](docs/evidence/v060-resultado.md).
 
 ### Notes
 - The comparison estimate is an upper bound. A comparison whose process stops is marked `failed` (superseded in v0.10.0: `interrupted` and resumable).
@@ -332,8 +357,8 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 - Reversible migration 0007 adds `kb_documents`, `kb_drafts`, `kb_versions`, `kb_state` and `kb_events`; schema version 7. `bootstrap`/`index` never rebuild or replace an existing collection.
 
 ### Validation
-- Backend strict script: **293 tests passed** (Reviewer r2); web: **20 tests passed** with external Ruff. Independent reviews and three real QA rounds are linked from the [result record](docs/evidence/v050-resultado.md).
-- Real QA covered embeddings, baseline build, the full draft → candidate → test → activation → rollback cycle in the UI, 403/409/429 protections, concurrent version capture, a real DeepSeek/JEV Router comparison and conversation recovery with a single POST.
+- Backend strict script: **293 tests passed**; web: **20 tests passed** with external Ruff. Independent reviews and the real-model validation are linked from the [result record](docs/evidence/v050-resultado.md).
+- Real-model validation covered embeddings, baseline build, the full draft → candidate → test → activation → rollback cycle in the UI, 403/409/429 protections, concurrent version capture, a real DeepSeek/JEV Router comparison and conversation recovery with a single POST.
 - Paid calls in this version: **US$0.00553883**; project total US$0.59837466 of US$5.
 
 ### Return to 0.4.0
@@ -357,12 +382,12 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 
 ### Validation
 - Backend strict script: **216 tests passed**, Ruff and skill checks passed.
-- Web Ruff check/format passed; web pytest: **14 passed**. Independent Reviewer and QA rechecked both directions of Router selection changes; earlier QA covered Simulated/Recorded labels, compatible profile publication, effective parameters and rejection without a version change.
+- Web Ruff check/format passed; web pytest: **14 passed**. Independent review and validation rechecked both directions of Router selection changes; earlier validation covered Simulated/Recorded labels, compatible profile publication, effective parameters and rejection without a version change.
 - Synthetic HTTP client flow passed login, profile read, two-router comparison, selected message, run inspection, one-time consumption and authorization/revocation checks.
-- Candidate r6, review and QA are linked from the [result record](docs/evidence/v040-resultado.md).
+- Candidate r6, review and validation are linked from the [result record](docs/evidence/v040-resultado.md).
 
 ### Notes
-- Validated with scripted models; real-model QA starts in 0.5.0.
+- Validated with scripted models; real-model validation starts in 0.5.0.
 
 ## [0.3.0] — 2026-10-27
 
@@ -382,8 +407,8 @@ Editable, versioned knowledge base ([spec](docs/specs/base-versionada-v050.md), 
 - Independent synthetic service fixtures live in `data/mock-services/`.
 
 ### Validation
-- The owner approved v0.3.0 for release ([central validation record](docs/evidence/v030-resultado.md)).
-- Strict validation: **191 tests**. Independent [Reviewer r6](docs/evidence/v030-reviewer-r6.md) and [QA r6](docs/evidence/v030-qa-r6.md) are apt.
+- Result record: [v030-resultado.md](docs/evidence/v030-resultado.md).
+- Strict validation: **191 tests**. Independent [review](docs/evidence/v030-reviewer-r6.md) and [validation](docs/evidence/v030-qa-r6.md) are apt.
 - **40 recorded real HTTP responses** scored with the corrected rubric, with no new model calls ([report](docs/evidence/v030-real-http-r2-replay.md)). Separately, **4 multi-turn conversations** were repeated live through HTTP and passed **4/4** ([conversation report](docs/evidence/v030-real-conversations-r3.md)).
 
 ### Notes

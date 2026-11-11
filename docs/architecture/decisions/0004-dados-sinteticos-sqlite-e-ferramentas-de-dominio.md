@@ -6,15 +6,11 @@ Guardar os dados sintéticos em SQLite e implementar as ferramentas de suporte c
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (v0.1.0, 2026-10-26).
 
 ## Contexto
 
-O Customer Support precisa de pelo menos duas ferramentas sobre dados do usuário. Não há acesso a sistemas reais; os dados são sintéticos e precisam ser consistentes entre fontes (agenda, repasse, dispositivos, autorizações, contrato). O cliente deve ser vinculado pelo servidor, nunca pelo modelo. A vaga cita MCP, mas o desafio não o exige, e o prazo é desconhecido.
+O Customer Support precisa de pelo menos duas ferramentas sobre dados do usuário. Não há acesso a sistemas reais; os dados são sintéticos e precisam ser consistentes entre fontes (agenda, repasse, dispositivos, autorizações, contrato). O cliente deve ser vinculado pelo servidor, nunca pelo modelo. O desafio não exige MCP; o projeto o oferece como adaptador sobre as mesmas funções.
 
 ## Decisão
 
@@ -26,7 +22,7 @@ O Customer Support precisa de pelo menos duas ferramentas sobre dados do usuári
 ## Alternativas consideradas
 
 - **Servidor HTTP de mocks por domínio desde o início:** mais realista, mas acrescenta processos e contratos antes de validar o núcleo. Continua sendo opção para o pricing fictício da fatia 3.
-- **MCP desde a fatia 1:** aproveita a experiência anterior, mas adiciona transporte e processo ao caminho crítico.
+- **MCP desde a fatia 1:** não adotado: adiciona transporte e processo ao caminho crítico antes de validar o núcleo.
 - **JSON estático:** sem consultas por período nem consistência entre tabelas.
 
 ## Consequências

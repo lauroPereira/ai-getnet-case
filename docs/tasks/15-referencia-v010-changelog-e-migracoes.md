@@ -11,7 +11,7 @@ Fixar a entrega inicial como `v0.1.0`, criar o changelog e a infraestrutura de m
 ## Pré-condições
 
 - Especificação complementar e decisão 0006 aprovadas.
-- Autorização do responsável para criar a tag `v0.1.0` na `main` (Q8).
+- Tag `v0.1.0` na `main` autorizada (Q8).
 
 ## Arquivos prováveis
 
@@ -22,7 +22,7 @@ Fixar a entrega inicial como `v0.1.0`, criar o changelog e a infraestrutura de m
 
 ## Passos
 
-1. Criar a tag `v0.1.0` no commit de merge do PR #1, com a autorização registrada.
+1. Criar a tag `v0.1.0` no commit de merge do PR #1.
 2. Escrever `CHANGELOG.md` com a v0.1.0 (funcionalidades, contratos, dados, validação, limitações) e a seção "Não publicado".
 3. Converter o esquema atual na migração `0001_core` e criar `schema_version`, com `up` e `down`.
 4. Expor em `/ready` as versões do pacote, do esquema, do índice e dos prompts.
@@ -34,12 +34,12 @@ Fixar a entrega inicial como `v0.1.0`, criar o changelog e a infraestrutura de m
 - [x] Migrações sobem e descem sem perda dos dados sintéticos recriáveis.
 - [x] `/ready` mostra as versões.
 
-## Validação
+## Resultado
 
-2026-10-26: tag `v0.1.0` criada no commit `29a0088` e publicada, com autorização do responsável. `CHANGELOG.md` criado. Migrações 0001 a 0003 em `data/migrations.py` com `up`/`down` e `schema_version`; `merchant-assistant migrate --to 1` e de volta ao 3 verificados; banco da v0.1.0 é atualizado no lugar. `tests/unit/data/test_migrations.py` e `/ready` com versões (app, esquema, índice, prompts). 116 testes passando. Revisão não independente.
+Tag `v0.1.0` publicada e `CHANGELOG.md` criado. Migrações 0001 a 0003 com `up`/`down` e `schema_version`: `migrate --to 1` e a volta à 3 verificadas, e o banco da v0.1.0 é atualizado no lugar. `/ready` mostra app, esquema, índice e prompts; 116 testes aprovados.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.2.0)
 ```

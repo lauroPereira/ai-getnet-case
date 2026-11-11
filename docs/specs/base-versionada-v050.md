@@ -1,5 +1,7 @@
 # Especificação: base editável e versionada v0.5.0
 
+Estado: entregue na v0.5.0 (2026-10-27; [resultado](../evidence/v050-resultado.md)).
+
 ## Problema
 
 A v0.4.0 seleciona perfis e registra execuções, mas a base depende de arquivos
@@ -18,10 +20,8 @@ atendimento captura uma única versão, inclusive durante ativação concorrente
 
 ## Escopo
 
-RF-63–66, CA-41, partes aplicáveis de CA-28/44/45, ADR0009 e plano incremental
-aprovado. A referência é a main backend
-`ea2355b5ba8fa8dcff66200f34461ae063183250` e web
-`40ff199f7441a09b0fa28925bcfd0038e4b6ccbe` (PRs5 e1 integrados).
+RF-63–66, CA-41, partes aplicáveis de CA-28/44/45, ADR 0009 e plano incremental
+aprovado, sobre a v0.4.0 integrada nos dois repositórios.
 
 ## Fora do escopo
 
@@ -53,17 +53,17 @@ e isolamento mantidos. Toda chamada paga, incluindo embeddings, deve reservar
 antes do envio e liquidar depois na guarda persistente; custo desconhecido
 bloqueia. Teto global US$5, acumulado anterior registrado US$0,59283583.
 
-Teto persistente por ledger (aceito pelo responsável em 2026-10-27, R2-06):
+Teto persistente por ledger (aceito pelo responsável em 2026-10-27):
 configuração e guardas recusam limite não finito ou acima de US$5. O teto de
 cada ledger fica em `<ledger>.limit`, criado uma única vez no primeiro uso,
 sem alterar o SQLite; ledger pré-existente sem o arquivo recebe no máximo
 US$1. Limite configurado acima do teto gravado é recusado no arranque; elevar
 o teto exige edição manual consciente do responsável (máximo US$5). Inclui a
-criação de `data/runtime/budget.sqlite3.limit` = 1.00 quando o QA montar o
-ledger real com `BUDGET_LIMIT_USD=1.00`.
+criação de `data/runtime/budget.sqlite3.limit` = 1.00 quando a validação real montar o
+ledger com `BUDGET_LIMIT_USD=1.00`.
 
-Testes unitários/de contrato permanecem determinísticos. Conforme autorização
-humana nova, o QA de aceite v0.5 usa provedores reais para os caminhos pagos,
+Testes unitários/de contrato permanecem determinísticos. A validação de aceite
+da v0.5 usa provedores reais para os caminhos pagos,
 com cenários sintéticos/fontes públicas e custo registrado. Simulação não
 fecha requisito de comportamento real. Falhas/limites continuam explícitos.
 
@@ -82,12 +82,12 @@ fecha requisito de comportamento real. Falhas/limites continuam explícitos.
 - [ ] Falha/custo negado não muda ativa e não faz chamada não reservada.
 - [ ] Execução concorrente consulta uma única versão identificada; legado/MCP preservados.
 - [ ] Navegação/rerun não dispara chamada paga ou nova publicação.
-- [ ] QA real limitado registra configuração efetiva, evidência, custo e pendências.
+- [ ] Validação real limitada registra configuração efetiva, evidência, custo e pendências.
 
 ## Riscos e questões em aberto
 
-Espaço de disco reduzido, concorrência de ativação e custo de embeddings.
+Concorrência de ativação e custo de embeddings, tratados por troca atômica do ponteiro e reserva antes de cada lote.
 Preservar coleções/ledgers existentes; qualquer remoção exige autorização
 específica. Contrato e migração foram aprovados pelo responsável em 2026-10-27 antes da
-implementação. Provedores estão configurados; disponibilidade será testada
-pela rodada real, não inferida da presença da chave.
+implementação. A disponibilidade dos provedores é medida
+na validação real, não inferida da presença da chave.

@@ -24,8 +24,8 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[2]
 EXCLUDED_PREFIXES = (("docs", "raw"),)
-# Links in files an agent may not edit (AGENTS.md, CLAUDE.md, .claude/, .github/) that point at a renamed or removed
-# file. They are reported as warnings until the owner's pull request updates them; remove the entry with it.
+# Links in protected files (such as .github/) that point at a renamed or removed file. They are reported as warnings
+# until the owner's pull request updates them; remove the entry with it.
 PENDING_PROTECTED: set[tuple[str, str]] = set()
 FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")

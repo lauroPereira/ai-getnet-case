@@ -25,3 +25,14 @@ Conversas longas mantêm contexto antigo por um resumo rolante e os números do 
 - CA-65 coberto por testes roteirizados de conversa longa, resumo em blocos e uso dos fatos pela guarda.
 - Mensagens não resumidas permanecem armazenadas; até 12 também são entregues como contexto a quem redige a resposta, e contextos que excedem o limite são sinalizados. Fatos só vêm de resultados estruturados e mantêm a origem.
 - Migração 0014 e adições à API preservam os campos existentes.
+
+## Resultado
+
+Conversa de 27 turnos com fatos exatos, aviso e recuperação do contexto incompleto.
+Evidência: [resultado da v0.12.0](../evidence/v0120-resultado.md).
+
+## Status
+
+```text
+concluída (v0.12.0)
+```

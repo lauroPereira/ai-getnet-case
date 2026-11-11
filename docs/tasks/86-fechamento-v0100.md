@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Fixar o candidato, revisar, rodar o QA real (remedição dos juízes sob a v4; comparação interrompida e retomada; `/metrics` ao vivo), decidir o padrão da rubrica pela regra D2 e fechar README, CHANGELOG e ADR 0022 antes de 2026-11-06 às 08h.
+Fixar o candidato, submetê-lo a revisão independente e à validação com modelos reais (remedição dos juízes sob a v4; comparação interrompida e retomada; `/metrics` ao vivo), decidir o padrão da rubrica pela regra D2 e fechar README, CHANGELOG e ADR 0022 antes de 2026-11-06 às 08h.
 
 ## Especificação relacionada
 
@@ -10,25 +10,29 @@ Fixar o candidato, revisar, rodar o QA real (remedição dos juízes sob a v4; c
 
 ## Pré-condições
 
-Tarefas 83 a 85 com parecer apto (83 pode ir ao QA antes de 84 e 85, momentos 1 a 3). Cap Anthropic restante US$2,52; teto desta versão no projeto US$0,25.
+Tarefas 83 a 85 implementadas e revisadas (a 83 pode ser validada antes da 84 e da 85, momentos 1 a 3). Teto desta versão: US$0,25.
 
 ## Passos
 
 1. Suíte estrita; manifesto `docs/evidence/v0100-candidato-rN.json`.
-2. Revisão independente em contexto frio; correções como rodadas.
-3. QA momentos 1 a 3 (rejulgamento v4 com DeepSeek e Opus; relatório v3 × v4); decisão D2 pelo Supervisor; se a v4 vira padrão, mudança de `RUBRIC_VERSION` com suíte focada.
-4. QA momentos 4 a 7 (comparação interrompida por reinício real e retomada; `/metrics`; regras), seed ressemeada se após a meia-noite.
-5. ADR 0022 (rubrica v4 e operação retomável/métricas); README (tabela por área: linhas Memory, Observability, Production e Evaluation; Observability; Limitations; Next steps); CHANGELOG 0.10.0; história; relatório do Supervisor; merge local na `main`; push e tag `v0.10.0` pelo responsável.
+2. Revisão independente do candidato; correções nas próprias tarefas.
+3. Validação com modelos reais, momentos 1 a 3 (rejulgamento v4 com DeepSeek e Opus; relatório v3 × v4); decisão D2; se a v4 vira padrão, mudança de `RUBRIC_VERSION` com suíte focada.
+4. Validação operacional, momentos 4 a 7 (comparação interrompida por reinício real e retomada; `/metrics`; regras), seed ressemeada se após a meia-noite.
+5. ADR 0022 (rubrica v4 e operação retomável/métricas); README (tabela por área: linhas Memory, Observability, Production e Evaluation; Observability; Limitations; Next steps); CHANGELOG 0.10.0; história; integração na `main` e tag `v0.10.0`.
 
 ## Critérios de conclusão
 
 - CA-57 a CA-59 com prova real, ou a parte não medida declarada como não medida.
 - README e CHANGELOG coerentes; nenhum caminho pessoal; CI verde na `main`.
 
-## Validação
+## Resultado
 
-Supervisor, 2026-11-06: candidato r1 ([manifesto](../evidence/v0100-candidato-r1.json)); QA do juiz r1 e QA operacional r1 aptos; D2 decidida pela regra prévia (v3 continua); ADR 0022 aceita; CHANGELOG 0.10.0, README (status, tabela de resposta, limitações, próximos passos, versões), contrato, história e relatório preenchidos; versão 0.10.0 no pacote e nos testes de fechamento com suíte estrita completa antes do merge.
+Candidato r1 fixado ([manifesto](../evidence/v0100-candidato-r1.json)); juiz e operação validados com modelos reais; D2 decidida pela regra escrita antes da medição (`judge.v3` continua o padrão).
+ADR 0022 aceita; CHANGELOG 0.10.0, README, contrato e história atualizados; versão 0.10.0 no pacote com a suíte estrita completa.
+Evidência: [`judge.v4` contra a calibração humana](../evidence/v0100-juiz-v4.md) e [validação operacional](../evidence/v0100-qa-ops-r1.md).
 
 ## Status
 
-Concluída em 2026-11-06 (merge local, push e tag `v0.10.0` pelo responsável).
+```text
+concluída (v0.10.0)
+```

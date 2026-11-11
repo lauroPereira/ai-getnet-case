@@ -11,11 +11,11 @@ Versão 2, 2026-11-03; roteiro fixado antes de implementar (versão 2: login por
 
 ## Critérios e candidato
 
-CA-46, CA-47 e CA-48 (spec 0.2), UC-20, UC-21 e UC-22; tarefas 63 a 68 e 66b. O candidato é fixado por hashes dos dois repositórios em `docs/evidence/v070-candidato-rN.json` antes do QA.
+CA-46, CA-47 e CA-48 (spec 0.2), UC-20, UC-21 e UC-22; tarefas 63 a 68 e 66b. O candidato é fixado por hashes dos dois repositórios em `docs/evidence/v070-candidato-rN.json` antes da validação real.
 
 ## Condições iniciais
 
-Mains com a v0.6.0; candidato v0.7.0 nos dois repositórios. `.env` com os valores fictícios do `.env.example` e a chave de modelo do responsável. QA real sob a campanha `v070-qa` (US$0,20) combinada com o ledger primário. Docker só com o daemon já de pé. Dados sintéticos da seed.
+v0.6.0 integrada; candidato v0.7.0 nos dois repositórios. `.env` com os valores fictícios do `.env.example` e a chave de modelo configurada. Validação real sob a campanha `v070-qa` (US$0,20) combinada com o ledger primário. Docker só com o daemon já de pé. Dados sintéticos da seed.
 
 ## Momentos da história
 
@@ -48,7 +48,7 @@ Mensagens de erro dizem o que aconteceu e como recuperar (entrar de novo, usar a
 
 ## Resultado da rodada
 
-QA real, rodada r1, 2026-11-04, candidato `v0.7.0-local-r1` (backend `e97d7f0`, web `932aeb6`, fingerprint `12adae52…ad8f`): **apto, com ressalvas**. Os 18 momentos passaram, na ordem, pelas superfícies que a história nomeia (`curl`, interface Streamlit com três sessões, CLI `operator`, reinício da API e Docker). CA-46, CA-47 e CA-48 comprovados; nenhum defeito aberto. Campanha `v070-qa`: US$0,10140195 de US$0,20 (US$0,07543317 pela guarda composta mais US$0,02596878 do ledger do volume Docker). Regressão real: 33/40 contra 34/40 da v0.6.0 (a diferença é o rótulo `V030-CONTRACT-TERMINATION` desatualizado pelo contrato novo e variação em casos de preço e habilitação), 4/4 conversas. Três atritos (`reject` com "Envio pendente" por causa do timeout de 3 s do ticketing, "sem alterações" do `approve`, texto do `reject`), observações e quatro perguntas ao Supervisor estão em [v070-qa.md](../evidence/v070-qa.md); evidência por momento em [v070-qa-historia.md](../evidence/v070-qa-historia.md).
+Validação real em 2026-11-04, candidato `v0.7.0-local-r1` (fingerprint `12adae52…ad8f`): **apto, com ressalvas**. Os 18 momentos passaram, na ordem, pelas superfícies que a história nomeia (`curl`, interface Streamlit com três sessões, CLI `operator`, reinício da API e Docker). CA-46, CA-47 e CA-48 comprovados; nenhum defeito aberto. Campanha `v070-qa`: US$0,10140195 de US$0,20 (US$0,07543317 pela guarda composta mais US$0,02596878 do ledger do volume Docker). Regressão real: 33/40 contra 34/40 da v0.6.0 (diferença explicada pelo rótulo `V030-CONTRACT-TERMINATION` desatualizado pelo contrato novo e variação em casos de preço e habilitação), 4/4 conversas. Três pontos de usabilidade (`reject` com "Envio pendente" por causa do timeout de 3 s do ticketing, "sem alterações" do `approve`, texto do `reject`) e as observações estão em [v070-qa.md](../evidence/v070-qa.md); evidência por momento em [v070-qa-historia.md](../evidence/v070-qa-historia.md).
 
 ## Como terminou
 

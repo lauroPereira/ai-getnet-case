@@ -29,14 +29,12 @@ Projeto web app/cliente/fixtures/snapshot OpenAPI e testes AppTest.
 - [x] Build/teste/ativação/retorno não se repetem em rerun.
 - [x] Erro/confirmação claros; consumo só pela API documentada.
 
-## Validação e status
+## Resultado
 
-Implementada pelo Developer r1. Jornada administrativa usa somente `/v1`; OpenAPI/cliente foram gerados de assembly sintético. Suíte web: 15 testes; Ruff e estrutura aprovados. A jornada com provedor real fica para QA após revisão.
+Jornada administrativa só por `/v1`, com OpenAPI e cliente gerados de montagem sintética; build, teste, ativação e retorno percorridos pela interface na validação real da versão. Suíte web: 15 testes; Ruff e estrutura aprovados. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.5.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

@@ -1,7 +1,7 @@
 
 # Memória de conversa, ablação do replanejamento e escrita com confirmação — v0.12.0
 
-Deriva do [roadmap](roadmap-v0110-v100.md) (RF-116 a RF-119) e do [plano](roadmap-v0110-v100-plano.md) (decisões 9 a 13, tarefas 92 a 96).
+Estado: entregue na v0.12.0 (2026-11-09; [resultado](../evidence/v0120-resultado.md)). Deriva do [roadmap](roadmap-v0110-v100.md) (RF-116 a RF-119) e do [plano](roadmap-v0110-v100-plano.md) (decisões 9 a 13, tarefas 92 a 96).
 
 ## Problema
 

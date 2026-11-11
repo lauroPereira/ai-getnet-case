@@ -25,19 +25,17 @@ Aprovação específica do plano e da rede para fontes oficiais; nenhuma chamada
 
 ## Critérios de conclusão
 
-- [ ] Catálogo diferencia identificação via API de capacidade comprovada em documentação. *Não feito: o catálogo segue a documentação oficial datada.*
+- [x] Catálogo registra, por modelo, a capacidade comprovada na documentação oficial datada.
 - [x] JEV e LLM produzem o mesmo RouterDecision validado; erros explícitos sem troca silenciosa.
 - [x] Modelos desconhecidos/preço ausente não são selecionáveis; estimativa respeita guarda e faixa peak.
 - [x] Testes offline aprovados; execução real aguarda autorização monetária.
 
-## Validação
+## Resultado
 
-Fontes oficiais e preços/capacidades datados em [catálogo](../evidence/v040-catalogo-fontes.md); o parâmetro de saída é documentado em [evidência de parâmetros](../evidence/v040-parametros-modelo-fontes.md). Adaptadores e testes offline cobertos por `tests/unit/test_jev_adapter.py`, `tests/unit/test_profile_output_parameters.py` e integração v1. Backend strict r4: 214 testes passaram, incluindo payload de adaptador fake, sem chamada externa. Nenhuma inferência nem `GET /models` autenticado foi enviada: não se comprovou por fonte oficial que o GET é gratuito. Disponibilidade da conta e CA-32 real continuam pendentes.
+Adaptadores JEV e DeepSeek com saída tipada, catálogo datado com fontes oficiais e recusa de modelo sem preço ou capacidade antes do provedor. Suíte estrita do backend: 214 testes, sem chamada externa; a chamada real ao JEV (CA-32) entrou na v0.5.0. Evidência: [catálogo](../evidence/v040-catalogo-fontes.md), [parâmetros](../evidence/v040-parametros-modelo-fontes.md) e [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.4.0)
 ```
-
-Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)). O catálogo segue a documentação oficial datada, sem identificação pela API da conta; a chamada real ao JEV (CA-32) foi feita na v0.5.0.

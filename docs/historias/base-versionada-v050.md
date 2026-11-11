@@ -11,8 +11,8 @@ financeira. Demo não administra a base.
 ## Condições iniciais
 
 Mains v0.4 integradas, corpus público/fictício e ativa inicial identificada.
-Unitários sem custo; aceite QA com provedores reais autorizado na v0.5 sob
-guarda persistente. Candidato será fixado por commits/hashes dos dois repos.
+Unitários sem custo; aceite com provedores reais na v0.5 sob guarda
+persistente. Candidato identificado por hash nos dois repositórios.
 
 ## Momentos
 
@@ -31,8 +31,8 @@ guarda persistente. Candidato será fixado por commits/hashes dos dois repos.
 
 ## Evidência e limites
 
-QA deve usar UI normal, HTTP, versão no snapshot, alterações de fonte e custo
-registrado. Baseline JEV/LLM real e modelos pendentes da v0.4 entram na rodada
+A validação usa UI normal, HTTP, versão no snapshot, alterações de fonte e custo
+registrado. Baseline JEV/LLM real e modelos pendentes da v0.4 entram na validação
 limitada, sem reescrever os relatórios anteriores. Resultados programados e
-pagos são separados. Executada no QA real da v0.5.0 ([QA r3](../evidence/v050-qa-r3.md),
+pagos são separados. Executada na validação real da v0.5.0 ([validação](../evidence/v050-qa-r3.md),
 [resultado](../evidence/v050-resultado.md)).

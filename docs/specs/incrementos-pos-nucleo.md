@@ -2,9 +2,9 @@
 
 # Especificação complementar: incrementos pós-núcleo
 
-Versão 0.3 — 2026-10-27 — **recorte final aprovado pelo responsável em 2026-10-27**: as antigas v0.6.0 e v0.7.0 foram substituídas por uma única v0.6.0 de simplificação, demonstração e fechamento (seção [Recorte final](#recorte-final-v060)). A 0.2 (2026-10-26) aprovou a sequência até a 0.7.0 e registrou as respostas às questões Q7, Q9, Q10 e Q12; seu texto é preservado abaixo com as marcações de tratamento.
+Versão 0.3, 2026-10-27. Estado: entregue da v0.2.0 à v0.6.0 (2026-10-26 a 2026-10-28). Recorte final aprovado pelo responsável em 2026-10-27: as antigas v0.6.0 e v0.7.0 foram substituídas por uma única v0.6.0 de simplificação, demonstração e fechamento (seção [Recorte final](#recorte-final-v060)). A 0.2 (2026-10-26) aprovou a sequência até a 0.7.0 e registrou as respostas às questões Q7, Q9, Q10 e Q12; seu texto é preservado abaixo com as marcações de tratamento.
 
-Complementa a [especificação principal](assistente-multiagente-lojista.md) (v0.2), cujo núcleo foi entregue e validado como versão 0.1.0 (PR #1, commit `29a0088`). Os requisitos RF-01 a RF-37 e os critérios CA-01 a CA-17 e CA-26 continuam valendo e não podem regredir. O plano técnico está em [incrementos-pos-nucleo-plano.md](incrementos-pos-nucleo-plano.md).
+Complementa a [especificação principal](assistente-multiagente-lojista.md) (v0.2), cujo núcleo foi entregue e validado como versão 0.1.0 (PR #1). Os requisitos RF-01 a RF-37 e os critérios CA-01 a CA-17 e CA-26 continuam valendo e não podem regredir. O plano técnico está em [incrementos-pos-nucleo-plano.md](incrementos-pos-nucleo-plano.md).
 
 ## Relação com o escopo vigente
 
@@ -23,18 +23,18 @@ O pedido do responsável repetiu parte do que as fatias 2 a 4 já previam. Os it
 | 9. Ciclo de melhoria supervisionada | **Novo** | RF-59 a RF-62 |
 | 10. Documentação editável e versões da base | **Novo** | RF-63 a RF-66 |
 | 11. Interface e comparação gráfica | **Parcial**: RF-36 previa chat e painel técnico | RF-67 a RF-70 |
-| 12. Compartilhamento com o recrutador | **Novo** | RF-71 a RF-74 |
+| 12. Compartilhamento com o visitante | **Novo** | RF-71 a RF-74 |
 | 13. Orçamento e economia de cota | **Já previsto**: RNF-02 e guarda persistente atômica | Mantido; RF-75 acrescenta estimativa antes de experimentos; RNF-12 registra a regra de delegação no desenvolvimento |
 | 14. Critérios finais | **Parcial**: README e vídeo (CA-16, CA-25) | CA-27 a CA-46 |
 
 ## Problema
 
-O núcleo responde bem a uma mensagem isolada, mas não acompanha uma conversa, não cobre as jornadas de maior risco financeiro (preço e contestação), não expõe as ferramentas por MCP e não permite comparar mecanismos e modelos. O responsável também não tem meios de editar a base fictícia, avaliar cada etapa, testar mudanças com segurança nem mostrar o sistema a um recrutador sem entregar acesso administrativo.
+O núcleo responde bem a uma mensagem isolada, mas não acompanha uma conversa, não cobre as jornadas de maior risco financeiro (preço e contestação), não expõe as ferramentas por MCP e não permite comparar mecanismos e modelos. O responsável também não tem meios de editar a base fictícia, avaliar cada etapa, testar mudanças com segurança nem mostrar o sistema a um visitante sem entregar acesso administrativo.
 
 ## Usuário afetado
 
 - **Lojista** (sintético): conversa em vários turnos e espera continuidade.
-- **Recrutador ou revisor técnico**: experimenta cenários e perfis autorizados pela interface, com limite de consumo.
+- **Visitante ou revisor técnico**: experimenta cenários e perfis autorizados pela interface, com limite de consumo.
 - **Responsável (administrador)**: configura perfis, edita documentos, executa experimentos, aprova propostas e ativa versões.
 
 ## Resultado desejado
@@ -46,7 +46,7 @@ O núcleo responde bem a uma mensagem isolada, mas não acompanha uma conversa, 
 - Perfis de modelos por agente, versionados e comparáveis em gráficos rastreáveis.
 - Avaliação por etapa com critérios, evidências e custo próprios.
 - Mudanças em documentos, prompts e configurações passando por proposta, teste, aprovação, ativação e retorno.
-- Interface Streamlit separada, consumindo só a API, compartilhável com o recrutador.
+- Interface Streamlit separada, consumindo só a API, compartilhável com visitantes.
 - Tudo dentro do teto de US$5, com versões e changelog.
 
 ## Escopo
@@ -61,7 +61,7 @@ Entrega em versões pequenas, cada uma utilizável e com changelog e instruçõe
 | 0.4.0 | Router JEV, modelos por agente, perfis, API da interface e projeto Streamlit com chat, perfis e toggle | RF-35, RF-41 a RF-43, RF-47 a RF-53 |
 | 0.5.0 | Versões da base e editor de documentos | RF-63 a RF-66 |
 | ~~0.6.0~~ | ~~Evaluation Agent por etapa e ciclo de melhoria supervisionada~~ — substituída na 0.3 | ~~RF-54 a RF-62~~ |
-| ~~0.7.0~~ | ~~Experimentos e gráficos, compartilhamento com o recrutador, README, changelog e roteiro de vídeo finais~~ — retirada da entrega na 0.3 | ~~RF-36, RF-67 a RF-75~~ |
+| ~~0.7.0~~ | ~~Experimentos e gráficos, compartilhamento com o visitante, README, changelog e roteiro de vídeo finais~~ — retirada da entrega na 0.3 | ~~RF-36, RF-67 a RF-75~~ |
 | 0.6.0 | Simplificação, demonstração e fechamento (recorte final) | RF-76 a RF-79 e os mantidos/simplificados do mapa abaixo |
 
 ## Recorte final (v0.6.0)
@@ -173,7 +173,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - **RF-69** Experimentos mantêm fixos cenários, documentos, prompts, dados, ferramentas e avaliador ao comparar modelos (e fixam o resto ao comparar documentos); usam conversas independentes; registram repetições e tamanho da amostra; marcam como exploratória qualquer comparação com mais de uma mudança; e não criam casos ou encaminhamentos no atendimento real.
 - **RF-70** Navegação, atualização de gráficos e reexecuções do Streamlit nunca disparam chamadas pagas: resultados gravados são reaproveitados e novas execuções exigem ação explícita.
 
-### Compartilhamento com o recrutador
+### Compartilhamento com o visitante
 
 - **RF-71** A interface pode ser compartilhada pelo IP público e porta da máquina do responsável, com instruções de inicialização, configuração e teste de acesso externo. Túnel só como alternativa documentada se o acesso direto falhar.
 - **RF-72** Só a interface é exposta; API, Qdrant e SQLite ficam acessíveis apenas internamente.
@@ -195,9 +195,9 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 - **RNF-09 Compatibilidade:** `POST /messages` mantém o contrato da v0.1.0; campos novos são opcionais. A API da interface é versionada (`/v1`).
 - **RNF-10 Segurança da exposição:** a interface exposta exige autenticação, usa HTTPS quando possível (certificado próprio do Streamlit), limita requisições por sessão e não revela erros internos.
-- **RNF-11 Orçamento:** teto total de US$5 mantido, descontado o já gasto (US$0,31 em 2026-10-26; US$0,59837466 reconciliado ao fim da v0.5.0). A demonstração pública tem sublimite próprio e configurável, inicialmente US$1,00, que pode ser aumentado por decisão do responsável sem ultrapassar o teto total. Na 0.3, o sublimite efetivo é o menor entre esse valor e o saldo do teto persistente do ledger da instalação.
-- **RNF-12 Processo de desenvolvimento:** o trabalho ocorre na sessão principal. Subagentes só com autorização explícita de escopo, quantidade, modelo e esforço, sem herança silenciosa nem troca por modelo mais caro. O consumo da ferramenta de desenvolvimento e o orçamento das APIs da aplicação são controles separados.
-- **RNF-13 Testes:** toda funcionalidade nova tem testes sem rede e sem custo; rodadas reais são limitadas e registradas em evidências. Nenhum requisito é dado como concluído só com mock ou documentação.
+- **RNF-11 Orçamento:** teto total de US$5 nesta fase (desde 2026-11-07, limite por provedor definido pelo responsável). A demonstração pública tem sublimite próprio e configurável, inicialmente US$1,00, que pode ser aumentado por decisão do responsável sem ultrapassar o teto total. Na 0.3, o sublimite efetivo é o menor entre esse valor e o restante do teto persistente do ledger da instalação.
+- **RNF-12 Processo de desenvolvimento:** toda delegação de trabalho tem escopo, quantidade, modelo e esforço autorizados, sem troca silenciosa por modelo mais caro. O consumo da ferramenta de desenvolvimento e o orçamento das APIs da aplicação são controles separados.
+- **RNF-13 Testes:** toda funcionalidade nova tem testes sem rede e sem custo; validações reais são limitadas e registradas em evidências. Nenhum requisito é dado como concluído só com mock ou documentação.
 
 ## Casos de uso
 
@@ -215,7 +215,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 | UC-28 | Experimento de perfis (simplificado na 0.3 para comparação pequena, RF-78) | Estimativa, confirmação, execução isolada e gráfico rastreável |
 | UC-29 | Edição de documento fictício | Rascunho, comparação, índice candidato, teste, ativação e retorno |
 | ~~UC-30~~ | ~~Proposta do avaliador~~ — adiado na 0.3 | — |
-| UC-31 | Recrutador acessa pelo IP público | Usa cenários autorizados dentro do limite; não vê administração |
+| UC-31 | Visitante acessa pelo IP público | Usa cenários autorizados dentro do limite; não vê administração |
 | UC-32 | Avaliar uma execução já gravada (0.3) | Estimativa, confirmação, resultado com método e rubrica; atendimento não repetido |
 | UC-33 | Mesma pergunta antes e depois de editar a base (0.3) | Mudança prevista na orientação e na ferramenta consultada; retorno restaura o comportamento anterior |
 
@@ -223,10 +223,10 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 
 - [x] **CA-27** A tag `v0.1.0` reproduz a entrega inicial; cada versão nova tem changelog com instruções de retorno.
 - [x] **CA-28** Os critérios do núcleo continuam passando em cada versão (testes e avaliação de regressão). Comprovado na v0.2.0; refazer a cada versão.
-- [x] **CA-29** UC-19 a UC-21 demonstrados com testes sem custo e com uma rodada real registrada (complementa CA-18 e CA-19).
+- [x] **CA-29** UC-19 a UC-21 demonstrados com testes sem custo e com uma validação real registrada (complementa CA-18 e CA-19).
 - [x] **CA-30** Demonstração MCP verificável conforme RF-45 (complementa CA-20).
 - [x] **CA-31** Os quatro comportamentos de preço, a habilitação e o cancelamento demonstrados com dados sintéticos (complementa CA-21 a CA-23). Comprovado na v0.3.0; [resultado e limites](../evidence/v030-resultado.md).
-- [x] **CA-32** Toggle LLM/JEV real funcionando no Streamlit, com mecanismo, versão, duração e custo registrados (complementa CA-24). Comprovado na v0.6.0 após a correção do P1-QA-01 ([resultado](../evidence/v060-resultado.md)).
+- [x] **CA-32** Toggle LLM/JEV real funcionando no Streamlit, com mecanismo, versão, duração e custo registrados (complementa CA-24). Comprovado na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [ ] **CA-33** Indisponibilidade do JEV produz erro explícito, sem troca silenciosa. *Coberto por testes e revisão; não exercitado ao vivo.*
 - [x] **CA-34** A comparação de roteamento executa só os Routers; o atendimento roda uma vez. Comprovado com provedores reais na v0.5.0 e na v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [x] **CA-35** A interface rotula cada resultado como real, simulado ou gravado. Verificado na interface da v0.6.0 ([resultado](../evidence/v060-resultado.md)).
@@ -242,7 +242,7 @@ Os requisitos RF-28 a RF-36 da especificação principal valem como escritos, co
 - [x] **CA-45** Gasto total dentro de US$5, com custo estimado antes de experimentos e bloqueio de custo desconhecido. Acumulado US$0,68637953 ao fim da v0.6.0 ([resultado](../evidence/v060-resultado.md)).
 - [x] **CA-46** README, changelog e roteiro de vídeo atualizados; nenhum dado privado do discovery publicado. Fechado na v0.6.0 ([resultado](../evidence/v060-resultado.md)); a gravação do vídeo segue em CA-25.
 
-Critérios novos da 0.3, formalizados antes do QA da v0.6.0 (detalhes em [fechamento-v060.md](fechamento-v060.md)):
+Critérios novos da 0.3, formalizados antes da validação real da v0.6.0 (detalhes em [fechamento-v060.md](fechamento-v060.md)):
 
 - [x] **CA-47** Na interface, o atendimento usa cenário, perfil publicado e toggle LLM/JEV; mostra conversa e estado do caso; recupera a resposta após falha de transporte só por GET; erros explicam como recuperar; navegação e reruns não geram POST, inferência ou publicação.
 - [x] **CA-48** Comparação de dois ou três perfis em cenários explícitos, com os dois gráficos e a tabela de RF-78; cada ponto abre as execuções; configurações, versões, repetições e falhas registradas; novas execuções só com estimativa, confirmação e reserva; nenhum caso ou encaminhamento criado no atendimento original; Router-only separado.
@@ -263,14 +263,14 @@ Critérios novos da 0.3, formalizados antes do QA da v0.6.0 (detalhes em [fecham
 | Experimentos consumirem o orçamento | Ultrapassar o teto | Estimativa e confirmação; reserva atômica; sublimites |
 | Duas cópias de regra (API e interface) | Divergência | Interface sem regra de negócio; tudo validado no backend |
 
-## Questões em aberto
+## Questões decididas
 
 | ID | Questão | Responsável | Bloqueia |
 | --- | --- | --- | --- |
 | Q7 | ~~Aprovar esta especificação e a sequência de versões~~ Aprovada em 2026-10-26, até a v0.7.0 | Responsável | — |
 | Q8 | ~~Autorizar a tag `v0.1.0` na `main`~~ Autorizada; tag criada em 2026-10-26 | Responsável | — |
 | Q9 | ~~Repositório próprio e template para o projeto web~~ Sim: repositório próprio no GitHub, criado a partir do ai-dev-template | Responsável | — |
-| Q10 | Sublimite de gasto da demonstração: ~~valor~~ inicial US$1,00, aumentável pelo responsável quando necessário (RNF-11). Janela de disponibilidade ainda a definir | Responsável | v0.6.0 (janela, desde a 0.3) |
-| Q11 | Disponibilidade de redirecionamento de porta no roteador e IP público sem CGNAT | Responsável (verificação no QA da v0.6.0) | RF-71, CA-51 |
+| Q10 | Sublimite de gasto da demonstração: ~~valor~~ inicial US$1,00, aumentável pelo responsável quando necessário (RNF-11). Janela anunciada por demonstração ([ADR 0012](../architecture/decisions/0012-exposicao-publica-da-demonstracao.md)) | Responsável | — |
+| Q11 | ~~Disponibilidade de redirecionamento de porta no roteador e IP público sem CGNAT~~ Acesso externo por túnel na v1.0.0 ([ADR 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)) | Responsável | — |
 | Q13 | ~~Recorte final~~ Aprovado em 2026-10-27: v0.6.0 única; v0.7.0 retirada; Evaluation Agent e propostas fora da entrega; contratos `/v1` aditivos, migração 0008 e controles de exposição aceitos | Responsável | — |
 | Q12 | ~~Provedores além de OpenAI e JEV~~ Sim: DeepSeek incluído como provedor por agente (RF-49) | Responsável | — |

@@ -6,15 +6,11 @@ Criar uma coleção Qdrant por versão da base e manter um ponteiro para a vers�
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (2026-10-26); entregue na v0.5.0 e complementada pela [ADR 0014](0014-ciclo-kb-v050.md).
 
 ## Contexto
 
-O responsável quer editar a documentação fictícia pela interface. Uma versão incompleta não pode substituir a ativa, cada execução deve consultar uma versão consistente e é preciso voltar à anterior. Fontes oficiais coletadas não podem ser sobrescritas.
+A documentação fictícia precisa ser editável pela interface. Uma versão incompleta não pode substituir a ativa, cada execução deve consultar uma versão consistente e é preciso voltar à anterior. Fontes oficiais coletadas não podem ser sobrescritas.
 
 ## Decisão
 

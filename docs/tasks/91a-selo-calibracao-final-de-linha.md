@@ -17,3 +17,14 @@ Garantir que os CSVs de calibração versionados conservem os mesmos bytes regis
 - Os hashes dos CSVs após checkout conferem com o selo tanto em checkout com finais LF quanto CRLF.
 - O selo e os CSVs permanecem inalterados; a amostra não precisa ser regenerada.
 - O teste offline confirma os atributos Git e compara os bytes dos CSVs com os hashes selados.
+
+## Resultado
+
+`.gitattributes` preserva os bytes dos CSVs selados; um teste offline compara os bytes com os hashes do selo.
+Evidência: [resultado da v0.11.0](../evidence/v0110-resultado.md).
+
+## Status
+
+```text
+concluída (v0.11.0)
+```

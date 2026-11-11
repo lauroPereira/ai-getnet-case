@@ -2,7 +2,7 @@
 
 # Plano: incrementos pós-núcleo
 
-Versão 0.3 — 2026-10-27 — **recorte final aprovado pelo responsável em 2026-10-27**: as linhas 0.6.0 e 0.7.0 antigas foram substituídas por uma única v0.6.0 ([plano detalhado](fechamento-v060-plano.md), [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md)). A 0.2 (2026-10-26) aprovou a sequência até a v0.7.0; as decisões 0006 a 0012 foram aceitas depois.
+Versão 0.3, 2026-10-27. Estado: entregue da v0.2.0 à v0.6.0 (2026-10-26 a 2026-10-28). Recorte final aprovado pelo responsável em 2026-10-27: as linhas 0.6.0 e 0.7.0 antigas foram substituídas por uma única v0.6.0 ([plano detalhado](fechamento-v060-plano.md), [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md)). A 0.2 (2026-10-26) aprovou a sequência até a v0.7.0; as decisões 0006 a 0012 foram aceitas depois.
 
 ## Especificação relacionada
 
@@ -69,7 +69,7 @@ Toda rota `/v1` exige token; as de escrita administrativa exigem papel `admin`, 
 | Contrato | 0.3.0+ | OpenAPI do serviço `mocks` e da API `/v1`; schemas MCP iguais aos da camada de domínio |
 | Integração sem custo | todas | Conversas multi-turno com modelo programado; MCP com cliente em memória; JEV simulado (sucesso, timeout, decisão inválida); experimento com modelo programado não cria casos; editor → índice candidato com embedder lexical |
 | Interface | 0.4.0+ | Testes do Streamlit (`AppTest`) contra respostas simuladas; nenhuma chamada paga em reexecução |
-| Real limitada | cada versão | Rodada de regressão do núcleo (27 casos) e dos cenários novos, com custo registrado |
+| Real limitada | cada versão | Regressão real do núcleo (27 casos) e dos cenários novos, com custo registrado |
 | Externa | 0.6.0 (era 0.7.0) | Acesso pelo IP público a partir de outra rede |
 
 ## Riscos técnicos

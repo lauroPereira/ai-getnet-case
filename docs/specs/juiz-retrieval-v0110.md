@@ -2,7 +2,7 @@
 
 # Juiz por afirmação, evidência da web e retrieval — v0.11.0
 
-Versão 0.3 — 2026-11-09. Complementa a [especificação do ciclo](roadmap-v0110-v100.md) (RF-109 a RF-115, CA-60 a CA-64) e o [plano técnico](roadmap-v0110-v100-plano.md).
+Versão 0.3, 2026-11-09. Estado: entregue na v0.11.0. Complementa a [especificação do ciclo](roadmap-v0110-v100.md) (RF-109 a RF-115, CA-60 a CA-64) e o [plano técnico](roadmap-v0110-v100-plano.md).
 
 ## Problema
 

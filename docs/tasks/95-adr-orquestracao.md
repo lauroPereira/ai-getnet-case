@@ -22,3 +22,13 @@ Registrar por que a orquestração usa um grafo com plano inicial do Router e re
 
 - ADR 0024 aceita e índice atualizado.
 - Decisão e condição de revisão correspondem às capacidades e limites implementados.
+
+## Resultado
+
+[ADR 0024](../architecture/decisions/0024-desenho-da-orquestracao.md) aceita, com a comparação dos dois desenhos e a condição de revisão.
+
+## Status
+
+```text
+concluída (v0.12.0)
+```

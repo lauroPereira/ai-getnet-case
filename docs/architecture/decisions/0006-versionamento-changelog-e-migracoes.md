@@ -6,15 +6,11 @@ Versionar cada incremento com SemVer, tag no Git, `CHANGELOG.md` e migrações d
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (v0.1.0, 2026-10-26).
 
 ## Contexto
 
-O núcleo foi entregue e validado (PR #1, commit `29a0088`). Os incrementos alteram contratos e dados e precisam de uma referência reproduzível e de um caminho de retorno. O template exige autorização para tags e publicação.
+O núcleo foi entregue e validado (PR #1). Os incrementos alteram contratos e dados e precisam de uma referência reproduzível e de um caminho de retorno. O template exige autorização para tags e publicação.
 
 ## Decisão
 

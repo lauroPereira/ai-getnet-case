@@ -10,7 +10,7 @@ docs/specs/perfis-interface-v040-plano.md; docs/historias/perfis-interface-v040.
 
 ## Pré-condições
 
-Reproduzir a evidência em docs/evidence/v040-qa-r3.md (na tag `v0.4.0`). Preservar a semântica de resposta sintética salva e não usar provedores externos.
+Reproduzir a divergência registrada na validação da interface (na tag `v0.4.0`). Preservar a semântica de resposta sintética salva e não usar provedores externos.
 
 ## Arquivos prováveis
 
@@ -18,7 +18,7 @@ Código da interface web e testes de apresentação dos modos Simulado/Gravado.
 
 ## Passos
 
-1. Reproduzir o caso descrito no relatório de QA, comparando resposta, indicador e snapshot.
+1. Reproduzir o caso descrito no relatório de validação, comparando resposta, indicador e snapshot.
 2. Corrigir a origem do rótulo exibido para que reflita o modo efetivamente executado.
 3. Acrescentar regressão automatizada que falhe na divergência observada e cubra Simulado e Gravado.
 4. Validar UI e suíte web completa sem chamadas a provedores.
@@ -31,12 +31,12 @@ Código da interface web e testes de apresentação dos modos Simulado/Gravado.
 - [x] Teste de regressão reproduz a condição anterior e passa após a correção.
 - [x] Nenhuma chamada a provedor pago é necessária.
 
-## Validação
+## Resultado
 
-`ai-getnet-case-web/tests/test_interface.py::test_simulated_and_recorded_modes_are_distinct_and_consume_comparison_once` valida a resposta visível e os snapshots nos dois modos. Suíte web r4: 12 testes passaram; Ruff check e format passaram. Sem chamadas a provedores. Detalhes em `docs/evidence/v040-developer-r4.md` (na tag `v0.4.0`).
+Resposta, indicador da interface e snapshot identificam Gravado e Simulado de forma consistente; `tests/test_interface.py::test_simulated_and_recorded_modes_are_distinct_and_consume_comparison_once` cobre os dois modos. Suíte web: 12 testes, Ruff aprovado, sem chamadas a provedores. Evidência: [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
-Concluída no escopo sem custo: implementação r4, revisão e confirmação pela
-UI no QA r5; modo Gravado e snapshot coerentes.
-
+```text
+concluída (v0.4.0)
+```

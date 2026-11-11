@@ -30,3 +30,14 @@ A avaliação consome os campos `web_summary` e `web_urls`; a busca de páginas 
 - Itens `web_page` no `judge_input` quando a página foi buscada; fallback e nota nos outros casos; cache funcionando.
 - `judge.v3.md` e `judge.v4.md` intocados (hash conferido em teste).
 - Os testes do buscador usam servidor em processo; o endpoint de atendimento não acessa páginas web.
+
+## Resultado
+
+O juiz recebe as páginas citadas como itens `web_page`, com o resumo da busca como alternativa declarada; a busca de páginas usa cache e nunca ocorre no atendimento. Testes offline com servidor HTTP em processo.
+Evidência: [resultado da v0.11.0](../evidence/v0110-resultado.md).
+
+## Status
+
+```text
+concluída (v0.11.0)
+```

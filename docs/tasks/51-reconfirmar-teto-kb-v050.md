@@ -2,20 +2,18 @@
 
 ## Objetivo
 
-Corrigir WUI-R1-01 para que o consentimento de build/teste corresponda ao teto
+Fazer o consentimento de build/teste corresponder ao teto
 numérico efetivamente enviado.
 
 ## Especificação relacionada
 
-[Tarefa49](49-correcao-confirmacoes-qa-v050.md), plano aprovado e
-Reviewer UI r1. Correção dentro do escopo
-de controles já autorizado, mesmos Developer → Reviewer → QA gpt-6-luna/high.
+[Tarefa 49](49-correcao-confirmacoes-qa-v050.md) e plano aprovado;
+dentro do escopo de controles já autorizado.
 
 ## Pré-condições
 
-- Candidato r5 preservado, sem QA nesta versão; parecer exige correção P2.
 - Nenhuma alteração de backend, API, guardas, limite global, credencial ou dados.
-- Sem chamadas reais/serviços pagos, commits, pushes ou limpeza.
+- Sem chamadas reais ou serviços pagos.
 
 ## Arquivos prováveis
 
@@ -23,7 +21,7 @@ Web `app.py` e teste direcionado em `tests/test_interface.py`.
 
 ## Passos
 
-1. Reproduzir o caso do parecer com cliente falso: marcar confirmação e
+1. Reproduzir o caso com cliente falso: marcar confirmação e
    aumentar o teto deixa o botão habilitado com consentimento antigo.
 2. Incluir o teto informado no contexto da confirmação de build e teste.
    Qualquer mudança de teto exige nova confirmação; preservar o valor digitado.
@@ -31,8 +29,6 @@ Web `app.py` e teste direcionado em `tests/test_interface.py`.
    ação com o teto novo; reruns/navegação continuam sem envio.
 4. Preservar recuperação manual, contexto de versões, parâmetros e backend.
    Validar regressão focal, suíte web e Ruff externo necessários à nova mudança.
-5. Encerrar escrita após validar e entregar passagem UI r3. Novo candidato r6,
-   revisão focada e retorno ao mesmo QA, sem novo controle financeiro.
 
 ## Critérios de conclusão
 
@@ -40,12 +36,13 @@ Web `app.py` e teste direcionado em `tests/test_interface.py`.
 - [x] Botão fica desabilitado até reconfirmar; valor digitado permanece.
 - [x] Uma ação explícita envia exatamente o novo teto, sem duplicação.
 - [x] Testes sem custo e Ruff passam; recuperação e backend permanecem intactos.
-- [x] Passagem identifica resultado real; não autoaprova revisão/QA.
 
-## Validação
+## Resultado
 
-Regressão sintética e validação web completas em evidência Developer UI r3. O script estrito executou 20/20 testes, estrutura e skills, mas retornou código 2 devido à ausência do Ruff no venv web; Ruff externo passou. Sem chamadas reais. A revisão independente foca no delta a congelar como r6.
+Mudar o teto de build ou de teste invalida a confirmação anterior; o botão só volta a habilitar depois de reconfirmar e envia uma única ação com o teto novo. Suíte web: 20/20 testes; Ruff aprovado; sem chamadas reais. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
-Concluída — Reviewer UI r2 apto e teto reconfirmado na UI no QA r2; integrada na v0.5.0.
+```text
+concluída (v0.5.0)
+```

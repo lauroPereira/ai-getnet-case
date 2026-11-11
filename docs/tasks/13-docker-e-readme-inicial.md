@@ -31,12 +31,12 @@ Empacotar API e Qdrant com docker-compose, inicialização automática do seed e
 - [x] Em ambiente limpo, sem volumes nem cache, `docker compose up --build` e o smoke passam com apenas `OPENAI_API_KEY`.
 - [x] Tempo e custo da primeira inicialização registrados.
 
-## Validação
+## Resultado
 
-2026-10-26: `docker compose down -v` + `docker compose build --no-cache` + `up` em ambiente limpo: API saudável em 18 s com seed e índice criados no primeiro start; smoke 10/10 (HTTP 200 e rota esperada). Repetido após as últimas mudanças: saudável em 12 s e smoke 10/10 via `docker compose exec api merchant-assistant smoke`. Custo da primeira inicialização: cerca de US$0,001 em embeddings. README final em inglês (antecipado da fatia 4). Revisão não independente.
+Imagem em estágios com usuário sem privilégios e Compose com API e Qdrant, seed e índice criados na primeira subida. Em ambiente limpo, API saudável em 18 s e smoke 10/10; depois das últimas mudanças, saudável em 12 s e smoke 10/10. Primeira inicialização: cerca de US$0,001 em embeddings.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

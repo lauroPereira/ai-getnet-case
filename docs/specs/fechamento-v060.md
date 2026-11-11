@@ -1,6 +1,6 @@
 # Especificação: simplificação, demonstração e fechamento v0.6.0
 
-Versão 1 — 2026-10-27 — recorte aprovado pelo responsável em 2026-10-27, incluindo contratos `/v1` aditivos, migração 0008 e controles de exposição. Deriva da [especificação complementar 0.3](incrementos-pos-nucleo.md#recorte-final-v060). Plano em [fechamento-v060-plano.md](fechamento-v060-plano.md); história em [fechamento-v060.md](../historias/fechamento-v060.md); decisão em [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md).
+Versão 1, 2026-10-27. Estado: entregue na v0.6.0 (2026-10-28; [resultado](../evidence/v060-resultado.md)). Recorte aprovado pelo responsável em 2026-10-27, incluindo contratos `/v1` aditivos, migração 0008 e controles de exposição. Deriva da [especificação complementar 0.3](incrementos-pos-nucleo.md#recorte-final-v060). Plano em [fechamento-v060-plano.md](fechamento-v060-plano.md); história em [fechamento-v060.md](../historias/fechamento-v060.md); decisão em [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md).
 
 ## Problema
 
@@ -8,7 +8,7 @@ As versões 0.1 a 0.5 entregaram atendimento multiagente, jornadas, perfis, JEV 
 
 ## Usuário afetado
 
-- **Recrutador ou revisor técnico:** experimenta cenários e perfis pela interface, sem acesso administrativo, dentro de um limite de consumo.
+- **Visitante ou revisor técnico:** experimenta cenários e perfis pela interface, sem acesso administrativo, dentro de um limite de consumo.
 - **Responsável (administrador):** prepara perfis e documentos, demonstra a mudança da base e compartilha a demonstração.
 - **Lojista sintético:** recebe atendimento consistente, na versão da base capturada no início.
 
@@ -82,12 +82,12 @@ Novo Evaluation Agent; workflow de propostas, candidatas e aprovações de melho
 | R2-01 teto gravado com representação exata | Tarefa 46 | Corrigir | Integridade do orçamento |
 | R2-02 publicação atômica do `.limit` | Tarefa 46 | Corrigir | Montagem concorrente não pode falhar nem sobrescrever |
 | R2-03 prontidão e captura sem escrita quando o registro existe | Tarefa 46 | Corrigir | Prontidão consistente |
-| R2-04 integridade Qdrant antes de `BEGIN IMMEDIATE` | Tarefa 46 | Risco aceito | QA r1–r3 sem contenção observada; mudança tocaria ativação concorrente aprovada |
+| R2-04 integridade Qdrant antes de `BEGIN IMMEDIATE` | Tarefa 46 | Risco aceito | Validações reais da v0.5.0 sem contenção observada; mudança tocaria ativação concorrente aprovada |
 | R2-05 timeout explícito no cliente OpenAI do CLI | Tarefa 46 | Corrigir | Timeouts consistentes |
 | R2-07 `BudgetGuard.record`/`record_embedding` sem chamadores | Tarefa 46 | Remover se o desuso for comprovado | Código sem uso, remoção pequena |
 | R2-08 testes de `max_retries == 0` e manifesto sem `chunks` | Tarefa 46 | Corrigir | Regressão sem custo |
 | Timeout fixo de 20 s no cliente web | Tarefa 48 | Corrigir: coerente com `MAX_REQUEST_SECONDS` e margem; GET continua curto | ReadTimeout com atendimento concluído |
-| Tarefas 47, 49–53 | QA v0.5 | Encerrar com evidência (QA r2/r3) | Já corrigidas e revalidadas |
+| Tarefas 47, 49–53 | Validação v0.5 | Encerrar com evidência | Já corrigidas e revalidadas |
 | Ruff ausente no ambiente web | v0.5 | Corrigir ambiente ou dependência de desenvolvimento | Script estrito web deve terminar com código 0 |
 | API do compose em `0.0.0.0:8000` | ADR 0012 | Ligar a `127.0.0.1` | Só a interface é exposta |
 | Sem limite por sessão demo | RNF-10, RF-73 | Limite configurável de mensagens por sessão demo | Compartilhamento com risco controlado |
@@ -107,9 +107,9 @@ Consistência de contratos entre cliente e backend, recuperação sem POST repet
 
 - **Compatibilidade:** `POST /messages` legado, MCP e contratos `/v1` existentes inalterados; acréscimos opcionais.
 - **Permissões:** demo e admin verificados no backend; simplificar a interface não retira controles.
-- **Orçamento:** teto agregado de US$5 descontado o consumo anterior (US$0,59837466 reconciliado em 2026-10-27); campanha de QA `v060-qa` com teto fixo de US$0,50 combinada com o ledger primário (teto persistente US$1, saldo US$0,65147156). Correções não renovam saldo. Custo desconhecido bloqueia.
-- **Testes:** toda funcionalidade nova tem testes sem rede e sem custo; QA real pequeno, identificado e contabilizado.
-- **Privacidade:** só dados sintéticos e fontes públicas; nada de `discovery/`.
+- **Orçamento:** campanha `v060-qa` com teto fixo de US$0,50, combinada com o ledger primário, dentro do teto agregado de US$5. Custo desconhecido bloqueia.
+- **Testes:** toda funcionalidade nova tem testes sem rede e sem custo; validação real pequena, identificada e contabilizada.
+- **Privacidade:** só dados sintéticos e fontes públicas; nenhum material privado.
 
 ## Critérios de aceitação
 
@@ -133,14 +133,13 @@ A v0.6.0 só está pronta com evidência de:
 | Router real não escolher `knowledge_and_support` para a pergunta de D | Validar a pergunta na V1 antes de editar; ajustar a pergunta, não o critério |
 | Variação do modelo mascarar a diferença em D | Diferença definida por ferramenta e fato verificáveis; repetição pequena registrada |
 | Comparação longa estourar timeout HTTP | Execução fora da requisição no próprio processo da API, estado persistido e atualização por GET |
-| CGNAT ou firewall impedir acesso externo | Verificar cedo; registrar impedimento; túnel como alternativa |
-| Saldo do ledger primário (US$0,65) limitar QA e janela pública | Teto de campanha US$0,50; janela usa o saldo restante; elevar o `.limit` é decisão manual do responsável |
+| CGNAT ou firewall impedir acesso externo | Verificar cedo; túnel como alternativa, adotado na v1.0.0 ([ADR 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)) |
 | Escopo crescer por obrigação histórica | Fora do escopo explícito; pendências registradas, sem v0.7.0 automática |
 
-## Questões em aberto
+## Questões decididas
 
-| ID | Questão | Responsável | Bloqueia |
-| --- | --- | --- | --- |
-| Q11 | IP público sem CGNAT e redirecionamento de porta no roteador | Responsável | CA-51 (acesso externo) |
-| Q14 | Janela de disponibilidade e porta pública | Responsável | Compartilhamento |
-| Q15 | Regra de entrada no firewall do Windows para a porta do Streamlit (configuração de segurança da máquina) | Responsável | Teste de outra rede |
+| ID | Questão | Decisão |
+| --- | --- | --- |
+| Q11 | IP público sem CGNAT e redirecionamento de porta no roteador | Acesso externo por túnel na v1.0.0 ([ADR 0026](../architecture/decisions/0026-tunel-com-login-por-redirecionamento.md)), sem depender de IP público |
+| Q14 | Janela de disponibilidade e porta pública | Janela anunciada por demonstração e fechada ao fim ([ADR 0012](../architecture/decisions/0012-exposicao-publica-da-demonstracao.md)) |
+| Q15 | Regra de entrada no firewall do Windows para a porta do Streamlit | Dispensada pelo túnel, que só abre conexão de saída |

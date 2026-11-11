@@ -1,0 +1,2154 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "all",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v080-all-r3.json",
+  "recorded_answers": 44,
+  "only_sample": "ajuste-01.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "ajuste-24-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.6,
+   "deterministic": 1.0,
+   "content": 0.6,
+   "route_ok": 1.0,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 0.8,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 8534,
+   "latency_p95_ms": 16753,
+   "cost_usd": 0,
+   "judge_failed": 5,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 2,
+    "unsupported": 1
+   },
+   "judge_means": {
+    "groundedness": 4.4,
+    "factual_correctness": 4.5,
+    "relevance": 4.7,
+    "usefulness": 4.4
+   },
+   "unsupported_claim_rate": 0.3,
+   "claim_verdicts": {
+    "claims": 49,
+    "supported": 44,
+    "partial": 0,
+    "generic": 5,
+    "not_found": 0,
+    "standard": 5
+   }
+  },
+  "by_split": {
+   "dev": {
+    "n": 3,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6664,
+    "latency_p95_ms": 16753,
+    "cost_usd": 0,
+    "judge_failed": 2,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 1,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 31,
+     "supported": 31,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 5
+    }
+   },
+   "holdout": {
+    "n": 2,
+    "passed": 0.0,
+    "deterministic": 1.0,
+    "content": 0.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.5,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9222,
+    "latency_p95_ms": 9911,
+    "cost_usd": 0,
+    "judge_failed": 3,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 1,
+     "unsupported": 1
+    },
+    "judge_means": {
+     "groundedness": 3.0,
+     "factual_correctness": 3.33,
+     "relevance": 4.0,
+     "usefulness": 3.0
+    },
+    "unsupported_claim_rate": 1.0,
+    "claim_verdicts": {
+     "claims": 18,
+     "supported": 13,
+     "partial": 0,
+     "generic": 5,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 2,
+    "passed": 1.0,
+    "deterministic": 1.0,
+    "content": 1.0,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 6299,
+    "latency_p95_ms": 6664,
+    "cost_usd": 0,
+    "judge_failed": 1,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 5.0
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 23,
+     "supported": 23,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 5
+    }
+   },
+   "pt": {
+    "n": 3,
+    "passed": 0.333,
+    "deterministic": 1.0,
+    "content": 0.333,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 0.667,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9911,
+    "latency_p95_ms": 16753,
+    "cost_usd": 0,
+    "judge_failed": 4,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 2,
+     "unsupported": 1
+    },
+    "judge_means": {
+     "groundedness": 3.8,
+     "factual_correctness": 4.0,
+     "relevance": 4.4,
+     "usefulness": 3.8
+    },
+    "unsupported_claim_rate": 0.6,
+    "claim_verdicts": {
+     "claims": 26,
+     "supported": 21,
+     "partial": 0,
+     "generic": 5,
+     "not_found": 0,
+     "standard": 0
+    }
+   }
+  },
+  "paths": {
+   "knowledge": {
+    "knowledge": 2,
+    "knowledge → customer_support → web": 1,
+    "knowledge → web": 1
+   },
+   "support": {
+    "customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:24:12+00:00",
+  "judge_cost_usd": 0.02364,
+  "judge_usage": {
+   "judgements": 10,
+   "total": {
+    "input_tokens": 37982,
+    "cache_read_tokens": 36096,
+    "cache_creation_tokens": 0,
+    "output_tokens": 3502
+   },
+   "mean": {
+    "input_tokens": 3798.2,
+    "cache_read_tokens": 3609.6,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 350.2
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 2
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 10,
+    "failed": 5,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.4,
+      "std": 0.18,
+      "exact": 0.833,
+      "within_one": 1.0,
+      "pairs": 6
+     },
+     "factual_correctness": {
+      "mean": 4.5,
+      "std": 0.0,
+      "exact": 1.0,
+      "within_one": 1.0,
+      "pairs": 6
+     },
+     "relevance": {
+      "mean": 4.7,
+      "std": 0.18,
+      "exact": 0.833,
+      "within_one": 1.0,
+      "pairs": 6
+     },
+     "usefulness": {
+      "mean": 4.4,
+      "std": 0.18,
+      "exact": 0.833,
+      "within_one": 1.0,
+      "pairs": 6
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.3,
+     "exact": 1.0,
+     "pairs": 6
+    }
+   },
+   "by_route": {
+    "knowledge": {
+     "cases": 4,
+     "judgements": 7,
+     "failed": 5,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.14,
+       "std": 0.24,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 4.29,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.57,
+       "std": 0.24,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.14,
+       "std": 0.24,
+       "exact": 0.667,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.429,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    },
+    "support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "dev": {
+     "cases": 3,
+     "judgements": 7,
+     "failed": 2,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 5
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 5
+      },
+      "relevance": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 5
+      },
+      "usefulness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 5
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 5
+     }
+    },
+    "holdout": {
+     "cases": 2,
+     "judgements": 3,
+     "failed": 3,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 3.0,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "factual_correctness": {
+       "mean": 3.33,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "relevance": {
+       "mean": 4.0,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      },
+      "usefulness": {
+       "mean": 3.0,
+       "std": 0.71,
+       "exact": 0.0,
+       "within_one": 1.0,
+       "pairs": 1
+      }
+     },
+     "unsupported_claim": {
+      "rate": 1.0,
+      "exact": 1.0,
+      "pairs": 1
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "PT06",
+   "repetition": 1,
+   "request_id": "req_eval0c6f7493f669",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Como funciona a antecipação de recebíveis na Getnet?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil. Acesse **Serviços > Antecipação de Vendas** e:\n1. Escolha uma conta bancária cadastrada e aceite os termos.\n2. Faça uma simulação para conferir valores, bandeiras e taxas. O valor mínimo é de R$50,00, e as taxas variam conforme o contrato.\n3. Se confirmar, confira o valor final, toque em **Antecipar** e informe sua senha. Acompanhe o status em **Meus Pedidos**.\n\nTambém é possível solicitar a habilitação da Antecipação Automática pelo app. A solicitação pode levar até 48 horas, exige saldo mínimo de R$ 50,00 para ocorrer e depende de avaliação individual do contrato.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Dúvidas e Perguntas Frequentes | Getnet",
+    "Como habilitar antecipação automática pelo App - Getnet"
+   ],
+   "duration_ms": 8534,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Como funciona a antecipação de recebíveis na Getnet?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Dúvidas e Perguntas Frequentes | Getnet",
+     "Como habilitar antecipação automática pelo App - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nJá sou cliente, posso alterar as taxas das minhas máquinas Getnet?\nSim, você pode solicitar a alteração das taxas nos canais da Getnet:\nAplicativo da Getnet;\nPortal do Cliente\n– para contratação de máquina adicional (aluguel ou compra);\nCentral de Relacionamento Getnet, por meio do telefone 4002-4000 e realizar a solicitação.\nQual a taxa para Antecipação Automática?\nQual a taxa para Antecipação Automática?\nA Antecipação Automática é uma condição para obtenção da isenção em clientes que optam pelo plano de recebimento ‘Receba Conforme suas Vendas’. Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática.\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nComprei/Aluguei uma Getnet, onde vejo as taxas do crédito parcelado?\nInformações de taxas\npara venda no débito e crédito\nPara maior transparência disponibilizamos todas as taxas cobradas em suas transações de vendas.\nPlano de recebimento:\n2 dias úteis*\nReceba conforme\nsuas vendas\nDébito:\n1,89%\n1,95%\nCrédito à vista:\n3,99%"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-habilitar-antecipacao-automatica-pelo-app",
+      "text": "Como habilitar antecipação automática pelo App - Getnet\nVocê pode habilitar a antecipação automática direto pelo App Getnet Brasil. Contudo, lembre-se que para qualquer solicitação de ativação e desativação é necessário ter um perfil administrativo e [credential removed] conseguir seguir.\nPasso a passo para habilitar a antecipação automática:\n1. Acesse o App com seu login e [credential removed]\n2. Clique no menu Serviços;\n3. Selecione Antecipação Automática;\n4. Clique Habilitar;\n5. Insira sua [credential removed] leia os termos e condições e clique Habilitar;\n6. Pronto! Sua solicitação foi enviada e pode demorar até 48 horas.\n7. Verifique o valor final e clique em Antecipar.\nCaso deseje desabilitar, basta selecionar Antecipação Automática na área Serviços e desabilitar.\nA habilitação é livre, porém para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 3021,
+     "kept_chars": 3021,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil. Acesse **Serviços > Antecipação de Vendas** e:\n1. Escolha uma conta bancária cadastrada e aceite os termos.\n2. Faça uma simulação para conferir valores, bandeiras e taxas. O valor mínimo é de R$50,00, e as taxas variam conforme o contrato.\n3. Se confirmar, confira o valor final, toque em **Antecipar** e informe sua senha. Acompanhe o status em **Meus Pedidos**.\n\nTambém é possível solicitar a habilitação da Antecipação Automática pelo app. A solicitação pode levar até 48 horas, exige saldo mínimo de R$ 50,00 para ocorrer e depende de avaliação individual do contrato."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 3021,
+    "kept_chars": 3021,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00060897,
+   "judge": {
+    "evaluation_id": "eval_2acda5fc527d4f3d83b3",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": null,
+    "state": "failed",
+    "model_used": "deepseek-flash",
+    "scores": {},
+    "reasons": {},
+    "unsupported_claim": null,
+    "cost_usd": 0.0038079,
+    "usage": null,
+    "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_2acda5fc527d4f3d83b3",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0038079,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    },
+    {
+     "evaluation_id": "eval_abb28ceb347e42d0a790",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Você pode antecipar vendas feitas no crédito, à vista ou parcelado, pelo app Getnet Brasil",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Acesse Serviços > Antecipação de Vendas",
+        "kind": "guidance"
+       },
+       {
+        "n": 3,
+        "text": "Escolha uma conta bancária cadastrada e aceite os termos",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Faça uma simulação para conferir valores, bandeiras e taxas",
+        "kind": "guidance"
+       },
+       {
+        "n": 5,
+        "text": "O valor mínimo é de R$50,00",
+        "kind": "value"
+       },
+       {
+        "n": 6,
+        "text": "As taxas variam conforme o contrato",
+        "kind": "fact"
+       },
+       {
+        "n": 7,
+        "text": "Se confirmar, confira o valor final, toque em Antecipar e informe sua senha",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Acompanhe o status em Meus Pedidos",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Também é possível solicitar a habilitação da Antecipação Automática pelo app",
+        "kind": "fact"
+       },
+       {
+        "n": 10,
+        "text": "A solicitação pode levar até 48 horas",
+        "kind": "date"
+       },
+       {
+        "n": 11,
+        "text": "Exige saldo mínimo de R$ 50,00 para ocorrer",
+        "kind": "value"
+       },
+       {
+        "n": 12,
+        "text": "Depende de avaliação individual do contrato",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "Clique no menu Serviços.\n3. Selecione Antecipação de Vendas."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Faça simulação da antecipação, conferindo os valores, bandeiras e taxas."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       },
+       {
+        "n": 6,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "Acesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Você pode habilitar a antecipação automática direto pelo App Getnet Brasil."
+       },
+       {
+        "n": 10,
+        "verdict": "supported",
+        "support": "Sua solicitação foi enviada e pode demorar até 48 horas."
+       },
+       {
+        "n": 11,
+        "verdict": "supported",
+        "support": "para a antecipação de fato ocorrer, é necessário ao menos saldo de R$ 50,00"
+       },
+       {
+        "n": 12,
+        "verdict": "supported",
+        "support": "Por tratar-se de um processo de aprovação de crédito, a Getnet reserva-se o direito de avaliar individualmente cada contrato na concessão (ou não) do produto Antecipação Automática."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 4,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All steps, values and dates trace to passages, except the generic claim that rates vary by contract.",
+      "factual_correctness": "Content agrees with the evidence; only the rate-variation-by-contract statement lacks support.",
+      "relevance": "Reply directly explains how antecipação works and how to do it via the app.",
+      "usefulness": "Clear, step-by-step, in Portuguese and polite; one unsupported clause slightly weakens it."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00089428,
+     "usage": {
+      "input_tokens": 4323,
+      "cache_read_tokens": 4096,
+      "cache_creation_tokens": 0,
+      "output_tokens": 668
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_47685272c4b2460e85bc",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0038079,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    }
+   ],
+   "deterministic": true,
+   "content": null
+  },
+  {
+   "id": "V030-ENABLEMENT-PENDING",
+   "repetition": 1,
+   "request_id": "req_evalda08fa632aaf",
+   "split": "dev",
+   "language": "en",
+   "message": "I already requested Visa enablement; can you check it?",
+   "route": "support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "customer_support",
+   "answer": "Your Visa enablement request is pending, and no activation date is recorded. The device checked for this request is marked available, but that does not mean Visa enablement is active. Keep protocol SIM-BND-1988-001 for follow-up.",
+   "sources": [
+    "Card-scheme enablement requests (your account)"
+   ],
+   "duration_ms": 6664,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_enablement_requests"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "I already requested Visa enablement; can you check it?",
+    "status": "answered",
+    "route": "support",
+    "sources": [
+     "Card-scheme enablement requests (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"enablement\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-04T19:53:59-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"enablement\"}, \"result\": {\"checks\": [], \"observed_at\": \"2026-11-04T19:53:59-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"enablement\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_enablement_requests",
+      "text": "{\"arguments\": {\"scheme\": \"Visa\"}, \"result\": {\"note\": \"Read-only status; no new request or terminal configuration is created.\", \"observed_at\": \"2026-11-04T19:54:00-03:00\", \"requests\": [{\"activated_at\": null, \"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}, \"protocol\": \"SIM-BND-1988-001\", \"request_id\": \"enr_1988_visa_001\", \"requested_at\": \"2026-11-02T09:00:00-03:00\", \"scheme\": \"visa\", \"status\": \"pending\"}], \"source\": \"EnablementRequestsMock\"}}"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 786,
+     "kept_chars": 786,
+     "items": 3,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Your Visa enablement request is pending, and no activation date is recorded. The device checked for this request is marked available, but that does not mean Visa enablement is active. Keep protocol SIM-BND-1988-001 for follow-up."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 786,
+    "kept_chars": 786,
+    "items": 3,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00028593,
+   "judge": {
+    "evaluation_id": "eval_53cac4d5e3904c2cb80b",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Your Visa enablement request is pending",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "no activation date is recorded",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "The device checked for this request is marked available",
+       "kind": "status"
+      },
+      {
+       "n": 4,
+       "text": "that does not mean Visa enablement is active",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Keep protocol SIM-BND-1988-001 for follow-up",
+       "kind": "standard"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "{\"activated_at\": null, \"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}, \"protocol\": \"SIM-BND-1988-001\", \"request_id\": \"enr_1988_visa_001\", \"requested_at\": \"2026-11-02T09:00:00"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"activated_at\": null ... \"status\": \"pending\""
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"activated_at\": null ... \"status\": \"pending\" — a request with no activation date is not active yet"
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "\"protocol\": \"SIM-BND-1988-001\", \"request_id\": \"enr_1988_visa_001\""
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every statement traces to the enablement request tool result: pending status, null activation date, available device, protocol.",
+     "factual_correctness": "Reply agrees with the tool result and draws only the correct consequence that pending with no activation means not active.",
+     "relevance": "Directly answers the merchant's request to check their Visa enablement request status.",
+     "usefulness": "Clear, concise, polite, same language as the merchant, states the status and protocol plainly."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00058393,
+    "usage": {
+     "input_tokens": 3217,
+     "cache_read_tokens": 3072,
+     "cache_creation_tokens": 0,
+     "output_tokens": 435
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_53cac4d5e3904c2cb80b",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Your Visa enablement request is pending",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "no activation date is recorded",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "The device checked for this request is marked available",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "that does not mean Visa enablement is active",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Keep protocol SIM-BND-1988-001 for follow-up",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "{\"activated_at\": null, \"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}, \"protocol\": \"SIM-BND-1988-001\", \"request_id\": \"enr_1988_visa_001\", \"requested_at\": \"2026-11-02T09:00:00"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"activated_at\": null ... \"status\": \"pending\""
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"activated_at\": null ... \"status\": \"pending\" — a request with no activation date is not active yet"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"protocol\": \"SIM-BND-1988-001\", \"request_id\": \"enr_1988_visa_001\""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every statement traces to the enablement request tool result: pending status, null activation date, available device, protocol.",
+      "factual_correctness": "Reply agrees with the tool result and draws only the correct consequence that pending with no activation means not active.",
+      "relevance": "Directly answers the merchant's request to check their Visa enablement request status.",
+      "usefulness": "Clear, concise, polite, same language as the merchant, states the status and protocol plainly."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00058393,
+     "usage": {
+      "input_tokens": 3217,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 435
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_ccb0c8b46714476b82e5",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Your Visa enablement request is pending",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "no activation date is recorded",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "The device checked for this request is marked available",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "that does not mean Visa enablement is active",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Keep protocol SIM-BND-1988-001 for follow-up",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"request_id\": \"enr_1988_visa_001\", \"requested_at\": \"2026-11-02T09:00:00-03:00\", \"scheme\": \"visa\", \"status\": \"pending\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"activated_at\": null"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"status\": \"pending\", \"activated_at\": null"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"protocol\": \"SIM-BND-1988-001\""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, status and protocol trace directly to the enablement requests tool result.",
+      "factual_correctness": "Pending status, null activation date and available device all agree with the evidence.",
+      "relevance": "Directly checks and reports the Visa enablement request status the merchant asked about.",
+      "usefulness": "Clear, concise, in the merchant's language, gives status and protocol for follow-up."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00046993,
+     "usage": {
+      "input_tokens": 3217,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 340
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_804cb23e5dab443a8ee2",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Your Visa enablement request is pending",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "no activation date is recorded",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "The device checked for this request is marked available",
+        "kind": "status"
+       },
+       {
+        "n": 4,
+        "text": "that does not mean Visa enablement is active",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Keep protocol SIM-BND-1988-001 for follow-up",
+        "kind": "standard"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"scheme\": \"visa\", \"status\": \"pending\", \"request_id\": \"enr_1988_visa_001\", \"requested_at\": \"2026-11-02T09:00:00-03:00\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"activated_at\": null"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"device_availability\": {\"available\": true, \"device_id\": \"dev_1988_gs01\"}"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"activated_at\": null ... \"status\": \"pending\""
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "\"protocol\": \"SIM-BND-1988-001\""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every statement in the reply traces directly to the enablement request tool result.",
+      "factual_correctness": "Status pending, null activation date and device availability all match the tool result.",
+      "relevance": "Directly answers the merchant's request to check the Visa enablement status.",
+      "usefulness": "Clear, concise, in the merchant's language, with the protocol reference for follow-up."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00046993,
+     "usage": {
+      "input_tokens": 3217,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 340
+     },
+     "error": null
+    }
+   ],
+   "expected_claims": [
+    [
+     "visa enablement request is still pending",
+     "visa enablement request is pending",
+     "visa enablement request remains pending",
+     "visa enablement request is currently pending"
+    ]
+   ],
+   "deterministic": true,
+   "content": true
+  },
+  {
+   "id": "REPLAN-ACCOUNT",
+   "repetition": 1,
+   "request_id": "req_eval4e3529ab6de2",
+   "split": "dev",
+   "language": "pt",
+   "message": "A antecipação de recebíveis está disponível no meu plano?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support → web",
+   "answer": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2, mas não foi possível confirmar se a antecipação está incluída nele. Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil. O valor mínimo é de R$ 50,00.",
+   "sources": [
+    "Como antecipar suas vendas pelo app - Getnet",
+    "Crédito: o que é antecipação de recebíveis – Conta Azul",
+    "Contracted products (your account)"
+   ],
+   "duration_ms": 16753,
+   "cost_usd": 0.0,
+   "model_calls": 8,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_contract_snapshot"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A antecipação de recebíveis está disponível no meu plano?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Como antecipar suas vendas pelo app - Getnet",
+     "Crédito: o que é antecipação de recebíveis – Conta Azul",
+     "Contracted products (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_contract_snapshot",
+      "text": "{\"arguments\": {}, \"result\": {\"effective_from\": \"2025-09-30\", \"observed_at\": \"2026-11-04T19:48:53-03:00\", \"pricing_context\": {\"plan\": \"demo_standard\", \"source\": \"ContractPricingContextMock\", \"version\": \"pricing_mock_v1\"}, \"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"], \"settlement_account_type\": \"get_conta\", \"settlement_plan\": \"debit_d1_credit_d2\", \"source\": \"ContractsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-antecipacao-de-venda-como-antecipar-sua-vendas-pelo-app",
+      "text": "Como antecipar suas vendas pelo app - Getnet\nÉ possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil, disponível para Android e iOS.\nPasso a passo para antecipar suas vendas pelo APP:\n1. Acesse com seu login e [credential removed]\n2. Clique no menu Serviços.\n3. Selecione Antecipação de Vendas.\n4. Na tela vai mostrar o valor disponível para antecipar e suas contas bancárias cadastradas. Escolha qual você deseja receber o valor antecipado.\n5. Leia e aceite os termos.\n6. Faça simulação da antecipação, conferindo os valores, bandeiras e taxas. Clique em confirmar.\n7. Verifique o valor final e clique em Antecipar.\n8. Insira sua [credential removed]\n9. Pronto sua solicitação foi realizado.\nAcesse a área de \"Meus Pedidos\" para acompanhar o status da sua solicitação. Lembrando que o valor mínimo para antecipação é de R$50,00."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1298,
+     "kept_chars": 1298,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2, mas não foi possível confirmar se a antecipação está incluída nele. Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil. O valor mínimo é de R$ 50,00."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1298,
+    "kept_chars": 1298,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.01157239,
+   "judge": {
+    "evaluation_id": "eval_cf60154259534d3086eb",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "não foi possível confirmar se a antecipação está incluída nele",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil",
+       "kind": "guidance"
+      },
+      {
+       "n": 4,
+       "text": "O valor mínimo é de R$ 50,00",
+       "kind": "value"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "settlement_plan\": \"debit_d1_credit_d2\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"]"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All facts trace to the tool_result and the passage; the gap is stated plainly.",
+     "factual_correctness": "Settlement plan, app eligibility and minimum amount all agree with the evidence.",
+     "relevance": "Directly answers whether anticipation is in the plan and explains how to request it.",
+     "usefulness": "Clear, polite Portuguese; states the gap and gives an actionable step and minimum."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.0004587,
+    "usage": {
+     "input_tokens": 3449,
+     "cache_read_tokens": 3200,
+     "cache_creation_tokens": 0,
+     "output_tokens": 304
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_cf60154259534d3086eb",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "não foi possível confirmar se a antecipação está incluída nele",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "O valor mínimo é de R$ 50,00",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"]"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts trace to the tool_result and the passage; the gap is stated plainly.",
+      "factual_correctness": "Settlement plan, app eligibility and minimum amount all agree with the evidence.",
+      "relevance": "Directly answers whether anticipation is in the plan and explains how to request it.",
+      "usefulness": "Clear, polite Portuguese; states the gap and gives an actionable step and minimum."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0004587,
+     "usage": {
+      "input_tokens": 3449,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 304
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_69e3721982834d6fb4f2",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0035286,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    },
+    {
+     "evaluation_id": "eval_b4a2bcccff2c4925b984",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Seu cadastro mostra o plano de recebimento débito D+1 e crédito D+2",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "não foi possível confirmar se a antecipação está incluída nele",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Você pode solicitar a antecipação de vendas no crédito, à vista ou parcelado, pelo app Getnet Brasil",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "O valor mínimo é de R$ 50,00",
+        "kind": "value"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"settlement_plan\": \"debit_d1_credit_d2\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"products\": [\"get_smart\", \"pix\", \"link_de_pagamento\", \"get_conta\"]"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "É possível antecipar o recebimento das vendas realizadas no crédito, à vista ou parcelado, por meio do aplicativo Getnet Brasil"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Lembrando que o valor mínimo para antecipação é de R$50,00."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, the settlement plan, the gap statement and the R$50 minimum trace to the tool result and passage.",
+      "factual_correctness": "Reply agrees with the contract snapshot and the app passage; no contradictions.",
+      "relevance": "It directly answers whether anticipation is in the plan, stating the gap plainly and how to request it.",
+      "usefulness": "Clear, concise, in Portuguese, states the gap and gives the actionable app path and minimum value."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0004779,
+     "usage": {
+      "input_tokens": 3449,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 320
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  },
+  {
+   "id": "NOEV",
+   "repetition": 1,
+   "request_id": "req_eval6ed9b2bce0f8",
+   "split": "holdout",
+   "language": "pt",
+   "message": "Qual é a taxa de juros da maquininha Get Ultra Pro 9000?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "web",
+    "personality"
+   ],
+   "executed_path": "knowledge → web",
+   "answer": "A Getnet não informa uma taxa única para a Get Ultra Pro 9000. As taxas podem variar conforme o tipo de pagamento e as condições do contrato. Consulte sua proposta ou o app da Getnet para verificar os percentuais aplicáveis à sua conta.",
+   "sources": [
+    "Getnet | Maquininha de cartão: Melhores taxas e opções grátis"
+   ],
+   "duration_ms": 9911,
+   "cost_usd": 0.0,
+   "model_calls": 4,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": false,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Qual é a taxa de juros da maquininha Get Ultra Pro 9000?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Getnet | Maquininha de cartão: Melhores taxas e opções grátis"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\n*Taxas mediante recebimento em D30\nGet Tap\nTransforme seu celular em maquininha\n0,99%\nDébito\n2,98%\nCrédito\n15,88%\nCrédito 12x\n5,98%\nCrédito 2x\n6,97%\nCrédito 3x\n7,96%\nCrédito 4x\n8,95%\nCrédito 5x\n9,94%\nCrédito 6x\n10,93%\nCrédito 7x\n11,92%\nCrédito 8x\n12,91%\nCrédito 9x\n13,90%\nCrédito 10x\n14,89%\nCrédito 11x\n15,88%\nCrédito 12x\nSem taxa de adesão\nPara celulares com aproximação (NFC) e android 12 ou superior\nCadastre-se e comece a vender\n*Taxas mediante recebimento D2\nSimule suas vendas\nAqui, você encontra taxas especiais para todas as bandeiras de cartões.\nJá é nosso cliente? Simule suas vendas em nosso app!\nAceite pagamentos com Pix, QR Code, aproximação\ne mais de 80 bandeiras\nPEDIR MINHA MAQUININHA\nDúvidas sobre as maquininhas?\nComo funciona a adesão da Get Lite e qual modelo faz parte da oferta?"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\nAplicativos para gestão do seu negócio\nSimulador de vendas\nManutenção vitalícia\nRecebeu sua maquininha de outra pessoa?\nCadastre-se aqui para ativá-la em seu nome\nSe você já adquiriu sua maquininha em nosso site, não precisa realizar este cadastro\nQUERO ME CADASTRAR\nIMPULSIONE SUAS VENDAS DE ONDE ESTIVER\nLeve sua maquininha e ganhe os serviços abaixo para acelerar suas vendas\nComece a vender agora e pague apenas a taxa de transação\nPix\nReceba na hora de forma rápida e segura direto na maquininha\nComprovante de pagamento\nSegurança com QR Code dinâmico\nRecebimento rápido\nConciliação de vendas\nLink de pagamento*\nVenda de onde estiver pelas redes sociais.\n1,90%\nDébito\n3,50%\nCrédito\n16,59%\nCrédito 12x\n6,09%\nCrédito 2x\n7,14%\nCrédito 3x\n8,19%\nCrédito 4x\n9,24%\nCrédito 5x\n10,29%\nCrédito 6x\n11,34%\nCrédito 7x\n12,39%\nCrédito 8x\n13,44%\nCrédito 9x\n14,49%\nCrédito 10x\n15,54%\nCrédito 11x\n16,59%\nCrédito 12x\nLink personalizável com detalhes do produto\nSegurança do Antifraude Getnet\nAceite débito, crédito, Pix e wallets\n*Link de pagamento sujeito à aprovação no credenciamento.\n*Taxas median [...cut]",
+      "cut": true
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-tap",
+      "text": "Getnet | Maquininha no celular: Receba pelo celular- Getnet\nPara CPF e CNPJ\nCom o Get Tap você prepara seu negócio para Black Friday\nSem taxa de adesão, manutenção e aluguel\nRealize vendas de qualquer valor no débito, crédito, voucher*, parcelado em até 12x e Pix\nTeclado dinâmico\nUso em múltiplos celulares\nSelo PCI DSS - Certificação de proteção de dados\nCONTRATE AGORA\nDisponivel para android 12 ou superior\n*voucher disponível conforme elegibilidade e ativação\nPARA PF E PJ\nSua escolha inteligente para vender mais em 2025:\nMaquininha + conta integrada Getnet\nRecomendado para\nPF ou CNPJ que querem alavancar seus negócios vendendo mais sem\npagar aluguel\nOnde você recebe\nGet Conta com cartão grátis\nQuando recebe\n2 dias úteis\nVendendo você ganha máquina grátis\nVenda o quanto quiser\nde graça pelo celular\nR$ 2mil por mês\n|\nGet Mini\nR$ 10mil por mês\n|\nGet Mini ou Get Clássica\nR$ 60mil por mês\n|\nGet Mini, Get Clássica ou Get Smart\nTaxa única para as bandeiras\nA partir de:\nDébito\n1,69%\nCrédito 1x\n3,79%\nCrédito 2x\n7,98%\nCrédito 3x\n8,47%\nCrédito 4x\n8,96%\nCrédito 5x\n9,45%\nCrédito 6x\n9,94%\nCrédito 7x\n10,43%\nCrédito 8x\n10,92%\nCrédito 9x\n11,41%\nC [...cut]",
+      "cut": true
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\nOferta não cumulativa com outras ofertas de aluguel.\nDuração: 12 meses a partir da contratação;\nApós esse período, o valor do aluguel será reajustado conforme tabela vigente.\nEssa alteração se aplica apenas ao aluguel e não contempla serviços adicionais, como o Eye e outros;\nO desconto só será aplicado se o cliente estiver adimplente com os pagamentos relativos ao valor mensal pela utilização das maquininhas.\nOferta exclusiva para contratação via site (site.getnet.com.br) e central de atendimento de vendas.\nOferta válida para novos clientes."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-todas-as-maquininhas",
+      "text": "Getnet | Maquininha de cartão: Melhores taxas e opções grátis\nPrepare seu negócio para vender mais na Black Friday com as maquininhas Getnet\nAceite cartões em moedas estrangeiras\nReceba pagamentos pelo Pix de forma rápida e segura\nConta e cartão grátis\nRecebimento em 2 dias úteis\nFrete Grátis\nESCOLHA SUA MAQUININHA\nAcelere suas vendas na Black Friday: ofertas especiais em maquininhas selecionadas\nSelecione sua faixa de faturamento e encontre as melhores taxas para sua empresa\nAté R$ 10 mil\nNOVO\nAcima de R$ 10 mil\nAcima de R$ 20 mil\nAcima de R$ 40 mil\nAcima de R$ 80 mil\n0,85%\nDébito\n2,69%\nCrédito\n9,07%\nCrédito 6x\nBaseado em seu faturamento, você tem R$ 319,69 de desconto no aluguel das maquininhas\nGet Clássica\nA melhor opção para seu negócio\nDe:\nR$ 79,90\nGrátis\nALUGAR GET CLÁSSICA\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nBateria com até 12hrs de duração\nTela touchscreen\nManutenção vitalícia\nGet Smart\nQuanto mais você fatura menos você paga\nDe:\nR$ 129,90\nGrátis\nALUGAR GET SMART\nAceita Pix, QR Code, aproximação e chip\nWi-fi, chip 3G e plano de dados grátis\nAplicativos para gestão do seu negócio\nS [...cut]",
+      "cut": true
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-taxas",
+      "text": "Getnet | Taxas - Getnet\nConfira as taxas das nossas soluções\nNavegue no menu ao lado e confira as nossas taxas.\nTaxas sujeitas a alteração de acordo com as condições dos produtos e serviços contratados. Com nossas maquininhas de cartão, Link de Pagamento e Get Tap você recebe na sua Get Conta sem pagar mais por isso!\nDébito\n0,99%\n1x\n2,89%\n2x\n7,80%\n3x\n8,22%\n4x\n8,64%\n5x\n9,06%\n6x\n9,48%\n7x\n9,90%\n8x\n10,32%\n9x\n10,74%\n10x\n11,16%\n11x\n11,58%\n12x\n12,00%\nEscolha a maquininha ideal para o seu negócio aqui\nGet Clássica\nPagamento por aproximação, Pix e QR Code\nComprovante impresso na hora ou via SMS\nReposição de bobina grátis e automática\nConexão Wi-Fi, chip 3G e plano de dados gratuitos\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ\nGet Smart\nPagamento por aproximação, Pix e QR Code\nSem fio com duração de até 12h de bateria\nConexão Wi-Fi, 3G, 4G e plano de dados gratuitos\nComprovante impresso na hora ou via SMS\nGanhe link de pagamento e venda no WhatsApp e redes sociais\nContratar antecipação para PF ou PJ"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 6219,
+     "kept_chars": 6000,
+     "items": 6,
+     "items_cut": 3,
+     "truncated": true
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "A Getnet não informa uma taxa única para a Get Ultra Pro 9000. As taxas podem variar conforme o tipo de pagamento e as condições do contrato. Consulte sua proposta ou o app da Getnet para verificar os percentuais aplicáveis à sua conta."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 6219,
+    "kept_chars": 6000,
+    "items": 6,
+    "items_cut": 3,
+    "truncated": true
+   },
+   "source_cost_usd": 0.01102201,
+   "judge": {
+    "evaluation_id": "eval_660de5996c974a5098ca",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": null,
+    "state": "failed",
+    "model_used": "deepseek-flash",
+    "scores": {},
+    "reasons": {},
+    "unsupported_claim": null,
+    "cost_usd": 0.0040332,
+    "usage": null,
+    "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\"claim..."
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_660de5996c974a5098ca",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0040332,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\"claim..."
+    },
+    {
+     "evaluation_id": "eval_42d56629c72441529d42",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Getnet não informa uma taxa única para a Get Ultra Pro 9000.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "As taxas podem variar conforme o tipo de pagamento e as condições do contrato.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Consulte sua proposta ou o app da Getnet para verificar os percentuais aplicáveis à sua conta.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "Confira as taxas das nossas soluções\nNavegue no menu ao lado e confira as nossas taxas."
+       },
+       {
+        "n": 2,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Only the gap about the missing rate is grounded; the variation and proposal guidance rest on nothing.",
+      "factual_correctness": "The reply does not contradict a rate, but states dependencies on contract no item holds.",
+      "relevance": "It addresses the asked product rate and explains Getnet does not state a rate for it.",
+      "usefulness": "Clear and polite, but sends the merchant to proposal/contract without a concrete channel or rate."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00036912,
+     "usage": {
+      "input_tokens": 5328,
+      "cache_read_tokens": 5120,
+      "cache_creation_tokens": 0,
+      "output_tokens": 230
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_ab7ecb2bf6384ddd8328",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "A Getnet não informa uma taxa única para a Get Ultra Pro 9000.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "As taxas podem variar conforme o tipo de pagamento e as condições do contrato.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Consulte sua proposta ou o app da Getnet para verificar os percentuais aplicáveis à sua conta.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "A Getnet não informa uma taxa única para a Get Ultra Pro 9000."
+       },
+       {
+        "n": 2,
+        "verdict": "generic",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 3,
+      "usefulness": 2
+     },
+     "reasons": {
+      "groundedness": "The gap about no rate for that product is fine, but contract dependence and proposal are unsupported.",
+      "factual_correctness": "The reply correctly notes no single rate is stated, but introduces unsupported contract dependence.",
+      "relevance": "It addresses the rate question by saying no unique rate is given, but does not point to available rate tables.",
+      "usefulness": "The merchant gets no concrete rate or Getnet channel, only a vague referral to proposal and app."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00036552,
+     "usage": {
+      "input_tokens": 5328,
+      "cache_read_tokens": 5120,
+      "cache_creation_tokens": 0,
+      "output_tokens": 227
+     },
+     "error": null
+    }
+   ],
+   "deterministic": true,
+   "content": null
+  },
+  {
+   "id": "EX10",
+   "repetition": 1,
+   "request_id": "req_evalad61a90973e3",
+   "split": "dev",
+   "language": "en",
+   "message": "Can I sell through WhatsApp using the Payment Link?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Yes. Getnet’s Payment Link is suitable for online and WhatsApp sales, and you can share the link with your customer through WhatsApp. Create a Payment Link in the Getnet Brasil app or the Getnet Customer Portal.",
+   "sources": [
+    "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+   ],
+   "duration_ms": 5935,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Can I sell through WhatsApp using the Payment Link?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+      "text": "Descontinuação dos pagamentos via WhatsApp Business - Getnet\nA partir de\n15/01\n, por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado.\nO que muda para você, cliente da Getnet?\nCaso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento. Sendo assim, você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento.\nComo usar o link de pagamento?\nO link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física. Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida.\nVocê pode configurar este link, com um ou mais meios de pagamentos: débito, crédito a vista, crédito parcelado, Pix ou Carteiras Digitais.\nApós criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)\nQuando a migração acontece?\nA migração já está sendo realizada, com data fim até\n15/01/2026\n, data oficial da descontinuação do WhatsApp Pay.\nQuais as vantagens desse novo pacote?\nAo migrar para o link de pagamento, você conta com:"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1250,
+     "kept_chars": 1250,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Yes. Getnet’s Payment Link is suitable for online and WhatsApp sales, and you can share the link with your customer through WhatsApp. Create a Payment Link in the Getnet Brasil app or the Getnet Customer Portal."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1250,
+    "kept_chars": 1250,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "source_cost_usd": 0.00042677,
+   "judge": {
+    "evaluation_id": "eval_5c9ca7d2f7524ef5b6e8",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Sim.",
+       "kind": "standard"
+      },
+      {
+       "n": 2,
+       "text": "O Link de Pagamento da Getnet é adequado para vendas online e pelo WhatsApp.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Você pode compartilhar o link com seu cliente pelo WhatsApp.",
+       "kind": "guidance"
+      },
+      {
+       "n": 4,
+       "text": "Crie um Link de Pagamento no app Getnet Brasil ou no Portal do Cliente Getnet.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp"
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida."
+      }
+     ],
+     "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "All statements trace to the passage on payment link use and creation channels.",
+     "factual_correctness": "The reply agrees fully with the passage; no wrong facts, dates or statuses.",
+     "relevance": "It directly answers whether WhatsApp sales via Payment Link are possible.",
+     "usefulness": "Clear, polite, concise, in the merchant's language, with actionable creation steps."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00043813,
+    "usage": {
+     "input_tokens": 3227,
+     "cache_read_tokens": 3072,
+     "cache_creation_tokens": 0,
+     "output_tokens": 311
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_5c9ca7d2f7524ef5b6e8",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "O Link de Pagamento da Getnet é adequado para vendas online e pelo WhatsApp.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Você pode compartilhar o link com seu cliente pelo WhatsApp.",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Crie um Link de Pagamento no app Getnet Brasil ou no Portal do Cliente Getnet.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the passage on payment link use and creation channels.",
+      "factual_correctness": "The reply agrees fully with the passage; no wrong facts, dates or statuses.",
+      "relevance": "It directly answers whether WhatsApp sales via Payment Link are possible.",
+      "usefulness": "Clear, polite, concise, in the merchant's language, with actionable creation steps."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00043813,
+     "usage": {
+      "input_tokens": 3227,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 311
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_540fd3ddad10439b8ee9",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim.",
+        "kind": "standard"
+       },
+       {
+        "n": 2,
+        "text": "O Link de Pagamento da Getnet é adequado para vendas online e pelo WhatsApp.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Você pode compartilhar o link com seu cliente pelo WhatsApp.",
+        "kind": "guidance"
+       },
+       {
+        "n": 4,
+        "text": "Crie um Link de Pagamento no app Getnet Brasil ou no Portal do Cliente Getnet.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "O link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Após criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida."
+       }
+      ],
+      "origin": "amostra:ajuste-24-claims.csv#cb82460b8a26"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every statement in the reply traces directly to the WhatsApp discontinuation passage.",
+      "factual_correctness": "The reply accurately reflects that Payment Link is suitable for WhatsApp sales and how to create it.",
+      "relevance": "It directly answers whether the merchant can sell through WhatsApp with Payment Link.",
+      "usefulness": "Clear, concise and actionable, telling the merchant where to create and how to share the link."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00045733,
+     "usage": {
+      "input_tokens": 3227,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 327
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_63a76a4510144dd091f8",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": null,
+     "state": "failed",
+     "model_used": "deepseek-flash",
+     "scores": {},
+     "reasons": {},
+     "unsupported_claim": null,
+     "cost_usd": 0.0034788,
+     "usage": null,
+     "error": "LLMError: judge: ValidationError: 1 validation error for JudgeScoreV5 Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='```json\\n{\\n \"cl..."
+    }
+   ],
+   "deterministic": true,
+   "content": true
+  }
+ ]
+}

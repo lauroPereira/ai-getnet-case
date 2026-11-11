@@ -2,7 +2,7 @@
 
 # Especificação: v0.7.0 — identidade e HITL real
 
-Versão 2 — 2026-11-03 — aberta pelo Supervisor sob a "Autorização por versão" do AGENTS.md; versão 2 com duas decisões do responsável no mesmo dia: **JWT com emissor próprio** no lugar de chave sintética com sessão opaca, e **serviço de ticketing próprio com tela no projeto web** no lugar do receptor passivo. Deriva da [especificação 0.2](evolucao-producao-v070-v0100.md) (RF-76 a RF-85, RF-100; CA-46 a CA-48) e do [plano](evolucao-producao-v070-v0100-plano.md) (decisões técnicas 1 a 8). História em [identidade-hitl-v070.md](../historias/identidade-hitl-v070.md); decisões em [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md) e [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
+Versão 2, 2026-11-03. Estado: entregue na v0.7.0 (2026-11-04; [resultado](../evidence/v070-resultado.md)). A versão 2 traz duas decisões do responsável: **JWT com emissor próprio** no lugar de chave sintética com sessão opaca, e **serviço de ticketing próprio com tela no projeto web** no lugar do receptor passivo. Deriva da [especificação 0.2](evolucao-producao-v070-v0100.md) (RF-76 a RF-85, RF-100; CA-46 a CA-48) e do [plano](evolucao-producao-v070-v0100-plano.md) (decisões técnicas 1 a 8). História em [identidade-hitl-v070.md](../historias/identidade-hitl-v070.md); decisões em [ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md) e [ADR 0018](../architecture/decisions/0018-interrupcao-retomada-webhooks.md).
 
 Esta spec não repete a 0.2: fixa o que o plano deixou aberto, o que mudou com as decisões do responsável e o **contrato entre os dois times**.
 
@@ -33,7 +33,7 @@ Provedor OIDC externo rodando na demo (Keycloak, Auth0, Entra): o assistente val
 
 ## Contrato entre os times
 
-Fixado aqui antes do código. Mudança neste contrato só pelo Supervisor, nesta spec, avisando os dois times.
+Fixado aqui antes do código. Mudança neste contrato só nesta spec, valendo para os dois times.
 
 ### Identidade (emissor no assistente, tarefa 63)
 
@@ -103,7 +103,7 @@ API para a tela, todas com JWT de operador validado pelo JWKS do assistente (`AS
 
 ## Decisões que o plano não fixou
 
-Todas reversíveis; registradas também no relatório do Supervisor.
+Todas reversíveis.
 
 | ID | Decisão | Motivo | Como reverter |
 | --- | --- | --- | --- |
@@ -135,11 +135,11 @@ Todas reversíveis; registradas também no relatório do Supervisor.
 | D27 | **Auditoria persiste entre subidas:** `audit_events` sai das tabelas recriadas pelo `seed`/`bootstrap`; os dados sintéticos de domínio continuam sendo recriados | O reinício do container (CA-48) não pode apagar a prova de segurança (CA-46, D23) | Voltar à lista anterior |
 | D28 | **Checkpoint que não grava** na abertura do caso deixa o caso marcado (`resume_status=checkpoint_failed`) e visível na fila desde o início; ação nele responde `503 checkpoint_missing`; não há caminho de retomada sem o grafo | Operador não descobre a falha só ao agir | — |
 | D29 | **`conversation.replied` ao lojista sem `operator_id`**: a cópia para `CONVERSATION_WEBHOOK_URL` omite o identificador do operador (a do ticketing o mantém), como a conversa já faz | Minimização: o lojista não precisa do identificador interno do atendente | Enviar o mesmo envelope aos dois |
-| D17 | **Ordem do Time B:** 72a já entregue; depois 66b (serviço, worktree próprio na v0.7.0) e 67 (tela). Nenhum dos dois depende do código do Time A, só deste contrato | Paralelismo real | — |
+| D17 | **Ordem do Time B:** 72a já entregue; depois 66b (serviço, checkout próprio na v0.7.0) e 67 (tela). Nenhum dos dois depende do código do Time A, só deste contrato | Paralelismo real | — |
 
 ## Critérios de aceitação e prova
 
-| ID | Critério | Prova determinística (tarefa) | Prova real (QA, campanha `v070-qa`) |
+| ID | Critério | Prova determinística (tarefa) | Prova real (campanha `v070-qa`) |
 | --- | --- | --- | --- |
 | CA-46 | Sem token `401`; token adulterado, expirado, revogado ou de outro emissor/audiência `401`; `user_id` de outro lojista `403 identity_mismatch`; dado de outro lojista nunca aparece; todo tool call com auditoria (principal, escopo, resultado) | Testes de contrato e integração; contagem de auditoria = contagem de tool calls (63, 64) | UC-22 por `curl` e na interface |
 | CA-47 | Caso vira ticket; `approve`, `reply` e `reject` feitos no ticketing produzem turno marcado como atendente, entrega ao lojista e volta ao ticket; resolver fecha o caso; entregas registradas nos dois lados | Integração com modelo programado e os dois serviços em processo (65, 66, 66b, 68) | UC-20 e UC-21 na tela de ticketing, na API e no Docker |
@@ -149,7 +149,7 @@ Regressão: 40 casos (`challenge_examples` 10, `core_cases` 17, `business_journe
 
 ## Requisitos não funcionais
 
-- Teto da campanha `v070-qa`: US$0,20, montada uma vez, combinada com o ledger primário (acumulado do projeto antes da versão: US$0,69 de US$5,00).
+- Teto da campanha `v070-qa`: US$0,20, montada uma vez, combinada com o ledger primário.
 - Testes sem chamada paga e sem rede externa; chaves RSA de teste geradas no teste; migração 0009 reversível; quebras de `POST /messages` e `/v1/sessions` no CHANGELOG com as duas chamadas (token + mensagem).
 - O caminho sem encaminhamento não lê checkpoint.
 - Nenhum segredo real; senhas, segredos de webhook e client secret do exemplo nomeados como fictícios; chave privada de assinatura nunca no Git.
@@ -162,4 +162,4 @@ Regressão: 40 casos (`challenge_examples` 10, `core_cases` 17, `business_journe
 | Estado do grafo não serializável pelo `SqliteSaver` | Teste de serialização primeiro na 65; plano B na ADR 0018 |
 | Quebra do `curl` do README | README com token + mensagem; smoke e `/docs` com o fluxo de token; senhas fictícias no `.env.example` |
 | Contrato entre times divergir | Contrato nesta seção; teste de contrato dos dois lados com os mesmos exemplos; integração na 68 |
-| Arquivos compartilhados entre times (`pyproject.toml`, compose, `.env.example`) | Só acréscimos em blocos próprios; o Supervisor integra a branch do B na da versão e resolve |
+| Arquivos compartilhados entre times (`pyproject.toml`, compose, `.env.example`) | Só acréscimos em blocos próprios, integrados no fechamento da versão |

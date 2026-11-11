@@ -27,3 +27,14 @@ Tarefas 97 e 99 concluídas; o cliente de serviço `telegram-operator` dispõe d
 ## Critérios de conclusão
 
 - CA-69 coberto por testes; desligado por padrão; suíte estrita verde.
+
+## Resultado
+
+Caso sintético levado ao Telegram, assumido e respondido pelo operador, com a resposta no histórico do lojista.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```

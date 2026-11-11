@@ -1,7 +1,8 @@
 # Contratos propostos da API v0.4.0
 
-Contrato aprovado no plano completo em 2026-10-27, antes das telas; a
-implementação deve demonstrar sua conformidade. Origem:
+Estado: entregue na v0.4.0 (2026-10-27; [resultado](../evidence/v040-resultado.md)); as sessões
+opacas deram lugar a JWT na v0.7.0 ([ADR 0017](../architecture/decisions/0017-identidade-principal-escopos.md)).
+Contrato aprovado no plano em 2026-10-27, antes das telas. Origem:
 [plano v0.4.0](perfis-interface-v040-plano.md), RF-42, RF-47–53 e RNF-09.
 Nomes de campos/código são em inglês. `POST /messages` mantém seu contrato.
 

@@ -8,12 +8,10 @@ de comparação, preservando integralmente a guarda e a contabilização existen
 ## Especificação relacionada
 
 RF-47–49, RF-75, CA-34/CA-37/CA-45; plano v0.4.0 e contratos aprovados.
-Achado P2 da revisão r1, candidato r1.
 
 ## Pré-condições
 
-Correção dentro do plano aprovado, sem chamada paga ou alteração de proteção.
-Manifesto/parecer r1 preservados; QA ainda não iniciado.
+Dentro do plano aprovado, sem chamada paga ou alteração de proteção.
 
 ## Arquivos prováveis
 
@@ -29,7 +27,7 @@ Não modificar BudgetGuard, limites financeiros ou a regra de reserva.
 3. Preservar custo/reserva já contabilizados; não reiniciar ledger, liberar
    valor consumido ou reduzir proteção para aprovar o teste.
 4. Verificar o erro no consumidor HTTP, testes proporcionais e regressão
-   necessária; fixar novo candidato e devolver ao mesmo Reviewer.
+   necessária; fixar novo candidato para revisão.
 
 ## Critérios de conclusão
 
@@ -37,26 +35,14 @@ Não modificar BudgetGuard, limites financeiros ou a regra de reserva.
 - [x] Provedor não é invocado quando sua reserva foi negada.
 - [x] Falha no segundo Router não cria comparação completa/consumível ou atendimento.
 - [x] Contabilização anterior permanece intacta, sem ultrapassar limites.
-- [x] Parecer/revalidação identificam o novo candidato e a correção real.
+- [x] Revisão e revalidação identificam o novo candidato e a correção real.
 
-## Validação
+## Resultado
 
-`PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q
-tests/integration/test_v1_api.py -k budget_rejection
---basetemp=.pytest_cache/v040-budget-r2-target2-20261027`: **4 passaram**.
-Os quatro casos usam estimativa/liquidação programadas de US$0,04/US$0,03,
-sem provedor ou chamada paga: limite por requisição e saldo global antes do
-primeiro Router, e ambos novamente antes do segundo. As respostas são HTTP 429
-com `request_budget_exceeded` ou `installation_budget_exceeded`; quando a
-primeira reserva foi liquidada, ela permanece em US$0,03 no ledger e a segunda
-chamada ao modelo não ocorre. Nenhum registro de comparação incompleta é
-criado. OpenAPI declara a resposta 429. A suíte strict r2 e os resultados
-completos estão na passagem Developer r2.
+Bloqueio de orçamento antes do primeiro ou do segundo Router volta como HTTP 429 com `request_budget_exceeded` ou `installation_budget_exceeded`, sem a chamada seguinte ao modelo nem comparação incompleta; a reserva já liquidada (US$0,03) fica no ledger. 4 testes focados (`-k budget_rejection`) aprovados; OpenAPI declara a resposta 429. Evidência: [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.4.0)
 ```
-
-Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)).

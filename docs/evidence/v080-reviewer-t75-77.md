@@ -1,6 +1,6 @@
-# Revisão independente do candidato r5 da v0.8.0 (tarefas 75 a 77)
+# Revisão independente das tarefas 75 a 77, v0.8.0
 
-Reviewer nativo do Claude Code (`opus`/`high`) em contexto frio, 2026-11-05. Não leu a passagem do Developer; leu as tarefas só até "## Validação"; do holdout usou apenas hash e `git rev-parse`.
+**Parecer final: apto**, no candidato `658c70adc69cb956c931737b8a1caf38ed638dd5` (r7, terceira revisão, no fim), sem achado bloqueante. Contexto novo (`opus`/`high`), 2026-11-05, sem o relato da implementação; tarefas lidas só até "## Validação"; do holdout, só hash e `git rev-parse`.
 
 ## Rodada 1 — candidato `94bf7b3b6e0ac44167878fad5bb12765726a51f8`
 

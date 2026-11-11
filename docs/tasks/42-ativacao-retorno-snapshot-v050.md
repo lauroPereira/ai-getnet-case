@@ -6,7 +6,7 @@ Trocar a base atomicamente sem alterar o atendimento em curso.
 
 ## Especificação relacionada
 
-RF-64–65, CA-41 e [ADR proposta0014](../architecture/decisions/0014-ciclo-kb-v050.md).
+RF-64–65, CA-41 e [ADR 0014](../architecture/decisions/0014-ciclo-kb-v050.md).
 
 ## Pré-condições
 
@@ -25,18 +25,16 @@ Registro/serviço KB, grafo/RunContext, trace/snapshot e API.
 
 ## Critérios de conclusão
 
-- [x] Conflito409; demo não ativa; estado inválido não muda ponteiro.
+- [x] Conflito 409; demo não ativa; estado inválido não muda ponteiro.
 - [x] Uma versão por run, registrada; nova execução vê a nova ativa.
 - [x] Rollback e legado/MCP preservados, sem remoção de dados.
 
-## Validação e status
+## Resultado
 
-Implementada pelo Developer r1. CAS de ativação/retorno, ator e evento exercitados; teste mantém índice antigo utilizável após ativação e confirma a versão capturada no trace. Conflito obsoleto retorna `409`. Nenhum banco ou ledger do responsável foi aberto.
+Ativação e retorno por troca condicional (CAS) com ator e evento; o índice antigo segue utilizável após a ativação, e o trace registra a versão capturada no início do atendimento; conflito obsoleto retorna `409`. Suíte estrita do backend: 293 testes. Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.5.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v050-resultado.md)).

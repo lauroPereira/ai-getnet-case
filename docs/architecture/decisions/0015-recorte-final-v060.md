@@ -2,7 +2,7 @@
 
 ## Status
 
-Aceita pelo responsável em 2026-10-27 com o recorte da v0.6.0. Complementa as decisões 0008 e 0012; não as substitui. A cláusula que encerrava a expansão funcional foi revogada pela [decisão 0016](0016-reabertura-roadmap-producao.md); o restante continua valendo.
+Aceita (v0.6.0, 2026-10-27). Complementa as decisões 0008 e 0012. Emendada pela [decisão 0016](0016-reabertura-roadmap-producao.md), que revogou só a cláusula que encerrava a expansão funcional.
 
 ## Contexto
 
@@ -16,7 +16,7 @@ O plano 0.2 previa uma v0.6.0 com Evaluation Agent por etapa e ciclo de melhoria
 - Comparação pequena (2–3 perfis, até 3 cenários, até 2 repetições), executada no processo da API fora da requisição, com efeitos de domínio isolados numa cópia do banco sintético e traces marcados.
 - Persistência mínima: migração 0008 reversível com `run_evaluations` e `comparisons`, mais o contador por sessão demo. Nenhuma outra entidade de experimento.
 - Catálogo curto de cenários rotulados em `data/scenarios/`, servido por `GET /v1/scenarios`.
-- Exposição conforme 0012, com dois ajustes: a API do compose fica em `127.0.0.1:8000` e a sessão demo tem limite configurável de mensagens; o sublimite efetivo da demonstração é o saldo do teto persistente do ledger.
+- Exposição conforme 0012, com dois ajustes: a API do compose fica em `127.0.0.1:8000` e a sessão demo tem limite configurável de mensagens; o sublimite efetivo da demonstração é o restante do teto persistente do ledger.
 
 ## Alternativas
 
@@ -26,7 +26,7 @@ O plano 0.2 previa uma v0.6.0 com Evaluation Agent por etapa e ciclo de melhoria
 
 ## Consequências e retorno
 
-Menos superfície para manter e demonstrar; requisitos retirados ficam como adiados, com IDs preservados. Retorno pela tag `v0.5.0` e pela migração 0008 → 0007 em banco sintético. Comparações longas dependem do processo da API ativo; uma comparação interrompida fica parcial ou com falha registrada (desde a v0.10.0, `interrupted` e retomável; [decisão 0022](0022-rubrica-v4-operacao-retomavel.md)).
+Menos superfície para manter e demonstrar; requisitos retirados ficam como adiados, com IDs preservados. Retorno pela tag `v0.5.0` e pela migração 0008 → 0007 em banco sintético. A comparação interrompida passou a `interrupted` e retomável na v0.10.0 ([decisão 0022](0022-rubrica-v4-operacao-retomavel.md)) e a ser retomada por qualquer worker na v0.13.0 ([decisão 0025](0025-identidade-e-operacao.md)).
 
 ## Data
 

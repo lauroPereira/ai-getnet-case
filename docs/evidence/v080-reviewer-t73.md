@@ -1,4 +1,6 @@
-# Revisão independente da T73 — v0.8.0
+# Revisão independente da tarefa 73 (regressão e fechamento), v0.8.0
+
+**Parecer final: apto**, no candidato `9057aaac36eddbe309393089115175b6fc98b5bd` (terceira revisão, no fim), por inspeção estática de um pacote com o delta, o código, os testes e as fontes normativas. As duas primeiras pediram correções no ledger da campanha e na projeção de custo.
 
 ## Rodada 1 — correções necessárias
 

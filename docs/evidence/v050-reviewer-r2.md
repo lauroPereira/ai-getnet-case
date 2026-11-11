@@ -1,11 +1,9 @@
-# Parecer independente — base versionada v0.5.0 (r2)
+# Revisão independente da base versionada da v0.5.0
 
-- Papel: Reviewer independente (Sonnet 5.5), contexto novo, sem participação na implementação. Não substitui QA.
-- Estado: **apto para QA** — nenhum achado P1/P2. Sete achados P3 (R2-01 a R2-05, R2-07, R2-08) e uma decisão humana pendente (R2-06) descritos abaixo; a decisão R2-06 deve ser tomada **antes** de o QA montar o ledger real.
-- Repositórios/branches: `C:\workspace\ai-getnet-case` e `C:\workspace\ai-getnet-case-web`, ambos em `codex/v0.5.0-base-versionada`.
-- Base e HEAD (não houve commit): backend `ea2355b5ba8fa8dcff66200f34461ae063183250`; web `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`. O candidato é o working tree local.
-- Candidato: `v0.5.0-local-r2` (manifesto `v050-candidato-r2.json`, pai `v050-candidato-r1.json`).
-- Próxima ação: Supervisor decidir R2-06 e encaminhar ao QA com o candidato fixado; Developer pode tratar os P3 (R2-01, R2-02, R2-05, R2-07 e R2-08 são baratos e isolados) sem reabrir revisão completa, ou o Supervisor pode aceitá-los como pendências conhecidas.
+**Parecer final: apto**, no candidato `v0.5.0-local-r2` (manifesto `v050-candidato-r2.json`, pai `v050-candidato-r1.json`), sem achado bloqueante: sete pontos menores e uma decisão de produto (R2-06, o arquivo de teto persistente ao lado do ledger, adotado na versão), descritos abaixo.
+
+- Independência: Sonnet 5.5, contexto novo, sem participação na implementação.
+- Base e HEAD (não houve commit): backend `ea2355b5ba8fa8dcff66200f34461ae063183250`; web `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`. O candidato é a árvore local.
 
 ## Independência e limites desta revisão
 

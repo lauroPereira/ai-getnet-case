@@ -30,14 +30,12 @@ Contratos/autenticação/ADR 0013 aprovados; tarefas 27–28 disponíveis.
 - [x] Comparação executa somente Routers; decisão selecionada é consumida uma vez.
 - [x] OpenAPI e exemplos consistentes, legado preservado e papel validado no backend.
 
-## Validação
+## Resultado
 
-O snapshot OpenAPI do projeto irmão declara `SessionBearer` nas rotas protegidas e documenta `/v1/catalog/models`, incluindo parâmetros compatíveis. Testes backend cobrem digest/expiração/revogação, papel/dono, conflito, migração e legado. HTTP sintético verificou login, catálogo, perfis, comparação, atendimento, trace e uso único. Regressão de logout: `DELETE` retorna corpo vazio `204`; o GET seguinte sem sessão retorna corpo `401` íntegro na mesma conexão persistente. Strict backend r4: 214 passed; sem chamadas de provedor.
+Contratos `/v1` com sessão opaca por digest, expiração e revogação, papel e dono em cada rota e comparação de Routers com uso único da decisão. HTTP sintético cobriu login, catálogo, perfis, comparação, atendimento, trace e logout (`204` seguido de `401` íntegro na mesma conexão). Suíte estrita do backend: 214 testes, sem chamada de provedor. Evidência: [resultado da v0.4.0](../evidence/v040-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.4.0)
 ```
-
-Revisão independente e QA aptos com modelos programados ([resultado](../evidence/v040-resultado.md)).

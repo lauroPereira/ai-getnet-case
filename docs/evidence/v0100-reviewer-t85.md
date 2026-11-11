@@ -1,12 +1,12 @@
-# Passagem de papel: revisão da tarefa 85 (`/metrics` e regras de alerta), rodada 1
+# Revisão independente da tarefa 85 (`/metrics` e regras de alerta), v0.10.0
 
-- **Papel e responsável:** Reviewer (subagente, contexto frio), 2026-11-05.
+**Parecer final: apto**, no export de `0b1a637` (2026-11-06), sem achado bloqueante. A primeira revisão, registrada logo abaixo, examinou o export de `c7b06d5` e pediu correções; a segunda, mais abaixo, confirma que foram fechadas.
+
 - **Objetivo e critérios:** tarefa 85, lida só até "## Validação"; spec `rubrica-operacao-v0100.md` D4, D5 e CA-59; história `rubrica-operacao-v0100.md`, momentos 6 e 7.
 - **Escopo:** `29add9c` (`observability/metrics.py` novo, `api/app.py` por acréscimo), `7638f18` (`alerts/rules.yml` novo, `tests/integration/test_v0100_metrics.py` novo) e `2a561db` (README, seção Observability). Base `023dc61`.
-- **Estado:** **correções necessárias**. Nenhum P1, 1 P2 (rótulos sem vocabulário fechado na camada de métricas) e 6 P3.
-- **Branch e PR:** `codex/v0.10.0-rubrica-operacao`, sem PR.
+- **Estado na primeira revisão:** correções necessárias (rótulos sem vocabulário fechado na camada de métricas e seis pontos menores).
 - **Base e versão final:** revisei o export de `c7b06d5` (`git archive`). Não há manifesto `v0100-candidato-*.json`, então fixei o candidato pelos blobs: `metrics.py c8c81af`, `app.py 978e2c2`, `rules.yml a24fc67`, `test_v0100_metrics.py 6d59e71`, `README.md 705d206`. No fim, os mesmos blobs. O HEAD avançou para `5d1ea89` durante a revisão (`2230603`, `5d1ea89`), mas os dois commits só mexem em `docs/` (`git diff --stat c7b06d5 HEAD -- src alerts tests README.md` sai vazio). O export ficou idêntico a um `git archive c7b06d5` novo (`diff -rq`, desconsiderando só os caches).
-- **Independência:** independente. Não implementei nada e não li `v0100-developer.md` nem a Validação ou o Status da tarefa 85.
+- **Independência:** independente. Não implementei nada e não li o relato da implementação nem a Validação ou o Status da tarefa 85.
 
 ## Comandos e números
 

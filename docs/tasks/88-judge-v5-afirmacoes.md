@@ -30,3 +30,14 @@ O juiz recebe os itens de evidência da tarefa 87 por `judge_input`; `judge.v3` 
 - Dois prompts novos, dois esquemas, veredito em código, `claims` persistido.
 - `judge.v5` é padrão; `--rubric v3` e `--rubric v4` preservam a seleção explícita das versões anteriores.
 - Testes offline cobrem os esquemas, cálculo do veredito, migração e compatibilidade de v3/v4.
+
+## Resultado
+
+`judge_claims.v1` e `judge.v5` julgam afirmação por afirmação, com o veredito calculado em código. `judge.v5` atingiu κ 0,647 (IC 95% 0,28 a 0,92) em 36 respostas seladas, pela regra escrita antes da medição, e é a rubrica padrão.
+Evidência: [resultado da v0.11.0](../evidence/v0110-resultado.md) e [ADR 0023](../architecture/decisions/0023-juiz-por-afirmacao-evidencia-web.md).
+
+## Status
+
+```text
+concluída (v0.11.0)
+```

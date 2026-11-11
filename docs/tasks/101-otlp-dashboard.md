@@ -26,3 +26,14 @@ Traces da API e métricas `/metrics` disponíveis; a exportação fica desligada
 ## Critérios de conclusão
 
 - CA-72 coberto por testes; dashboard válido; suíte estrita verde.
+
+## Resultado
+
+Spans por OTLP e painel Grafana sobre `/metrics` validados no sistema com Docker; nada é exportado sem configuração.
+Evidência: [resultado da v0.13.0](../evidence/v0130-resultado.md).
+
+## Status
+
+```text
+concluída (v0.13.0)
+```

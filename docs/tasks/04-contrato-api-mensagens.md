@@ -32,12 +32,12 @@ Expor `POST /messages` com schemas de entrada e saída, corpo de erro documentad
 - [x] Testes de contrato passam.
 - [x] O orquestrador pode ser trocado sem alterar a camada HTTP.
 
-## Validação
+## Resultado
 
-2026-10-26: testes de contrato em `tests/integration/test_messages_contract.py` (sucesso, campo ausente, limites, campo desconhecido, exemplos no OpenAPI, rota de traces só em modo demonstração) passaram. Revisão não independente (mesma sessão).
+`POST /messages` com schemas, corpo de erro, `request_id` e orquestrador injetável. Testes de contrato em `tests/integration/test_messages_contract.py` (sucesso, campo ausente, limites, campo desconhecido, exemplos no OpenAPI, rota de traces só em modo demonstração) aprovados em 2026-10-26.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

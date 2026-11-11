@@ -1,12 +1,9 @@
 # Only project inputs enter the context; the test stage needs the repository's tests and documentation too.
 *
-!.agent-template.json
 !.dockerignore
 !.gitattributes
 !.gitignore
-!AGENTS.md
 !CHANGELOG.md
-!CLAUDE.md
 !Dockerfile
 !README.md
 !docker-compose.yml
@@ -50,14 +47,10 @@ docs/*
 !docs/templates/**
 !docs/wiki
 !docs/wiki/**
-!evals
-!evals/**
 !observability
 !observability/**
 !prompts
 !prompts/**
-!skills
-!skills/**
 !src
 !src/**
 !tests
@@ -127,5 +120,5 @@ _tmp
 **/_tmp
 Claude outputs
 **/Claude outputs
-# docs, evals, skills, tests and tools stay in the context for the `test` target (README, "Run the tests inside the
+# docs, tests and tools stay in the context for the `test` target (README, "Run the tests inside the
 # image"); the published image copies only src, prompts and data

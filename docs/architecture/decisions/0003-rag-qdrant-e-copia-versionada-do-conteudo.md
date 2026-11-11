@@ -6,11 +6,7 @@ Indexar fontes oficiais e a base fictícia no Qdrant com `text-embedding-3-small
 
 ## Status
 
-```text
-aceita
-```
-
-Aceita pelo responsável em 2026-10-26.
+Aceita (v0.1.0, 2026-10-26). Complementada pelas ADRs [0009](0009-versoes-da-base-de-conhecimento.md) e [0020](0020-retrieval-hibrido-holdout.md).
 
 ## Contexto
 

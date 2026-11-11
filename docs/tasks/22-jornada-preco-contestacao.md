@@ -30,19 +30,12 @@ Ferramentas/registro, clientes, comparador de preço, dados contratuais, prompts
 - [x] Recurso de outro cliente bloqueado e auditado.
 - [x] Ferramentas equivalentes pela API/domínio e MCP; núcleo preservado.
 
-## Validação
+## Resultado
 
-Validação final: **191 testes**, Ruff, estrutura e skills aprovados. Os quatro
-resultados de preço foram comprovados por HTTP e MCP no QA independente.
-Respostas HTTP reais preservadas foram inspecionadas e reavaliadas sem nova
-API; o replay final aprovou 40/40 casos. As quatro conversas foram repetidas
-com modelo real no candidato r6. Métodos distintos, limitações e orçamento
-estão no [resultado](../evidence/v030-resultado.md).
+`simulate_pricing`, `get_fee_breakdown` e contexto contratual, com comparação determinística em centavos e quatro resultados distinguíveis por HTTP e MCP. Suíte estrita: 191 testes; reavaliação das respostas HTTP reais: 40/40; as quatro conversas repetidas com modelo real. Evidência: [resultado da v0.3.0](../evidence/v030-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.3.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v030-resultado.md)).

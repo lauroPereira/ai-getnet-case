@@ -1,126 +1,34 @@
-# Resultado da v0.4.0 — candidato local
+# Resultado da v0.4.0
 
-## Estado atual
+## Capacidades
 
-**Verificação sem custo do candidato r6 concluída; revisão e revalidação funcional aptas.**
-O responsável aceitou a integração privada com as limitações registradas.
-[PR backend #5](https://github.com/lauroPereira/ai-getnet-case/pull/5) e
-[PR web #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1) integrados.
-Mains remotas conferidas em `ea2355b5ba8fa8dcff66200f34461ae063183250`
-e `40ff199f7441a09b0fa28925bcfd0038e4b6ccbe`; confirmação.
-CA-32/JEV real e disponibilidade autenticada de modelos permanecem pendentes;
-QA pago foi autorizado a partir da v0.5.0. Não houve inferência paga v0.4.0.
+- Os perfis Reference, Hybrid e Adjusted são validados contra um catálogo datado de provedores, e cada versão publicada é imutável.
+- A API `/v1` autentica com tokens de sessão opacos de 60 minutos, guardados só como digest SHA-256; o backend aplica papéis e posse, revoga sessões e consome cada comparação uma única vez, de forma atômica.
+- O adaptador JEV System One serve só ao Router, sem fallback silencioso de provedor.
+- A interface Streamlit é um cliente separado, com mapa de rotas gerado do snapshot OpenAPI, fixtures Simulado e Gravado e o modo Real (API) por HTTP.
+- `max_output_tokens` é configurável por agente nos modelos OpenAI e DeepSeek, limitado pelo teto do agente e aplicado igual na reserva de orçamento e no payload.
+- Trocar o Router depois de uma comparação descarta o resultado; uma nova comparação só começa com clique explícito.
 
-[Manifesto r6](v040-candidato-r6.json): backend na branch
-`codex/v0.4.0-perfis-interface`, base/HEAD `bd549cc921ccffb37bd304a0959b8a4b690d6421`,
-51 arquivos fixados, incluindo três referências de catálogo/parâmetros;
-frontend independente sem Git, 84 arquivos. Fingerprint
-`d54fbd3799cecfefd0c467be217eb841e59d4ae9c89f607dc1a64967ae4d9367`.
-História versão 1 e critérios aprovados preservados.
+## Validação
 
-## Evidências por escopo
+| Verificação | Resultado |
+| --- | --- |
+| Candidato | [Manifesto r6](v040-candidato-r6.json): 51 arquivos do backend e 84 da interface, fingerprint `d54fbd3799cecfefd0c467be217eb841e59d4ae9c89f607dc1a64967ae4d9367`; runtime `b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5`, build `ed67d7ff81f6ed49042e9f3aa332ac145fdd004fa38d6b99e7a05072155d816d` |
+| Suíte do backend | 216 testes estritos; Ruff e skills aprovados |
+| Interface | 14 testes; Ruff e estrutura aprovados |
+| Revisão independente | Apto; os dois sentidos da troca de Router, contadores próprios e hashes conferidos ([revisão](v040-reviewer-r6.md)) |
+| Validação independente | Apto: nos dois sentidos, mudar a escolha depois da comparação invalida o resultado; rótulo Gravado, publicação de perfil, parâmetros efetivos, snapshot e rejeição sem mudança de versão comprovados ([validação](v040-qa-r6.md)) |
+| Build e execução | Imagem instalada com 124 arquivos iguais ao manifesto; imagem `sha256:3dc18d777ae79407363fddd4f5ca65c862b2cbb059f5af61a08e2d9e362d5c85` reutilizada por igualdade dos mapas de runtime e build ([Docker](v040-docker-r6.json)) |
+| Conferência final | Mapas 51/84/127/128, 29 arquivos protegidos da interface e 124 instalados, sem divergências ([auditoria](v040-verificacao-final-r6.json)) |
+| Critérios | CA-28, CA-33, CA-34–35, CA-36 (RF-49/51) e CA-37 comprovados com transporte HTTP real e inferência programada; CA-32, o JEV com modelo real, foi comprovado na v0.6.0 ([validação](v060-qa.md)) |
+| Catálogo de modelos | Conferido nas fontes oficiais ([fontes](v040-catalogo-fontes.md), [parâmetros](v040-parametros-modelo-fontes.md)); a consulta pública aos metadados, sem credenciais, respondeu 401, 401 e 403 ([registro](v040-metadados-publicos.json)) |
 
-| Escopo | Evidência | Resultado e limite |
-| --- | --- | --- |
-| Base web independente | Manifesto inicial | Template 0.2.0, 47 fontes identificadas, nove skills sincronizadas; governança adaptada sob aprovação |
-| Implementação/regressão backend | Developer r5 | 216 testes estritos, Ruff/skills; separa reserva de parâmetro aplicado, sem inferência paga |
-| Contrato e interface | Developer r6 | 14 testes web, Ruff/estrutura; corrige seleção sem mudar backend/contrato OpenAPI |
-| Revisão técnica independente | [Reviewer r6](v040-reviewer-r6.md) | Apto para QA; dois sentidos da troca, contadores próprios e hashes conferidos |
-| Build e execução instalados | [Docker r6](v040-docker-r6.json) | Reutiliza imagem r5 por igualdade completa de runtime/build; 124 arquivos instalados coincidem com r6 |
-| História funcional | [QA r6](v040-qa-r6.md) e positivos r5 | R6 apto na tarefa 38 nos dois sentidos; Gravado, publicação/parâmetro, snapshot e rejeição já comprovados em r5 |
-| Conferência final do Supervisor | [Auditoria r6](v040-verificacao-final-r6.json) | Mapas 51/84/127/128, 29 protegidos web e 124 instalados, sem divergências; API/interface200 |
+A validação usou transporte HTTP real com modelos e embeddings programados, sem credencial de provedor.
 
-O backend completo tem fingerprint de runtime
-`b8d3a1845ac4ea16c50272bb800248bc7c4df4dbd172e40c47ae220fb063c4a5` e
-build `ed67d7ff81f6ed49042e9f3aa332ac145fdd004fa38d6b99e7a05072155d816d`.
-A imagem r5 instalada é
-`sha256:3dc18d777ae79407363fddd4f5ca65c862b2cbb059f5af61a08e2d9e362d5c85`.
-Receita/dependências/dados/prompts não mudaram desde r2; por limitação de disco,
-o wheel do código corrigido foi instalado incrementalmente sobre a imagem r2
-fixada, sem rede no build e sem reinstalar dependências. Os 124 arquivos
-instalados foram comparados ao manifesto. Isso não declara rebuild completo
-do Dockerfile canônico. R6 reutiliza essa imagem por igualdade completa dos
-mapas de runtime/build; somente a interface, seus testes e README mudaram,
-além da tarefa 38. O frontend r6 usa seu venv próprio.
+## Gasto
 
-O ambiente r6 usa API `127.0.0.1:18841` e
-Streamlit `127.0.0.1:18540`, ambos prontos com HTTP 200.
-O transporte HTTP é real; modelos/embeddings são programados e fontes são
-sintéticas/públicas. A seleção Real(API) não transforma essa montagem em
-inferência real. Nenhuma credencial de provedor foi configurada no harness.
+Nenhuma chamada paga nesta versão. Total registrado do projeto: US$0,59283583. Os valores de liquidação dos testes de orçamento são sintéticos.
 
-## Processo e correções
+## Decisão
 
-Exatamente três novos agentes autorizados e acionados em sequência,
-explicitamente `gpt-6-luna/high`, com contextos novos: Developer
-`/root/developer_v040`, Reviewer `/root/reviewer_v040`, QA `/root/qa_v040`.
-Supervisor coordena a sessão principal. Correções voltaram ao mesmo Developer.
-
-R1 identificou erro genérico quando a reserva de comparação era negada. R2
-corrigiu o handler e preservou o ledger, mas exigiu atualizar o snapshot da
-interface. R3 sincronizou o OpenAPI/gerador/cliente e recebeu parecer apto.
-Manifestos, relatórios e reproduções anteriores ficam preservados.
-
-QA r3 reproduziu uma resposta Gravada rotulada como Simulada e a ausência de
-parâmetros compatíveis configuráveis por agente. Tarefas 35/36 voltaram ao mesmo
-Developer; o candidato r3 permanece como referência histórica. R4 implementa
-rótulo Gravado consistente e `max_output_tokens` configurável por agente,
-limitado antes da reserva, com publicação/snapshot e rejeições estritas.
-Reviewer r4 confirmou os demais pontos em testes focados, mas encontrou
-`max_output_tokens: 80` no snapshot JEV, embora esse campo não seja enviado ao
-provedor. Tarefa 37 volta ao mesmo Developer para distinguir reserva interna
-de parâmetro aplicado, preservando a guarda. R5 implementa essa separação e
-regressões para comparação e snapshots JEV/LLM, sem alterar a interface ou
-schema. Reviewer r5 apto; mesmo QA retomado para o escopo afetado.
-
-QA r5 confirmou esses pontos e encontrou divergência ao mudar a seleção após
-comparar. R6 invalida o resultado anterior e exige novo clique explícito para
-comparar, mantendo o vínculo imutável de método/ID. Sem chamada automática no
-rerun. Reviewer r6 e QA r6 aptos no escopo corrigido: ambos os sentidos da
-troca foram exercitados na interface/HTTP, com novo ID apenas por comparação
-explícita, uso único e snapshot coerente. Não surgiu novo defeito nesse escopo.
-
-## Critérios comprovados e pendências
-
-| Critério | Evidência desta rodada sem custo | Limite |
-| --- | --- | --- |
-| CA-28 | Regressão automatizada backend216; web14; execução instalada pronta | Não é nova avaliação de qualidade com modelo real |
-| CA-33 | Adaptador/erros JEV e ausência de fallback cobertos por testes/revisão | Indisponibilidade real de provedor não foi exercitada |
-| CA-34–35 | Comparação só dos Routers, atendimento uma vez, rerun sem nova comparação; modos Simulado/Gravado coerentes | Transporte HTTP real com inferência programada |
-| CA-36 / RF-49/51 | Perfil publicado com Support256, versão/digest/snapshot; Router LLM300 e JEV sem parâmetro não enviado | Evaluation reservado à v0.6; provedores reais não invocados |
-| CA-37 | Catálogo compatível local, UI limitada e API422 preservando versão/digest | IDs disponíveis na conta do provedor não foram verificados via API autenticada |
-| CA-32 | Pendente | JEV real exige autorização de validação própria |
-
-A auditoria pós-QA confirmou também branch/HEAD e os fingerprints completos.
-As três funções foram realizadas pelos mesmos três agentes distintos
-`gpt-6-luna/high`, em sequência; os relatórios mantêm a independência em
-relação ao implementador. A validade r5 do backend é preservada pela igualdade
-integral de runtime/build em r6. Nenhuma nova suíte completa foi repetida
-depois disso sem mudança que a justificasse.
-
-## Orçamento e limites
-
-**Nenhuma chamada paga de aplicação nesta versão.** Total registrado do projeto
-permanece US$0,59283583 de US$5; saldo da validação v0.3.0 não autoriza gasto
-na v0.4.0. Valores de liquidação usados pelos testes de orçamento são simulados,
-não despesa do provedor. Testes programados não concluem CA-32 nem qualidade
-das respostas dos modelos reais. [Fontes do catálogo](v040-catalogo-fontes.md).
-
-Uma tentativa adicional de [metadados públicos sem credenciais](v040-metadados-publicos.json)
-recebeu 401/401/403; nenhum ID foi obtido. Não foi feita consulta autenticada
-nem inferência; o resultado não fecha a lacuna de verificação via API.
-
-O responsável autorizou commits/pushes necessários aos PRs e merges e a
-criação do remoto web privado. Registro da integração
-identifica commits e escopo. A v0.3.0 permanece integrada e tagueada. Retorno previsto pela tag
-v0.3.0 e pela migração 0006→0005, validada somente em bancos sintéticos isolados.
-
-## Próximo passo
-
-O trabalho de implementação/verificação autorizado sem chamadas pagas está
-fechado nas evidências acima. A integração e o início da v0.5.0 foram aceitos
-explicitamente com as pendências de validação real mantidas; elas não passam
-a concluídas pelo merge. Integração confirmada e
-[próxima versão iniciada em planejamento](../specs/base-versionada-v050-plano.md)
-a partir das mains atualizadas. Os manifestos r6 preservam os bytes pré-Git;
-os hashes canônicos e o delta documental ficam nos registros de integração.
+Integrada na `main` com a tag `v0.4.0` ([PR backend #5](https://github.com/lauroPereira/ai-getnet-case/pull/5), [PR web #1](https://github.com/lauroPereira/ai-getnet-case-web/pull/1)); a interface ganhou repositório próprio. O retorno à v0.3.0 é pela migração 0006 → 0005, validada em bancos sintéticos.

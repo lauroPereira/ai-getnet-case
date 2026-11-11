@@ -1,0 +1,2812 @@
+{
+ "config": {
+  "mode": "real",
+  "model": "gpt-6-luna",
+  "agent_provider": "openai",
+  "embedding": "text-embedding-3-small",
+  "split": "holdout_v080",
+  "judge": true,
+  "judge_config": {
+   "provider": "deepseek",
+   "model": "deepseek-flash",
+   "rubric": "judge",
+   "rubric_version": "5",
+   "prompt": "judge@5",
+   "independence": "different_provider",
+   "parameters": {
+    "max_output_tokens": 2000,
+    "effort": "none",
+    "claims_max_output_tokens": 1200
+   },
+   "claims_prompt": "judge_claims@1"
+  },
+  "repeat": 1,
+  "judge_repeat": 3,
+  "answers_from": "v0110-qa-holdout-v080.json",
+  "recorded_answers": 25,
+  "only_sample": "seladas-holdout-01.csv",
+  "only_sample_ids": 5,
+  "selected_answers": 5,
+  "claims_from": [
+   "v0110-calibracao-amostra-claims.csv"
+  ],
+  "ruler": "combined",
+  "campaign": null,
+  "campaign_cap_usd": null,
+  "cases": 5
+ },
+ "summary": {
+  "overall": {
+   "n": 5,
+   "passed": 0.4,
+   "deterministic": 0.8,
+   "content": 0.6,
+   "route_ok": 0.8,
+   "status_ok": 1.0,
+   "language_ok": 1.0,
+   "tools_ok": 1.0,
+   "amounts_ok": 1.0,
+   "content_ok": 1.0,
+   "forbidden_ok": 1.0,
+   "sources_ok": 1.0,
+   "grounded_ok": 1.0,
+   "latency_p50_ms": 9491,
+   "latency_p95_ms": 18842,
+   "cost_usd": 0,
+   "judge_failed": 0,
+   "judge_web_note": {
+    "judged_answers": 5,
+    "answers": 1,
+    "unsupported": 1
+   },
+   "judge_means": {
+    "groundedness": 4.13,
+    "factual_correctness": 4.0,
+    "relevance": 4.67,
+    "usefulness": 4.2
+   },
+   "unsupported_claim_rate": 0.333,
+   "claim_verdicts": {
+    "claims": 90,
+    "supported": 71,
+    "partial": 11,
+    "generic": 3,
+    "not_found": 5,
+    "standard": 3
+   }
+  },
+  "by_split": {
+   "holdout_v080": {
+    "n": 5,
+    "passed": 0.4,
+    "deterministic": 0.8,
+    "content": 0.6,
+    "route_ok": 0.8,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9491,
+    "latency_p95_ms": 18842,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 5,
+     "answers": 1,
+     "unsupported": 1
+    },
+    "judge_means": {
+     "groundedness": 4.13,
+     "factual_correctness": 4.0,
+     "relevance": 4.67,
+     "usefulness": 4.2
+    },
+    "unsupported_claim_rate": 0.333,
+    "claim_verdicts": {
+     "claims": 90,
+     "supported": 71,
+     "partial": 11,
+     "generic": 3,
+     "not_found": 5,
+     "standard": 3
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "n": 2,
+    "passed": 0.5,
+    "deterministic": 0.5,
+    "content": 1.0,
+    "route_ok": 0.5,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9852,
+    "latency_p95_ms": 11670,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 2,
+     "answers": 0,
+     "unsupported": 0
+    },
+    "judge_means": {
+     "groundedness": 5.0,
+     "factual_correctness": 5.0,
+     "relevance": 5.0,
+     "usefulness": 4.83
+    },
+    "unsupported_claim_rate": 0.0,
+    "claim_verdicts": {
+     "claims": 30,
+     "supported": 30,
+     "partial": 0,
+     "generic": 0,
+     "not_found": 0,
+     "standard": 0
+    }
+   },
+   "pt": {
+    "n": 3,
+    "passed": 0.333,
+    "deterministic": 1.0,
+    "content": 0.333,
+    "route_ok": 1.0,
+    "status_ok": 1.0,
+    "language_ok": 1.0,
+    "tools_ok": 1.0,
+    "amounts_ok": 1.0,
+    "content_ok": 1.0,
+    "forbidden_ok": 1.0,
+    "sources_ok": 1.0,
+    "grounded_ok": 1.0,
+    "latency_p50_ms": 9491,
+    "latency_p95_ms": 18842,
+    "cost_usd": 0,
+    "judge_failed": 0,
+    "judge_web_note": {
+     "judged_answers": 3,
+     "answers": 1,
+     "unsupported": 1
+    },
+    "judge_means": {
+     "groundedness": 3.56,
+     "factual_correctness": 3.33,
+     "relevance": 4.44,
+     "usefulness": 3.78
+    },
+    "unsupported_claim_rate": 0.556,
+    "claim_verdicts": {
+     "claims": 60,
+     "supported": 41,
+     "partial": 11,
+     "generic": 3,
+     "not_found": 5,
+     "standard": 3
+    }
+   }
+  },
+  "paths": {
+   "general_web": {
+    "knowledge": 1
+   },
+   "knowledge": {
+    "knowledge": 2,
+    "knowledge → customer_support": 1
+   },
+   "knowledge_and_support": {
+    "knowledge → customer_support": 1
+   }
+  },
+  "generated_at": "2026-11-09T11:22:27+00:00",
+  "judge_cost_usd": 0.00957,
+  "judge_usage": {
+   "judgements": 15,
+   "total": {
+    "input_tokens": 53973,
+    "cache_read_tokens": 45952,
+    "cache_creation_tokens": 0,
+    "output_tokens": 5736
+   },
+   "mean": {
+    "input_tokens": 3598.2,
+    "cache_read_tokens": 3063.5,
+    "cache_creation_tokens": 0.0,
+    "output_tokens": 382.4
+   }
+  },
+  "web_evidence": {
+   "answers": 5,
+   "web_page": 0,
+   "web_summary": 0,
+   "no_url": 1
+  },
+  "variation": {
+   "kind": "judge",
+   "description": "variação do juiz (as mesmas respostas gravadas avaliadas N vezes)",
+   "repetitions": 3,
+   "caveat": "Ressalva de amostra pequena (D19): 5 casos com 3 repetições cada; os recortes por rota e por split têm menos casos ainda (marcados com * quando há menos de 10). Médias, desvios e concordâncias indicam quanto confiar no resultado, não o provam, e um único caso muda um recorte pequeno.",
+   "overall": {
+    "cases": 5,
+    "judgements": 15,
+    "failed": 0,
+    "few_cases": true,
+    "criteria": {
+     "groundedness": {
+      "mean": 4.13,
+      "std": 0.23,
+      "exact": 0.867,
+      "within_one": 0.867,
+      "pairs": 15
+     },
+     "factual_correctness": {
+      "mean": 4.0,
+      "std": 0.23,
+      "exact": 0.733,
+      "within_one": 1.0,
+      "pairs": 15
+     },
+     "relevance": {
+      "mean": 4.67,
+      "std": 0.23,
+      "exact": 0.733,
+      "within_one": 1.0,
+      "pairs": 15
+     },
+     "usefulness": {
+      "mean": 4.2,
+      "std": 0.35,
+      "exact": 0.6,
+      "within_one": 1.0,
+      "pairs": 15
+     }
+    },
+    "unsupported_claim": {
+     "rate": 0.333,
+     "exact": 0.867,
+     "pairs": 15
+    }
+   },
+   "by_route": {
+    "general_web": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 2.67,
+       "std": 1.15,
+       "exact": 0.333,
+       "within_one": 0.333,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 2.33,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 3.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.667,
+      "exact": 0.333,
+      "pairs": 3
+     }
+    },
+    "knowledge": {
+     "cases": 3,
+     "judgements": 9,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.33,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "factual_correctness": {
+       "mean": 4.22,
+       "std": 0.19,
+       "exact": 0.778,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 9
+      },
+      "usefulness": {
+       "mean": 4.22,
+       "std": 0.19,
+       "exact": 0.778,
+       "within_one": 1.0,
+       "pairs": 9
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.333,
+      "exact": 1.0,
+      "pairs": 9
+     }
+    },
+    "knowledge_and_support": {
+     "cases": 1,
+     "judgements": 3,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "factual_correctness": {
+       "mean": 5.0,
+       "std": 0.0,
+       "exact": 1.0,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      },
+      "usefulness": {
+       "mean": 4.67,
+       "std": 0.58,
+       "exact": 0.333,
+       "within_one": 1.0,
+       "pairs": 3
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.0,
+      "exact": 1.0,
+      "pairs": 3
+     }
+    }
+   },
+   "by_split": {
+    "holdout_v080": {
+     "cases": 5,
+     "judgements": 15,
+     "failed": 0,
+     "few_cases": true,
+     "criteria": {
+      "groundedness": {
+       "mean": 4.13,
+       "std": 0.23,
+       "exact": 0.867,
+       "within_one": 0.867,
+       "pairs": 15
+      },
+      "factual_correctness": {
+       "mean": 4.0,
+       "std": 0.23,
+       "exact": 0.733,
+       "within_one": 1.0,
+       "pairs": 15
+      },
+      "relevance": {
+       "mean": 4.67,
+       "std": 0.23,
+       "exact": 0.733,
+       "within_one": 1.0,
+       "pairs": 15
+      },
+      "usefulness": {
+       "mean": 4.2,
+       "std": 0.35,
+       "exact": 0.6,
+       "within_one": 1.0,
+       "pairs": 15
+      }
+     },
+     "unsupported_claim": {
+      "rate": 0.333,
+      "exact": 0.867,
+      "pairs": 15
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "HV080-EN-SUP-ENABLEMENT-MASTERCARD-DEVICE",
+   "repetition": 1,
+   "request_id": "req_evalf5b50003f996",
+   "split": "holdout_v080",
+   "language": "en",
+   "message": "My account says Mastercard is turned on, but can my machine actually accept Mastercard cards yet?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "Mastercard is active on your account, but it is not available on your machine yet. If you use a POS, it is already ready to accept cards and no update is needed. If you use TEF, contact your TEF provider for support.",
+   "sources": [
+    "Getnet | Cartões - Getnet",
+    "Card-scheme enablement requests (your account)"
+   ],
+   "duration_ms": 11670,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": false,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_enablement_requests"
+   ],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "My account says Mastercard is turned on, but can my machine actually accept Mastercard cards yet?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Getnet | Cartões - Getnet",
+     "Card-scheme enablement requests (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_enablement_requests",
+      "text": "{\"arguments\": {\"scheme\": \"Mastercard\"}, \"result\": {\"note\": \"Read-only status; no new request or terminal configuration is created.\", \"observed_at\": \"2026-11-07T00:46:22-03:00\", \"requests\": [{\"activated_at\": \"2026-10-09T09:00:00-03:00\", \"device_availability\": {\"available\": false}, \"protocol\": \"SIM-BND-1988-002\", \"request_id\": \"enr_1988_master_001\", \"requested_at\": \"2026-10-08T09:00:00-03:00\", \"scheme\": \"mastercard\", \"status\": \"active\"}], \"source\": \"EnablementRequestsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-bandeiras",
+      "text": "Getnet | Cartões - Getnet\nO prazo máximo de recebimento das vendas passará a ser de 15 dias\nA taxa de MDR será limitada a 3,6%\nCaso você antecipe seus recebíveis, a taxa permanece a mesma do crédito\n**Todas essas condições serão aplicadas somente nas transações realizadas na função voucher**\nVER MAIS\nPrincipais vantagens para o seu negócio\nMenores taxas e melhores prazos de liquidação\nAceite diversos cartões e aumente suas vendas\nProcessamento rápido e eficiente\nSua maquininha já está pronta\nNenhuma atualização necessária para POS (Se você utiliza TEF entre em contato com sua TEF house para suporte)\nCom as soluções TEF você pode ter mais de 100 bandeiras habilitadas!\nNa sua plataforma TEF as bandeiras já vem habilitadas! São mais bandeiras para\nvocê não perder nenhuma venda!\n+ 121 bandeiras\nVer menos\nEntre em contato para cadastrar uma nova bandeira\nA-E\nF-J\nK-O\nP-T\nU-Z\nCarregar mais\nDúvidas sobre cartões?\nVeja nosso FAQ e conte com a gente para tirar todas as suas dúvidas.\nAinda possui dúvidas?\nMais respostas"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1501,
+     "kept_chars": 1501,
+     "items": 2,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Mastercard is active on your account, but it is not available on your machine yet. If you use a POS, it is already ready to accept cards and no update is needed. If you use TEF, contact your TEF provider for support."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1501,
+    "kept_chars": 1501,
+    "items": 2,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": false,
+   "content": true,
+   "source_cost_usd": 0.00086696,
+   "judge": {
+    "evaluation_id": "eval_d4e6c5e79b344b909d9a",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Mastercard is active on your account",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "Mastercard is not available on your machine yet",
+       "kind": "status"
+      },
+      {
+       "n": 3,
+       "text": "If you use a POS, it is already ready to accept cards",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "If you use a POS, no update is needed",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "If you use TEF, contact your TEF provider for support",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"scheme\": \"mastercard\", \"status\": \"active\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "\"device_availability\": {\"available\": false}"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "Sua maquininha já está pronta"
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Nenhuma atualização necessária para POS"
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Se você utiliza TEF entre em contato com sua TEF house para suporte"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Every statement traces to the tool result or the Getnet passage.",
+     "factual_correctness": "Active account but device unavailable, and POS/TEF guidance all match the evidence.",
+     "relevance": "Directly answers whether the machine can accept Mastercard yet.",
+     "usefulness": "Clear, concise and actionable, though English reply to a merchant writing in English is fine."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00065599,
+    "usage": {
+     "input_tokens": 3426,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 286
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_d4e6c5e79b344b909d9a",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Mastercard is active on your account",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Mastercard is not available on your machine yet",
+        "kind": "status"
+       },
+       {
+        "n": 3,
+        "text": "If you use a POS, it is already ready to accept cards",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "If you use a POS, no update is needed",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "If you use TEF, contact your TEF provider for support",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"scheme\": \"mastercard\", \"status\": \"active\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"device_availability\": {\"available\": false}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Sua maquininha já está pronta"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Nenhuma atualização necessária para POS"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Se você utiliza TEF entre em contato com sua TEF house para suporte"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Every statement traces to the tool result or the Getnet passage.",
+      "factual_correctness": "Active account but device unavailable, and POS/TEF guidance all match the evidence.",
+      "relevance": "Directly answers whether the machine can accept Mastercard yet.",
+      "usefulness": "Clear, concise and actionable, though English reply to a merchant writing in English is fine."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00065599,
+     "usage": {
+      "input_tokens": 3426,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 286
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_ec3e7bd9ee534ae4ab2d",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Mastercard is active on your account",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Mastercard is not available on your machine yet",
+        "kind": "status"
+       },
+       {
+        "n": 3,
+        "text": "If you use a POS, it is already ready to accept cards",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "If you use a POS, no update is needed",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "If you use TEF, contact your TEF provider for support",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"scheme\": \"mastercard\", \"status\": \"active\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"device_availability\": {\"available\": false}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Sua maquininha já está pronta"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Nenhuma atualização necessária para POS"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "(Se você utiliza TEF entre em contato com sua TEF house para suporte)"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts, statuses and guidance trace directly to the tool_result and the cards passage.",
+      "factual_correctness": "Active status, unavailable device and POS/TEF guidance all agree with the evidence.",
+      "relevance": "Directly answers whether the machine can accept Mastercard yet, distinguishing POS from TEF.",
+      "usefulness": "Clear, concise, polite and in the merchant's language, with a plain answer and next step."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.000447,
+     "usage": {
+      "input_tokens": 3426,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 300
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_d11549dee74d418792e4",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Mastercard is active on your account",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Mastercard is not available on your machine yet",
+        "kind": "status"
+       },
+       {
+        "n": 3,
+        "text": "If you use a POS, it is already ready to accept cards",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "If you use a POS, no update is needed",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "If you use TEF, contact your TEF provider for support",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "{\"activated_at\": \"2026-10-09T09:00:00-03:00\", ... \"scheme\": \"mastercard\", \"status\": \"active\"}"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"device_availability\": {\"available\": false}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Sua maquininha já está pronta"
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Nenhuma atualização necessária para POS (Se você utiliza TEF entre em contato com sua TEF house para suporte)"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Se você utiliza TEF entre em contato com sua TEF house para suporte"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All statements trace to the enablement tool result and the cards passage.",
+      "factual_correctness": "Active status with device unavailable is correctly reflected; POS and TEF guidance matches the passage.",
+      "relevance": "Directly answers whether the machine can accept Mastercard yet.",
+      "usefulness": "Clear, concise and actionable, distinguishing POS from TEF use."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.0004794,
+     "usage": {
+      "input_tokens": 3426,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 327
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "HV080-PT-KNOW-ACQUIRER-ERROR-RESET-HARD",
+   "repetition": 1,
+   "request_id": "req_evalecb11f0c7b5b",
+   "split": "holdout_v080",
+   "language": "pt",
+   "message": "A telinha da máquina mostra um erro do adquirente com uns números e não deixa vender. Tem algum comando no teclado que eu mesmo faço pra destravar?",
+   "route": "knowledge_and_support",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "customer_support",
+    "personality"
+   ],
+   "executed_path": "knowledge → customer_support",
+   "answer": "O sinal mais recente mostra a Get Smart offline desde 06/11 às 21:16. Não encontrei nos registros recentes os erros ADQ 1-50, 4-91 ou 4-83. Os códigos 51 e 05 são de transações recusadas e não confirmam o erro exibido na tela. Qual é o código exato que aparece na máquina?\n\nSe for ADQ 1-50, 4-91 ou 4-83:\n1. Pressione Função, digite 38 e aguarde a tela verde.\n2. Selecione Inicialização e aguarde a tela verde novamente.\n3. Faça uma venda teste.\n\nPara outros códigos, não consigo confirmar que esse procedimento ou comando de teclado se aplique.",
+   "sources": [
+    "Erro ADQ 1-50: erro de leitura - Getnet",
+    "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+    "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet",
+    "Card machine status (your account)",
+    "Card authorization events (your account)"
+   ],
+   "duration_ms": 18842,
+   "cost_usd": 0.0,
+   "model_calls": 5,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [
+    "get_complaint_history",
+    "run_customer_healthcheck",
+    "get_device_status",
+    "find_authorization_events"
+   ],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "A telinha da máquina mostra um erro do adquirente com uns números e não deixa vender. Tem algum comando no teclado que eu mesmo faço pra destravar?",
+    "status": "answered",
+    "route": "knowledge_and_support",
+    "sources": [
+     "Erro ADQ 1-50: erro de leitura - Getnet",
+     "Erro ADQ 4-91: erro na aprovação da venda - Getnet",
+     "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet",
+     "Card machine status (your account)",
+     "Card authorization events (your account)"
+    ],
+    "evidence": [
+     {
+      "kind": "tool_result",
+      "label": "get_complaint_history",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"cases\": [], \"observed_at\": \"2026-11-07T00:44:04-03:00\", \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "run_customer_healthcheck",
+      "text": "{\"arguments\": {\"topic\": \"authorization\"}, \"result\": {\"checks\": [{\"check\": \"authorization_service\", \"note\": \"Authorization events source reachable.\", \"observed_at\": \"2026-11-07T00:44:05-03:00\", \"status\": \"ok\"}, {\"check\": \"declines_today\", \"note\": \"0 declined transaction(s) today.\", \"observed_at\": \"2026-11-07T00:44:05-03:00\", \"status\": \"ok\"}], \"observed_at\": \"2026-11-07T00:44:05-03:00\", \"source\": \"HealthcheckMock\", \"topic\": \"authorization\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "get_device_status",
+      "text": "{\"arguments\": {\"device_id\": null}, \"result\": {\"devices\": [{\"config\": {\"card_schemes\": [\"visa\"], \"firmware\": \"demo-4.2\", \"mobile_data\": \"available\", \"wifi_configured\": true}, \"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\", \"minutes_since_last_seen\": 207, \"model\": \"Get Smart\", \"status\": \"offline\"}], \"needs_selection\": false, \"note\": \"Signals are the last ones received; no remote command is executed on the device.\", \"observed_at\": \"2026-11-07T00:44:15-03:00\", \"source\": \"DevicesMock\"}}"
+     },
+     {
+      "kind": "tool_result",
+      "label": "find_authorization_events",
+      "text": "{\"arguments\": {\"limit\": 5, \"period\": \"last_7_days\", \"status\": \"declined\"}, \"result\": {\"date_from\": \"2026-11-01\", \"date_to\": \"2026-11-07\", \"events\": [{\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 230,00\", \"minor\": 23000}, \"customer_message\": \"Saldo ou limite insuficiente no cartão do comprador.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Ofereça outro meio de pagamento, como outro cartão ou Pix.\", \"occurred_at\": \"2026-11-06T21:06:41-03:00\", \"payment_type\": \"credit\", \"reason_category\": \"insufficient_funds\", \"response_code\": \"51\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0101\"}, {\"amount\": {\"currency\": \"BRL\", \"display\": \"R$ 45,90\", \"minor\": 4590}, \"customer_message\": \"Transação não autorizada pelo banco emissor do cartão.\", \"device_id\": \"dev_1988_gs01\", \"next_step\": \"Peça ao comprador para falar com o banco emissor ou usar outro meio de pagamento.\", \"occurred_at\": \"2026-11-04T16:02:00-03:00\", \"payment_type\": \"debit\", \"reason_category\": \"issuer_declined\", \"response_code\": \"05\", \"retry_allowed\": false, \"status\": \"declined\", \"transaction_id\": \"txn_1988_0100\"}], \"note\": \"Only codes documented in the demo have a reason; others stay unknown.\", \"observed_at\": \"2026-11-07T00:44:15-03:00\", \"source\": \"AuthorizationsMock\"}}"
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-1-50",
+      "text": "Erro ADQ 1-50: erro de leitura - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso apareça um “Erro ADQ” na tela da sua maquininha, você mesmo pode corrigir isso rapidamente. Verifique o código do erro e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-91",
+      "text": "Erro ADQ 4-91: erro na aprovação da venda - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     },
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-erros-maquininha-erro-adq-4-83",
+      "text": "Erro ADQ 4-83: erro de integração com as bandeiras - Getnet\nVamos começar o seu atendimento?\nAinda não é cliente?\nAdquira agora e venda mais!\nCENTRAL DE VENDAS\nJá é nosso cliente?\nCENTRAL DE AJUDA\nCaso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado e siga as instruções abaixo.\n- 1. Clique na tecla de Função\n- 2. Insira o número 38\n- 3. A tela ficará verde confirmando a ação\n- 4. Selecione a opção: Inicialização\n- 5. A tela ficará verde confirmando a ação, novamente\n- 6. Em seguida, faça uma venda teste."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 4118,
+     "kept_chars": 4118,
+     "items": 7,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "O sinal mais recente mostra a Get Smart offline desde 06/11 às 21:16. Não encontrei nos registros recentes os erros ADQ 1-50, 4-91 ou 4-83. Os códigos 51 e 05 são de transações recusadas e não confirmam o erro exibido na tela. Qual é o código exato que aparece na máquina?\n\nSe for ADQ 1-50, 4-91 ou 4-83:\n1. Pressione Função, digite 38 e aguarde a tela verde.\n2. Selecione Inicialização e aguarde a tela verde novamente.\n3. Faça uma venda teste.\n\nPara outros códigos, não consigo confirmar que esse procedimento ou comando de teclado se aplique."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 4118,
+    "kept_chars": 4118,
+    "items": 7,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00109991,
+   "judge": {
+    "evaluation_id": "eval_fe58bdbce616411da5f3",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "O sinal mais recente mostra a Get Smart offline desde 06/11 às 21:16",
+       "kind": "status"
+      },
+      {
+       "n": 2,
+       "text": "Não encontrei nos registros recentes os erros ADQ 1-50, 4-91 ou 4-83",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Os códigos 51 e 05 são de transações recusadas",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "Os códigos 51 e 05 não confirmam o erro exibido na tela",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "Qual é o código exato que aparece na máquina?",
+       "kind": "standard"
+      },
+      {
+       "n": 6,
+       "text": "Se for ADQ 1-50, 4-91 ou 4-83: Pressione Função, digite 38 e aguarde a tela verde",
+       "kind": "guidance"
+      },
+      {
+       "n": 7,
+       "text": "Selecione Inicialização e aguarde a tela verde novamente",
+       "kind": "guidance"
+      },
+      {
+       "n": 8,
+       "text": "Faça uma venda teste",
+       "kind": "guidance"
+      },
+      {
+       "n": 9,
+       "text": "Para outros códigos, não consigo confirmar que esse procedimento ou comando de teclado se aplique",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "\"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\", \"minutes_since_last_seen\": 207, \"model\": \"Get Smart\", \"status\": \"offline\""
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "{\"cases\": [], \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}"
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "\"reason_category\": \"insufficient_funds\", \"response_code\": \"51\" ... \"reason_category\": \"issuer_declined\", \"response_code\": \"05\" ... \"status\": \"declined\""
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "\"note\": \"Only codes documented in the demo have a reason; others stay unknown.\""
+      },
+      {
+       "n": 5,
+       "verdict": "partial",
+       "support": ""
+      },
+      {
+       "n": 6,
+       "verdict": "supported",
+       "support": "- 1. Clique na tecla de Função - 2. Insira o número 38 - 3. A tela ficará verde confirmando a ação"
+      },
+      {
+       "n": 7,
+       "verdict": "supported",
+       "support": "- 4. Selecione a opção: Inicialização - 5. A tela ficará verde confirmando a ação, novamente"
+      },
+      {
+       "n": 8,
+       "verdict": "supported",
+       "support": "- 6. Em seguida, faça uma venda teste."
+      },
+      {
+       "n": 9,
+       "verdict": "supported",
+       "support": "\"note\": \"Only codes documented in the demo have a reason; others stay unknown.\""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "All facts, status and steps trace to tool results and Getnet error passages.",
+     "factual_correctness": "Reply agrees with device status, declined codes and documented ADQ procedures.",
+     "relevance": "Addresses the requested keyboard unblock for documented ADQ codes, asks for exact code otherwise.",
+     "usefulness": "Clear, polite Portuguese steps and plain gap statement; asks for the code to complete help."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00145159,
+    "usage": {
+     "input_tokens": 4982,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 560
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_fe58bdbce616411da5f3",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O sinal mais recente mostra a Get Smart offline desde 06/11 às 21:16",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Não encontrei nos registros recentes os erros ADQ 1-50, 4-91 ou 4-83",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Os códigos 51 e 05 são de transações recusadas",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Os códigos 51 e 05 não confirmam o erro exibido na tela",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Qual é o código exato que aparece na máquina?",
+        "kind": "standard"
+       },
+       {
+        "n": 6,
+        "text": "Se for ADQ 1-50, 4-91 ou 4-83: Pressione Função, digite 38 e aguarde a tela verde",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Selecione Inicialização e aguarde a tela verde novamente",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Faça uma venda teste",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Para outros códigos, não consigo confirmar que esse procedimento ou comando de teclado se aplique",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"connectivity\": \"wifi\", \"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\", \"minutes_since_last_seen\": 207, \"model\": \"Get Smart\", \"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "{\"cases\": [], \"open_cases\": 0, \"source\": \"SupportHistoryMock\"}"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"reason_category\": \"insufficient_funds\", \"response_code\": \"51\" ... \"reason_category\": \"issuer_declined\", \"response_code\": \"05\" ... \"status\": \"declined\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"note\": \"Only codes documented in the demo have a reason; others stay unknown.\""
+       },
+       {
+        "n": 5,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "- 1. Clique na tecla de Função - 2. Insira o número 38 - 3. A tela ficará verde confirmando a ação"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "- 4. Selecione a opção: Inicialização - 5. A tela ficará verde confirmando a ação, novamente"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "- 6. Em seguida, faça uma venda teste."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "\"note\": \"Only codes documented in the demo have a reason; others stay unknown.\""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "All facts, status and steps trace to tool results and Getnet error passages.",
+      "factual_correctness": "Reply agrees with device status, declined codes and documented ADQ procedures.",
+      "relevance": "Addresses the requested keyboard unblock for documented ADQ codes, asks for exact code otherwise.",
+      "usefulness": "Clear, polite Portuguese steps and plain gap statement; asks for the code to complete help."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00145159,
+     "usage": {
+      "input_tokens": 4982,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 560
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_2efb440f76f34d2f8d4b",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O sinal mais recente mostra a Get Smart offline desde 06/11 às 21:16",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Não encontrei nos registros recentes os erros ADQ 1-50, 4-91 ou 4-83",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Os códigos 51 e 05 são de transações recusadas",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Os códigos 51 e 05 não confirmam o erro exibido na tela",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Qual é o código exato que aparece na máquina?",
+        "kind": "standard"
+       },
+       {
+        "n": 6,
+        "text": "Se for ADQ 1-50, 4-91 ou 4-83: Pressione Função, digite 38 e aguarde a tela verde",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Selecione Inicialização e aguarde a tela verde novamente",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Faça uma venda teste",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Para outros códigos, não consigo confirmar que esse procedimento ou comando de teclado se aplique",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"device_id\": \"dev_1988_gs01\", ... \"model\": \"Get Smart\", \"status\": \"offline\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "{\"cases\": [], \"open_cases\": 0} / events: response_code 51 insufficient_funds, 05 issuer_declined"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"response_code\": \"51\", \"reason_category\": \"insufficient_funds\" ... \"status\": \"declined\" ... \"response_code\": \"05\", \"reason_category\": \"issuer_declined\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"note\": \"Only codes documented in the demo have a reason; others stay unknown.\" ... events are declined transactions with codes 51 and 05"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": ""
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "- 1. Clique na tecla de Função - 2. Insira o número 38 - 3. A tela ficará verde confirmando a ação"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "- 4. Selecione a opção: Inicialização - 5. A tela ficará verde confirmando a ação, novamente"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "- 6. Em seguida, faça uma venda teste."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Passages only give the Função/38/Inicialização procedure for ADQ 1-50, 4-91 and 4-83."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Device status, codes, gap and procedure all trace to tool results and passages.",
+      "factual_correctness": "Statements agree with evidence; codes 51/05 correctly identified as declines, not screen errors.",
+      "relevance": "Addresses the keyboard-unlock question directly, asking for the exact code when needed.",
+      "usefulness": "Clear, polite Portuguese with actionable steps and an honest gap statement."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00079222,
+     "usage": {
+      "input_tokens": 4982,
+      "cache_read_tokens": 4736,
+      "cache_creation_tokens": 0,
+      "output_tokens": 575
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_cc3e85ab181f4011b96a",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "O sinal mais recente mostra a Get Smart offline desde 06/11 às 21:16",
+        "kind": "status"
+       },
+       {
+        "n": 2,
+        "text": "Não encontrei nos registros recentes os erros ADQ 1-50, 4-91 ou 4-83",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Os códigos 51 e 05 são de transações recusadas",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Os códigos 51 e 05 não confirmam o erro exibido na tela",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "Qual é o código exato que aparece na máquina?",
+        "kind": "standard"
+       },
+       {
+        "n": 6,
+        "text": "Se for ADQ 1-50, 4-91 ou 4-83: Pressione Função, digite 38 e aguarde a tela verde",
+        "kind": "guidance"
+       },
+       {
+        "n": 7,
+        "text": "Selecione Inicialização e aguarde a tela verde novamente",
+        "kind": "guidance"
+       },
+       {
+        "n": 8,
+        "text": "Faça uma venda teste",
+        "kind": "guidance"
+       },
+       {
+        "n": 9,
+        "text": "Para outros códigos, não consigo confirmar que esse procedimento ou comando de teclado se aplique",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "\"device_id\": \"dev_1988_gs01\", \"last_seen_at\": \"2026-11-06T21:16:41-03:00\", ... \"model\": \"Get Smart\", \"status\": \"offline\""
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "\"cases\": [], \"open_cases\": 0"
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "\"response_code\": \"51\" ... \"reason_category\": \"insufficient_funds\" ... \"Transação não autorizada pelo banco emissor do cartão.\" ... \"response_code\": \"05\""
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "\"response_code\": \"51\", ... \"status\": \"declined\" — os códigos 51 e 05 são de recusas, não do erro ADQ"
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "A telinha da máquina mostra um erro do adquirente com uns números"
+       },
+       {
+        "n": 6,
+        "verdict": "supported",
+        "support": "- 1. Clique na tecla de Função - 2. Insira o número 38 - 3. A tela ficará verde confirmando a ação"
+       },
+       {
+        "n": 7,
+        "verdict": "supported",
+        "support": "- 4. Selecione a opção: Inicialização - 5. A tela ficará verde confirmando a ação, novamente"
+       },
+       {
+        "n": 8,
+        "verdict": "supported",
+        "support": "- 6. Em seguida, faça uma venda teste."
+       },
+       {
+        "n": 9,
+        "verdict": "supported",
+        "support": "Caso sua maquininha apresente um “Erro ADQ” na tela, você mesmo pode solucioná-lo rapidamente. Verifique o código apresentado"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Todos os fatos citados vêm do tool_result e dos trechos; o procedimento é o dos três códigos listados.",
+      "factual_correctness": "Offline desde 21:16, códigos 51/05 como recusas e o passo a passo condicional estão corretos e coerentes.",
+      "relevance": "Responde à pergunta com o comando de teclado para os códigos ADQ e pede o código exato quando não se aplica.",
+      "usefulness": "Claro, em português, conciso e acionável: passo a passo condicional e pedido do código exato."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00080182,
+     "usage": {
+      "input_tokens": 4982,
+      "cache_read_tokens": 4736,
+      "cache_creation_tokens": 0,
+      "output_tokens": 583
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "HV080-EN-KNOW-PHONE-AS-TERMINAL-HARD",
+   "repetition": 1,
+   "request_id": "req_eval58eb38849091",
+   "split": "holdout_v080",
+   "language": "en",
+   "message": "Can I take card payments on my own smartphone instead of renting a terminal? What kind of phone would I need?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Yes. Get Tap turns your phone into a payment terminal for contactless sales using cards, digital wallets, and NFC-enabled devices.\n\nYour phone needs Android 12 or later and NFC. To check compatibility, open the Getnet app and go to Sell > Get Tap – Contactless.",
+   "sources": [
+    "Dúvidas e Perguntas Frequentes | Getnet"
+   ],
+   "duration_ms": 8035,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": true,
+   "judge_input": {
+    "merchant_message": "Can I take card payments on my own smartphone instead of renting a terminal? What kind of phone would I need?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Dúvidas e Perguntas Frequentes | Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-duvidas",
+      "text": "Dúvidas e Perguntas Frequentes | Getnet\nComo faço para abrir uma Get Conta? Preciso ter uma máquina de cartão?\nPara abrir uma Get Conta, basta acessar o\nnosso site\n, escolher uma máquina de aluguel ou compra e optar por receber suas vendas na Conta. A abertura da conta é feita na hora e você terá acesso a um cartão pré-pago gratuitamente para fazer compras nas lojas de todo Brasil e online.\nCaso não queira ter uma máquina, você pode abrir uma conta para realizar transferências, pagamentos de boletos e ter com um cartão pré-pago.\nSolicite através do\ncredenciamento digital\nna aba “Credenciamento” > Sem máquina > preencher os dados cadastrais para abertura.\nver mais\nGet Tap\nO que é o Get Tap?\nO que é o Get Tap?\nÉ uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC.\nO Get Tap funciona no meu celular?\nO Get Tap funciona no meu celular?\nPara receber vendas via Get Tap, o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC.\nConfirme se o seu aparelho é compatível no próprio aplicativo da Getnet:\nAcesse o App Getnet, clique em\nVender\ne em\nGet Tap – Aproximação."
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1235,
+     "kept_chars": 1235,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Yes. Get Tap turns your phone into a payment terminal for contactless sales using cards, digital wallets, and NFC-enabled devices.\n\nYour phone needs Android 12 or later and NFC. To check compatibility, open the Getnet app and go to Sell > Get Tap – Contactless."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1235,
+    "kept_chars": 1235,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": true,
+   "source_cost_usd": 0.00044087,
+   "judge": {
+    "evaluation_id": "eval_b957c5253181471d98cf",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Yes, you can take card payments on your own smartphone.",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Get Tap turns your phone into a payment terminal for contactless sales using cards, digital wallets, and NFC-enabled devices.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "Your phone needs Android 12 or later.",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "Your phone needs NFC.",
+       "kind": "fact"
+      },
+      {
+       "n": 5,
+       "text": "To check compatibility, open the Getnet app and go to Sell > Get Tap – Contactless.",
+       "kind": "guidance"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "Acesse o App Getnet, clique em Vender e em Get Tap – Aproximação."
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 5,
+     "factual_correctness": 5,
+     "relevance": 5,
+     "usefulness": 5
+    },
+    "reasons": {
+     "groundedness": "Every statement traces directly to the Getnet FAQ passage about Get Tap.",
+     "factual_correctness": "All facts (NFC, Android 12, app path) match the source passage exactly.",
+     "relevance": "Directly answers both questions: smartphone payments and required phone specs.",
+     "usefulness": "Clear, concise, correct language, and tells the merchant exactly how to check compatibility."
+    },
+    "unsupported_claim": false,
+    "cost_usd": 0.00072919,
+    "usage": {
+     "input_tokens": 3290,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 381
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_b957c5253181471d98cf",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Yes, you can take card payments on your own smartphone.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Get Tap turns your phone into a payment terminal for contactless sales using cards, digital wallets, and NFC-enabled devices.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Your phone needs Android 12 or later.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Your phone needs NFC.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "To check compatibility, open the Getnet app and go to Sell > Get Tap – Contactless.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Acesse o App Getnet, clique em Vender e em Get Tap – Aproximação."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every statement traces directly to the Getnet FAQ passage about Get Tap.",
+      "factual_correctness": "All facts (NFC, Android 12, app path) match the source passage exactly.",
+      "relevance": "Directly answers both questions: smartphone payments and required phone specs.",
+      "usefulness": "Clear, concise, correct language, and tells the merchant exactly how to check compatibility."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00072919,
+     "usage": {
+      "input_tokens": 3290,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 381
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_323db1467d4b4655b02f",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Yes, you can take card payments on your own smartphone.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Get Tap turns your phone into a payment terminal for contactless sales using cards, digital wallets, and NFC-enabled devices.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Your phone needs Android 12 or later.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Your phone needs NFC.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "To check compatibility, open the Getnet app and go to Sell > Get Tap – Contactless.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão"
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Acesse o App Getnet, clique em Vender e em Get Tap – Aproximação."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "Every statement matches the FAQ passage about Get Tap requirements and how to check compatibility.",
+      "factual_correctness": "The reply agrees with the evidence on Android 12, NFC and the in-app compatibility check.",
+      "relevance": "It directly answers both questions: card payments on a smartphone and the phone requirements.",
+      "usefulness": "Clear, polite, concise English matching the merchant, with the exact app path to check compatibility."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00048343,
+     "usage": {
+      "input_tokens": 3290,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 333
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_7610fa07b5334e6b8dcb",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Yes, you can take card payments on your own smartphone.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Get Tap turns your phone into a payment terminal for contactless sales using cards, digital wallets, and NFC-enabled devices.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "Your phone needs Android 12 or later.",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "Your phone needs NFC.",
+        "kind": "fact"
+       },
+       {
+        "n": 5,
+        "text": "To check compatibility, open the Getnet app and go to Sell > Get Tap – Contactless.",
+        "kind": "guidance"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "É uma funcionalidade dentro do APP Getnet que transforma o seu celular em maquinha para receber vendas por aproximação com cartão, carteiras digitais e dispositivos que tenham NFC."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "Para receber vendas via Get Tap, o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Para receber vendas via Get Tap, o seu dispositivo precisa ter o sistema operacional a partir do Android 12 e a tecnologia NFC."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "Acesse o App Getnet, clique em Vender e em Get Tap – Aproximação."
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 5,
+      "factual_correctness": 5,
+      "relevance": 5,
+      "usefulness": 5
+     },
+     "reasons": {
+      "groundedness": "All facts and the guidance match the passage on Get Tap requirements and app navigation.",
+      "factual_correctness": "Reply accurately reflects Android 12, NFC requirement, and in-app compatibility check.",
+      "relevance": "Directly answers both questions: smartphone payments and required phone specifications.",
+      "usefulness": "Clear, concise, polite, in merchant's language, with actionable compatibility steps."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00056023,
+     "usage": {
+      "input_tokens": 3290,
+      "cache_read_tokens": 3072,
+      "cache_creation_tokens": 0,
+      "output_tokens": 397
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "HV080-PT-KNOW-WHATSAPP-PAY-MIGRATION",
+   "repetition": 1,
+   "request_id": "req_eval1061dd0dd2f0",
+   "split": "holdout_v080",
+   "language": "pt",
+   "message": "Eu cobrava meus clientes pelos pagamentos do WhatsApp Business. Isso vai acabar? Como fica e quanto vou pagar?",
+   "route": "knowledge",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Sim. Por decisão da Meta, os pagamentos via WhatsApp Business serão descontinuados em 15/01/2026. Se você tem um pacote de serviços do WhatsApp Business, ele será alterado para o pacote de Link de Pagamento. Assim, você poderá continuar vendendo pelo WhatsApp, enviando o link ao cliente.\n\nA oferta pública informa a cobrança de R$1,00 por link pago pelo cliente. As condições específicas dependem do seu contrato.",
+   "sources": [
+    "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+   ],
+   "duration_ms": 9491,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Eu cobrava meus clientes pelos pagamentos do WhatsApp Business. Isso vai acabar? Como fica e quanto vou pagar?",
+    "status": "answered",
+    "route": "knowledge",
+    "sources": [
+     "Descontinuação dos pagamentos via WhatsApp Business - Getnet"
+    ],
+    "evidence": [
+     {
+      "kind": "passage",
+      "label": "pub:site-getnet-com-br-get-ajuda-whatsapp-business-descontinuacao-whatsapp-business",
+      "text": "Descontinuação dos pagamentos via WhatsApp Business - Getnet\nA partir de\n15/01\n, por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado.\nO que muda para você, cliente da Getnet?\nCaso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento. Sendo assim, você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento.\nComo usar o link de pagamento?\nO link de pagamento da Getnet é ideal para vendas online e via WhatsApp, sem necessidade de site ou maquininha física. Pode ser criado através do app Getnet Brasil ou Portal do Cliente Getnet, de forma simples e rápida.\nVocê pode configurar este link, com um ou mais meios de pagamentos: débito, crédito a vista, crédito parcelado, Pix ou Carteiras Digitais.\nApós criado, você pode compartilhar por qualquer meio de interação com seu cliente (SMS, Whatsapp, E-mail ou qualquer outro)\nQuando a migração acontece?\nA migração já está sendo realizada, com data fim até\n15/01/2026\n, data oficial da descontinuação do WhatsApp Pay.\nQuais as vantagens desse novo pacote?\nAo migrar para o link de pagamento, você conta com:"
+     }
+    ],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 1250,
+     "kept_chars": 1250,
+     "items": 1,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [],
+    "reply": "Sim. Por decisão da Meta, os pagamentos via WhatsApp Business serão descontinuados em 15/01/2026. Se você tem um pacote de serviços do WhatsApp Business, ele será alterado para o pacote de Link de Pagamento. Assim, você poderá continuar vendendo pelo WhatsApp, enviando o link ao cliente.\n\nA oferta pública informa a cobrança de R$1,00 por link pago pelo cliente. As condições específicas dependem do seu contrato."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 1250,
+    "kept_chars": 1250,
+    "items": 1,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.00063267,
+   "judge": {
+    "evaluation_id": "eval_2b36263f8a7949309674",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Sim, os pagamentos via WhatsApp Business serão descontinuados.",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "A descontinuação é por decisão da Meta.",
+       "kind": "fact"
+      },
+      {
+       "n": 3,
+       "text": "A descontinuação será em 15/01/2026.",
+       "kind": "date"
+      },
+      {
+       "n": 4,
+       "text": "Se você tem um pacote de serviços do WhatsApp Business, ele será alterado para o pacote de Link de Pagamento.",
+       "kind": "promise"
+      },
+      {
+       "n": 5,
+       "text": "Você poderá continuar vendendo pelo WhatsApp, enviando o link ao cliente.",
+       "kind": "fact"
+      },
+      {
+       "n": 6,
+       "text": "A oferta pública informa a cobrança de R$1,00 por link pago pelo cliente.",
+       "kind": "value"
+      },
+      {
+       "n": 7,
+       "text": "As condições específicas dependem do seu contrato.",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "supported",
+       "support": "o serviço de pagamentos via whatsapp business será descontinuado."
+      },
+      {
+       "n": 2,
+       "verdict": "supported",
+       "support": "por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado."
+      },
+      {
+       "n": 3,
+       "verdict": "supported",
+       "support": "data fim até\n15/01/2026\n, data oficial da descontinuação do WhatsApp Pay."
+      },
+      {
+       "n": 4,
+       "verdict": "supported",
+       "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+      },
+      {
+       "n": 5,
+       "verdict": "supported",
+       "support": "você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento."
+      },
+      {
+       "n": 6,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 7,
+       "verdict": "generic",
+       "support": ""
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 3,
+     "factual_correctness": 3,
+     "relevance": 4,
+     "usefulness": 3
+    },
+    "reasons": {
+     "groundedness": "The R$1,00 fee per link is invented; the rest traces to the passage.",
+     "factual_correctness": "Rules about the change are right, but the stated R$1,00 fee has no basis.",
+     "relevance": "Answers whether it ends, how it changes, and addresses pricing, though pricing is unfounded.",
+     "usefulness": "Clear and in Portuguese, but the invented fee could mislead the merchant about cost."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00080239,
+    "usage": {
+     "input_tokens": 3418,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 410
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_2b36263f8a7949309674",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, os pagamentos via WhatsApp Business serão descontinuados.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A descontinuação é por decisão da Meta.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A descontinuação será em 15/01/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Se você tem um pacote de serviços do WhatsApp Business, ele será alterado para o pacote de Link de Pagamento.",
+        "kind": "promise"
+       },
+       {
+        "n": 5,
+        "text": "Você poderá continuar vendendo pelo WhatsApp, enviando o link ao cliente.",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "A oferta pública informa a cobrança de R$1,00 por link pago pelo cliente.",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "As condições específicas dependem do seu contrato.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "data fim até\n15/01/2026\n, data oficial da descontinuação do WhatsApp Pay."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento."
+       },
+       {
+        "n": 6,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 7,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "The R$1,00 fee per link is invented; the rest traces to the passage.",
+      "factual_correctness": "Rules about the change are right, but the stated R$1,00 fee has no basis.",
+      "relevance": "Answers whether it ends, how it changes, and addresses pricing, though pricing is unfounded.",
+      "usefulness": "Clear and in Portuguese, but the invented fee could mislead the merchant about cost."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00080239,
+     "usage": {
+      "input_tokens": 3418,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 410
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_f2c362ce7c234cca99df",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, os pagamentos via WhatsApp Business serão descontinuados.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A descontinuação é por decisão da Meta.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A descontinuação será em 15/01/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Se você tem um pacote de serviços do WhatsApp Business, ele será alterado para o pacote de Link de Pagamento.",
+        "kind": "promise"
+       },
+       {
+        "n": 5,
+        "text": "Você poderá continuar vendendo pelo WhatsApp, enviando o link ao cliente.",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "A oferta pública informa a cobrança de R$1,00 por link pago pelo cliente.",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "As condições específicas dependem do seu contrato.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "com data fim até 15/01/2026, data oficial da descontinuação do WhatsApp Pay."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento."
+       },
+       {
+        "n": 6,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 7,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 2,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Most facts trace to the passage, but the R$1,00 fee and contract-dependence claim have no support.",
+      "factual_correctness": "The R$1,00 charge is invented and the migration date framing is mixed with the discontinuation date.",
+      "relevance": "It addresses the discontinuation and migration, but answers the price question with an unverified fee.",
+      "usefulness": "Clear and in Portuguese, but the invented fee may mislead the merchant about what they will pay."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.0005886,
+     "usage": {
+      "input_tokens": 3418,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 420
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_147489ea573e4ad28c5c",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim, os pagamentos via WhatsApp Business serão descontinuados.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "A descontinuação é por decisão da Meta.",
+        "kind": "fact"
+       },
+       {
+        "n": 3,
+        "text": "A descontinuação será em 15/01/2026.",
+        "kind": "date"
+       },
+       {
+        "n": 4,
+        "text": "Se você tem um pacote de serviços do WhatsApp Business, ele será alterado para o pacote de Link de Pagamento.",
+        "kind": "promise"
+       },
+       {
+        "n": 5,
+        "text": "Você poderá continuar vendendo pelo WhatsApp, enviando o link ao cliente.",
+        "kind": "fact"
+       },
+       {
+        "n": 6,
+        "text": "A oferta pública informa a cobrança de R$1,00 por link pago pelo cliente.",
+        "kind": "value"
+       },
+       {
+        "n": 7,
+        "text": "As condições específicas dependem do seu contrato.",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "supported",
+        "support": "o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 2,
+        "verdict": "supported",
+        "support": "por decisão da Meta, empresa responsável pelo whatsapp, o serviço de pagamentos via whatsapp business será descontinuado."
+       },
+       {
+        "n": 3,
+        "verdict": "supported",
+        "support": "com data fim até 15/01/2026, data oficial da descontinuação do WhatsApp Pay."
+       },
+       {
+        "n": 4,
+        "verdict": "supported",
+        "support": "Caso você tenha um pacote de serviços do Whatsapp Business, faremos a alteração deste pacote, para o pacote de Link de Pagamento."
+       },
+       {
+        "n": 5,
+        "verdict": "supported",
+        "support": "você continuará fazendo as suas vendas pelo whatsapp, porém, a cobrança será mediante um envio de link de pagamento."
+       },
+       {
+        "n": 6,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 7,
+        "verdict": "generic",
+        "support": ""
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 3,
+      "factual_correctness": 3,
+      "relevance": 4,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Most facts trace to the passage, but the R$1,00 fee is invented and the contract dependence is generic.",
+      "factual_correctness": "The R$1,00 per-link charge contradicts the evidence, which states no fee amount.",
+      "relevance": "It addresses the discontinuation and the migration, but not the price question with evidence.",
+      "usefulness": "Clear and polite, but the price answer rests on an unsupported amount, limiting actionability."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.0005814,
+     "usage": {
+      "input_tokens": 3418,
+      "cache_read_tokens": 3200,
+      "cache_creation_tokens": 0,
+      "output_tokens": 414
+     },
+     "error": null
+    }
+   ]
+  },
+  {
+   "id": "HV080-PT-WEB-CURITIBA-RAIN",
+   "repetition": 1,
+   "request_id": "req_eval891131a94187",
+   "split": "holdout_v080",
+   "language": "pt",
+   "message": "Vai chover em Curitiba no próximo sábado?",
+   "route": "general_web",
+   "status": "answered",
+   "agents": [
+    "router",
+    "knowledge",
+    "personality"
+   ],
+   "executed_path": "knowledge",
+   "answer": "Sim. Para sábado, 14 de novembro de 2026, a previsão indica pancadas de chuva pela manhã e no fim da tarde ou à noite em Curitiba, segundo o Weather.",
+   "sources": [
+    "Web search data provider: oai-weather"
+   ],
+   "duration_ms": 6476,
+   "cost_usd": 0.0,
+   "model_calls": 3,
+   "errors": [],
+   "violations": [],
+   "route_ok": true,
+   "status_ok": true,
+   "language_ok": true,
+   "tools_ok": true,
+   "amounts_ok": true,
+   "content_ok": true,
+   "forbidden_ok": true,
+   "sources_ok": true,
+   "grounded_ok": true,
+   "tools_called": [],
+   "passed": false,
+   "judge_input": {
+    "merchant_message": "Vai chover em Curitiba no próximo sábado?",
+    "status": "answered",
+    "route": "general_web",
+    "sources": [
+     "Web search data provider: oai-weather"
+    ],
+    "evidence": [],
+    "evidence_truncation": {
+     "limit_chars": 6000,
+     "original_chars": 0,
+     "kept_chars": 0,
+     "items": 0,
+     "items_cut": 0,
+     "truncated": false
+    },
+    "evidence_notes": [
+     "The reply comes from a web search whose text is not recorded: judge only whether it is consistent with the listed sources and say so in the reasons."
+    ],
+    "reply": "Sim. Para sábado, 14 de novembro de 2026, a previsão indica pancadas de chuva pela manhã e no fim da tarde ou à noite em Curitiba, segundo o Weather."
+   },
+   "evidence_truncation": {
+    "limit_chars": 6000,
+    "original_chars": 0,
+    "kept_chars": 0,
+    "items": 0,
+    "items_cut": 0,
+    "truncated": false
+   },
+   "deterministic": true,
+   "content": false,
+   "source_cost_usd": 0.01040151,
+   "judge": {
+    "evaluation_id": "eval_42fd2f518490432890e3",
+    "rubric_version": "5",
+    "repetition": 1,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "claims": {
+     "claims": [
+      {
+       "n": 1,
+       "text": "Sim.",
+       "kind": "fact"
+      },
+      {
+       "n": 2,
+       "text": "Para sábado, 14 de novembro de 2026",
+       "kind": "date"
+      },
+      {
+       "n": 3,
+       "text": "a previsão indica pancadas de chuva pela manhã e no fim da tarde ou à noite em Curitiba",
+       "kind": "fact"
+      },
+      {
+       "n": 4,
+       "text": "segundo o Weather",
+       "kind": "fact"
+      }
+     ],
+     "claim_verdicts": [
+      {
+       "n": 1,
+       "verdict": "partial",
+       "support": "Web search data provider: oai-weather"
+      },
+      {
+       "n": 2,
+       "verdict": "not_found",
+       "support": ""
+      },
+      {
+       "n": 3,
+       "verdict": "partial",
+       "support": "Web search data provider: oai-weather"
+      },
+      {
+       "n": 4,
+       "verdict": "partial",
+       "support": "Web search data provider: oai-weather"
+      }
+     ],
+     "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+    },
+    "state": "completed",
+    "model_used": "deepseek-flash",
+    "scores": {
+     "groundedness": 2,
+     "factual_correctness": 2,
+     "relevance": 4,
+     "usefulness": 4
+    },
+    "reasons": {
+     "groundedness": "Only the weather source title is available; the specific date and forecast details are not confirmed by any item.",
+     "factual_correctness": "The forecast is consistent with the source title, but the specific date 14 de novembro de 2026 is unverifiable and possibly wrong.",
+     "relevance": "The reply directly answers the merchant's question about rain in Curitiba next Saturday.",
+     "usefulness": "Clear, polite and in Portuguese, giving a forecast with period detail the merchant can act on."
+    },
+    "unsupported_claim": true,
+    "cost_usd": 0.00046429,
+    "usage": {
+     "input_tokens": 2875,
+     "cache_read_tokens": 2432,
+     "cache_creation_tokens": 0,
+     "output_tokens": 264
+    },
+    "error": null
+   },
+   "judge_runs": [
+    {
+     "evaluation_id": "eval_42fd2f518490432890e3",
+     "rubric_version": "5",
+     "repetition": 1,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Para sábado, 14 de novembro de 2026",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "a previsão indica pancadas de chuva pela manhã e no fim da tarde ou à noite em Curitiba",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "segundo o Weather",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 2,
+      "relevance": 4,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Only the weather source title is available; the specific date and forecast details are not confirmed by any item.",
+      "factual_correctness": "The forecast is consistent with the source title, but the specific date 14 de novembro de 2026 is unverifiable and possibly wrong.",
+      "relevance": "The reply directly answers the merchant's question about rain in Curitiba next Saturday.",
+      "usefulness": "Clear, polite and in Portuguese, giving a forecast with period detail the merchant can act on."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00046429,
+     "usage": {
+      "input_tokens": 2875,
+      "cache_read_tokens": 2432,
+      "cache_creation_tokens": 0,
+      "output_tokens": 264
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_3f332e14caee4d0fb69a",
+     "rubric_version": "5",
+     "repetition": 2,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Para sábado, 14 de novembro de 2026",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "a previsão indica pancadas de chuva pela manhã e no fim da tarde ou à noite em Curitiba",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "segundo o Weather",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 2,
+        "verdict": "not_found",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 2,
+      "factual_correctness": 2,
+      "relevance": 5,
+      "usefulness": 3
+     },
+     "reasons": {
+      "groundedness": "Web text was not available; only source titles confirm provider, and the specific date is unverifiable.",
+      "factual_correctness": "The specific date 14 November 2026 cannot be checked and may be wrong since no web text exists.",
+      "relevance": "The reply directly answers the merchant's question about rain in Curitiba next Saturday.",
+      "usefulness": "Clear and in Portuguese, but gives an unverifiable date and vague source name, limiting actionability."
+     },
+     "unsupported_claim": true,
+     "cost_usd": 0.00038183,
+     "usage": {
+      "input_tokens": 2875,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 258
+     },
+     "error": null
+    },
+    {
+     "evaluation_id": "eval_ba699dcab44c40949991",
+     "rubric_version": "5",
+     "repetition": 3,
+     "provider": "deepseek",
+     "model": "deepseek-flash",
+     "claims": {
+      "claims": [
+       {
+        "n": 1,
+        "text": "Sim.",
+        "kind": "fact"
+       },
+       {
+        "n": 2,
+        "text": "Para sábado, 14 de novembro de 2026",
+        "kind": "date"
+       },
+       {
+        "n": 3,
+        "text": "a previsão indica pancadas de chuva pela manhã e no fim da tarde ou à noite em Curitiba",
+        "kind": "fact"
+       },
+       {
+        "n": 4,
+        "text": "segundo o Weather",
+        "kind": "fact"
+       }
+      ],
+      "claim_verdicts": [
+       {
+        "n": 1,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 2,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 3,
+        "verdict": "partial",
+        "support": ""
+       },
+       {
+        "n": 4,
+        "verdict": "partial",
+        "support": "Web search data provider: oai-weather"
+       }
+      ],
+      "origin": "amostra:v0110-calibracao-amostra-claims.csv#cdd0a659f5ac"
+     },
+     "state": "completed",
+     "model_used": "deepseek-flash",
+     "scores": {
+      "groundedness": 4,
+      "factual_correctness": 3,
+      "relevance": 5,
+      "usefulness": 4
+     },
+     "reasons": {
+      "groundedness": "Weather facts come only from the web search, whose text was not available; consistent with the listed weather source.",
+      "factual_correctness": "No evidence contradicts the forecast, but no recorded passage confirms the specific date or rain details.",
+      "relevance": "Directly answers the merchant's question about rain in Curitiba next Saturday.",
+      "usefulness": "Clear, polite, in Portuguese and gives the forecast with a named source."
+     },
+     "unsupported_claim": false,
+     "cost_usd": 0.00034583,
+     "usage": {
+      "input_tokens": 2875,
+      "cache_read_tokens": 2688,
+      "cache_creation_tokens": 0,
+      "output_tokens": 228
+     },
+     "error": null
+    }
+   ]
+  }
+ ]
+}

@@ -1,6 +1,6 @@
-# QA real v0.7.0: evidência da história, momento a momento
+# Validação com modelos reais da v0.7.0: evidência da história, momento a momento
 
-Rodada r1, 2026-11-04, candidato `v0.7.0-local-r1` (backend `e97d7f0`, web `932aeb6`, fingerprint `12adae52…ad8f`). Saídas HTTP copiadas do que o `curl` devolveu, com o token **mascarado** (`<JWT-masked>`); senhas fictícias e chaves de provedor não aparecem. Cada ação do operador usou um caso novo:
+**Parecer final: apto, com ressalvas** ([v070-qa.md](v070-qa.md)). Execução de 2026-11-04, candidato `v0.7.0-local-r1` (backend `e97d7f0`, web `932aeb6`, fingerprint `12adae52…ad8f`). Saídas HTTP copiadas do que o `curl` devolveu, com o token **mascarado** (`<JWT-masked>`); senhas fictícias e chaves de provedor não aparecem. Cada ação do operador usou um caso novo:
 
 | Caso | Protocolo | Quem pediu | Ação do operador | Superfície |
 | --- | --- | --- | --- | --- |

@@ -4,7 +4,7 @@
 
 [Spec v0.6.0](fechamento-v060.md), [especificação complementar 0.3](incrementos-pos-nucleo.md#recorte-final-v060), [história v1](../historias/fechamento-v060.md) e [ADR 0015](../architecture/decisions/0015-recorte-final-v060.md).
 
-**Estado: recorte aprovado pelo responsável em 2026-10-27**, com contratos `/v1` aditivos, migração 0008, limite por sessão demo, API do compose só local, três subagentes Claude Opus 5.5 com esforço high e teto de campanha US$0,50. Base: mains com a v0.5.0 integrada (backend `c3a9027b7c218f560345576770a646d4ec2bc098`, web `4192169afc8b37f150d88fdf16e3529a0fd33b90`, tags `v0.5.0`); branches `codex/v0.6.0-fechamento`.
+**Estado:** entregue na v0.6.0 (2026-10-28; [resultado](../evidence/v060-resultado.md)). Recorte aprovado pelo responsável em 2026-10-27, com contratos `/v1` aditivos, migração 0008, limite por sessão demo, API do compose só local e teto de campanha US$0,50.
 
 ## Decisões técnicas
 
@@ -13,7 +13,7 @@
 3. **Avaliação por modelo sob demanda.** Reutilizar `JudgeScore` e o prompt `judge` versionado; avaliador com configuração fixa (provedor, modelo e parâmetros vindos da configuração do backend), registrada em cada avaliação, independente do perfil avaliado. Estimativa pelo preço do catálogo, confirmação, reserva e liquidação na guarda persistente. Mesma configuração e execução devolve o registro existente, salvo `repeat=true`. O campo `evaluation` dos perfis permanece no esquema e não é usado.
 4. **Comparação.** Execução fora da requisição, em thread do próprio processo da API (sem fila nem serviço novo), com estado persistido e atualização por GET explícito. Limites: 2–3 perfis, até 3 cenários, até 2 repetições, no máximo 18 células. Uma versão da base capturada para toda a comparação. Efeitos de domínio (conversas, casos, tentativas, encaminhamentos) numa cópia temporária do banco sintético; traces e snapshots no armazenamento normal, marcados com `purpose=comparison` e o ID da comparação, para abrir as execuções. Reuso de execuções compatíveis rotuladas como gravadas.
 5. **Gráficos.** No Streamlit, com seleção que só relê dados gravados: custo × qualidade por perfil (duração média e tamanho da amostra no rótulo) e custo por agente/modelo com seleção que abre as execuções. Tabela de células. Router-only em seção própria.
-6. **Efeito da documentação.** Texto da V2 do documento fictício de dispositivos preparado na tarefa 57, com a diferença esperada registrada antes; validação offline com política programada e embeddings falsos; aceite real pelo QA. O trace já registra documentos recuperados (`hits`), `chunk_id` das citações, versão da base e ferramentas.
+6. **Efeito da documentação.** Texto da V2 do documento fictício de dispositivos preparado na tarefa 57, com a diferença esperada registrada antes; validação offline com política programada e embeddings falsos; aceite pela validação real. O trace já registra documentos recuperados (`hits`), `chunk_id` das citações, versão da base e ferramentas.
 7. **Interface.** Três abas: Atendimento, Resultados, Administração (só quando a sessão é `admin`). Reaproveitar componentes atuais de conversa, comparação de Routers, inspeção e administração de perfis e base. Cliente e snapshot OpenAPI regenerados.
 8. **Estabilização.** Itens da [triagem](fechamento-v060.md#e-estabilização), sem redesenhar autenticação, orçamento, migrações ou versionamento.
 9. **Exposição.** Compose publica a API em `127.0.0.1:8000`; Streamlit roda nativo no projeto web e é o único serviço com endereço externo (`--server.address 0.0.0.0`); HTTPS com certificado próprio quando possível; limite configurável de mensagens por sessão demo, recusado no backend com erro claro. Redirecionamento de porta e regra de firewall são ações do responsável.
@@ -55,19 +55,13 @@ Uma listagem `GET /v1/runs` só entra se a área Resultados precisar de execuç�
 - Integração sem custo: comparação e avaliação com modelo programado; D com política programada e embeddings falsos mostrando a mudança de ferramenta entre V1 e V2 e o retorno.
 - Web (`AppTest`): três áreas, Administração ausente para demo, gráficos e tabela a partir de fixtures, nenhum POST em rerun, troca de aba ou seleção de gráfico, recuperação por GET, erros com ação de recuperação.
 - Validação estrita backend (`python tools/scripts/lint_and_tests.py --strict`) e web com código 0.
-- QA real conforme a história, no candidato fixado.
+- Validação real conforme a história, no candidato fixado.
 
-## QA real, orçamento e Docker
+## Validação real, orçamento e Docker
 
-- Antes da rodada, o Supervisor reconcilia os ledgers em modo somente leitura. Estado em 2026-10-27: primário 885 entradas, US$0,34852844, zero reservas, teto persistente US$1; acumulado do projeto US$0,59837466.
-- Campanha `v060-qa`: `FixedBudgetGuard` com teto fixo US$0,50 em `.pytest_cache/v060-qa-control/budget.sqlite3`, combinada com o ledger primário, montada uma vez pelo QA. Correções não renovam.
-- Estimativa da rodada ≈ US$0,15: regressão real (40 casos + 4 conversas) ≈ 0,07; comparação ≈ 0,03; D ≈ 0,02; chat, toggle, Docker e acesso externo ≈ 0,02; avaliações por modelo ≈ 0,01.
-- Docker: o contêiner usa o ledger do seu volume. O QA lê esse ledger antes e depois, soma o delta ao total da campanha e mantém o agregado abaixo de US$0,50; a rodada no Docker é um smoke pequeno.
-- Developer e Reviewer não fazem chamadas pagas. Testes automatizados nunca chamam APIs pagas.
-
-## Delegação aprovada
-
-No máximo três subagentes, em sequência e com contexto novo: Developer, Reviewer e QA, **Claude Opus 5.5 com esforço high** (substituto de `gpt-6-luna`, indisponível nesta sessão, escolhido pelo responsável em 2026-10-27). Sem delegação aninhada nem agentes adicionais. Correções voltam ao mesmo Developer; revalidação pelo mesmo Reviewer e QA, cobrindo o delta e as regressões pertinentes. Reviewer não recebe conclusões do implementador. O Supervisor fixa o candidato por hashes antes de revisão e QA e registra o resultado central em `docs/evidence/v060-resultado.md`, com passagens únicas por papel (rodadas acrescentadas no mesmo arquivo).
+- Campanha `v060-qa`: `FixedBudgetGuard` com teto fixo de US$0,50, combinada com o ledger primário e montada uma vez.
+- Docker: o contêiner usa o ledger do seu volume; o delta lido antes e depois entra no total da campanha, abaixo de US$0,50.
+- Testes automatizados nunca chamam APIs pagas.
 
 ## Riscos técnicos e retorno
 
@@ -82,8 +76,8 @@ Retorno de código pela tag `v0.5.0`; dados pela migração 0008 → 0007 em ban
 58. [Execução, compartilhamento e documentação final](../tasks/58-execucao-compartilhamento-v060.md)
 59. [Validação e aceite da v0.6.0](../tasks/59-validacao-aceite-v060.md)
 
-Ordem: 54 primeiro (orçamento e integridade); 55 antes de 56 (cenários e avaliação alimentam a comparação); 57 depende de 55 (catálogo e Resultados); 58 por último no Developer; 59 com Reviewer e QA.
+Ordem: 54 primeiro (orçamento e integridade); 55 antes de 56 (cenários e avaliação alimentam a comparação); 57 depende de 55 (catálogo e Resultados); 58 por último; 59 fecha com a validação.
 
 ## Aprovação registrada e limites
 
-O responsável aprovou em 2026-10-27 o recorte, os contratos e dados acima, a delegação e o teto de campanha. Commits e push da v0.6.0, PRs, merges, tag e abertura de porta continuam dependendo de autorização própria no fechamento. Sem limpeza de dados, remoção de coleções ou mudança de credenciais.
+O responsável aprovou em 2026-10-27 o recorte, os contratos e dados acima e o teto de campanha; tag e abertura de porta dependem de autorização própria. Sem limpeza de dados, remoção de coleções ou mudança de credenciais.

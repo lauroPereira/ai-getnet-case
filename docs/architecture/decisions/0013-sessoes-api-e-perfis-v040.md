@@ -2,8 +2,7 @@
 
 ## Status
 
-Aceita pelo responsável em 2026-10-27 na aprovação completa do plano v0.4.0. **Substituída** na v0.7.0 pela [decisão 0017](0017-identidade-principal-escopos.md): as sessões opacas deram lugar a JWT (`POST /v1/auth/token`).
-Implementação/validação registradas nas tarefas e evidências correspondentes.
+Aceita (v0.4.0, 2026-10-27). **Substituída** na v0.7.0 pela [decisão 0017](0017-identidade-principal-escopos.md): as sessões opacas deram lugar a JWT (`POST /v1/auth/token`).
 
 ## Contexto
 
@@ -34,7 +33,7 @@ backend não atende RF-73. Token opaco mantém o contrato simples e revogável.
 ## Consequências e retorno
 
 Novas tabelas de principal/sessão e testes de expiração, revogação e autorização.
-Não é um provedor de identidade de produção. Custos/permissões/guardrails não
+O provedor de identidade veio na v0.7.0 (ADR 0017). Custos/permissões/guardrails não
 viram campos editáveis de perfil. Retorno pela v0.3.0 e descida 0006→0005 apenas
 em banco sintético; não alterar credenciais existentes nem reiniciar ledger.
 

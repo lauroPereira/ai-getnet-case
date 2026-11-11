@@ -7,22 +7,18 @@ impedir a interface de receber o resultado do POST.
 
 ## Especificação relacionada
 
-[Tarefa48](48-diagnostico-timeout-chat-ui-v050.md),
-proposta aprovada, plano v0.5,
-história v1 e QA r1. Responsável aprovou explicitamente este escopo adicional.
+[Tarefa 48](48-diagnostico-timeout-chat-ui-v050.md),
+proposta aprovada, plano v0.5 e história v1; escopo adicional aprovado pelo responsável.
 
 ## Pré-condições
 
-- Tarefa49 implementada em candidato r4, ainda sem revisão/QA próprios.
-- Reutilizar mesmos Developer → Reviewer → QA, todos gpt-6-luna/high.
-- Manter dois projetos/branches atuais, sem nova branch, pull ou integração.
-- Preservar bytes r4 antes de editar em novo diretório de teste. Não tocar
-  backend, API pública, dados, ledger, teto, timeout, credenciais ou políticas.
+- Tarefa 49 implementada.
+- Bytes da interface preservados antes de editar. Não tocar backend, API pública,
+  dados, ledger, teto, timeout, credenciais ou políticas.
 
 ## Arquivos prováveis
 
-Web `app.py`, cliente/fake existentes se necessários e testes da interface.
-Documentação de passagem. Backend somente esta tarefa e evidência.
+Web `app.py`, cliente/fake existentes se necessários e testes da interface. Backend somente esta tarefa e evidência.
 
 ## Passos
 
@@ -37,13 +33,10 @@ Documentação de passagem. Backend somente esta tarefa e evidência.
 4. Preservar renderização/inspeção normal quando request_id estiver disponível;
    não inventar request_id ausente. Erro na consulta GET também é recuperável.
 5. Acrescentar medição HTTP sanitizada se necessária ao diagnóstico: operação,
-   duração e classe do erro, sem texto, token ou credencial. Não aumentar20s
+   duração e classe do erro, sem texto, token ou credencial. Não aumentar 20 s
    nem introduzir retry automático. Registrar limites da análise histórica.
 6. Validar transporte controlado e testes web completos, script exigido/Ruff
-   externo se necessário. Não chamar APIs reais ou serviços pagos da rodada.
-7. Entregar passagem `v050-developer-ui-r2.md` (na tag `v0.5.0`); parar escrita ao concluir,
-   sem adendos experimentais. Supervisor fixa r5, Reviewer revisa o conjunto
-   controles/recuperação e o mesmo QA revalida no orçamento já existente.
+   externo se necessário. Não chamar APIs reais ou serviços pagos.
 
 ## Critérios de conclusão
 
@@ -53,12 +46,14 @@ Documentação de passagem. Backend somente esta tarefa e evidência.
   ela ainda não está disponível; histórico velho não aparece como resposta nova.
 - [x] GET repetido/rerun não duplica envio/gasto; estado de erro GET é útil.
 - [x] Suíte web e Ruff passaram sem chamadas reais; backend ficou idêntico.
-- [x] Mesma campanhaUS$0,25 preservada; QA r1 e candidatos históricos mantidos.
+- [x] Mesma campanha de US$0,25 preservada; evidências e candidatos anteriores mantidos.
 
-## Validação
+## Resultado
 
-Validação sintética registrada em evidência Developer. `lint_and_tests.py --strict` executou 20/20 testes e a estrutura/skills, mas retornou código 2 porque Ruff não existe no venv web; Ruff externo passou em `app.py src tests tools`. Nenhuma chamada real foi feita. Critérios visuais e jornada integrada aguardam Reviewer e QA no candidato r5.
+ID da conversa fixado antes do POST, falha de transporte sem traceback nem reenvio e atualização manual só por GET. Suíte web: 20/20 testes; Ruff aprovado; nenhuma chamada real. Recuperação comprovada no navegador depois da [tarefa 53](53-consumir-contrato-real-conversa-v050.md). Evidência: [resultado da v0.5.0](../evidence/v050-resultado.md).
 
 ## Status
 
-Concluída — recuperação por GET comprovada no navegador no [QA r3](../evidence/v050-qa-r3.md), após a correção da tarefa 53; integrada na v0.5.0.
+```text
+concluída (v0.5.0)
+```

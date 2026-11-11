@@ -24,3 +24,14 @@ Documentar no produto as capacidades de memória de conversa, ablação do repla
 - README e CHANGELOG descrevem o comportamento v0.12 sem referências de custo desatualizadas.
 - Metadados do pacote, `/ready`, migração e testes concordam em app 0.12.0 e schema 14.
 - Links documentais funcionais e contrato coerente com a implementação.
+
+## Resultado
+
+README, CHANGELOG e contrato descrevem a v0.12.0; `/ready` informa aplicação 0.12.0 e esquema 14. Suíte estrita com 2.698 aprovados.
+Evidência: [resultado da v0.12.0](../evidence/v0120-resultado.md).
+
+## Status
+
+```text
+concluída (v0.12.0)
+```

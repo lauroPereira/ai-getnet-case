@@ -14,7 +14,7 @@ Tarefa 55 concluída (catálogo e Resultados). Documento fictício de dispositiv
 
 ## Arquivos prováveis
 
-`data/scenarios/` (cenário de D), fixture com o texto da V2, testes de integração com política programada, e o roteiro operacional em `docs/evidence/v060-qa-preparacao.md` (na tag `v0.6.0`).
+`data/scenarios/` (cenário de D), fixture com o texto da V2, testes de integração com política programada, e o roteiro operacional da validação real (na tag `v0.6.0`).
 
 ## Passos
 
@@ -22,7 +22,7 @@ Tarefa 55 concluída (catálogo e Resultados). Documento fictício de dispositiv
 2. Registrar a diferença esperada antes da edição: na V2, o procedimento exige `get_contract_snapshot` antes de oferecer Link de Pagamento como alternativa, e a resposta só oferece a alternativa se o produto constar nos fatos.
 3. Preparar o texto da V2 como edição de rascunho do documento fictício, sem prazo oficial, regra financeira ou concessão de ferramenta.
 4. Teste de integração sem custo: mesma pergunta, cenário, perfil, prompts e ferramentas em conversas independentes; V1 sem a consulta, V2 com a consulta, V1 restaurada sem ela; trecho, versão, fatos e ferramentas visíveis em Resultados.
-5. Roteiro do QA real: executar a V1 primeiro; se a diferença já ocorrer, redefinir e registrar outra antes de editar; repetição pequena por versão.
+5. Roteiro da validação real: executar a V1 primeiro; se a diferença já ocorrer, redefinir e registrar outra antes de editar; repetição pequena por versão.
 
 ## Critérios de conclusão
 
@@ -30,19 +30,12 @@ Tarefa 55 concluída (catálogo e Resultados). Documento fictício de dispositiv
 - [x] Teste sem custo mostra a mudança e o retorno por ferramenta e fato, não só por redação.
 - [x] Nenhuma ferramenta nova, prazo oficial ou regra financeira vinda do texto.
 
-## Validação
+## Resultado
 
-- Diferença esperada registrada antes de qualquer edição real em v060-qa-preparacao.md (na tag `v0.6.0`); pergunta `SC-DOC-EFFECT` no catálogo; V2 em `data/scenarios/kb-demo-devices-v2.md` (só acrescenta a seção "Alternativa de venda com a maquininha sem conexão").
-- `test_document_edit_changes_tool_use_and_rollback_restores_it`: V1 sem `get_contract_snapshot`; rascunho V2 com diff só de adição; build, teste e ativação; V2 com o trecho novo nos `hits`, `get_device_status` → `get_contract_snapshot`, fonte do contrato e oferta condicionada ao fato; retorno a `kb_initial` restaura o comportamento; três conversas independentes com o mesmo cenário, perfil, digest, Router e conjunto de prompts.
-- `test_v2_text_adds_no_deadline_amount_or_new_tool`: a seção nova não tem dígitos (prazo, valor, taxa) e só cita a ferramenta já autorizada.
-- Limite: a política programada aplica o procedimento recuperado; o comportamento do modelo real fica para o QA, com o roteiro na preparação.
-
-Validação estrita backend (`PYTEST_ADDOPTS="-p no:cacheprovider --basetemp .pytest_cache/v060-dev-strict" .venv/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **326 passed**, Ruff "All checks passed!", estrutura e skills válidas, código 0. Web (`.venv-v040/Scripts/python.exe tools/scripts/lint_and_tests.py --strict`): **30 passed**, Ruff sem achados, código 0. Nenhuma chamada paga, chave de provedor ou build Docker. Passagem: v060-developer.md (na tag `v0.6.0`).
+Diferença esperada registrada antes da edição; a V2 só acrescenta a seção de alternativa de venda. O teste sem custo mostra a V1 sem `get_contract_snapshot`, a V2 com o trecho novo e a ferramenta e a V1 restaurada sem ela. Na validação real, o trecho novo veio em primeiro (0,758) e a V1 restaurada voltou sem a ferramenta. Suíte estrita: backend 326 testes, web 30. Evidência: [resultado da v0.6.0](../evidence/v060-resultado.md).
 
 ## Status
 
 ```text
 concluída (v0.6.0)
 ```
-
-Revisão independente e QA real aptos ([resultado](../evidence/v060-resultado.md)).

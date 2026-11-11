@@ -35,12 +35,12 @@ Criar o banco SQLite com seed relativo a um relógio injetável, incluindo `clie
 - [x] Teste de virada de dia no fuso de São Paulo.
 - [x] Nenhum dado real.
 
-## Validação
+## Resultado
 
-2026-10-26: `tests/unit/data/` (15 testes) cobre fuso de São Paulo na virada do dia, períodos nomeados, dias úteis, seed determinístico com relógio fixo, vendas sempre em D-1 com o relógio do sistema, idempotência preservando encaminhamentos e isolamento entre clientes. Revisão não independente.
+Relógio injetável, seed determinístico de `cliente1988` e `cliente_demo_002`, códigos de negativa e glossário de status. `tests/unit/data/` (15 testes) cobre a virada do dia em São Paulo, períodos nomeados, dias úteis, seed com relógio fixo, vendas em D-1 com o relógio do sistema, idempotência e isolamento entre clientes.
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```

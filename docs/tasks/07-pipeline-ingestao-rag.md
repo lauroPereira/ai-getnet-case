@@ -22,7 +22,7 @@ Coletar as fontes, gravar a cópia versionada, fragmentar, indexar e recuperar, 
 
 ## Passos
 
-1. Promover a base fictícia de `discovery/base-conhecimento-ficticia/` para `data/knowledge-demo/`, retirando do README as menções à pesquisa exploratória e acrescentando a tabela de códigos de negativa sintéticos da tarefa 05.
+1. Promover a base fictícia, preparada localmente, para `data/knowledge-demo/`, com README próprio e a tabela de códigos de negativa sintéticos da tarefa 05.
 2. Coletor HTTP identificado, com respeito a `robots.txt` e intervalo entre requisições; extração do conteúdo principal, sem navegação repetida.
 3. Gravar uma cópia por página com `url`, `title`, `collected_at`, `content_hash` e texto.
 4. Falhar com relatório quando o texto extraído de uma página estiver vazio ou curto demais.
@@ -37,12 +37,12 @@ Coletar as fontes, gravar a cópia versionada, fragmentar, indexar e recuperar, 
 - [x] Testes rodam sem rede.
 - [x] Recall@k em inglês e em português registrado em `docs/evidence/`, com amostra e custo.
 
-## Validação
+## Resultado
 
-2026-10-26: `ingest` gerou 32 cópias sem falha; `index` e `eval-retrieval` reconstroem o índice só a partir delas. Recall@6 = 1,0 em inglês e português com `text-embedding-3-small` (14 perguntas, US$0,0007). Testes offline em `tests/unit/rag/`. Detalhes em [docs/evidence/2026-10-26-pipeline-rag.md](../evidence/2026-10-26-pipeline-rag.md). Revisão não independente.
+`ingest` gerou 32 cópias sem falha; `index` e `eval-retrieval` reconstroem o índice só a partir delas. Recall@6 = 1,0 em inglês e português com `text-embedding-3-small` (14 perguntas, US$0,0007); testes offline em `tests/unit/rag/`. Evidência: [pipeline RAG](../evidence/2026-10-26-pipeline-rag.md).
 
 ## Status
 
 ```text
-concluída
+concluída (v0.1.0)
 ```
